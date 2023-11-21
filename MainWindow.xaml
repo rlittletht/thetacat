@@ -10,6 +10,11 @@
         <local:MathConverter x:Key="MathConverter" />
     </Window.Resources>
     <StackPanel VerticalAlignment="Stretch">
+        <Menu>
+            <MenuItem Header="T_ools">
+                <MenuItem Header="_Migration" Click="LaunchMigration"/>
+            </MenuItem>
+        </Menu>
         <Grid x:Name="mainGrid" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=(@VALUE*.80)}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
@@ -24,7 +29,7 @@
             <Image Grid.Column="0" Grid.Row="1" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
             <Image Grid.Column="1" Grid.Row="1" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
         </Grid>
-        <Button Content="TryIt" IsDefault="True" Click="DoCommand"/>
-        <Button Content="TryIt2" IsDefault="True" Click="DoCommand2"/>
+        <Button Content="TryImages" IsDefault="True" Click="DoCommand"/>
+        <Button Content="TryAzureUpload" IsDefault="True" Click="DoCommand2"/>
     </StackPanel>
 </Window>

@@ -169,5 +169,12 @@ namespace Thetacat
                 }
             }
         }
+
+        private void LaunchMigration(object sender, RoutedEventArgs e)
+        {
+            Migration.Migration migration = new();
+
+            migration.ShowDialog();
+        }
     }
 }
