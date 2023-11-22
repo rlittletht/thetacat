@@ -24,8 +24,9 @@ namespace Thetacat.Migration;
 /// </summary>
 public partial class ElementsMigration : Window
 {
+    private IAppState m_appState;
     private List<ElementsMediaItem>? m_items;
-    readonly List<PathSubstitution> m_pathSubstitutions = new() { new PathSubstitution { From = "//ix", To = "//pix" } };
+    private readonly List<PathSubstitution> m_pathSubstitutions = new();
 
     void BuildMetadataReportFromDatabase(string database)
     {
@@ -37,14 +38,29 @@ public partial class ElementsMigration : Window
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);
         view.Filter = FilterMediaItem;
+
+        foreach (string s in m_appState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
+        {
+            string []pair = s.Split(",");
+            if (pair.Length != 2)
+            {
+                MessageBox.Show($"bad subst setting in registry: {s}");
+                continue;
+            }
+
+            m_pathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
+        }
+
         substDatagrid.ItemsSource = m_pathSubstitutions;
 
         db.Close();
     }
 
-    public ElementsMigration(string database)
+    public ElementsMigration(string database, IAppState appState)
     {
+        m_appState = appState;
         InitializeComponent();
+
         BuildMetadataReportFromDatabase(database);
     }
 
@@ -115,10 +131,17 @@ public partial class ElementsMigration : Window
     {
         Dictionary<string, string> pathSubst = new();
 
+        List<string> regValues = new();
+
         foreach (PathSubstitution sub in m_pathSubstitutions)
         {
             pathSubst.Add(sub.From, sub.To);
+            regValues.Add($"{sub.From},{sub.To}");
         }
+
+        // persist the paths to the registry here
+        m_appState.Settings.Settings.SetRgsValue("LastElementsSubstitutions", regValues.ToArray());
+        m_appState.Settings.Settings.Save();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 

@@ -26,6 +26,7 @@ using Microsoft.Extensions.Azure;
 using Microsoft.Windows.Themes;
 
 using System.Security.Cryptography;
+using Thetacat.Types;
 
 
 namespace Thetacat
@@ -35,6 +36,8 @@ namespace Thetacat
     /// </summary>
     public partial class MainWindow : Window
     {
+        private AppState m_appState;
+
         //        public class ImageEntry
         //        {
         //            [PrimaryKey]
@@ -42,6 +45,7 @@ namespace Thetacat
         public MainWindow()
         {
             InitializeComponent();
+            m_appState = new AppState();
         }
 
         SQLiteConnection OpenDatabase()
@@ -172,7 +176,7 @@ namespace Thetacat
 
         private void LaunchMigration(object sender, RoutedEventArgs e)
         {
-            Migration.Migration migration = new();
+            Migration.Migration migration = new(m_appState);
 
             migration.ShowDialog();
         }
