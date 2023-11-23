@@ -10,7 +10,7 @@ namespace Thetacat.Migration.Elements;
 
 class ElementsDb
 {
-    private SQLiteConnection m_connection;
+    private SQLiteConnection? m_connection;
 
     public static ElementsDb Create(string databaseFile)
     {
@@ -18,16 +18,18 @@ class ElementsDb
 
         connection.Open();
 
-        ElementsDb db = new ElementsDb();
+        ElementsDb db = new()
+        {
+            m_connection = connection
+        };
 
-        db.m_connection = connection;
         return db;
     }
 
     public void Close()
     {
-        m_connection.Close();
-        m_connection.Dispose();
+        m_connection?.Close();
+        m_connection?.Dispose();
     }
 
     public List<ElementsMetaTag> ReadMetadataTags()

@@ -17,4 +17,8 @@
     <PackageReference Include="TCore.Sql" Version="2.2.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Secrets\" />
+  </ItemGroup>
+
 </Project>

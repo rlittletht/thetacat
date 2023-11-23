@@ -9,9 +9,9 @@ namespace Thetacat.Migration.Elements;
 
 public class ElementsMetaTag
 {
-    public string Name { get; set; }
-    public string ID { get; set; }
-    public string ParentID { get; set; }
-    public string ParentName { get; set; }
-    public string ElementsTypeName { get; set; }
+    public string? Name { get; set; }
+    public string? ID { get; set; }
+    public string? ParentID { get; set; }
+    public string? ParentName { get; set; }
+    public string? ElementsTypeName { get; set; }
 }

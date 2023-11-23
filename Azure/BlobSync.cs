@@ -1,27 +1,19 @@
 ﻿using Azure.Core;
 using Azure.Identity;
-using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
 using System;
-using System.Collections.Generic;
-using System.DirectoryServices;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Security.RightsManagement;
-using System.Text;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
 
 namespace Thetacat;
 
 // this is a singleton
 class BlobSync
 {
-    private static TokenCredential m_credential = null;
+    private static TokenCredential? m_credential = null;
 
-    private static string m_storageAccountName = null;
+    private static string m_storageAccountName = String.Empty;
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public static async Task Create(string appTenant, string appId, string storageAccountName)
     {
         TokenCredentialOptions options = new TokenCredentialOptions();
@@ -29,6 +21,7 @@ class BlobSync
         BlobSync.m_credential = new InteractiveBrowserCredential(appTenant, appId, options);
         BlobSync.m_storageAccountName = storageAccountName;
     }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
     public static async Task<TcBlobContainer> OpenContainer(string containerName)
     {

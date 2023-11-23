@@ -9,13 +9,11 @@ namespace Thetacat.Migration.Elements;
 
 public class ElementsMetaTagBuilder
 {
-    private ElementsMetaTag m_building;
+    private ElementsMetaTag m_building = new();
 
     public static ElementsMetaTagBuilder Create()
     {
         ElementsMetaTagBuilder builder = new();
-
-        builder.m_building = new ElementsMetaTag();
 
         return builder;
     }

@@ -9,13 +9,13 @@
     <Window.Resources>
         <local:MathConverter x:Key="MathConverter" />
     </Window.Resources>
-    <StackPanel VerticalAlignment="Stretch">
-        <Menu>
+    <DockPanel> <!--VerticalAlignment="Stretch">-->
+        <Menu DockPanel.Dock="Top">
             <MenuItem Header="T_ools">
                 <MenuItem Header="_Migration" Click="LaunchMigration"/>
             </MenuItem>
         </Menu>
-        <Grid x:Name="mainGrid" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=(@VALUE*.80)}">
+        <Grid x:Name="mainGrid"> <!--Height="{Binding ActualHeight, ElementName=window, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=(@VALUE*.80)}">-->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
@@ -23,13 +23,20 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="5*"/>
                 <RowDefinition Height="5*"/>
+                <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
             <Image Grid.Column="0" Grid.Row="0" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
             <Image Grid.Column="1" Grid.Row="0" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
             <Image Grid.Column="0" Grid.Row="1" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
             <Image Grid.Column="1" Grid.Row="1" Margin="10,10,10,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50*"/>
+                    <ColumnDefinition Width="50*" />
+                </Grid.ColumnDefinitions>
+                <Button Content="TryImages" IsDefault="True" Click="DoCommand" Grid.Column="0"/>
+                <Button Content="TryAzureUpload" IsDefault="True" Click="DoCommand2" Grid.Column="1"/>
+            </Grid>
         </Grid>
-        <Button Content="TryImages" IsDefault="True" Click="DoCommand"/>
-        <Button Content="TryAzureUpload" IsDefault="True" Click="DoCommand2"/>
-    </StackPanel>
+    </DockPanel>
 </Window>

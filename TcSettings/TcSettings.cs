@@ -9,18 +9,18 @@ namespace Thetacat.TcSettings;
 
 public class TcSettings
 {
-    string s_registryRoot = "Software\\Thetasoft\\Thetacat";
+    readonly string s_registryRoot = "Software\\Thetasoft\\Thetacat";
     private Settings? m_settings;
 
-    private Settings.SettingsElt[] s_appSettings =
+    private readonly Settings.SettingsElt[] s_appSettings =
     {
-        new Settings.SettingsElt("LastElementsDb", Settings.Type.Str, "", ""),
-        new Settings.SettingsElt("LastElementsSubstitutions", Settings.Type.StrArray, Array.Empty<string>(), Array.Empty<string>())
+        new("LastElementsDb", Settings.Type.Str, "", ""),
+        new("LastElementsSubstitutions", Settings.Type.StrArray, Array.Empty<string>(), Array.Empty<string>())
     };
 
     public static TcSettings LoadSettings()
     {
-        TcSettings settings = new TcSettings();
+        TcSettings settings = new();
 
         settings.m_settings = new Settings(settings.s_appSettings, settings.s_registryRoot, "app");
         settings.m_settings.Load();
@@ -28,5 +28,13 @@ public class TcSettings
         return settings;
     }
 
-    public Settings Settings => m_settings;
+    public Settings Settings
+    {
+        get
+        {
+            if (m_settings == null) 
+                throw new Exception("improper creation of TcSettings");
+            return m_settings;
+        }
+    }
 }

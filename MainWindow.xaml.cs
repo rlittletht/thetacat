@@ -136,7 +136,7 @@ namespace Thetacat
 
         private void DoCommand(object sender, RoutedEventArgs e)
         {
-            using (SQLiteConnection conn = OpenDatabase())
+            // using (SQLiteConnection conn = OpenDatabase())
             {
                 List<Image> images = new List<Image>();
                 foreach (Image image in mainGrid.Children.OfType<Image>())
@@ -161,7 +161,10 @@ namespace Thetacat
 
                             CvInvoke.ResizeForFrame(mat, matOut, new System.Drawing.Size(512, 512));
                             mat.Save($"c:\\temp\\{baseName}-1.jpg");
-                            matOut.Save($"c:\\temp\\{baseName}-2.jpg");
+                            string outFile = $"c:\\temp\\{baseName}-2.jpg";
+                            matOut.Save(outFile);
+
+                            img.Source = new BitmapImage(new Uri(outFile));
                             // PortableImage image = J2kImage.FromFile(filename);
 
                             //                BitmapSource bsrc = BitmapSource.Create(mat.Width, mat.Height, 300, 300, PixelFormats.Bgr24, ))

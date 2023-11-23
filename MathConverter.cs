@@ -21,12 +21,16 @@ public class MathConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         // Parse value into equation and remove spaces
-        var mathEquation = parameter as string;
+        string? mathEquation = parameter as string;
+
+        if (mathEquation == null)
+            throw new ArgumentNullException();
+
         mathEquation = mathEquation.Replace(" ", "");
         mathEquation = mathEquation.Replace("@VALUE", value.ToString());
 
         // Validate values and get list of numbers in equation
-        var numbers = new List<double>();
+        List<double> numbers = new();
         double tmp;
 
         foreach (string s in mathEquation.Split(_allOperators))

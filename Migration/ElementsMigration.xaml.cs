@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Mime;
 using System.Text;
@@ -41,7 +42,7 @@ public partial class ElementsMigration : Window
 
         foreach (string s in m_appState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
-            string []pair = s.Split(",");
+            string[] pair = s.Split(",");
             if (pair.Length != 2)
             {
                 MessageBox.Show($"bad subst setting in registry: {s}");
@@ -70,16 +71,19 @@ public partial class ElementsMigration : Window
     {
         TriState tri = TriState.Maybe;
 
-        foreach (ElementsMediaItem item in m_items)
+        if (m_items != null)
         {
-            if (item.PathVerified == TriState.No)
-                tri = TriState.No;
+            foreach (ElementsMediaItem item in m_items)
+            {
+                if (item.PathVerified == TriState.No)
+                    tri = TriState.No;
 
-            if (item.PathVerified == TriState.Yes && tri != TriState.No)
-                tri = TriState.Yes;
+                if (item.PathVerified == TriState.Yes && tri != TriState.No)
+                    tri = TriState.Yes;
 
-            if (item.PathVerified == TriState.Maybe && tri != TriState.No)
-                tri = TriState.Maybe;
+                if (item.PathVerified == TriState.Maybe && tri != TriState.No)
+                    tri = TriState.Maybe;
+            }
         }
 
         switch (tri)
@@ -113,6 +117,8 @@ public partial class ElementsMigration : Window
 
     void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
     {
+        Debug.Assert(m_items != null, nameof(m_items) + " != null");
+
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
@@ -129,6 +135,9 @@ public partial class ElementsMigration : Window
 
     private void VerifyPaths(object sender, RoutedEventArgs e)
     {
+        if (m_items == null)
+            return;
+
         Dictionary<string, string> pathSubst = new();
 
         List<string> regValues = new();
@@ -169,7 +178,7 @@ public partial class ElementsMigration : Window
     bool FilterMediaItem(object o)
     {
         ElementsMediaItem item = (ElementsMediaItem)o;
-        
+
         if (FilterItems.SelectedItem == null)
             return true;
 
