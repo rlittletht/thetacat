@@ -13,6 +13,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="T_ools">
                 <MenuItem Header="_Migration" Click="LaunchMigration"/>
+                <MenuItem Header="Meta_tags" Click="ManageMetatags"/>
             </MenuItem>
         </Menu>
         <Grid x:Name="mainGrid"> <!--Height="{Binding ActualHeight, ElementName=window, Mode=OneWay, Converter={StaticResource MathConverter}, ConverterParameter=(@VALUE*.80)}">-->

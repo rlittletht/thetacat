@@ -1,0 +1,34 @@
+﻿<Window x:Class="Thetacat.Metatags.ManageMetadata"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Metatags"
+        mc:Ignorable="d"
+        Title="ManageMetadata" Height="450" Width="800">
+    <DockPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100*"/>
+                <RowDefinition Height="24"/>
+            </Grid.RowDefinitions>
+            <TreeView Name="MetatagsTree" Grid.Row="0">
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate DataType="local:IMetatagTreeItem" ItemsSource="{Binding Children}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Name}" Grid.Column="0" Margin="2,0,0,0"/>
+                            <TextBlock Text="{Binding Description}" Grid.Column="1" Margin="15,0,0,0"/>
+                            <TextBlock Text="{Binding ID}" Grid.Column="2" Margin="15,0,0,0" />
+                        </Grid>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+            <Button Content="Load Metatags" IsDefault="True" Click="LoadMetatags" Grid.Row="1" />
+        </Grid>
+    </DockPanel>
+</Window>

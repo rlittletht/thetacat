@@ -1,11 +1,12 @@
-﻿using Thetacat.ServiceClient.LocalService;
+﻿using Thetacat.Model;
+using Thetacat.ServiceClient.LocalService;
 
 namespace Thetacat.ServiceClient;
 
 public class ServiceInterop
 {
-    public ServiceMetatagSchema GetMetatagSchema()
+    public static MetatagSchema GetMetatagSchema()
     {
-        return LocalService.Metatags.GetMetatagSchema();
+        return MetatagSchema.CreateFromService(LocalService.Metatags.GetMetatagSchema());
     }
 }

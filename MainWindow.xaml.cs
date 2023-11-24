@@ -183,5 +183,11 @@ namespace Thetacat
 
             migration.ShowDialog();
         }
+
+        private void ManageMetatags(object sender, RoutedEventArgs e)
+        {
+            Metatags.ManageMetadata manage = new(m_appState);
+            manage.ShowDialog();
+        }
     }
 }
