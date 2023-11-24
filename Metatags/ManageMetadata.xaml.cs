@@ -97,7 +97,7 @@ namespace Thetacat.Metatags
         private MetatagTree? m_metatagTree;
         private void LoadMetatags(object sender, RoutedEventArgs e)
         {
-            m_appState.MetatagSchema = LoadSampleSchema(); // ServiceInterop.GetMetatagSchema();
+            m_appState.MetatagSchema = ServiceInterop.GetMetatagSchema(); // LoadSampleSchema(); // 
             m_metatagTree = new MetatagTree(m_appState.MetatagSchema.Metatags);
             MetatagsTree.ItemsSource = m_metatagTree.Children;
         }

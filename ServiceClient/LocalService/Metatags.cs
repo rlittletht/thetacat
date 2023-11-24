@@ -19,7 +19,7 @@ public class Metatags
 
         SqlSelect select = new SqlSelect();
 
-        select.AddBase("SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$name, $$tcat_metatags$$.description FROM $$#tcat_metatags$$");
+        select.AddBase("SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description FROM $$#tcat_metatags$$");
         select.AddAliases(s_aliases);
 
         LocalServiceClient.Sql.BeginTransaction();
@@ -34,7 +34,7 @@ public class Metatags
                     ServiceMetatag metatag = new()
                     {
                         ID = reader.Reader.GetGuid(0),
-                        Parent = reader.Reader.GetGuid(1),
+                        Parent = reader.Reader.IsDBNull(1) ? null : reader.Reader.GetGuid(1),
                         Name = reader.Reader.GetString(2),
                         Description = reader.Reader.GetString(3)
                     };

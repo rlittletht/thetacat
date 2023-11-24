@@ -5,7 +5,7 @@ using Thetacat.Model;
 
 namespace Thetacat.Metatags;
 
-public class MetatagTree: IMetatagTreeItem
+public class MetatagTree : IMetatagTreeItem
 {
     private readonly Dictionary<Guid, MetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
@@ -14,17 +14,23 @@ public class MetatagTree: IMetatagTreeItem
     {
         foreach (Metatag metatag in metatags)
         {
-            MetatagTreeItem treeItem = MetatagTreeItem.CreateFromMetatag(metatag);
+            MetatagTreeItem treeItem;
 
-            if (IdMap.ContainsKey(treeItem.ItemId))
+            if (IdMap.ContainsKey(metatag.ID))
             {
                 // if we already have the id, it had better have been a placeholder created for
                 // a parent id we hadn't seen yet
-                if (!IdMap[treeItem.ItemId].IsPlaceholder)
-                    throw new Exception($"duplicate id {treeItem.ItemId}");
+                if (!IdMap[metatag.ID].IsPlaceholder)
+                    throw new Exception($"duplicate id {metatag.ID}");
+
+                IdMap[metatag.ID].MaterializePlaceholder(metatag);
+
+                // reset this so we don't use the one we just created
+                treeItem = IdMap[metatag.ID];
             }
             else
             {
+                treeItem = MetatagTreeItem.CreateFromMetatag(metatag);
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 

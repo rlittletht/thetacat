@@ -42,6 +42,11 @@ public class MetatagTreeItem: IMetatagTreeItem
         return metatag;
     }
 
+    public void MaterializePlaceholder(Metatag metatag)
+    {
+        m_metatag = metatag;
+    }
+
     public void AddChild(MetatagTreeItem treeItem)
     {
         Children.Add(treeItem);
