@@ -1,0 +1,73 @@
+﻿<UserControl x:Class="Thetacat.Migration.Elements.MetatagMigration"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Thetacat.Migration.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="63*"/>
+                <ColumnDefinition Width="334*"/>
+            </Grid.ColumnDefinitions>
+            <DockPanel Grid.ColumnSpan="2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="100*" />
+                        <RowDefinition Height="24" />
+                        <RowDefinition Height="24" />
+                    </Grid.RowDefinitions>
+                    <ListView Name="metaTagsListView" ItemsSource="{Binding Path=ElementsMetaTag}" Grid.Row="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridView.Columns>
+                                    <GridViewColumn Header="IsSelected" >
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Name="IsSelected" IsChecked="{Binding Path=IsSelected}"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn DisplayMemberBinding="{Binding Path=ID}">
+                                        <GridViewColumnHeader Tag="ID" Click="SortType" Content="ID"/>
+                                    </GridViewColumn>
+                                    <GridViewColumn  DisplayMemberBinding="{Binding Path=Name}">
+                                        <GridViewColumnHeader Tag="Name" Click="SortType" Content="Name"/>
+                                    </GridViewColumn>
+                                    <GridViewColumn DisplayMemberBinding="{Binding Path=ParentID}">
+                                        <GridViewColumnHeader Tag="ParentID" Click="SortType" Content="Parent ID"/>
+                                    </GridViewColumn>
+                                    <GridViewColumn DisplayMemberBinding="{Binding Path=ParentName}">
+                                        <GridViewColumnHeader Tag="ParentName" Click="SortType" Content="Parent Name"/>
+                                    </GridViewColumn>
+                                    <GridViewColumn DisplayMemberBinding="{Binding Path=ElementsTypeName}">
+                                        <GridViewColumnHeader Tag="ElementsTypeName" Click="SortType" Content="Type"/>
+                                    </GridViewColumn>
+                                </GridView.Columns>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <Button Content="Toggle Selected"
+                                    Click="DoToggleSelected" Grid.Column="1" Height="24" />
+                        <Button Content="Remove Selected"
+                                    Click="RemoveSelected" Grid.Column="0" Height="24" />
+                    </Grid>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Button Content="Migrate to Thetacat" IsDefault="True"
+                                    Click="DoMigrate" Grid.Column="0" Height="24" />
+                    </Grid>
+                </Grid>
+            </DockPanel>
+        </Grid>
+    </Grid>
+</UserControl>

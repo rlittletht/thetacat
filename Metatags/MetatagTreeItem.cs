@@ -13,9 +13,9 @@ public class MetatagTreeItem: IMetatagTreeItem
     public Guid? ParentId => m_metatag?.Parent;
     public ObservableCollection<IMetatagTreeItem> Children { get; } = new();
 
-    public string Description => m_metatag.Description;
-    public string Name => m_metatag.Name;
-    public string ID => m_metatag.ID.ToString();
+    public string Description => m_metatag?.Description ?? String.Empty;
+    public string Name => m_metatag?.Name ?? String.Empty;
+    public string ID => m_metatag?.ID.ToString() ?? String.Empty;
 
     public bool IsPlaceholder { get; private init; }
 

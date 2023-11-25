@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Thetacat.Types;
 
-enum TriState
+public enum TriState
 {
     Yes = 0,
     No = 1,

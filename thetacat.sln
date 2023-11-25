@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thetacat", "Thetacat.csproj
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Liblets", "Liblets", "{78E5D325-20FF-4340-9463-3D72DE06AF5C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sql", "..\liblet\cs\sql\sql.csproj", "{B9037ADE-F787-431B-B309-46219A06BF79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,9 +22,18 @@ Global
 		{23F79956-B898-48E8-B056-1703AC1AECD5}.ProdDebug|Any CPU.Build.0 = Debug|Any CPU
 		{23F79956-B898-48E8-B056-1703AC1AECD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23F79956-B898-48E8-B056-1703AC1AECD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.ProdDebug|Any CPU.ActiveCfg = ProdDebug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.ProdDebug|Any CPU.Build.0 = ProdDebug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B9037ADE-F787-431B-B309-46219A06BF79} = {78E5D325-20FF-4340-9463-3D72DE06AF5C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52762D7C-92EE-4EA4-94A0-6563828854D5}

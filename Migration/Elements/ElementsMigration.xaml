@@ -1,0 +1,25 @@
+﻿<Window x:Class="Thetacat.Migration.ElementsMigration"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Migration"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:elements="clr-namespace:Thetacat.Migration.Elements"
+        mc:Ignorable="d"
+        Title="Migrate from Adobe Elements 8.0" Height="450" Width="800">
+    <TabControl >
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>Metadata and Tags</TextBlock>
+            </TabItem.Header>
+            <elements:MetatagMigration x:Name="MetatagMigrationTab"/>
+        </TabItem>
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>Media</TextBlock>
+            </TabItem.Header>
+            <elements:MediaMigration x:Name="MediaMigrationTab"/>
+        </TabItem>
+    </TabControl>
+</Window>

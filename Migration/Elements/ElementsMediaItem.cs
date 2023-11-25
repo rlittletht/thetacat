@@ -11,7 +11,7 @@ using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements;
 
-class ElementsMediaItem : INotifyPropertyChanged
+public class ElementsMediaItem : INotifyPropertyChanged
 {
     private TriState m_pathVerified;
     public string ID { get; set; } = String.Empty;

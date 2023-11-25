@@ -17,48 +17,47 @@ public class Metatags
         Guid crid = Guid.NewGuid();
         LocalServiceClient.EnsureConnected();
 
-        SqlSelect select = new SqlSelect();
+        SqlSelect selectTags = new SqlSelect();
 
-        select.AddBase("SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description FROM $$#tcat_metatags$$");
-        select.AddAliases(s_aliases);
+        selectTags.AddBase("SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description FROM $$#tcat_metatags$$");
+        selectTags.AddAliases(s_aliases);
 
-        LocalServiceClient.Sql.BeginTransaction();
+        string selectSchemaVersion = "select metatag_schema_version from tcat_schemaversions";
+
+        string sQuery = $"{selectTags.ToString()} {selectSchemaVersion}";
+
+        // we do both queries in the same command in order to get the matching schema version
 
         ServiceMetatagSchema schema =
-            SqlReader.DoGenericQueryDelegateRead<ServiceMetatagSchema>(
+            SqlReader.DoGenericMultiSetQueryDelegateRead<ServiceMetatagSchema>(
                 LocalServiceClient.Sql,
                 crid,
-                select.ToString(),
-                (SqlReader reader, Guid correlationId, ref ServiceMetatagSchema schemaBuilding) =>
+                sQuery,
+                (SqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
                 {
-                    ServiceMetatag metatag = new()
+                    if (recordset == 0)
                     {
-                        ID = reader.Reader.GetGuid(0),
-                        Parent = reader.Reader.IsDBNull(1) ? null : reader.Reader.GetGuid(1),
-                        Name = reader.Reader.GetString(2),
-                        Description = reader.Reader.GetString(3)
-                    };
+                        ServiceMetatag metatag = new()
+                        {
+                            ID = reader.Reader.GetGuid(0),
+                            Parent = reader.Reader.IsDBNull(1)
+                                                         ? null
+                                                         : reader.Reader.GetGuid(1),
+                            Name = reader.Reader.GetString(2),
+                            Description = reader.Reader.GetString(3)
+                        };
 
-                    if (schemaBuilding.Metatags == null)
-                        throw new Exception("metatags no preallocated");
+                        if (schemaBuilding.Metatags == null)
+                            throw new Exception("metatags no preallocated");
 
-                    schemaBuilding.Metatags.Add(metatag);
+                        schemaBuilding.Metatags.Add(metatag);
+                    }
+                    else if (recordset == 1)
+                    {
+                        schemaBuilding.SchemaVersion = reader.Reader.GetInt32(0);
+                    }
                 }
             );
-
-        ServiceMetatagSchemaVersion version =
-            SqlReader.DoGenericQueryDelegateRead<ServiceMetatagSchemaVersion>(
-                LocalServiceClient.Sql,
-                crid,
-                "SELECT metatag_schema_version FROM tcat_schemaversions",
-                (SqlReader reader, Guid correlationid, ref ServiceMetatagSchemaVersion schemaVersion) =>
-                {
-                    schemaVersion.SchemaVersion = reader.Reader.GetInt32(0);
-                });
-
-        schema.SchemaVersion = version.SchemaVersion;
-
-        LocalServiceClient.Sql.Commit();
 
         return schema;
     }

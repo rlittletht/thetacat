@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Thetacat.Migration.Elements;
 
-class ElementsDb
+public class ElementsDb
 {
     private SQLiteConnection? m_connection;
 
