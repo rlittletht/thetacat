@@ -26,6 +26,7 @@ using Microsoft.Extensions.Azure;
 using Microsoft.Windows.Themes;
 
 using System.Security.Cryptography;
+using NUnit.Framework;
 using Thetacat.Types;
 
 
@@ -191,5 +192,15 @@ namespace Thetacat
             Metatags.ManageMetadata manage = new(m_appState);
             manage.ShowDialog();
         }
+    }
+}
+
+[TestFixture]
+public class TestIt
+{
+    [Test]
+    public void StaticTest()
+    {
+        Assert.AreEqual(1, 1);
     }
 }

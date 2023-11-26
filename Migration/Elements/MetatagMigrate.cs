@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Windows.Documents;
-using Thetacat.Metatags;
 
 namespace Thetacat.Migration.Elements;
 
 public class MetatagMigrate
 {
-    private MetatagTree? m_metatagTree;
+    private readonly MetatagTree? m_metatagTree;
 
     public MetatagMigrate(List<Metatag> tags)
     {
@@ -43,7 +40,9 @@ public class MetatagMigrate
         Dictionary<string, Metatag> collected = new();
 
         foreach (Metatag tag in tags)
+        {
             CollectTagAndParents(collected, tag);
+        }
 
         return new List<Metatag>(collected.Values);
     }

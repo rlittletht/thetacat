@@ -51,4 +51,15 @@ public class MetatagTreeItem: IMetatagTreeItem
     {
         Children.Add(treeItem);
     }
+
+    public IMetatagTreeItem? FindChildByName(string name)
+    {
+        foreach (IMetatagTreeItem item in Children)
+        {
+            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
+                return item;
+        }
+
+        return null;
+    }
 }

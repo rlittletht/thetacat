@@ -1,15 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Thetacat.Metatags;
 
 namespace Thetacat.Migration.Elements;
 
-public class MetatagTreeItem
+/*----------------------------------------------------------------------------
+    Thetacat.Migration.Elements.MetatagTreeItem
+----------------------------------------------------------------------------*/
+public class MetatagTreeItem: IMetatagTreeItem
 {
     private Metatag? m_metatag;
 
     public string ItemId => m_metatag?.ID ?? string.Empty;
     public string? ParentId => m_metatag?.ParentID;
-    public List<MetatagTreeItem> Children { get; } = new();
+    public ObservableCollection<IMetatagTreeItem> Children { get; } = new();
+    public string Description => string.Empty;
 
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID ?? string.Empty;
@@ -49,5 +55,16 @@ public class MetatagTreeItem
     public void AddChild(MetatagTreeItem treeItem)
     {
         Children.Add(treeItem);
+    }
+
+    public IMetatagTreeItem? FindChildByName(string name)
+    {
+        foreach (IMetatagTreeItem item in Children)
+        {
+            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
+                return item;
+        }
+
+        return null;
     }
 }

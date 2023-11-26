@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Thetacat.Metatags;
 
 namespace Thetacat.Migration.Elements;
 
-public class MetatagTree
+public class MetatagTree: IMetatagTreeItem
 {
     private readonly Dictionary<string, MetatagTreeItem> IdMap = new();
-    private readonly List<MetatagTreeItem> RootMetatags = new();
+    private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
+
+    public string Description => string.Empty;
 
     public MetatagTree(List<Metatag> metatags)
     {
@@ -56,7 +59,18 @@ public class MetatagTree
         return IdMap[id].Item;
     }
 
-    public List<MetatagTreeItem> Children => RootMetatags;
+    public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
     public string Name => "Root";
     public string ID => "";
+
+    public IMetatagTreeItem? FindChildByName(string name)
+    {
+        foreach (IMetatagTreeItem item in Children)
+        {
+            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
+                return item;
+        }
+
+        return null;
+    }
 }

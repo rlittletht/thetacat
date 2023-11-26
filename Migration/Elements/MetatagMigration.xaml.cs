@@ -116,7 +116,7 @@ public partial class MetatagMigration : UserControl
 
     public void RemoveItems(IEnumerable<object?>? items)
     {
-        if (items == null || m_metatags == null) 
+        if (items == null || m_metatags == null)
             return;
 
         List<object> removeList = new();
@@ -137,8 +137,83 @@ public partial class MetatagMigration : UserControl
 
     }
 
+    static void MatchAndInsertChildrenIfNeeded(
+        IMetatagTreeItem? liveParent,
+        IMetatagTreeItem parent,
+        List<Model.Metatag> tagsToInsert,
+        Guid? idParent,
+        List<string> nameHistory)
+    {
+        // we have to build the tags to sync from the parent to the leaf in order to make sure we
+        // build the correct relationships (we may have duplicate names in the tree, but they might
+        // be unique because of hierarchy.  "Dog" might be under Pets/Dog and also Toys/Dog. We need
+        // two Dog nodes in this case.
+
+        foreach (IMetatagTreeItem item in parent.Children)
+        {
+            // look for a matching root in the current schema
+            IMetatagTreeItem? match = liveParent?.FindChildByName(item.Name);
+            Guid parentId;
+
+            nameHistory.Add(item.Name);
+
+            if (match == null)
+            {
+                Model.Metatag newTag = new()
+                {
+                    ID = Guid.NewGuid(),
+                    Description = string.Join(":", nameHistory.ToArray()),
+                    Name = item.Name,
+                    Parent = idParent
+                };
+
+                tagsToInsert.Add(newTag);
+                parentId = newTag.ID;
+            }
+            else
+            {
+                parentId = Guid.Parse(match.ID);
+            }
+
+            MatchAndInsertChildrenIfNeeded(match, item, tagsToInsert, parentId, nameHistory);
+            nameHistory.RemoveAt(nameHistory.Count - 1);
+        }
+    }
+
+    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree liveTree, List<Metatag> tagsToSync)
+    {
+        // build a hierchical tree for the tags to sync
+        MetatagTree treeToSync = new(tagsToSync);
+
+        List<Model.Metatag> tagsToInsert = new();
+        MatchAndInsertChildrenIfNeeded(liveTree, treeToSync, tagsToInsert, null, new List<string>());
+
+        return tagsToInsert;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: MigrateSelected
+        %%Qualified: Thetacat.Migration.Elements.MetatagMigration.MigrateSelected
+
+        Migrate the selected elements tags (and their parents)
+    ----------------------------------------------------------------------------*/
     private void MigrateSelected(object sender, RoutedEventArgs e)
     {
+        // build a list of selected items
+        List<Metatag> metatags = new();
 
+        foreach (Metatag? item in metaTagsListView.SelectedItems)
+        {
+            if (item != null)
+                metatags.Add(item);
+        }
+
+        MetatagMigrate migrate = new(metatags);
+
+        Metatags.MetatagTree liveTree = LiveMetatags.Model;
+
+        // now figure out what items (if any) we have to add to the live schema
+        List<Metatag> tagsToSync = migrate.CollectDependentTags(liveTree, metatags);
+        List<Model.Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
     }
 }

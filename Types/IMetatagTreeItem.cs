@@ -8,4 +8,5 @@ public interface IMetatagTreeItem
     public string Description { get; }
     public string Name { get; }
     public string ID { get; }
+    public IMetatagTreeItem? FindChildByName(string name);
 }

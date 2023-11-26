@@ -57,4 +57,15 @@ public class MetatagTree : IMetatagTreeItem
     public string Description => "Metatags";
     public string Name => "Root";
     public string ID => "";
+
+    public IMetatagTreeItem? FindChildByName(string name)
+    {
+        foreach (IMetatagTreeItem item in Children)
+        {
+            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
+                return item;
+        }
+
+        return null;
+    }
 }
