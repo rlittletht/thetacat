@@ -7,6 +7,10 @@ using Metatag = Thetacat.Model.Metatag;
 
 namespace Thetacat.Metatags;
 
+/*----------------------------------------------------------------------------
+    %%Class: MetatagTree
+    %%Qualified: Thetacat.Metatags.MetatagTree
+----------------------------------------------------------------------------*/
 public class MetatagTree : IMetatagTreeItem
 {
     private readonly Dictionary<Guid, MetatagTreeItem> IdMap = new();
@@ -55,7 +59,7 @@ public class MetatagTree : IMetatagTreeItem
 
     public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
     public string Description => "Metatags";
-    public string Name => "Root";
+    public string Name => "___Root";
     public string ID => "";
 
     public IMetatagTreeItem? FindChildByName(string name)
