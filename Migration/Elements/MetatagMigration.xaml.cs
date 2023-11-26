@@ -141,16 +141,4 @@ public partial class MetatagMigration : UserControl
     {
 
     }
-
-    private Metatags.MetatagTree? m_metatagTree;
-
-    private void LoadSchema(object sender, RoutedEventArgs e)
-    {
-        if (m_metatagTree == null || m_appState == null)
-            throw new Exception("not initialized");
-
-        m_appState.MetatagSchema = ServiceInterop.GetMetatagSchema(); // LoadSampleSchema(); // 
-        m_metatagTree = new Metatags.MetatagTree(m_appState.MetatagSchema.Metatags);
-        LiveMetatags.SetItems(m_metatagTree.Children);
-    }
 }
