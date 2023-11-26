@@ -32,7 +32,7 @@ public class ElementsDb
         m_connection?.Dispose();
     }
 
-    public List<ElementsMetatag> ReadMetadataTags()
+    public List<Metatag> ReadMetadataTags()
     {
         using SQLiteCommand cmd = new()
         {
@@ -46,12 +46,12 @@ public class ElementsDb
 
         using SQLiteDataReader reader = cmd.ExecuteReader();
 
-        List<ElementsMetatag> tags = new();
+        List<Metatag> tags = new();
 
         while (reader.Read())
         {
             tags.Add(
-                ElementsMetatagBuilder
+                MetatagBuilder
                    .Create()
                    .SetID(reader.GetInt32(0).ToString())
                    .SetName(reader.GetString(1))
@@ -83,7 +83,7 @@ public class ElementsDb
         while (reader.Read())
         {
             items.Add(
-                ElementsMediaItemBuilder
+                MediaItemBuilder
                    .Create()
                    .SetID(reader.GetInt32(0).ToString())
                    .SetFilename(reader.GetString(3))

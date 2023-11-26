@@ -4,16 +4,16 @@ using System.Collections.ObjectModel;
 
 namespace Thetacat.Migration.Elements;
 
-public class ElementsMetatagTree
+public class MetatagTree
 {
-    private readonly Dictionary<string, ElementsMetatagTreeItem> IdMap = new();
-    private readonly List<ElementsMetatagTreeItem> RootMetatags = new();
+    private readonly Dictionary<string, MetatagTreeItem> IdMap = new();
+    private readonly List<MetatagTreeItem> RootMetatags = new();
 
-    public ElementsMetatagTree(List<ElementsMetatag> metatags)
+    public MetatagTree(List<Metatag> metatags)
     {
-        foreach (ElementsMetatag metatag in metatags)
+        foreach (Metatag metatag in metatags)
         {
-            ElementsMetatagTreeItem treeItem;
+            MetatagTreeItem treeItem;
 
             if (IdMap.ContainsKey(metatag.ID))
             {
@@ -29,7 +29,7 @@ public class ElementsMetatagTree
             }
             else
             {
-                treeItem = ElementsMetatagTreeItem.CreateFromMetatag(metatag);
+                treeItem = MetatagTreeItem.CreateFromMetatag(metatag);
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 
@@ -43,7 +43,7 @@ public class ElementsMetatagTree
                 {
                     IdMap.Add(
                         treeItem.ParentId,
-                        ElementsMetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
+                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
                 }
 
                 IdMap[treeItem.ParentId].AddChild(treeItem);
@@ -51,12 +51,12 @@ public class ElementsMetatagTree
         }
     }
 
-    public ElementsMetatag GetTagFromId(string id)
+    public Metatag GetTagFromId(string id)
     {
         return IdMap[id].Item;
     }
 
-    public List<ElementsMetatagTreeItem> Children => RootMetatags;
+    public List<MetatagTreeItem> Children => RootMetatags;
     public string Name => "Root";
     public string ID => "";
 }

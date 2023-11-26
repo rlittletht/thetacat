@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Migration.Elements;
 using Thetacat.Model;
+using Metatag = Thetacat.Model.Metatag;
 
 namespace Thetacat.Metatags;
 

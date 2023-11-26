@@ -59,7 +59,7 @@ public partial class Migration : Window, INotifyPropertyChanged
     private void LaunchElementsMigration(object sender, RoutedEventArgs e)
     {
         SaveSettingsIfNeeded();
-        ElementsMigration elements = new ElementsMigration(ElementsDb, m_appState);
+        MigrationManager elements = new MigrationManager(ElementsDb, m_appState);
         elements.ShowDialog();
     }
 

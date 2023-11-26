@@ -8,16 +8,16 @@ namespace Thetacat.Migration.Elements;
 
 public class MetatagMigrate
 {
-    private ElementsMetatagTree? m_metatagTree;
+    private MetatagTree? m_metatagTree;
 
-    public MetatagMigrate(List<ElementsMetatag> tags)
+    public MetatagMigrate(List<Metatag> tags)
     {
-        m_metatagTree = new ElementsMetatagTree(tags);
+        m_metatagTree = new MetatagTree(tags);
     }
 
     // since we don't have an elements metatag tree, we either have to build one to do this,
     // or we need to make a new class to build on (preferred so its reusable)
-    void CollectTagAndParents(Dictionary<string, ElementsMetatag> collected, ElementsMetatag tag)
+    void CollectTagAndParents(Dictionary<string, Metatag> collected, Metatag tag)
     {
         if (m_metatagTree == null)
         {
@@ -38,13 +38,13 @@ public class MetatagMigrate
         A single tag can't be uploaded to thetacat -- all of its dependent parent
         tags have to be included in case they aren't already defined
     ----------------------------------------------------------------------------*/
-    public List<ElementsMetatag> CollectDependentTags(MetatagTree tree, List<ElementsMetatag> tags)
+    public List<Metatag> CollectDependentTags(Metatags.MetatagTree tree, List<Metatag> tags)
     {
-        Dictionary<string, ElementsMetatag> collected = new();
+        Dictionary<string, Metatag> collected = new();
 
-        foreach (ElementsMetatag tag in tags)
+        foreach (Metatag tag in tags)
             CollectTagAndParents(collected, tag);
 
-        return new List<ElementsMetatag>(collected.Values);
+        return new List<Metatag>(collected.Values);
     }
 }

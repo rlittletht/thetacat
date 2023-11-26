@@ -21,13 +21,13 @@ using Thetacat.Migration.Elements;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
-namespace Thetacat.Migration;
+namespace Thetacat.Migration.Elements;
 
 
 /// <summary>
-/// Interaction logic for ElementsMigration.xaml
+/// Interaction logic for MigrationManager.xaml
 /// </summary>
-public partial class ElementsMigration : Window
+public partial class MigrationManager : Window
 {
     private readonly IAppState m_appState;
 
@@ -41,7 +41,7 @@ public partial class ElementsMigration : Window
         db.Close();
     }
 
-    public ElementsMigration(string database, IAppState appState)
+    public MigrationManager(string database, IAppState appState)
     {
         m_appState = appState;
         InitializeComponent();

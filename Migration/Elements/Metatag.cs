@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Thetacat.Migration.Elements;
 
-public class ElementsMetatag : INotifyPropertyChanged
+public class Metatag : INotifyPropertyChanged
 {
     private bool _isSelected = false;
     public string Name { get; set; } = String.Empty;

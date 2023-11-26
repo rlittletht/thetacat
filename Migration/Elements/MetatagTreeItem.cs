@@ -3,35 +3,35 @@ using System.Collections.ObjectModel;
 
 namespace Thetacat.Migration.Elements;
 
-public class ElementsMetatagTreeItem
+public class MetatagTreeItem
 {
-    private ElementsMetatag? m_metatag;
+    private Metatag? m_metatag;
 
     public string ItemId => m_metatag?.ID ?? string.Empty;
     public string? ParentId => m_metatag?.ParentID;
-    public List<ElementsMetatagTreeItem> Children { get; } = new();
+    public List<MetatagTreeItem> Children { get; } = new();
 
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID ?? string.Empty;
 
-    public ElementsMetatag Item => m_metatag ?? new ElementsMetatag();
+    public Metatag Item => m_metatag ?? new Metatag();
 
     public bool IsPlaceholder { get; private init; }
 
-    public static ElementsMetatagTreeItem CreateFromMetatag(ElementsMetatag item)
+    public static MetatagTreeItem CreateFromMetatag(Metatag item)
     {
-        ElementsMetatagTreeItem metatag = new()
+        MetatagTreeItem metatag = new()
         {
             m_metatag = item
         };
         return metatag;
     }
 
-    public static ElementsMetatagTreeItem CreateParentPlaceholder(string id)
+    public static MetatagTreeItem CreateParentPlaceholder(string id)
     {
-        ElementsMetatagTreeItem metatag = new()
+        MetatagTreeItem metatag = new()
         {
-            m_metatag = new ElementsMetatag
+            m_metatag = new Metatag
             {
                 ID = id
             },
@@ -41,12 +41,12 @@ public class ElementsMetatagTreeItem
         return metatag;
     }
 
-    public void MaterializePlaceholder(ElementsMetatag metatag)
+    public void MaterializePlaceholder(Metatag metatag)
     {
         m_metatag = metatag;
     }
 
-    public void AddChild(ElementsMetatagTreeItem treeItem)
+    public void AddChild(MetatagTreeItem treeItem)
     {
         Children.Add(treeItem);
     }
