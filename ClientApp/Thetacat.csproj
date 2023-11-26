@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\liblet\cs\sql\sql.csproj" />
+    <ProjectReference Include="..\..\liblet\cs\sql\sql.csproj" />
   </ItemGroup>
 
   <ItemGroup>
