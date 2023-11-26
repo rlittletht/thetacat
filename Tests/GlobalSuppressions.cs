@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Assertion", "NUnit2005:Consider using Assert.That(actual, Is.EqualTo(expected)) instead of Assert.AreEqual(expected, actual)", Justification = "<Pending>", Scope = "member", Target = "~M:MetatagMigrationTests.TestBuildTagsToInsert_OneRoot_NoChildren_NoExisting")]
+[assembly: SuppressMessage("Assertion", "NUnit2005:Consider using Assert.That(actual, Is.EqualTo(expected)) instead of Assert.AreEqual(expected, actual)", Justification = "<Pending>", Scope = "member", Target = "~M:MetatagMigrationTests.TestBuildTagsToInsert_TwoRoots_NoChildren_NoExisting")]

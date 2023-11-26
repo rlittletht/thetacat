@@ -9,7 +9,7 @@ namespace Thetacat.Migration.Elements;
 
 public class MetatagBuilder
 {
-    private Metatag m_building = new();
+    private readonly Metatag m_building = new();
 
     public static MetatagBuilder Create()
     {

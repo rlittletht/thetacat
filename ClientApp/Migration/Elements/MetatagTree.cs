@@ -8,6 +8,8 @@ namespace Thetacat.Migration.Elements;
 /*----------------------------------------------------------------------------
     %%Class: MetatagTree
     %%Qualified: Thetacat.Migration.Elements.MetatagTree
+
+    Metatag tree specific to Photoshop Elements Metatags (for migration)
 ----------------------------------------------------------------------------*/
 public class MetatagTree: IMetatagTreeItem
 {
@@ -40,7 +42,7 @@ public class MetatagTree: IMetatagTreeItem
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 
-            if (treeItem.ParentId == null)
+            if (treeItem.ParentId == null || treeItem.ParentId == "0")
             {
                 RootMetatags.Add(treeItem);
             }
