@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Thetacat.Migration.Elements;
-using Thetacat.Model;
-using Metatag = Thetacat.Model.Metatag;
+using Thetacat.Metatags;
 
-namespace Thetacat.Metatags;
+namespace Thetacat.Migration.Elements;
 
-public class MetatagTree : IMetatagTreeItem
+/*----------------------------------------------------------------------------
+    %%Class: MetatagTree
+    %%Qualified: Thetacat.Migration.Elements.MetatagTree
+
+    Metatag tree specific to Photoshop Elements Metatags (for migration)
+----------------------------------------------------------------------------*/
+public class MetatagTree: IMetatagTreeItem
 {
-    private readonly Dictionary<Guid, MetatagTreeItem> IdMap = new();
+    private readonly Dictionary<string, MetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
+
+    public string Description => string.Empty;
 
     public MetatagTree(List<Metatag> metatags)
     {
@@ -36,26 +42,31 @@ public class MetatagTree : IMetatagTreeItem
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 
-            if (treeItem.ParentId == null)
+            if (treeItem.ParentId == null || treeItem.ParentId == "0")
             {
                 RootMetatags.Add(treeItem);
             }
             else
             {
-                if (!IdMap.ContainsKey(treeItem.ParentId.Value))
+                if (!IdMap.ContainsKey(treeItem.ParentId))
                 {
                     IdMap.Add(
-                        treeItem.ParentId.Value,
-                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId.Value));
+                        treeItem.ParentId,
+                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
                 }
-                IdMap[treeItem.ParentId.Value].AddChild(treeItem);
+
+                IdMap[treeItem.ParentId].AddChild(treeItem);
             }
         }
     }
 
+    public Metatag GetTagFromId(string id)
+    {
+        return IdMap[id].Item;
+    }
+
     public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
-    public string Description => "Metatags";
-    public string Name => "Root";
+    public string Name => "___Root";
     public string ID => "";
 
     public IMetatagTreeItem? FindChildByName(string name)

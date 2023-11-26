@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Thetacat.Metatags;
+using Thetacat.Migration.Elements;
+using Thetacat.Model;
+using Metatag = Thetacat.Model.Metatag;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Metatags;
 
-public class MetatagTree: IMetatagTreeItem
+/*----------------------------------------------------------------------------
+    %%Class: MetatagTree
+    %%Qualified: Thetacat.Metatags.MetatagTree
+----------------------------------------------------------------------------*/
+public class MetatagTree : IMetatagTreeItem
 {
-    private readonly Dictionary<string, MetatagTreeItem> IdMap = new();
+    private readonly Dictionary<Guid, MetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
-
-    public string Description => string.Empty;
 
     public MetatagTree(List<Metatag> metatags)
     {
@@ -42,25 +46,20 @@ public class MetatagTree: IMetatagTreeItem
             }
             else
             {
-                if (!IdMap.ContainsKey(treeItem.ParentId))
+                if (!IdMap.ContainsKey(treeItem.ParentId.Value))
                 {
                     IdMap.Add(
-                        treeItem.ParentId,
-                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
+                        treeItem.ParentId.Value,
+                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId.Value));
                 }
-
-                IdMap[treeItem.ParentId].AddChild(treeItem);
+                IdMap[treeItem.ParentId.Value].AddChild(treeItem);
             }
         }
     }
 
-    public Metatag GetTagFromId(string id)
-    {
-        return IdMap[id].Item;
-    }
-
     public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
-    public string Name => "Root";
+    public string Description => "Metatags";
+    public string Name => "___Root";
     public string ID => "";
 
     public IMetatagTreeItem? FindChildByName(string name)

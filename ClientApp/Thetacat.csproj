@@ -23,7 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\liblet\cs\sql\sql.csproj" />
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\liblet\cs\sql\sql.csproj" />
   </ItemGroup>
 
   <ItemGroup>
