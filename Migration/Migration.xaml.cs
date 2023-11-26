@@ -54,6 +54,8 @@ public partial class Migration : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
         ElementsDb = m_appState.Settings.Settings.SValue("LastElementsDb");
+
+        m_appState.RegisterWindowPlace(this, "Migration");
     }
 
     private void LaunchElementsMigration(object sender, RoutedEventArgs e)

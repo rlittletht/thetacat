@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,6 +52,11 @@ public partial class MetatagMigration : UserControl
     public void Initialize(IAppState appState, ElementsDb db)
     {
         m_appState = appState;
+
+        if (m_appState == null)
+            throw new ArgumentNullException(nameof(appState));
+
+        m_appState = appState;
         ObservableCollection<Metatag> tags = new();
         foreach (Metatag metaTag in db.ReadMetadataTags())
         {
@@ -59,6 +65,13 @@ public partial class MetatagMigration : UserControl
 
         m_metatags = tags;
         metaTagsListView.ItemsSource = m_metatags;
+
+        if (m_appState.MetatagSchema == null)
+            m_appState.RefreshMetatagSchema();
+
+        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
+        LiveMetatags.Initialize(m_appState.MetatagSchema.Metatags);
+
     }
 
     private void RemoveSelected(object sender, RoutedEventArgs e)

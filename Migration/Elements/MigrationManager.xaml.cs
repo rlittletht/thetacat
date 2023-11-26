@@ -47,5 +47,6 @@ public partial class MigrationManager : Window
         InitializeComponent();
 
         BuildMetadataReportFromDatabase(database);
+        m_appState.RegisterWindowPlace(this, "ElementsMigrationManager");
     }
 }

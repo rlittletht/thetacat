@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using RestoreWindowPlace;
 
 namespace Thetacat
 {
@@ -13,5 +14,17 @@ namespace Thetacat
     /// </summary>
     public partial class App : Application
     {
+        public WindowPlace WindowPlace { get; }
+
+        public App()
+        {
+            WindowPlace = new WindowPlace("placement.config");
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            WindowPlace.Save();
+        }
     }
 }

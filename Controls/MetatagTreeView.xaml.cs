@@ -15,15 +15,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Metatags;
+using Thetacat.Model;
 
 namespace Thetacat.Controls;
 
 /// <summary>
-/// Interaction logic for MetatagTree.xaml
+/// Interaction logic for MetatagTreeView.xaml
 /// </summary>
-public partial class MetatagTree : UserControl
+public partial class MetatagTreeView : UserControl
 {
-    public MetatagTree()
+    public MetatagTreeView()
     {
         InitializeComponent();
     }
@@ -31,5 +32,23 @@ public partial class MetatagTree : UserControl
     public void SetItems(ObservableCollection<IMetatagTreeItem> items)
     {
         Tree.ItemsSource = items;
+    }
+
+    private MetatagTree? m_metatagTree;
+
+    public MetatagTree Model
+    {
+        get
+        {
+            if (m_metatagTree == null) 
+                throw new Exception("not initialized");
+            return m_metatagTree;
+        }
+    }
+
+    public void Initialize(List<Metatag> tags)
+    {
+        m_metatagTree = new MetatagTree(tags);
+        SetItems(m_metatagTree.Children);
     }
 }

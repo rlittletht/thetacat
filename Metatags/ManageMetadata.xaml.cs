@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,7 @@ namespace Thetacat.Metatags
         {
             m_appState = appState;
             InitializeComponent();
+            m_appState.RegisterWindowPlace(this, "ManageMetadata");
         }
 
         MetatagSchema LoadSampleSchema()
@@ -89,12 +91,13 @@ namespace Thetacat.Metatags
             return MetatagSchema.CreateFromService(serviceMetatagSchema);
         }
 
-        private MetatagTree? m_metatagTree;
         private void LoadMetatags(object sender, RoutedEventArgs e)
         {
-            m_appState.MetatagSchema = ServiceInterop.GetMetatagSchema(); // LoadSampleSchema(); // 
-            m_metatagTree = new MetatagTree(m_appState.MetatagSchema.Metatags);
-            MetatagsTree.SetItems(m_metatagTree.Children);
+            m_appState.RefreshMetatagSchema();
+
+            Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
+
+            MetatagsTree.Initialize(m_appState.MetatagSchema.Metatags);
         }
     }
 }
