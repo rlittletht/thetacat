@@ -27,7 +27,7 @@ namespace Thetacat.Migration.Elements
     public partial class MediaMigration : UserControl
     {
         private IAppState? m_appState;
-        private List<ElementsMediaItem>? m_items;
+        private List<MediaItem>? m_items;
         private readonly List<PathSubstitution> m_pathSubstitutions = new();
 
         public MediaMigration()
@@ -61,7 +61,7 @@ namespace Thetacat.Migration.Elements
 
         bool FilterMediaItem(object o)
         {
-            ElementsMediaItem item = (ElementsMediaItem)o;
+            MediaItem item = (MediaItem)o;
 
             if (FilterItems.SelectedItem == null)
                 return true;
@@ -109,7 +109,7 @@ namespace Thetacat.Migration.Elements
 
             if (m_items != null)
             {
-                foreach (ElementsMediaItem item in m_items)
+                foreach (MediaItem item in m_items)
                 {
                     if (item.PathVerified == TriState.No)
                         tri = TriState.No;

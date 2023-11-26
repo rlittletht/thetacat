@@ -9,7 +9,7 @@ namespace Thetacat.Migration.Elements;
 
 class ElementsMediaItemBuilder
 {
-    private ElementsMediaItem m_building = new ElementsMediaItem();
+    private MediaItem m_building = new MediaItem();
 
     public static ElementsMediaItemBuilder Create() => new ();
 
@@ -55,7 +55,7 @@ class ElementsMediaItemBuilder
         return this;
     }
 
-    public ElementsMediaItem Build()
+    public MediaItem Build()
     {
         return m_building;
     }

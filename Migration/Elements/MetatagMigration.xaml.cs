@@ -15,8 +15,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
+using Thetacat.Metatags;
+using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
+using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements
 {
@@ -24,7 +27,7 @@ namespace Thetacat.Migration.Elements
     {
         private GridViewColumnHeader? sortCol = null;
         private SortAdorner? sortAdorner;
-        private ObservableCollection<ElementsMetaTag>? m_metatags;
+        private ObservableCollection<ElementsMetatag>? m_metatags;
         IAppState? m_appState;
 
         /// <summary>
@@ -48,8 +51,8 @@ namespace Thetacat.Migration.Elements
         public void Initialize(IAppState appState, ElementsDb db)
         {
             m_appState = appState;
-            ObservableCollection<ElementsMetaTag> tags = new();
-            foreach (ElementsMetaTag metaTag in db.ReadMetadataTags())
+            ObservableCollection<ElementsMetatag> tags = new();
+            foreach (ElementsMetatag metaTag in db.ReadMetadataTags())
             {
                 tags.Add(metaTag);
             }
@@ -68,7 +71,7 @@ namespace Thetacat.Migration.Elements
             if (items == null)
                 return;
 
-            foreach (ElementsMetaTag? item in items)
+            foreach (ElementsMetatag? item in items)
             {
                 if (item != null)
                     item.IsSelected = !item.IsSelected;
@@ -104,13 +107,13 @@ namespace Thetacat.Migration.Elements
                 return;
 
             List<object> removeList = new();
-            foreach (ElementsMetaTag? item in items)
+            foreach (ElementsMetatag? item in items)
             {
                 if (item != null)
                     removeList.Add(item);
             }
 
-            foreach (ElementsMetaTag tag in removeList)
+            foreach (ElementsMetatag tag in removeList)
             {
                 m_metatags.Remove(tag);
             }
@@ -119,6 +122,23 @@ namespace Thetacat.Migration.Elements
         private void DoMigrate(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void MigrateSelected(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private MetatagTree? m_metatagTree;
+
+        private void LoadSchema(object sender, RoutedEventArgs e)
+        {
+            if (m_metatagTree == null || m_appState == null)
+                throw new Exception("not initialized");
+
+            m_appState.MetatagSchema = ServiceInterop.GetMetatagSchema(); // LoadSampleSchema(); // 
+            m_metatagTree = new MetatagTree(m_appState.MetatagSchema.Metatags);
+            LiveMetatags.SetItems(m_metatagTree.Children);
         }
     }
 }

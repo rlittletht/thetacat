@@ -7,48 +7,48 @@ using System.Threading.Tasks;
 
 namespace Thetacat.Migration.Elements;
 
-public class ElementsMetaTagBuilder
+public class ElementsMetatagBuilder
 {
-    private ElementsMetaTag m_building = new();
+    private ElementsMetatag m_building = new();
 
-    public static ElementsMetaTagBuilder Create()
+    public static ElementsMetatagBuilder Create()
     {
-        ElementsMetaTagBuilder builder = new();
+        ElementsMetatagBuilder builder = new();
 
         return builder;
     }
 
-    public ElementsMetaTagBuilder SetName(string name)
+    public ElementsMetatagBuilder SetName(string name)
     {
         m_building.Name = name;
         return this;
     }
 
-    public ElementsMetaTagBuilder SetID(string id)
+    public ElementsMetatagBuilder SetID(string id)
     {
         m_building.ID = id;
         return this;
     }
 
-    public ElementsMetaTagBuilder SetParentID(string parentID)
+    public ElementsMetatagBuilder SetParentID(string parentID)
     {
         m_building.ParentID = parentID;
         return this;
     }
 
-    public ElementsMetaTagBuilder SetParentName(string parentName)
+    public ElementsMetatagBuilder SetParentName(string parentName)
     {
         m_building.ParentName = parentName;
         return this;
     }
 
-    public ElementsMetaTagBuilder SetElementsTypeName(string typeName)
+    public ElementsMetatagBuilder SetElementsTypeName(string typeName)
     {
         m_building.ElementsTypeName = typeName;
         return this;
     }
 
-    public ElementsMetaTag Build()
+    public ElementsMetatag Build()
     {
         return m_building;
     }

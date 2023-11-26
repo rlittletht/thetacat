@@ -31,11 +31,6 @@ namespace Thetacat.Metatags
             InitializeComponent();
         }
 
-        void RefreshTree()
-        {
-            MetatagsTree.Items.Clear();
-        }
-
         MetatagSchema LoadSampleSchema()
         {
             Guid root1 = Guid.NewGuid();
@@ -99,7 +94,7 @@ namespace Thetacat.Metatags
         {
             m_appState.MetatagSchema = ServiceInterop.GetMetatagSchema(); // LoadSampleSchema(); // 
             m_metatagTree = new MetatagTree(m_appState.MetatagSchema.Metatags);
-            MetatagsTree.ItemsSource = m_metatagTree.Children;
+            MetatagsTree.SetItems(m_metatagTree.Children);
         }
     }
 }
