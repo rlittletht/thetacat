@@ -17,6 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Metatags;
+using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
@@ -70,8 +71,7 @@ public partial class MetatagMigration : UserControl
             m_appState.RefreshMetatagSchema();
 
         Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        LiveMetatags.Initialize(m_appState.MetatagSchema.Metatags);
-
+        LiveMetatags.Initialize(m_appState.MetatagSchema);
     }
 
     private void RemoveSelected(object sender, RoutedEventArgs e)
@@ -199,21 +199,40 @@ public partial class MetatagMigration : UserControl
     ----------------------------------------------------------------------------*/
     private void MigrateSelected(object sender, RoutedEventArgs e)
     {
+        if (m_appState == null)
+            throw new Exception("appstate uninitialized");
+
+        if (m_metatags == null)
+            return;
+
         // build a list of selected items
         List<Metatag> metatags = new();
 
-        foreach (Metatag? item in metaTagsListView.SelectedItems)
+        foreach (Metatag? item in metaTagsListView.Items)
         {
-            if (item != null)
+            if (item?.IsSelected ?? false)
                 metatags.Add(item);
         }
 
-        MetatagMigrate migrate = new(metatags);
+        MetatagMigrate migrate = new(m_metatags);
 
         Metatags.MetatagTree liveTree = LiveMetatags.Model;
 
         // now figure out what items (if any) we have to add to the live schema
         List<Metatag> tagsToSync = migrate.CollectDependentTags(liveTree, metatags);
         List<Model.Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
+
+        MetatagSchemaDiff diff = new(LiveMetatags.SchemaVersion);
+
+        foreach (Model.Metatag metatag in tagsToInsert)
+        {
+            diff.InsertMetatag(metatag);
+        }
+
+        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(diff);
+        m_appState.RefreshMetatagSchema();
+
+        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
+        LiveMetatags.Initialize(m_appState.MetatagSchema);
     }
 }

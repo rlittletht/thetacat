@@ -42,7 +42,7 @@ public class ElementsDb
         };
 
         cmd.CommandText =
-            "select OTR.id, OTR.name, OTR.parent_id, OTR.type_name, INR.name as ParentName FROM tag_table as OTR INNER JOIN tag_table as INR on INR.id = OTR.parent_id where OTR.parent_id <> 0 and OTR.type_name not like 'history%' and OTR.type_name not like 'import%'";
+            "select OTR.id, OTR.name, OTR.parent_id, OTR.type_name, INR.name as ParentName FROM tag_table as OTR INNER JOIN tag_table as INR on INR.id = OTR.parent_id where OTR.type_name not like 'history%' and OTR.type_name not like 'import%'";
 
         using SQLiteDataReader reader = cmd.ExecuteReader();
 

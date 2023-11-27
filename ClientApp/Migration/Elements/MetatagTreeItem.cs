@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Thetacat.Metatags;
 
 namespace Thetacat.Migration.Elements;
@@ -22,7 +23,13 @@ public class MetatagTreeItem: IMetatagTreeItem
 
     public Metatag Item => m_metatag ?? new Metatag();
 
-    public bool IsPlaceholder { get; private init; }
+    public bool IsPlaceholder { get; private set; }
+
+    public void MakeOrphan()
+    {
+        Debug.Assert(m_metatag != null, nameof(m_metatag) + " != null");
+        m_metatag.ParentID = string.Empty;
+    }
 
     public static MetatagTreeItem CreateFromMetatag(Metatag item)
     {
@@ -50,6 +57,7 @@ public class MetatagTreeItem: IMetatagTreeItem
     public void MaterializePlaceholder(Metatag metatag)
     {
         m_metatag = metatag;
+        IsPlaceholder = false;
     }
 
     public void AddChild(MetatagTreeItem treeItem)

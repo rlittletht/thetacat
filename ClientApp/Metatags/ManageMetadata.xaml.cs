@@ -97,7 +97,7 @@ namespace Thetacat.Metatags
 
             Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
 
-            MetatagsTree.Initialize(m_appState.MetatagSchema.Metatags);
+            MetatagsTree.Initialize(m_appState.MetatagSchema);
         }
     }
 }

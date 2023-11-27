@@ -27,14 +27,17 @@ public partial class MetatagTreeView : UserControl
     public MetatagTreeView()
     {
         InitializeComponent();
+        DataContext = this;
     }
 
-    public void SetItems(ObservableCollection<IMetatagTreeItem> items)
+    public void SetItems(ObservableCollection<IMetatagTreeItem> items, int schemaVersion)
     {
         Tree.ItemsSource = items;
+        m_metatagSchemaVersion = schemaVersion;
     }
 
     private MetatagTree? m_metatagTree;
+    private int m_metatagSchemaVersion = 0;
 
     public MetatagTree Model
     {
@@ -46,9 +49,13 @@ public partial class MetatagTreeView : UserControl
         }
     }
 
-    public void Initialize(List<Metatag> tags)
+    public int SchemaVersion => m_metatagSchemaVersion;
+
+    public void Initialize(MetatagSchema schema)
     {
-        m_metatagTree = new MetatagTree(tags);
-        SetItems(m_metatagTree.Children);
+        m_metatagTree = new MetatagTree(schema.Metatags);
+        m_metatagSchemaVersion = schema.SchemaVersion;
+
+        SetItems(m_metatagTree.Children, schema.SchemaVersion);
     }
 }

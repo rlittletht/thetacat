@@ -9,4 +9,9 @@ public class ServiceInterop
     {
         return MetatagSchema.CreateFromService(LocalService.Metatags.GetMetatagSchema());
     }
+
+    public static void UpdateMetatagSchema(MetatagSchemaDiff schemaDiff)
+    {
+        LocalService.Metatags.UpdateMetatagSchema(schemaDiff);
+    }
 }

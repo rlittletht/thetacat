@@ -3,11 +3,15 @@ using System.Collections.Generic;
 
 namespace Thetacat.Migration.Elements;
 
+/*----------------------------------------------------------------------------
+    %%Class: MetatagMigrate
+    %%Qualified: Thetacat.Migration.Elements.MetatagMigrate
+----------------------------------------------------------------------------*/
 public class MetatagMigrate
 {
     private readonly MetatagTree? m_metatagTree;
 
-    public MetatagMigrate(List<Metatag> tags)
+    public MetatagMigrate(IEnumerable<Metatag> tags)
     {
         m_metatagTree = new MetatagTree(tags);
     }
@@ -25,6 +29,10 @@ public class MetatagMigrate
             return;
 
         collected.Add(tag.ID, tag);
+
+        if (string.IsNullOrEmpty(tag.ParentID) || tag.ParentID == "0")
+            return;
+
         CollectTagAndParents(collected, m_metatagTree.GetTagFromId(tag.ParentID));
     }
 

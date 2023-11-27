@@ -18,7 +18,7 @@ public class MetatagTree: IMetatagTreeItem
 
     public string Description => string.Empty;
 
-    public MetatagTree(List<Metatag> metatags)
+    public MetatagTree(IEnumerable<Metatag> metatags)
     {
         foreach (Metatag metatag in metatags)
         {
@@ -42,11 +42,7 @@ public class MetatagTree: IMetatagTreeItem
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 
-            if (treeItem.ParentId == null || treeItem.ParentId == "0")
-            {
-                RootMetatags.Add(treeItem);
-            }
-            else
+            if (!string.IsNullOrEmpty(treeItem.ParentId) && treeItem.ParentId != "0")
             {
                 if (!IdMap.ContainsKey(treeItem.ParentId))
                 {
@@ -57,6 +53,31 @@ public class MetatagTree: IMetatagTreeItem
 
                 IdMap[treeItem.ParentId].AddChild(treeItem);
             }
+        }
+        // lastly, clean up anything that is just placeholders and fixup their
+        // parents to be empty
+        HashSet<string> keysToDelete = new();
+
+        foreach (string id in IdMap.Keys)
+        {
+            MetatagTreeItem item = IdMap[id];
+
+            if (!string.IsNullOrEmpty(item.ParentId))
+            {
+                if (item.IsPlaceholder)
+                    keysToDelete.Add(id);
+
+                if (!IdMap.ContainsKey(item.ParentId) || IdMap[item.ParentId].IsPlaceholder)
+                    item.MakeOrphan();
+            }
+
+            if (string.IsNullOrEmpty(item.ParentId))
+                RootMetatags.Add(item);
+        }
+
+        foreach (string key in keysToDelete)
+        {
+            IdMap.Remove(key);
         }
     }
 

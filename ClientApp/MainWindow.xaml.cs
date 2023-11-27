@@ -194,13 +194,3 @@ namespace Thetacat
         }
     }
 }
-
-[TestFixture]
-public class TestIt
-{
-    [Test]
-    public void StaticTest()
-    {
-        Assert.AreEqual(1, 1);
-    }
-}
