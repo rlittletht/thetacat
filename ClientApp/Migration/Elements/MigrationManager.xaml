@@ -13,7 +13,7 @@
             <TabItem.Header>
                 <TextBlock>Metadata and Tags</TextBlock>
             </TabItem.Header>
-            <elements:MetatagMigration x:Name="MetatagMigrationTab"/>
+            <elements:UserMetatagMigration x:Name="MetatagMigrationTab"/>
         </TabItem>
         <TabItem>
             <TabItem.Header>

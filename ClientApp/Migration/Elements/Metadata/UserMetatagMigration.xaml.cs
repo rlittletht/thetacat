@@ -26,7 +26,7 @@ using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements;
 
-public partial class MetatagMigration : UserControl
+public partial class UserMetatagMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
@@ -34,9 +34,9 @@ public partial class MetatagMigration : UserControl
     IAppState? m_appState;
 
     /// <summary>
-    /// Interaction logic for MetatagMigration.xaml
+    /// Interaction logic for UserMetatagMigration.xaml
     /// </summary>
-    public MetatagMigration()
+    public UserMetatagMigration()
     {
         InitializeComponent();
     }
@@ -194,7 +194,7 @@ public partial class MetatagMigration : UserControl
 
     /*----------------------------------------------------------------------------
         %%Function: MigrateSelected
-        %%Qualified: Thetacat.Migration.Elements.MetatagMigration.MigrateSelected
+        %%Qualified: Thetacat.Migration.Elements.UserMetatagMigration.MigrateSelected
 
         Migrate the selected elements tags (and their parents)
     ----------------------------------------------------------------------------*/
