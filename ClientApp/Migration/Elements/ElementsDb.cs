@@ -5,6 +5,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Thetacat.Migration.Elements.Metadata;
 
 namespace Thetacat.Migration.Elements;
 
@@ -32,7 +33,7 @@ public class ElementsDb
         m_connection?.Dispose();
     }
 
-    public List<Metatag> ReadMetadataTags()
+    public List<PseMetatag> ReadMetadataTags()
     {
         using SQLiteCommand cmd = new()
         {
@@ -46,12 +47,12 @@ public class ElementsDb
 
         using SQLiteDataReader reader = cmd.ExecuteReader();
 
-        List<Metatag> tags = new();
+        List<PseMetatag> tags = new();
 
         while (reader.Read())
         {
             tags.Add(
-                MetatagBuilder
+                PseMetatagBuilder
                    .Create()
                    .SetID(reader.GetInt32(0).ToString())
                    .SetName(reader.GetString(1))

@@ -7,16 +7,16 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata;
 
-public class Metatag : INotifyPropertyChanged
+public class PseMetatag : INotifyPropertyChanged
 {
     private bool _isSelected = false;
-    public string Name { get; set; } = String.Empty;
-    public string ID { get; set; } = String.Empty;
-    public string ParentID { get; set; } = String.Empty;
-    public string ParentName { get; set; } = String.Empty;
-    public string ElementsTypeName { get; set; } = String.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string ID { get; set; } = string.Empty;
+    public string ParentID { get; set; } = string.Empty;
+    public string ParentName { get; set; } = string.Empty;
+    public string ElementsTypeName { get; set; } = string.Empty;
 
     public bool IsSelected
     {

@@ -17,13 +17,15 @@ public class MetatagSchemaDiffOp
     public bool IsNameChanged => (m_updatedValues & UpdatedValues.Name) != 0;
     public bool IsDescriptionChanged => (m_updatedValues & UpdatedValues.Description) != 0;
     public bool IsParentChanged => (m_updatedValues & UpdatedValues.ParentID) != 0;
+    public bool IsStandardChanged => (m_updatedValues & UpdatedValues.Standard) != 0;
 
     [Flags]
     enum UpdatedValues
     {
         ParentID = 0x01,
         Name = 0x02,
-        Description = 0x04
+        Description = 0x04,
+        Standard = 0x08,
     }
 
     private Metatag? m_metatag;
@@ -64,7 +66,8 @@ public class MetatagSchemaDiffOp
             op.m_updatedValues |= UpdatedValues.ParentID;
         if (original.Description != updated.Description)
             op.m_updatedValues &= UpdatedValues.Description;
-
+        if (original.Standard != updated.Standard)
+            op.m_updatedValues &= UpdatedValues.Standard;
         return op;
     }
 

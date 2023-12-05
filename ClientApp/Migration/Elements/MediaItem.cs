@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using MetadataExtractor;
+using MetadataExtractor.Formats.Xmp;
+using Thetacat.Model;
+using Thetacat.Standards;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements;
 
-public class MediaItem : INotifyPropertyChanged
+public class MediaItem : INotifyPropertyChanged, IMediaItem
 {
     private TriState m_pathVerified;
+    private Dictionary<Guid, string> _metatagValues = new();
     public string ID { get; set; } = String.Empty;
 
     public string Filename { get; set; } = String.Empty;
@@ -22,6 +28,20 @@ public class MediaItem : INotifyPropertyChanged
     public string MimeType { get; set; } = String.Empty;
     public string VolumeId { get; set; } = String.Empty;
     public string VolumeName { get; set; } = String.Empty;
+    public int ImageWidth { get; set; }
+    public int ImageHeight { get; set; }
+    public DateTime FileDateOriginal { get; set; }
+
+    public Dictionary<Guid, string> MetatagValues
+    {
+        get => _metatagValues;
+        set
+        {
+            if (Equals(value, _metatagValues)) return;
+            _metatagValues = value;
+            OnPropertyChanged();
+        }
+    }
 
     public TriState PathVerified
     {
@@ -39,7 +59,44 @@ public class MediaItem : INotifyPropertyChanged
         PathVerified = TriState.Maybe;
     }
 
-    public void CheckPath(Dictionary<string, string> subst)
+    public void MigrateMetadataForDirectory(IAppState appState, Model.Metatag? parent, MetadataExtractor.Directory directory, MetatagSchema.Standard standard)
+    {
+        if (parent == null && standard == MetatagSchema.Standard.Unknown)
+        {
+            StandardMappings? standardMappings = StandardsMappings.GetStandardsMappingFromType(directory.GetType().Name);
+
+            standard = standardMappings != null ? MetatagSchema.GetStandardFromString(standardMappings.Tag) : MetatagSchema.Standard.Unknown;
+        }
+
+        // match the current directory to a metatag
+
+//        MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageHeight
+        Debug.Assert(appState.MetatagSchema != null, "appState.MetatagSchema != null");
+        Model.Metatag? dirTag = appState.MetatagSchema.FindByName(parent, directory.Name);
+
+        if (dirTag == null)
+        {
+            // we have to create one
+            dirTag = Model.Metatag.Create(parent?.ID, directory.Name, directory.Name, standard);
+            appState.MetatagSchema.AddMetatag(dirTag);
+        }
+
+        foreach (MetadataExtractor.Tag tag in directory.Tags)
+        {
+            Model.Metatag? metatag = appState.MetatagSchema.FindByName(dirTag, tag.Name);
+
+            if (metatag == null)
+            {
+                // need to create a new one
+                metatag = Model.Metatag.Create(dirTag?.ID, tag.Name, tag.Name, standard);
+            }
+
+            // Description is the value
+            this.MetatagValues.Add(metatag.ID, tag.Description ?? string.Empty);
+        }
+    }
+
+    public void CheckPath(IAppState appState, Dictionary<string, string> subst)
     {
         if (PathVerified == TriState.Yes)
             return;
@@ -54,6 +111,17 @@ public class MediaItem : INotifyPropertyChanged
         newPath = newPath.Replace("/", "\\");
 
         PathVerified = Path.Exists(newPath) ? TriState.Yes : TriState.No;
+
+        if (PathVerified == TriState.Yes)
+        {
+            // load exif and other data from this item.
+            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(newPath);
+
+            foreach (MetadataExtractor.Directory directory in directories)
+            {
+                MigrateMetadataForDirectory(appState, null, directory, MetatagSchema.Standard.Unknown);
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

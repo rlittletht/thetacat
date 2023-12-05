@@ -17,6 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Metatags;
+using Thetacat.Migration.Elements.Metadata;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
@@ -29,7 +30,7 @@ public partial class MetatagMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private ObservableCollection<Metatag>? m_metatags;
+    private ObservableCollection<PseMetatag>? m_metatags;
     IAppState? m_appState;
 
     /// <summary>
@@ -58,8 +59,8 @@ public partial class MetatagMigration : UserControl
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        ObservableCollection<Metatag> tags = new();
-        foreach (Metatag metaTag in db.ReadMetadataTags())
+        ObservableCollection<PseMetatag> tags = new();
+        foreach (PseMetatag metaTag in db.ReadMetadataTags())
         {
             tags.Add(metaTag);
         }
@@ -84,7 +85,7 @@ public partial class MetatagMigration : UserControl
         if (items == null)
             return;
 
-        foreach (Metatag? item in items)
+        foreach (PseMetatag? item in items)
         {
             if (item != null)
                 item.IsSelected = !item.IsSelected;
@@ -120,13 +121,13 @@ public partial class MetatagMigration : UserControl
             return;
 
         List<object> removeList = new();
-        foreach (Metatag? item in items)
+        foreach (PseMetatag? item in items)
         {
             if (item != null)
                 removeList.Add(item);
         }
 
-        foreach (Metatag tag in removeList)
+        foreach (PseMetatag tag in removeList)
         {
             m_metatags.Remove(tag);
         }
@@ -152,7 +153,7 @@ public partial class MetatagMigration : UserControl
         foreach (IMetatagTreeItem item in parent.Children)
         {
             // look for a matching root in the current schema
-            IMetatagTreeItem? match = liveParent?.FindChildByName(item.Name);
+            IMetatagTreeItem? match = liveParent?.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.Name), 1/*levelsToRecurse*/);
             Guid parentId;
 
             nameHistory.Add(item.Name);
@@ -180,10 +181,10 @@ public partial class MetatagMigration : UserControl
         }
     }
 
-    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree liveTree, List<Metatag> tagsToSync)
+    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree liveTree, List<PseMetatag> tagsToSync)
     {
         // build a hierchical tree for the tags to sync
-        MetatagTree treeToSync = new(tagsToSync);
+        PseMetatagTree treeToSync = new(tagsToSync);
 
         List<Model.Metatag> tagsToInsert = new();
         MatchAndInsertChildrenIfNeeded(liveTree, treeToSync, tagsToInsert, null, new List<string>());
@@ -206,9 +207,9 @@ public partial class MetatagMigration : UserControl
             return;
 
         // build a list of selected items
-        List<Metatag> metatags = new();
+        List<PseMetatag> metatags = new();
 
-        foreach (Metatag? item in metaTagsListView.Items)
+        foreach (PseMetatag? item in metaTagsListView.Items)
         {
             if (item?.IsSelected ?? false)
                 metatags.Add(item);
@@ -219,8 +220,8 @@ public partial class MetatagMigration : UserControl
         Metatags.MetatagTree liveTree = LiveMetatags.Model;
 
         // now figure out what items (if any) we have to add to the live schema
-        List<Metatag> tagsToSync = migrate.CollectDependentTags(liveTree, metatags);
-        List<Model.Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
+        List<PseMetatag> tagsToSync = migrate.CollectDependentTags(liveTree, metatags);
+        List<Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
 
         MetatagSchemaDiff diff = new(LiveMetatags.SchemaVersion);
 

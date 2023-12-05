@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Metatags;
 
@@ -9,6 +10,7 @@ public class MetatagTreeItem: IMetatagTreeItem
 {
     private Metatag? m_metatag;
 
+    public bool IsLocalOnly { get; set; }
     public Guid ItemId => m_metatag?.ID ?? Guid.Empty;
     public Guid? ParentId => m_metatag?.Parent;
     public ObservableCollection<IMetatagTreeItem> Children { get; } = new();
@@ -52,12 +54,29 @@ public class MetatagTreeItem: IMetatagTreeItem
         Children.Add(treeItem);
     }
 
-    public IMetatagTreeItem? FindChildByName(string name)
+    /*----------------------------------------------------------------------------
+        %%Function: FindMatchingChild
+        %%Qualified: Thetacat.Metatags.MetatagTree.FindMatchingChild
+
+        Find the given named child (in this item or below). we will only
+        recurse the given number of levels (-1 means recurse all levels)
+    ----------------------------------------------------------------------------*/
+    public IMetatagTreeItem? FindMatchingChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher, int levelsToRecurse)
     {
+        if (treeItemMatcher.IsMatch(this))
+            return this;
+
+        if (levelsToRecurse == 0)
+            return null;
+
+        if (levelsToRecurse != -1)
+            levelsToRecurse--;
+
         foreach (IMetatagTreeItem item in Children)
         {
-            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
-                return item;
+            IMetatagTreeItem? matched = item.FindMatchingChild(treeItemMatcher, levelsToRecurse);
+            if (matched != null)
+                return matched;
         }
 
         return null;

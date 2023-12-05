@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata;
 
 /*----------------------------------------------------------------------------
     %%Class: MetatagMigrate
@@ -9,16 +9,16 @@ namespace Thetacat.Migration.Elements;
 ----------------------------------------------------------------------------*/
 public class MetatagMigrate
 {
-    private readonly MetatagTree? m_metatagTree;
+    private readonly PseMetatagTree? m_metatagTree;
 
-    public MetatagMigrate(IEnumerable<Metatag> tags)
+    public MetatagMigrate(IEnumerable<PseMetatag> tags)
     {
-        m_metatagTree = new MetatagTree(tags);
+        m_metatagTree = new PseMetatagTree(tags);
     }
 
     // since we don't have an elements metatag tree, we either have to build one to do this,
     // or we need to make a new class to build on (preferred so its reusable)
-    void CollectTagAndParents(Dictionary<string, Metatag> collected, Metatag tag)
+    void CollectTagAndParents(Dictionary<string, PseMetatag> collected, PseMetatag tag)
     {
         if (m_metatagTree == null)
         {
@@ -43,15 +43,15 @@ public class MetatagMigrate
         A single tag can't be uploaded to thetacat -- all of its dependent parent
         tags have to be included in case they aren't already defined
     ----------------------------------------------------------------------------*/
-    public List<Metatag> CollectDependentTags(Metatags.MetatagTree tree, List<Metatag> tags)
+    public List<PseMetatag> CollectDependentTags(Metatags.MetatagTree tree, List<PseMetatag> tags)
     {
-        Dictionary<string, Metatag> collected = new();
+        Dictionary<string, PseMetatag> collected = new();
 
-        foreach (Metatag tag in tags)
+        foreach (PseMetatag tag in tags)
         {
             CollectTagAndParents(collected, tag);
         }
 
-        return new List<Metatag>(collected.Values);
+        return new List<PseMetatag>(collected.Values);
     }
 }

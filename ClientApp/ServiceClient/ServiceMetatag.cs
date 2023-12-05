@@ -8,4 +8,5 @@ public class ServiceMetatag
     public string? Name { get; set; }
     public string? Description { get; set; }
     public Guid? Parent { get; set; }
+    public string? Standard { get; set; }
 }

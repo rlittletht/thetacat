@@ -22,7 +22,7 @@
                         <ListView Name="mediaItemsListView" ItemsSource="{Binding Path=ElementsMediaItem}" Grid.Row="0">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="Check" DisplayMemberBinding="{Binding PathVerified}"/>
+                                    <GridViewColumn Header="Valid" DisplayMemberBinding="{Binding PathVerified}"/>
                                     <GridViewColumn Header="ID" DisplayMemberBinding="{Binding Path=ID}" />
                                     <GridViewColumn Header="Filename" DisplayMemberBinding="{Binding Path=Filename}" />
                                     <GridViewColumn Header="Full Path" DisplayMemberBinding="{Binding Path=FullPath}" />

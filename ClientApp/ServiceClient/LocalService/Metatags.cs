@@ -22,7 +22,7 @@ public class Metatags
         SqlSelect selectTags = new SqlSelect();
 
         selectTags.AddBase(
-            "SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description FROM $$#tcat_metatags$$");
+            "SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description, $$tcat_metatags$$.standard FROM $$#tcat_metatags$$");
         selectTags.AddAliases(s_aliases);
 
         string selectSchemaVersion = "select metatag_schema_version from tcat_schemaversions";
@@ -49,7 +49,8 @@ public class Metatags
                                                              ? null
                                                              : reader.Reader.GetGuid(1),
                                                          Name = reader.Reader.GetString(2),
-                                                         Description = reader.Reader.GetString(3)
+                                                         Description = reader.Reader.GetString(3),
+                                                         Standard = reader.Reader.GetString(4)
                                                      };
 
                             if (schemaBuilding.Metatags == null)
@@ -80,9 +81,10 @@ public class Metatags
         string description = TCore.Sql.Sqlify(diffOp.Metatag.Description);
         string name = TCore.Sql.Sqlify(diffOp.Metatag.Name);
         string parent = TCore.Sql.Nullable(diffOp.Metatag.Parent);
+        string standard = TCore.Sql.Sqlify(diffOp.Metatag.Standard);
 
-        return "INSERT INTO tcat_metatags (Description, ID, Name, Parent) "
-            + $"VALUES ('{description}', '{diffOp.ID.ToString()}', '{name}', {parent}) ";
+        return "INSERT INTO tcat_metatags (Description, ID, Name, Parent, Standard) "
+            + $"VALUES ('{description}', '{diffOp.ID.ToString()}', '{name}', {parent}, '{standard}') ";
     }
 
     static string BuildDeleteSql(MetatagSchemaDiffOp diffOp)
@@ -100,6 +102,8 @@ public class Metatags
             sets.Add($"Description='{TCore.Sql.Sqlify(diffOp.Metatag.Description)}'");
         if (diffOp.IsParentChanged)
             sets.Add($"Parent={TCore.Sql.Nullable(diffOp.Metatag.Parent)}");
+        if (diffOp.IsStandardChanged)
+            sets.Add($"Standard={TCore.Sql.Nullable(diffOp.Metatag.Standard)}");
 
         if (sets.Count == 0)
             return "";

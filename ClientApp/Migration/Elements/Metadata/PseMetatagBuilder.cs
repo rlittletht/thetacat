@@ -5,50 +5,50 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata;
 
-public class MetatagBuilder
+public class PseMetatagBuilder
 {
-    private readonly Metatag m_building = new();
+    private readonly PseMetatag m_building = new();
 
-    public static MetatagBuilder Create()
+    public static PseMetatagBuilder Create()
     {
-        MetatagBuilder builder = new();
+        PseMetatagBuilder builder = new();
 
         return builder;
     }
 
-    public MetatagBuilder SetName(string name)
+    public PseMetatagBuilder SetName(string name)
     {
         m_building.Name = name;
         return this;
     }
 
-    public MetatagBuilder SetID(string id)
+    public PseMetatagBuilder SetID(string id)
     {
         m_building.ID = id;
         return this;
     }
 
-    public MetatagBuilder SetParentID(string parentID)
+    public PseMetatagBuilder SetParentID(string parentID)
     {
         m_building.ParentID = parentID;
         return this;
     }
 
-    public MetatagBuilder SetParentName(string parentName)
+    public PseMetatagBuilder SetParentName(string parentName)
     {
         m_building.ParentName = parentName;
         return this;
     }
 
-    public MetatagBuilder SetElementsTypeName(string typeName)
+    public PseMetatagBuilder SetElementsTypeName(string typeName)
     {
         m_building.ElementsTypeName = typeName;
         return this;
     }
 
-    public Metatag Build()
+    public PseMetatag Build()
     {
         return m_building;
     }

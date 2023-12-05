@@ -157,6 +157,7 @@ public partial class MediaMigration : UserControl
     void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
     {
         Debug.Assert(m_items != null, nameof(m_items) + " != null");
+        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
 
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
@@ -166,7 +167,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        m_items[i].CheckPath(subs);
+                        m_items[i].CheckPath(m_appState, subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -200,17 +201,17 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // split the list into 4 parts and do them in parallel
-        int segLength = m_items.Count / 10;
+        int segLength = m_items.Count; //  / 10;
         int segStart = 0;
         for (int iSeg = 0; iSeg < 10; iSeg++)
         {
             int segEnd = Math.Min(segStart + segLength, m_items.Count);
 
             VerifyPathSet(segStart, segEnd, pathSubst);
+            segStart += segLength;
+
             if (segEnd == m_items.Count)
                 break;
-
-            segStart += segLength;
         }
 
         if (segStart < m_items.Count)

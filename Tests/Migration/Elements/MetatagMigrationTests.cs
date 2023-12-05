@@ -3,6 +3,7 @@ using Thetacat;
 using Thetacat.Migration.Elements;
 using NUnit.Framework;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.Migration.Elements.Metadata;
 
 public class MetatagMigrationTests
 {
@@ -12,9 +13,9 @@ public class MetatagMigrationTests
         List<Thetacat.Model.Metatag> liveTags = new();
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -37,9 +38,9 @@ public class MetatagMigrationTests
         List<Thetacat.Model.Metatag> liveTags = new();
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -47,7 +48,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -80,9 +81,9 @@ public class MetatagMigrationTests
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -90,7 +91,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -123,9 +124,9 @@ public class MetatagMigrationTests
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -133,7 +134,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -158,9 +159,9 @@ public class MetatagMigrationTests
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -168,7 +169,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -176,7 +177,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "11",
                                            ElementsTypeName = string.Empty,
@@ -184,7 +185,7 @@ public class MetatagMigrationTests
                                            ParentID = "1",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "21",
                                            ElementsTypeName = string.Empty,
@@ -221,9 +222,9 @@ public class MetatagMigrationTests
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -231,7 +232,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -239,7 +240,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "11",
                                            ElementsTypeName = string.Empty,
@@ -247,7 +248,7 @@ public class MetatagMigrationTests
                                            ParentID = "1",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "21",
                                            ElementsTypeName = string.Empty,
@@ -280,9 +281,9 @@ public class MetatagMigrationTests
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
-        List<Metatag> tagsToSync = new()
+        List<PseMetatag> tagsToSync = new()
                                    {
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "1",
                                            ElementsTypeName = string.Empty,
@@ -290,7 +291,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "2",
                                            ElementsTypeName = string.Empty,
@@ -298,7 +299,7 @@ public class MetatagMigrationTests
                                            ParentID = "0",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "11",
                                            ElementsTypeName = string.Empty,
@@ -306,7 +307,7 @@ public class MetatagMigrationTests
                                            ParentID = "1",
                                            ParentName = ""
                                        },
-                                       new Metatag()
+                                       new PseMetatag()
                                        {
                                            ID = "21",
                                            ElementsTypeName = string.Empty,

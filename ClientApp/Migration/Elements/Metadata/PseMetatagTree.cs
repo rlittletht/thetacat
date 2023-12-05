@@ -2,27 +2,28 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Metatags;
+using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata;
 
 /*----------------------------------------------------------------------------
-    %%Class: MetatagTree
-    %%Qualified: Thetacat.Migration.Elements.MetatagTree
+    %%Class: PseMetatagTree
+    %%Qualified: Thetacat.Migration.Elements.PseMetatagTree
 
-    Metatag tree specific to Photoshop Elements Metatags (for migration)
+    PseMetatag tree specific to Photoshop Elements Metatags (for migration)
 ----------------------------------------------------------------------------*/
-public class MetatagTree: IMetatagTreeItem
+public class PseMetatagTree : IMetatagTreeItem
 {
-    private readonly Dictionary<string, MetatagTreeItem> IdMap = new();
+    private readonly Dictionary<string, PseMetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
     public string Description => string.Empty;
 
-    public MetatagTree(IEnumerable<Metatag> metatags)
+    public PseMetatagTree(IEnumerable<PseMetatag> metatags)
     {
-        foreach (Metatag metatag in metatags)
+        foreach (PseMetatag metatag in metatags)
         {
-            MetatagTreeItem treeItem;
+            PseMetatagTreeItem treeItem;
 
             if (IdMap.ContainsKey(metatag.ID))
             {
@@ -38,7 +39,7 @@ public class MetatagTree: IMetatagTreeItem
             }
             else
             {
-                treeItem = MetatagTreeItem.CreateFromMetatag(metatag);
+                treeItem = PseMetatagTreeItem.CreateFromMetatag(metatag);
                 IdMap.Add(treeItem.ItemId, treeItem);
             }
 
@@ -48,7 +49,7 @@ public class MetatagTree: IMetatagTreeItem
                 {
                     IdMap.Add(
                         treeItem.ParentId,
-                        MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
+                        PseMetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
                 }
 
                 IdMap[treeItem.ParentId].AddChild(treeItem);
@@ -60,7 +61,7 @@ public class MetatagTree: IMetatagTreeItem
 
         foreach (string id in IdMap.Keys)
         {
-            MetatagTreeItem item = IdMap[id];
+            PseMetatagTreeItem item = IdMap[id];
 
             if (!string.IsNullOrEmpty(item.ParentId))
             {
@@ -81,7 +82,7 @@ public class MetatagTree: IMetatagTreeItem
         }
     }
 
-    public Metatag GetTagFromId(string id)
+    public PseMetatag GetTagFromId(string id)
     {
         return IdMap[id].Item;
     }
@@ -90,12 +91,29 @@ public class MetatagTree: IMetatagTreeItem
     public string Name => "___Root";
     public string ID => "";
 
-    public IMetatagTreeItem? FindChildByName(string name)
+    /*----------------------------------------------------------------------------
+        %%Function: FindMatchingChild
+        %%Qualified: Thetacat.Metatags.PseMetatagTree.FindMatchingChild
+
+        Find the given named child (in this item or below). we will only
+        recurse the given number of levels (-1 means recurse all levels)
+    ----------------------------------------------------------------------------*/
+    public IMetatagTreeItem? FindMatchingChild(IMetatagMatcher<IMetatagTreeItem> matcher, int levelsToRecurse)
     {
+        if (matcher.IsMatch(this))
+            return this;
+
+        if (levelsToRecurse == 0)
+            return null;
+
+        if (levelsToRecurse != -1)
+            levelsToRecurse--;
+
         foreach (IMetatagTreeItem item in Children)
         {
-            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
-                return item;
+            IMetatagTreeItem? matched = item.FindMatchingChild(matcher, levelsToRecurse);
+            if (matched != null)
+                return matched;
         }
 
         return null;

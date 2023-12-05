@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Migration.Elements;
 using Thetacat.Model;
+using Thetacat.Types;
 using Metatag = Thetacat.Model.Metatag;
 
 namespace Thetacat.Metatags;
@@ -62,12 +63,29 @@ public class MetatagTree : IMetatagTreeItem
     public string Name => "___Root";
     public string ID => "";
 
-    public IMetatagTreeItem? FindChildByName(string name)
+    /*----------------------------------------------------------------------------
+        %%Function: FindMatchingChild
+        %%Qualified: Thetacat.Metatags.MetatagTree.FindMatchingChild
+
+        Find the given named child (in this item or below). we will only
+        recurse the given number of levels (-1 means recurse all levels)
+    ----------------------------------------------------------------------------*/
+    public IMetatagTreeItem? FindMatchingChild(IMetatagMatcher<IMetatagTreeItem> matcher, int levelsToRecurse)
     {
+        if (matcher.IsMatch(this))
+            return this;
+
+        if (levelsToRecurse == 0)
+            return null;
+
+        if (levelsToRecurse != -1)
+            levelsToRecurse--;
+
         foreach (IMetatagTreeItem item in Children)
         {
-            if (string.Compare(item.Name, name, StringComparison.CurrentCultureIgnoreCase) == 0)
-                return item;
+            IMetatagTreeItem? matched = item.FindMatchingChild(matcher, levelsToRecurse);
+            if (matched != null)
+                return matched;
         }
 
         return null;
