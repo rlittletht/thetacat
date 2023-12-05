@@ -5,13 +5,13 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Media;
 
 class MediaItemBuilder
 {
     private MediaItem m_building = new MediaItem();
 
-    public static MediaItemBuilder Create() => new ();
+    public static MediaItemBuilder Create() => new();
 
     public MediaItemBuilder SetID(string id)
     {

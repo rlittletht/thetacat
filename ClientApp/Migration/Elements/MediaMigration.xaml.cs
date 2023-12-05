@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
+using Thetacat.Migration.Elements.Media;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements;

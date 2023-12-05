@@ -1,4 +1,6 @@
-﻿namespace Thetacat.Migration.Elements.Metadata;
+﻿using Thetacat.Migration.Elements.Media;
+
+namespace Thetacat.Migration.Elements.Metadata;
 
 public class SchemaMapping<T>
 {

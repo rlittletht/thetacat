@@ -14,20 +14,20 @@ using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Media;
 
 public class MediaItem : INotifyPropertyChanged, IMediaItem
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string> _metatagValues = new();
-    public string ID { get; set; } = String.Empty;
+    public string ID { get; set; } = string.Empty;
 
-    public string Filename { get; set; } = String.Empty;
-    public string FullPath { get; set; } = String.Empty;
-    public string FilePathSearch { get; set; } = String.Empty;
-    public string MimeType { get; set; } = String.Empty;
-    public string VolumeId { get; set; } = String.Empty;
-    public string VolumeName { get; set; } = String.Empty;
+    public string Filename { get; set; } = string.Empty;
+    public string FullPath { get; set; } = string.Empty;
+    public string FilePathSearch { get; set; } = string.Empty;
+    public string MimeType { get; set; } = string.Empty;
+    public string VolumeId { get; set; } = string.Empty;
+    public string VolumeName { get; set; } = string.Empty;
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
     public DateTime FileDateOriginal { get; set; }
@@ -59,7 +59,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         PathVerified = TriState.Maybe;
     }
 
-    public void MigrateMetadataForDirectory(IAppState appState, Model.Metatag? parent, MetadataExtractor.Directory directory, MetatagSchema.Standard standard)
+    public void MigrateMetadataForDirectory(IAppState appState, Metatag? parent, MetadataExtractor.Directory directory, MetatagSchema.Standard standard)
     {
         if (parent == null && standard == MetatagSchema.Standard.Unknown)
         {
@@ -70,29 +70,29 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
 
         // match the current directory to a metatag
 
-//        MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageHeight
+        //        MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageHeight
         Debug.Assert(appState.MetatagSchema != null, "appState.MetatagSchema != null");
-        Model.Metatag? dirTag = appState.MetatagSchema.FindByName(parent, directory.Name);
+        Metatag? dirTag = appState.MetatagSchema.FindByName(parent, directory.Name);
 
         if (dirTag == null)
         {
             // we have to create one
-            dirTag = Model.Metatag.Create(parent?.ID, directory.Name, directory.Name, standard);
+            dirTag = Metatag.Create(parent?.ID, directory.Name, directory.Name, standard);
             appState.MetatagSchema.AddMetatag(dirTag);
         }
 
-        foreach (MetadataExtractor.Tag tag in directory.Tags)
+        foreach (Tag tag in directory.Tags)
         {
-            Model.Metatag? metatag = appState.MetatagSchema.FindByName(dirTag, tag.Name);
+            Metatag? metatag = appState.MetatagSchema.FindByName(dirTag, tag.Name);
 
             if (metatag == null)
             {
                 // need to create a new one
-                metatag = Model.Metatag.Create(dirTag?.ID, tag.Name, tag.Name, standard);
+                metatag = Metatag.Create(dirTag?.ID, tag.Name, tag.Name, standard);
             }
 
             // Description is the value
-            this.MetatagValues.Add(metatag.ID, tag.Description ?? string.Empty);
+            MetatagValues.Add(metatag.ID, tag.Description ?? string.Empty);
         }
     }
 

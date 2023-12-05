@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.String;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Media;
 
 class PathSubstitution
 {
