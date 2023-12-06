@@ -1,0 +1,29 @@
+﻿<Window x:Class="Thetacat.Migration.Elements.Metadata.DefineMetadataMap"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Migration.Elements.Metadata"
+        mc:Ignorable="d"
+        Title="DefineMetadataMap" Height="auto" Width="400">
+    <UserControl Name="DefineMap">
+        <StackPanel Margin="5 5 5 0">
+            <TextBlock VerticalAlignment="Bottom">PSE identifier</TextBlock>
+            <TextBox Text="{Binding Path=PseIdentifier}" />
+            <TextBlock VerticalAlignment="Bottom">Standard root tag</TextBlock>
+            <ComboBox IsEditable="True" x:Name="Standard" SelectionChanged="StandardSelected"/>
+            <TextBlock VerticalAlignment="Bottom">Metadata tag</TextBlock>
+            <ComboBox IsEditable="True" x:Name="TagName" />
+            <TextBlock VerticalAlignment="Bottom">Tag description</TextBlock>
+            <TextBox Text="{Binding Description}"/>
+            <Grid HorizontalAlignment="Right" Margin="0 10 0 5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="64" />
+                    <ColumnDefinition Width="64" />
+                </Grid.ColumnDefinitions>
+                <Button Content="Cancel" IsCancel="True" Grid.Column="0" Height="24" Margin="0 0 5 0" />
+                <Button Content="Save" Click="DoSave" IsDefault="True" Grid.Column="1" Height="24" Margin="5 0 0 0" />
+            </Grid>
+        </StackPanel>
+    </UserControl>
+</Window>

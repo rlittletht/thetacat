@@ -37,7 +37,8 @@ public partial class MigrationManager : Window
 
         MediaMigrationTab.Initialize(m_appState, db);
         MetatagMigrationTab.Initialize(m_appState, db);        
-        
+        MetadataMigrationTab.Initialize(m_appState, db);
+
         db.Close();
     }
 

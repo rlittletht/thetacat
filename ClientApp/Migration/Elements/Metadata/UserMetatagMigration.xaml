@@ -23,7 +23,7 @@
                     <RowDefinition Height="100*"/>
                     <RowDefinition Height="24"/>
                 </Grid.RowDefinitions>
-                <ListView Name="metaTagsListView" ItemsSource="{Binding Path=ElementsMetaTag}" Grid.Row="0">
+                <ListView Name="metaTagsListView" Grid.Row="0">
                     <ListView.View>
                         <GridView>
                             <GridView.Columns>

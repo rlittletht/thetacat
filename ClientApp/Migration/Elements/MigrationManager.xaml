@@ -11,9 +11,15 @@
     <TabControl >
         <TabItem>
             <TabItem.Header>
-                <TextBlock>Metadata and Tags</TextBlock>
+                <TextBlock>Standards Metadata</TextBlock>
             </TabItem.Header>
-            <elements:UserMetatagMigration x:Name="MetatagMigrationTab"/>
+            <elements:StandardMetadataMigration x:Name="MetadataMigrationTab"/>
+        </TabItem>
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>User Metatags</TextBlock>
+            </TabItem.Header>
+            <elements:UserMetatagMigration x:Name="MetatagMigrationTab" />
         </TabItem>
         <TabItem>
             <TabItem.Header>
