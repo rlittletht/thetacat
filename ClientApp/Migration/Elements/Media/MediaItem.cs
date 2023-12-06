@@ -14,7 +14,7 @@ using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements.Media;
+namespace Thetacat.Migration.Elements.Metadata.UI.Media;
 
 public class MediaItem : INotifyPropertyChanged, IMediaItem
 {

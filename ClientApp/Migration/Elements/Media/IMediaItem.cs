@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Thetacat.Migration.Elements.Media;
+namespace Thetacat.Migration.Elements.Metadata.UI.Media;
 
 public interface IMediaItem
 {

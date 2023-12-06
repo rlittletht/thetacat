@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Migration\Elements\Metadata\StandardMetadataMigration.xaml.cs">
+    <Compile Update="Migration\Elements\Metadata\UI\StandardMetadataMigration.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

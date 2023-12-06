@@ -17,12 +17,11 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Thetacat.Migration.Elements;
-using Thetacat.Migration.Elements.Metadata;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 
 /// <summary>

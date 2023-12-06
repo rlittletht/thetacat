@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Thetacat.Standards;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class SchemaMappings
 {

@@ -5,7 +5,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class PseMetatagBuilder
 {

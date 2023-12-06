@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using Thetacat.Metatags;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 /*----------------------------------------------------------------------------
     %%Class: PseMetatagTree

@@ -4,7 +4,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class PseMetadata: INotifyPropertyChanged
 {

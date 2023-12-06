@@ -13,7 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Thetacat.Migration.Elements;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
 
 namespace Thetacat.Migration;

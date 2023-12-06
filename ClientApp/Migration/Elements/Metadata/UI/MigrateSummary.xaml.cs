@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Thetacat.Migration.Elements.Metadata
+namespace Thetacat.Migration.Elements.Metadata.UI;
+
+/// <summary>
+/// Interaction logic for MigrateSummary.xaml
+/// </summary>
+public partial class MigrateSummary : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MigrateSummary.xaml
-    /// </summary>
-    public partial class MigrateSummary : UserControl
+    public MigrateSummary()
     {
-        public MigrateSummary()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

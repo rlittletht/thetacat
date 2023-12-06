@@ -17,7 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Migration.Elements.Metadata;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
@@ -25,7 +25,7 @@ using Thetacat.Standards;
 using Thetacat.Types;
 using MetatagTree = Thetacat.Metatags.MetatagTree;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public partial class UserMetatagMigration : UserControl
 {

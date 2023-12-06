@@ -5,7 +5,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements.Media;
+namespace Thetacat.Migration.Elements.Metadata.UI.Media;
 
 class MediaItemBuilder
 {

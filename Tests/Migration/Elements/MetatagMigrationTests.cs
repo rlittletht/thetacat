@@ -1,9 +1,8 @@
 ﻿using Emgu.CV.Dnn;
 using Thetacat;
-using Thetacat.Migration.Elements;
+using Thetacat.Migration.Elements.Metadata.UI;
 using NUnit.Framework;
 using Thetacat.ServiceClient.LocalService;
-using Thetacat.Migration.Elements.Metadata;
 
 public class MetatagMigrationTests
 {

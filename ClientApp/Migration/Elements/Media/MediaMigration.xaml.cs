@@ -17,11 +17,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
-using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Metadata;
+using Thetacat.Migration.Elements.Metadata.UI.Media;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 /// <summary>
 /// Interaction logic for MediaMigration.xaml

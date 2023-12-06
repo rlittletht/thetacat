@@ -5,10 +5,10 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Metadata;
+using Thetacat.Migration.Elements.Metadata.UI.Media;
+using Thetacat.Migration.Elements.Metadata.UI;
 
-namespace Thetacat.Migration.Elements;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class ElementsDb
 {

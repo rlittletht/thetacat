@@ -5,7 +5,7 @@ using System.Diagnostics;
 using Thetacat.Metatags;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 /*----------------------------------------------------------------------------
     Thetacat.Migration.Elements.PseMetatagTreeItem

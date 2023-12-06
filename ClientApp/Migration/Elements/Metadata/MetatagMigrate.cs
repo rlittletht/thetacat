@@ -5,7 +5,7 @@ using MetadataExtractor;
 using Microsoft.Identity.Client;
 using Thetacat.Model;
 
-namespace Thetacat.Migration.Elements.Metadata;
+namespace Thetacat.Migration.Elements.Metadata.UI;
 
 /*----------------------------------------------------------------------------
     %%Class: MetatagMigrate
