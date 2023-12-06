@@ -16,6 +16,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Metatags;
 using Thetacat.Model;
+using Thetacat.Standards;
+using Thetacat.Types;
 
 namespace Thetacat.Controls;
 
@@ -51,11 +53,32 @@ public partial class MetatagTreeView : UserControl
 
     public int SchemaVersion => m_metatagSchemaVersion;
 
-    public void Initialize(MetatagSchema schema)
+    /*----------------------------------------------------------------------------
+        %%Function: Initialize
+        %%Qualified: Thetacat.Controls.MetatagTreeView.Initialize
+
+        If you don't specify a standardRoot, then you will get all the root
+        items, and they will automatically update if you add new root items.
+
+        If you specify a standardRoot, then the root items will not automatically
+        update (which is intuitively obvious since you will only have the one
+        matched root to start with...)
+    ----------------------------------------------------------------------------*/
+    public void Initialize(MetatagSchema schema, MetatagStandards.Standard? standardRoot = null)
     {
         m_metatagTree = new MetatagTree(schema.Metatags);
         m_metatagSchemaVersion = schema.SchemaVersion;
 
-        SetItems(m_metatagTree.Children, schema.SchemaVersion);
+        if (standardRoot != null)
+        {
+            IMetatagTreeItem? itemMatch = m_metatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
+
+            if (itemMatch != null)
+                SetItems(itemMatch.Children, schema.SchemaVersion);
+        }
+        else
+        {
+            SetItems(m_metatagTree.Children, schema.SchemaVersion);
+        }
     }
 }

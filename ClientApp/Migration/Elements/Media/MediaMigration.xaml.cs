@@ -18,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Metadata;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements;
@@ -30,6 +31,7 @@ public partial class MediaMigration : UserControl
     private IAppState? m_appState;
     private List<MediaItem>? m_items;
     private readonly List<PathSubstitution> m_pathSubstitutions = new();
+    private MetatagMigrate? m_migrate;
 
     public MediaMigration()
     {
@@ -46,11 +48,12 @@ public partial class MediaMigration : UserControl
         CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource).Refresh();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db)
+    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
         m_items = db.ReadMediaItems();
-
+        m_migrate = migrate;
+        
         mediaItemsListView.ItemsSource = m_items;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);

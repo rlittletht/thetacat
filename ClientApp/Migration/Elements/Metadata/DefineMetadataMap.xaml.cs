@@ -63,7 +63,7 @@ namespace Thetacat.Migration.Elements.Metadata
 
                 // get the matching standard
                 Debug.Assert(standard != null, nameof(standard) + " != null");
-                IEnumerable<StandardMappings> mappings = MetatagStandards.GetStandardsMappingFromStandardName(standard);
+                IEnumerable<StandardMappings> mappings = MetatagStandards.GetStandardMappingsFromStandardName(standard);
 
                 TagName.Items.Clear();
                 List<string> tagNames = new();

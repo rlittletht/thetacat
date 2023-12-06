@@ -21,6 +21,7 @@ using Thetacat.Migration.Elements.Metadata;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.Standards;
 using Thetacat.Types;
 using MetatagTree = Thetacat.Metatags.MetatagTree;
 
@@ -30,7 +31,8 @@ public partial class UserMetatagMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private ObservableCollection<PseMetatag>? m_metatags;
+    private MetatagMigrate? m_migrate = null;
+
     IAppState? m_appState;
 
     /// <summary>
@@ -51,28 +53,24 @@ public partial class UserMetatagMigration : UserControl
         Sort(metaTagsListView, sender as GridViewColumnHeader);
     }
 
-    public void Initialize(IAppState appState, ElementsDb db)
+    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
+        m_migrate = migrate;
 
         if (m_appState == null)
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        ObservableCollection<PseMetatag> tags = new();
-        foreach (PseMetatag metaTag in db.ReadMetadataTags())
-        {
-            tags.Add(metaTag);
-        }
-
-        m_metatags = tags;
-        metaTagsListView.ItemsSource = m_metatags;
+        m_migrate.SetUserMetatags(db.ReadMetadataTags());
+        
+        metaTagsListView.ItemsSource = m_migrate.UserMetatags;
 
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();
 
         Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        LiveMetatags.Initialize(m_appState.MetatagSchema);
+        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
     }
 
     private void RemoveSelected(object sender, RoutedEventArgs e)
@@ -117,7 +115,7 @@ public partial class UserMetatagMigration : UserControl
 
     public void RemoveItems(IEnumerable<object?>? items)
     {
-        if (items == null || m_metatags == null)
+        if (items == null|| m_migrate == null)
             return;
 
         List<object> removeList = new();
@@ -129,7 +127,7 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (PseMetatag tag in removeList)
         {
-            m_metatags.Remove(tag);
+            m_migrate.UserMetatags.Remove(tag);
         }
     }
 
@@ -200,11 +198,8 @@ public partial class UserMetatagMigration : UserControl
     ----------------------------------------------------------------------------*/
     private void MigrateSelected(object sender, RoutedEventArgs e)
     {
-        if (m_appState == null)
-            throw new Exception("appstate uninitialized");
-
-        if (m_metatags == null)
-            return;
+        if (m_appState == null || m_migrate == null)
+            throw new Exception("appstate or migrate uninitialized");
 
         // build a list of selected items
         List<PseMetatag> metatags = new();
@@ -215,12 +210,26 @@ public partial class UserMetatagMigration : UserControl
                 metatags.Add(item);
         }
 
-        MetatagMigrate migrate = new(m_metatags);
+        // instead of building the ops manually and live updating
+        // and requerying, we want to keep an older schema (original base)
+        // and modify the livetree. then we can do a diff of new livetree
+        // against the base to get the ops.
+
+        // this way, when we bring up the schema diff summary tab,
+        // it can do the diff AND build the list of adds from the schema
+        // metadata tab to get the live list of schema diffenences.
+
+        // actually, we should make the metadata tab ALSO update
+        // the live schema tree -- that way the summary tab
+        // is only a diff summary of what we will upload. Basically
+        // its just a user control that takes two SchemaModels (base and new)
+        // and build the diff ops and lists those in the control.
+        m_migrate.BuildMetatagTree(m_migrate.UserMetatags);
 
         Metatags.MetatagTree liveTree = LiveMetatags.Model;
 
         // now figure out what items (if any) we have to add to the live schema
-        List<PseMetatag> tagsToSync = migrate.CollectDependentTags(liveTree, metatags);
+        List<PseMetatag> tagsToSync = m_migrate.CollectDependentTags(liveTree, metatags);
         List<Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
 
         MetatagSchemaDiff diff = new(LiveMetatags.SchemaVersion);
@@ -234,6 +243,6 @@ public partial class UserMetatagMigration : UserControl
         m_appState.RefreshMetatagSchema();
 
         Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        LiveMetatags.Initialize(m_appState.MetatagSchema);
+        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
     }
 }

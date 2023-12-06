@@ -12,50 +12,6 @@ namespace Thetacat.Model;
 
 public class MetatagSchema
 {
-    public enum Standard
-    {
-        IPTC,
-        EXIF,
-        JPEG,
-        JFIF,
-        Nikon1,
-        Nikon2,
-        XMP,
-        User,
-        Unknown
-    };
-
-    private static readonly Dictionary<Standard, string> m_standardMap =
-        new()
-        {
-            { Standard.IPTC, MetatagStandards.Iptc.Tag },
-            { Standard.EXIF, MetatagStandards.Exif.Tag },
-            { Standard.JPEG, MetatagStandards.Jpeg.Tag },
-            { Standard.JFIF, MetatagStandards.Jfif.Tag },
-            { Standard.Nikon1, MetatagStandards.ExifMakernotes_Nikon1.Tag },
-            { Standard.Nikon2, MetatagStandards.ExifMakernotes_Nikon2.Tag },
-            { Standard.User, "user" },
-        };
-
-    public static Standard GetStandardFromString(string standard)
-    {
-        foreach (Standard key in m_standardMap.Keys)
-        {
-            if (m_standardMap[key] == standard) 
-                return key;
-        }
-
-        return Standard.Unknown;
-    }
-
-    public static string GetStandardString(Standard standard)
-    {
-        if (m_standardMap.TryGetValue(standard, out string? s))
-            return s;
-
-        throw new Exception($"unknown standard enum ${standard}");
-    }
-
     public List<Metatag> Metatags { get; set; } = new List<Metatag>();
     public int SchemaVersion { get; set; } = 0;
 
@@ -100,7 +56,7 @@ public class MetatagSchema
         return FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(name));
     }
 
-    public void AddMetatag(Metatag metatag)
+    void AddMetatagNoValidation(Metatag metatag)
     {
         Metatags.Add(metatag);
 
@@ -122,6 +78,54 @@ public class MetatagSchema
                 parent.Children.Add(newItem);
             }
         }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddMetatag
+        %%Qualified: Thetacat.Model.MetatagSchema.AddMetatag
+
+        This is the most core AddMetatag. It requires that you have a parent
+        set. You CANNOT add a root standard tag with this function
+    ----------------------------------------------------------------------------*/
+    public void AddMetatag(Metatag metatag)
+    {
+        if (metatag.Parent == null)
+            throw new ArgumentException("must specify parent for metatag");
+
+        AddMetatagNoValidation(metatag);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddStandardRoot
+        %%Qualified: Thetacat.Model.MetatagSchema.AddStandardRoot
+
+        This is really the same as AddMetatag, but it allows null for the parent
+
+    ----------------------------------------------------------------------------*/
+    public void AddStandardRoot(Metatag metatag)
+    {
+        AddMetatagNoValidation(metatag);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddNewStandardRoot
+        %%Qualified: Thetacat.Model.MetatagSchema.AddNewStandardRoot
+
+        This will create a new standard root metatag and add it (and return it)
+    ----------------------------------------------------------------------------*/
+    public Metatag AddNewStandardRoot(MetatagStandards.Standard standard)
+    {
+        StandardMappings mappings = MetatagStandards.GetStandardMappings(standard);
+
+        Metatag metatag = MetatagBuilder
+           .Create()
+           .SetName(mappings.Tag)
+           .SetDescription($"{mappings.Tag} root")
+           .Build();
+
+        AddMetatagNoValidation(metatag);
+
+        return metatag;
     }
 
     public static MetatagSchema CreateFromService(ServiceMetatagSchema serviceMetatagSchema)

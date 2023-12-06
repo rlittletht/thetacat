@@ -7,7 +7,7 @@ namespace Thetacat.Standards;
 
 public class MetatagStandards
 {
-    public enum Builtin
+    public enum Standard
     {
         Unknown,
         Tcat,
@@ -24,7 +24,7 @@ public class MetatagStandards
 
     public static StandardMappings Tcat =
         new(
-            Builtin.Tcat,
+            Standard.Tcat,
             "TCAT",
             Array.Empty<string>(),
             new Dictionary<int, StandardMapping>
@@ -34,14 +34,14 @@ public class MetatagStandards
 
     public static StandardMappings Pse =
         new(
-            Builtin.Pse,
+            Standard.Pse,
             "PSE",
             Array.Empty<string>(),
             new Dictionary<int, StandardMapping>
             {
-                { PhotoshopElements.FileNameOriginal, new(PhotoshopElements.FileNameOriginal, "FileNameOriginal")},
-                { PhotoshopElements.ImportSourceName, new(PhotoshopElements.ImportSourceName, "ImportSourceName")},
-                { PhotoshopElements.ImportSourcePath, new(PhotoshopElements.ImportSourcePath, "ImportSourcePath")}
+                { PhotoshopElementsTags.FileNameOriginal, new(PhotoshopElementsTags.FileNameOriginal, "FileNameOriginal")},
+                { PhotoshopElementsTags.ImportSourceName, new(PhotoshopElementsTags.ImportSourceName, "ImportSourceName")},
+                { PhotoshopElementsTags.ImportSourcePath, new(PhotoshopElementsTags.ImportSourcePath, "ImportSourcePath")}
             });
     //    public static StandardMappings  =
     //        new(
@@ -53,7 +53,7 @@ public class MetatagStandards
 
     public static StandardMappings Jpeg =
         new(
-            Builtin.Jpeg,
+            Standard.Jpeg,
             "JPEG",
             new[]
             {
@@ -74,7 +74,7 @@ public class MetatagStandards
 
     public static StandardMappings Jfif =
         new(
-            Builtin.Jfif,
+            Standard.Jfif,
             "JFIF",
             new[]
             {
@@ -92,7 +92,7 @@ public class MetatagStandards
 
     public static StandardMappings Iptc =
         new(
-            Builtin.Iptc,
+            Standard.Iptc,
             "IPTC",
             new[]
             {
@@ -181,7 +181,7 @@ public class MetatagStandards
 
     public static StandardMappings ExifMakernotes_Nikon1 =
         new(
-            Builtin.ExifMakernotes_Nikon1,
+            Standard.ExifMakernotes_Nikon1,
             "EXIF-MakerNotes-Nikon1",
             new[]
             {
@@ -204,7 +204,7 @@ public class MetatagStandards
 
     public static StandardMappings ExifMakernotes_Nikon2 =
         new(
-            Builtin.ExifMakernotes_Nikon2,
+            Standard.ExifMakernotes_Nikon2,
             "EXIF-MakerNotes-Nikon2",
             new[]
             {
@@ -340,7 +340,7 @@ public class MetatagStandards
 
     public static StandardMappings Exif =
         new(
-            Builtin.Exif,
+            Standard.Exif,
             "EXIF",
             new[]
             {
@@ -521,7 +521,7 @@ public class MetatagStandards
 
     public static StandardMappings ExifGps =
         new(
-            Builtin.ExifGps,
+            Standard.ExifGps,
             "EXIF",
             new[]
             {
@@ -563,53 +563,64 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Exif.GpsDirectory.TagHPositioningError, new(MetadataExtractor.Formats.Exif.GpsDirectory.TagHPositioningError, "HPositioningError", false)},
             });
 
-    public static Dictionary<Builtin, StandardMappings> KnownStandards =
+    public static Dictionary<Standard, StandardMappings> KnownStandards =
         new()
         {
-            { Builtin.Tcat, Tcat },
-            { Builtin.Pse, Pse },
-            { Builtin.Jpeg, Jpeg },
-            { Builtin.Jfif, Jfif },
-            { Builtin.Iptc, Iptc },
-            { Builtin.ExifMakernotes_Nikon1, ExifMakernotes_Nikon1 },
-            { Builtin.ExifMakernotes_Nikon2, ExifMakernotes_Nikon2 },
-            { Builtin.Exif, Exif },
-            { Builtin.ExifGps, ExifGps },
+            { Standard.Tcat, Tcat },
+            { Standard.Pse, Pse },
+            { Standard.Jpeg, Jpeg },
+            { Standard.Jfif, Jfif },
+            { Standard.Iptc, Iptc },
+            { Standard.ExifMakernotes_Nikon1, ExifMakernotes_Nikon1 },
+            { Standard.ExifMakernotes_Nikon2, ExifMakernotes_Nikon2 },
+            { Standard.Exif, Exif },
+            { Standard.ExifGps, ExifGps },
         };
 
-    /*----------------------------------------------------------------------------
-        %%Function: GetStandardsMappingFromType
-        %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardsMappingFromType
-
-    ----------------------------------------------------------------------------*/
-    public static StandardMappings? GetStandardsMappingFromType(string typeName)
+    public static Standard GetStandardFromType(string typeName)
     {
-        foreach (StandardMappings standard in KnownStandards.Values)
+        foreach (Standard standard in KnownStandards.Keys)
         {
-            foreach (string standardTypeName in standard.TypeNames)
+            StandardMappings mappings = KnownStandards[standard];
+
+            foreach (string standardTypeName in mappings.TypeNames)
             {
                 if (string.Compare(standardTypeName, typeName, StringComparison.InvariantCultureIgnoreCase) == 0)
                     return standard;
             }
         }
 
-        return null;
+        return Standard.Unknown;
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: GetBuiltinStandard
-        %%Qualified: Thetacat.Standards.MetatagStandards.GetBuiltinStandard
-      
-    ----------------------------------------------------------------------------*/
-    public static StandardMappings GetBuiltinStandard(Builtin builtin)
-    {
-        if (!KnownStandards.ContainsKey(builtin))
-            throw new Exception($"unknown builtin standard: ${builtin}");
+        %%Function: GetStandardMappingsFromType
+        %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardMappingsFromType
 
-        return KnownStandards[builtin];
+    ----------------------------------------------------------------------------*/
+    public static StandardMappings? GetStandardMappingsFromType(string typeName)
+    {
+        Standard standard = GetStandardFromType(typeName);
+        if (standard == Standard.Unknown)
+            return null;
+
+        return KnownStandards[standard];
     }
 
-    public static List<StandardMappings> GetStandardsMappingFromStandardName(string standardName)
+    /*----------------------------------------------------------------------------
+        %%Function: GetStandardMappings
+        %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardMappings
+      
+    ----------------------------------------------------------------------------*/
+    public static StandardMappings GetStandardMappings(Standard standard)
+    {
+        if (!KnownStandards.ContainsKey(standard))
+            throw new Exception($"unknown standard standard: ${standard}");
+
+        return KnownStandards[standard];
+    }
+
+    public static List<StandardMappings> GetStandardMappingsFromStandardName(string standardName)
     {
         List<StandardMappings> standardMappings = new();
 
@@ -621,4 +632,29 @@ public class MetatagStandards
 
         return standardMappings;
     }
+
+    public static Standard GetStandardFromStandardTag(string standardTag)
+    {
+        foreach (Standard standard in KnownStandards.Keys)
+        {
+            StandardMappings mappings = KnownStandards[standard];
+
+            if (mappings.Tag == standardTag)
+                return standard;
+        }
+
+        return Standard.Unknown;
+    }
+
+    public static string GetStandardsTagFromStandard(Standard standard)
+    {
+        if (standard == Standard.Unknown)
+            return string.Empty;
+
+        if (standard == Standard.User)
+            return "user";
+
+        return KnownStandards[standard].Tag;
+    }
+
 }

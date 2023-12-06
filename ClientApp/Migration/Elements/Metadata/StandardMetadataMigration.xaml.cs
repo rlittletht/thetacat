@@ -30,7 +30,7 @@ public partial class StandardMetadataMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private PseMetadataSchema? m_schema = null;
+    private MetatagMigrate? m_migrate = null;
 
     IAppState? m_appState;
 
@@ -52,18 +52,19 @@ public partial class StandardMetadataMigration : UserControl
         Sort(metadataListView, sender as GridViewColumnHeader);
     }
 
-    public void Initialize(IAppState appState, ElementsDb db)
+    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
+        m_migrate = migrate;
 
         if (m_appState == null)
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        m_schema = db.ReadMetadataSchema();
-        m_schema.PopulateBuiltinMappings();
+        m_migrate.SetMetatagSchema(db.ReadMetadataSchema());
+        m_migrate.Schema.PopulateBuiltinMappings();
 
-        metadataListView.ItemsSource = m_schema.MetadataItems;
+        metadataListView.ItemsSource = m_migrate.Schema.MetadataItems;
 
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();

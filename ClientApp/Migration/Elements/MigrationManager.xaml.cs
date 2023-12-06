@@ -18,6 +18,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Migration.Elements;
+using Thetacat.Migration.Elements.Metadata;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
@@ -30,14 +31,15 @@ namespace Thetacat.Migration.Elements;
 public partial class MigrationManager : Window
 {
     private readonly IAppState m_appState;
+    private MetatagMigrate m_migrate;
 
     void BuildMetadataReportFromDatabase(string database)
     {
         ElementsDb db = ElementsDb.Create(database);
 
-        MediaMigrationTab.Initialize(m_appState, db);
-        MetatagMigrationTab.Initialize(m_appState, db);        
-        MetadataMigrationTab.Initialize(m_appState, db);
+        MediaMigrationTab.Initialize(m_appState, db, m_migrate);
+        MetatagMigrationTab.Initialize(m_appState, db, m_migrate);
+        MetadataMigrationTab.Initialize(m_appState, db, m_migrate);
 
         db.Close();
     }
@@ -47,6 +49,7 @@ public partial class MigrationManager : Window
         m_appState = appState;
         InitializeComponent();
 
+        m_migrate = new MetatagMigrate();
         BuildMetadataReportFromDatabase(database);
         m_appState.RegisterWindowPlace(this, "ElementsMigrationManager");
     }

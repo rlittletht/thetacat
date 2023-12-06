@@ -59,14 +59,10 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         PathVerified = TriState.Maybe;
     }
 
-    public void MigrateMetadataForDirectory(IAppState appState, Metatag? parent, MetadataExtractor.Directory directory, MetatagSchema.Standard standard)
+    public void MigrateMetadataForDirectory(IAppState appState, Metatag? parent, MetadataExtractor.Directory directory, MetatagStandards.Standard standard)
     {
-        if (parent == null && standard == MetatagSchema.Standard.Unknown)
-        {
-            StandardMappings? standardMappings = MetatagStandards.GetStandardsMappingFromType(directory.GetType().Name);
-
-            standard = standardMappings != null ? MetatagSchema.GetStandardFromString(standardMappings.Tag) : MetatagSchema.Standard.Unknown;
-        }
+        if (parent == null && standard == MetatagStandards.Standard.Unknown)
+            standard = MetatagStandards.GetStandardFromType(directory.GetType().Name);
 
         // match the current directory to a metatag
 
@@ -119,7 +115,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
 
             foreach (MetadataExtractor.Directory directory in directories)
             {
-                MigrateMetadataForDirectory(appState, null, directory, MetatagSchema.Standard.Unknown);
+                MigrateMetadataForDirectory(appState, null, directory, MetatagStandards.Standard.Unknown);
             }
         }
     }

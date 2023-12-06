@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms.Design;
 using Thetacat.ServiceClient;
+using Thetacat.Standards;
 using Thetacat.Types;
 
 namespace Thetacat.Model;
@@ -17,7 +18,7 @@ public class Metatag: IMetatag
 
     public Guid? Parent { get; set; }
 
-    public static Metatag Create(Guid? parent, string name, string description, MetatagSchema.Standard standard)
+    public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard)
     {
         return new Metatag()
                {
@@ -25,7 +26,7 @@ public class Metatag: IMetatag
                    Parent = parent,
                    Name = name,
                    Description = description,
-                   Standard = MetatagSchema.GetStandardString(standard),
+                   Standard = MetatagStandards.GetStandardsTagFromStandard(standard),
                    LocalOnly = true
                };
     }

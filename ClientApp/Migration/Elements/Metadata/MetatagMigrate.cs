@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using MetadataExtractor;
+using Microsoft.Identity.Client;
+using Thetacat.Model;
 
 namespace Thetacat.Migration.Elements.Metadata;
 
@@ -9,11 +13,53 @@ namespace Thetacat.Migration.Elements.Metadata;
 ----------------------------------------------------------------------------*/
 public class MetatagMigrate
 {
-    private readonly PseMetatagTree? m_metatagTree;
+    private PseMetatagTree? m_metatagTree;
+    private PseMetadataSchema? m_schema = null;
+    private ObservableCollection<PseMetatag>? m_metatags;
 
-    public MetatagMigrate(IEnumerable<PseMetatag> tags)
+    private ObservableCollection<MetatagSchemaDiff>? m_schemaDiff;
+
+    public PseMetadataSchema Schema
+    {
+        get
+        {
+            if (m_schema == null)
+                throw new Exception("not initialized");
+            return m_schema;
+        }
+    }
+
+    public ObservableCollection<PseMetatag> UserMetatags
+    {
+        get
+        {
+            if (m_metatags == null)
+                throw new Exception("not intialized");
+
+            return m_metatags;
+        }
+    }
+
+    public MetatagMigrate() { }
+
+    public void BuildMetatagTree(IEnumerable<PseMetatag> tags)
     {
         m_metatagTree = new PseMetatagTree(tags);
+    }
+
+    public void SetUserMetatags(IEnumerable<PseMetatag> metatags)
+    {
+        m_metatags = new ObservableCollection<PseMetatag>();
+
+        foreach (PseMetatag metatag in metatags)
+        {
+            m_metatags.Add(metatag);
+        }
+    }
+
+    public void SetMetatagSchema(PseMetadataSchema schema)
+    {
+        m_schema = schema;
     }
 
     // since we don't have an elements metatag tree, we either have to build one to do this,
@@ -53,5 +99,24 @@ public class MetatagMigrate
         }
 
         return new List<PseMetatag>(collected.Values);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: BuildSchemaDiff
+        %%Qualified: Thetacat.Migration.Elements.Metadata.MetatagMigrate.BuildSchemaDiff
+
+        There are two parts to the migrate
+
+        USER:
+        First, build the set of tags we have to migrate based on the items added
+        to the UserMetatagMigration
+
+        STANDARDS:
+        Second, collect all the checked items from the StandardMetadata tab.
+    ----------------------------------------------------------------------------*/
+    public void BuildSchemaDiff()
+    {
+        m_schemaDiff = new ObservableCollection<MetatagSchemaDiff>();
+
     }
 }

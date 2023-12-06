@@ -19,6 +19,12 @@ public class MetatagBuilder
                          ID = id
                      };
     }
+
+    public static MetatagBuilder Create()
+    {
+        return Create(Guid.NewGuid());
+    }
+
     public static MetatagBuilder Create(Guid id)
     {
         MetatagBuilder builder = new(id);

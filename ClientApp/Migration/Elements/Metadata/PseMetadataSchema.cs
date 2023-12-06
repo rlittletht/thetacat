@@ -15,19 +15,28 @@ public class PseMetadataSchema
 
     void FillMetadataFromSchemaMapping<T>(PseMetadata metadata, SchemaMapping<T> pseMapping)
     {
-        if (pseMapping.StandardId == MetatagStandards.Builtin.User)
+        if (pseMapping.StandardId == MetatagStandards.Standard.User)
         {
             metadata.Standard = "user";
             metadata.Tag = pseMapping.Name;
             metadata.Description = pseMapping.Description;
+            metadata.Migrate = true;
         }
-        else if (pseMapping.StandardId != MetatagStandards.Builtin.Unknown)
+        else if (pseMapping.StandardId == MetatagStandards.Standard.Unknown)
         {
-            StandardMappings mapping = MetatagStandards.GetBuiltinStandard(pseMapping.StandardId);
+            metadata.Standard = "standard";
+            metadata.Tag = string.Empty;
+            metadata.Description = string.Empty;
+            metadata.Migrate = true;
+        }
+        else if (pseMapping.StandardId != MetatagStandards.Standard.Unknown)
+        {
+            StandardMappings mapping = MetatagStandards.GetStandardMappings(pseMapping.StandardId);
 
             metadata.Standard = mapping.Tag;
             metadata.Tag = mapping.Properties[pseMapping.ItemTag].TagName;
             metadata.Description = $"{mapping.Tag} {metadata.Tag}";
+            metadata.Migrate = true;
         }
     }
 
