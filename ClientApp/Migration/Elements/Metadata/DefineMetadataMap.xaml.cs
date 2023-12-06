@@ -28,7 +28,7 @@ namespace Thetacat.Migration.Elements.Metadata
         {
             HashSet<string> mappings = new();
 
-            foreach (StandardMappings mapping in MetatagStandards.KnownStandards.Values)
+            foreach (StandardDefinitions mapping in MetatagStandards.KnownStandards.Values)
             {
                 mappings.Add(mapping.Tag);
             }
@@ -63,14 +63,14 @@ namespace Thetacat.Migration.Elements.Metadata
 
                 // get the matching standard
                 Debug.Assert(standard != null, nameof(standard) + " != null");
-                IEnumerable<StandardMappings> mappings = MetatagStandards.GetStandardMappingsFromStandardName(standard);
+                IEnumerable<StandardDefinitions> mappings = MetatagStandards.GetStandardMappingsFromStandardName(standard);
 
                 TagName.Items.Clear();
                 List<string> tagNames = new();
 
-                foreach (StandardMappings mapping in mappings)
+                foreach (StandardDefinitions mapping in mappings)
                 {
-                    foreach (StandardMapping mappingItem in mapping.Properties.Values)
+                    foreach (StandardDefinition mappingItem in mapping.Properties.Values)
                     {
                         tagNames.Add(mappingItem.TagName);
                     }

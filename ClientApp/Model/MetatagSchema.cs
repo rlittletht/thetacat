@@ -115,12 +115,12 @@ public class MetatagSchema
     ----------------------------------------------------------------------------*/
     public Metatag AddNewStandardRoot(MetatagStandards.Standard standard)
     {
-        StandardMappings mappings = MetatagStandards.GetStandardMappings(standard);
+        StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
 
         Metatag metatag = MetatagBuilder
            .Create()
-           .SetName(mappings.Tag)
-           .SetDescription($"{mappings.Tag} root")
+           .SetName(definitions.Tag)
+           .SetDescription($"{definitions.Tag} root")
            .Build();
 
         AddMetatagNoValidation(metatag);

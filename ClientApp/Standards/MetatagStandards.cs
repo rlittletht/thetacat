@@ -22,36 +22,36 @@ public class MetatagStandards
         User,
     };
 
-    public static StandardMappings Tcat =
+    public static StandardDefinitions Tcat =
         new(
             Standard.Tcat,
             "TCAT",
             Array.Empty<string>(),
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { ThetacatTags.DescriptionTag, new(ThetacatTags.DescriptionTag, "Description") }
             });
 
-    public static StandardMappings Pse =
+    public static StandardDefinitions Pse =
         new(
             Standard.Pse,
             "PSE",
             Array.Empty<string>(),
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { PhotoshopElementsTags.FileNameOriginal, new(PhotoshopElementsTags.FileNameOriginal, "FileNameOriginal")},
                 { PhotoshopElementsTags.ImportSourceName, new(PhotoshopElementsTags.ImportSourceName, "ImportSourceName")},
                 { PhotoshopElementsTags.ImportSourcePath, new(PhotoshopElementsTags.ImportSourcePath, "ImportSourcePath")}
             });
-    //    public static StandardMappings  =
+    //    public static StandardDefinitions  =
     //        new(
     //            "FMT",
-    //            new StandardMapping[]
+    //            new StandardDefinition[]
     //            {
     //                new(MetadataExtractor.Formats., ""),
     //            });
 
-    public static StandardMappings Jpeg =
+    public static StandardDefinitions Jpeg =
         new(
             Standard.Jpeg,
             "JPEG",
@@ -59,7 +59,7 @@ public class MetatagStandards
             {
                 "JpegDirectory"
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Jpeg.JpegDirectory.TagCompressionType, new(MetadataExtractor.Formats.Jpeg.JpegDirectory.TagCompressionType, "CompressionType", false) },
                 { MetadataExtractor.Formats.Jpeg.JpegDirectory.TagDataPrecision, new(MetadataExtractor.Formats.Jpeg.JpegDirectory.TagDataPrecision, "DataPrecision", false) },
@@ -72,7 +72,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Jpeg.JpegDirectory.TagComponentData4, new(MetadataExtractor.Formats.Jpeg.JpegDirectory.TagComponentData4, "ComponentData4", false) }
             });
 
-    public static StandardMappings Jfif =
+    public static StandardDefinitions Jfif =
         new(
             Standard.Jfif,
             "JFIF",
@@ -80,7 +80,7 @@ public class MetatagStandards
             {
                 "JfifDirectory"
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Jfif.JfifDirectory.TagVersion, new(MetadataExtractor.Formats.Jfif.JfifDirectory.TagVersion, "Version", false)},
                 { MetadataExtractor.Formats.Jfif.JfifDirectory.TagUnits, new(MetadataExtractor.Formats.Jfif.JfifDirectory.TagUnits, "Units", false)},
@@ -90,7 +90,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Jfif.JfifDirectory.TagThumbHeight, new(MetadataExtractor.Formats.Jfif.JfifDirectory.TagThumbHeight, "ThumbHeight", false)},
             });
 
-    public static StandardMappings Iptc =
+    public static StandardDefinitions Iptc =
         new(
             Standard.Iptc,
             "IPTC",
@@ -98,7 +98,7 @@ public class MetatagStandards
             {
                 "IptcDirectory"
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagEnvelopeRecordVersion, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagEnvelopeRecordVersion, "EnvelopeRecordVersion", false)},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagDestination, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagDestination, "Destination", false)},
@@ -179,7 +179,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagObjectPreviewData, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagObjectPreviewData, "ObjectPreviewData", false) },
             });
 
-    public static StandardMappings ExifMakernotes_Nikon1 =
+    public static StandardDefinitions ExifMakernotes_Nikon1 =
         new(
             Standard.ExifMakernotes_Nikon1,
             "EXIF-MakerNotes-Nikon1",
@@ -187,7 +187,7 @@ public class MetatagStandards
             {
                 "NikonType1MakernoteDirectory",
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagCcdSensitivity, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagCcdSensitivity, "CcdSensitivity", false)},
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagColorMode, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagColorMode, "ColorMode", false)},
@@ -202,7 +202,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagWhiteBalance, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType1MakernoteDirectory.TagWhiteBalance, "WhiteBalance", false)}
             });
 
-    public static StandardMappings ExifMakernotes_Nikon2 =
+    public static StandardDefinitions ExifMakernotes_Nikon2 =
         new(
             Standard.ExifMakernotes_Nikon2,
             "EXIF-MakerNotes-Nikon2",
@@ -210,7 +210,7 @@ public class MetatagStandards
             {
                 "NikonType2MakernoteDirectory",
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagFirmwareVersion, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagFirmwareVersion, "FirmwareVersion", false)},
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagIso1, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagIso1, "Iso1", false)},
@@ -330,15 +330,15 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagUnknown55, new(MetadataExtractor.Formats.Exif.Makernotes.NikonType2MakernoteDirectory.TagUnknown55, "Unknown55", false) },
             });
 
-    //    public static StandardMappings Fmt =
+    //    public static StandardDefinitions Fmt =
     //        new(
     //            "FMT",
-    //            new StandardMapping[]
+    //            new StandardDefinition[]
     //            {
     //                new(MetadataExtractor.Formats., ""),
     //            });
 
-    public static StandardMappings Exif =
+    public static StandardDefinitions Exif =
         new(
             Standard.Exif,
             "EXIF",
@@ -348,7 +348,7 @@ public class MetatagStandards
                 "ExifInteropDirectory",
                 "ExifSubIFDDirectory"
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagInteropIndex, new(MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagInteropIndex, "InteropIndex", false)},
                 { MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagInteropVersion, new(MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagInteropVersion, "InteropVersion", false)},
@@ -519,7 +519,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagLens, new(MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagLens, "Lens") },
             });
 
-    public static StandardMappings ExifGps =
+    public static StandardDefinitions ExifGps =
         new(
             Standard.ExifGps,
             "EXIF",
@@ -527,7 +527,7 @@ public class MetatagStandards
             {
                 "GpsDirectory",
             },
-            new Dictionary<int, StandardMapping>
+            new Dictionary<int, StandardDefinition>
             {
                 { MetadataExtractor.Formats.Exif.GpsDirectory.TagVersionId, new(MetadataExtractor.Formats.Exif.GpsDirectory.TagVersionId, "VersionId", false)},
                 { MetadataExtractor.Formats.Exif.GpsDirectory.TagLatitudeRef, new(MetadataExtractor.Formats.Exif.GpsDirectory.TagLatitudeRef, "LatitudeRef")},
@@ -563,7 +563,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Exif.GpsDirectory.TagHPositioningError, new(MetadataExtractor.Formats.Exif.GpsDirectory.TagHPositioningError, "HPositioningError", false)},
             });
 
-    public static Dictionary<Standard, StandardMappings> KnownStandards =
+    public static Dictionary<Standard, StandardDefinitions> KnownStandards =
         new()
         {
             { Standard.Tcat, Tcat },
@@ -581,9 +581,9 @@ public class MetatagStandards
     {
         foreach (Standard standard in KnownStandards.Keys)
         {
-            StandardMappings mappings = KnownStandards[standard];
+            StandardDefinitions definitions = KnownStandards[standard];
 
-            foreach (string standardTypeName in mappings.TypeNames)
+            foreach (string standardTypeName in definitions.TypeNames)
             {
                 if (string.Compare(standardTypeName, typeName, StringComparison.InvariantCultureIgnoreCase) == 0)
                     return standard;
@@ -598,7 +598,7 @@ public class MetatagStandards
         %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardMappingsFromType
 
     ----------------------------------------------------------------------------*/
-    public static StandardMappings? GetStandardMappingsFromType(string typeName)
+    public static StandardDefinitions? GetStandardMappingsFromType(string typeName)
     {
         Standard standard = GetStandardFromType(typeName);
         if (standard == Standard.Unknown)
@@ -612,7 +612,7 @@ public class MetatagStandards
         %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardMappings
       
     ----------------------------------------------------------------------------*/
-    public static StandardMappings GetStandardMappings(Standard standard)
+    public static StandardDefinitions GetStandardMappings(Standard standard)
     {
         if (!KnownStandards.ContainsKey(standard))
             throw new Exception($"unknown standard standard: ${standard}");
@@ -620,11 +620,11 @@ public class MetatagStandards
         return KnownStandards[standard];
     }
 
-    public static List<StandardMappings> GetStandardMappingsFromStandardName(string standardName)
+    public static List<StandardDefinitions> GetStandardMappingsFromStandardName(string standardName)
     {
-        List<StandardMappings> standardMappings = new();
+        List<StandardDefinitions> standardMappings = new();
 
-        foreach (StandardMappings standard in KnownStandards.Values)
+        foreach (StandardDefinitions standard in KnownStandards.Values)
         {
             if (string.Compare(standard.Tag, standardName, StringComparison.InvariantCultureIgnoreCase) == 0)
                 standardMappings.Add(standard);
@@ -637,9 +637,9 @@ public class MetatagStandards
     {
         foreach (Standard standard in KnownStandards.Keys)
         {
-            StandardMappings mappings = KnownStandards[standard];
+            StandardDefinitions definitions = KnownStandards[standard];
 
-            if (mappings.Tag == standardTag)
+            if (definitions.Tag == standardTag)
                 return standard;
         }
 

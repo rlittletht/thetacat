@@ -31,11 +31,11 @@ public class PseMetadataSchema
         }
         else if (pseMapping.StandardId != MetatagStandards.Standard.Unknown)
         {
-            StandardMappings mapping = MetatagStandards.GetStandardMappings(pseMapping.StandardId);
+            StandardDefinitions definition = MetatagStandards.GetStandardMappings(pseMapping.StandardId);
 
-            metadata.Standard = mapping.Tag;
-            metadata.Tag = mapping.Properties[pseMapping.ItemTag].TagName;
-            metadata.Description = $"{mapping.Tag} {metadata.Tag}";
+            metadata.Standard = definition.Tag;
+            metadata.Tag = definition.Properties[pseMapping.ItemTag].TagName;
+            metadata.Description = $"{definition.Tag} {metadata.Tag}";
             metadata.Migrate = true;
         }
     }
