@@ -28,12 +28,12 @@ public class MetatagSchema
     private static readonly Dictionary<Standard, string> m_standardMap =
         new()
         {
-            { Standard.IPTC, StandardsMappings.Iptc.Tag },
-            { Standard.EXIF, StandardsMappings.Exif.Tag },
-            { Standard.JPEG, StandardsMappings.Jpeg.Tag },
-            { Standard.JFIF, StandardsMappings.Jfif.Tag },
-            { Standard.Nikon1, StandardsMappings.ExifMakernotes_Nikon1.Tag },
-            { Standard.Nikon2, StandardsMappings.ExifMakernotes_Nikon2.Tag },
+            { Standard.IPTC, MetatagStandards.Iptc.Tag },
+            { Standard.EXIF, MetatagStandards.Exif.Tag },
+            { Standard.JPEG, MetatagStandards.Jpeg.Tag },
+            { Standard.JFIF, MetatagStandards.Jfif.Tag },
+            { Standard.Nikon1, MetatagStandards.ExifMakernotes_Nikon1.Tag },
+            { Standard.Nikon2, MetatagStandards.ExifMakernotes_Nikon2.Tag },
             { Standard.User, "user" },
         };
 

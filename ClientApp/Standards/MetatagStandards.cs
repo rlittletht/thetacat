@@ -5,7 +5,7 @@ using Thetacat.Model;
 
 namespace Thetacat.Standards;
 
-public class StandardsMappings
+public class MetatagStandards
 {
     public enum Builtin
     {
@@ -579,7 +579,7 @@ public class StandardsMappings
 
     /*----------------------------------------------------------------------------
         %%Function: GetStandardsMappingFromType
-        %%Qualified: Thetacat.Standards.StandardsMappings.GetStandardsMappingFromType
+        %%Qualified: Thetacat.Standards.MetatagStandards.GetStandardsMappingFromType
 
     ----------------------------------------------------------------------------*/
     public static StandardMappings? GetStandardsMappingFromType(string typeName)
@@ -598,7 +598,7 @@ public class StandardsMappings
 
     /*----------------------------------------------------------------------------
         %%Function: GetBuiltinStandard
-        %%Qualified: Thetacat.Standards.StandardsMappings.GetBuiltinStandard
+        %%Qualified: Thetacat.Standards.MetatagStandards.GetBuiltinStandard
       
     ----------------------------------------------------------------------------*/
     public static StandardMappings GetBuiltinStandard(Builtin builtin)

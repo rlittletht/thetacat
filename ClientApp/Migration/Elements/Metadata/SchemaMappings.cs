@@ -10,12 +10,12 @@ public class SchemaMappings
         new()
         {
             // from metadata_string_table
-            { "tiff:ImageDescription", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Tcat, ThetacatTags.DescriptionTag) },
-            { "pse:FileNameOriginal", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Pse, PhotoshopElements.FileNameOriginal) },
-            { "pse:ImportSourceName", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Pse, PhotoshopElements.ImportSourceName) },
-            { "pse:ImportSourcePath", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Pse, PhotoshopElements.ImportSourcePath) },
-            { "exif:Make", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagMake) },
-            { "exif:Model", SchemaMapping<string>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagModel) },
+            { "tiff:ImageDescription", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Tcat, ThetacatTags.DescriptionTag) },
+            { "pse:FileNameOriginal", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Pse, PhotoshopElements.FileNameOriginal) },
+            { "pse:ImportSourceName", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Pse, PhotoshopElements.ImportSourceName) },
+            { "pse:ImportSourcePath", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Pse, PhotoshopElements.ImportSourcePath) },
+            { "exif:Make", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagMake) },
+            { "exif:Model", SchemaMapping<string>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagModel) },
             { "pse:TagNotes", SchemaMapping<string>.CreateUser("PseTagNotes", "Tag Notes from PSE") },
         };
 
@@ -25,9 +25,9 @@ public class SchemaMappings
             // from metadata_integer_table
             { "tiff:ImageWidth", SchemaMapping<int>.CreateBuiltIn((item, width) => item.ImageWidth = width) },
             { "tiff:ImageHeight", SchemaMapping<int>.CreateBuiltIn((item, height) => item.ImageHeight = height) },
-            { "exif:ExposureProgram", SchemaMapping<int>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureProgram) },
-            { "exif:Flash", SchemaMapping<int>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFlash) },
-            { "exif:ISOSpeedRatings", SchemaMapping<int>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagIsoSpeed) },
+            { "exif:ExposureProgram", SchemaMapping<int>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureProgram) },
+            { "exif:Flash", SchemaMapping<int>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFlash) },
+            { "exif:ISOSpeedRatings", SchemaMapping<int>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagIsoSpeed) },
         };
 
     public static readonly Dictionary<string, SchemaMapping<DateTime>> DateTimeMappings =
@@ -39,11 +39,11 @@ public class SchemaMappings
     public static readonly Dictionary<string, SchemaMapping<double>> DecimalMappings =
         new()
         {
-            { "exif:ExposureBias", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureBias) },
-            { "exif:ExposureTime", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureTime) },
-            { "exif:FNumber", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFNumber) },
-            { "exif:FocalLength", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFocalLength) },
-            { "exif:GPSLatitude", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.ExifGps, MetadataExtractor.Formats.Exif.GpsDirectory.TagLatitude) },
-            { "exif:GPSLongitude", SchemaMapping<double>.CreateStandard(StandardsMappings.Builtin.ExifGps, MetadataExtractor.Formats.Exif.GpsDirectory.TagLongitude) },
+            { "exif:ExposureBias", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureBias) },
+            { "exif:ExposureTime", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagExposureTime) },
+            { "exif:FNumber", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFNumber) },
+            { "exif:FocalLength", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.Exif, MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagFocalLength) },
+            { "exif:GPSLatitude", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.ExifGps, MetadataExtractor.Formats.Exif.GpsDirectory.TagLatitude) },
+            { "exif:GPSLongitude", SchemaMapping<double>.CreateStandard(MetatagStandards.Builtin.ExifGps, MetadataExtractor.Formats.Exif.GpsDirectory.TagLongitude) },
         };
 }

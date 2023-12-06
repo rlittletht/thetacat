@@ -2,7 +2,7 @@
 
 namespace Thetacat.Standards;
 
-public class PhotoshopElements
+public class PhotoshopElementsTags
 {
     public static int FileNameOriginal = 0;
     public static int ImportSourceName = 1;

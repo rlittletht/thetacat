@@ -63,7 +63,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
     {
         if (parent == null && standard == MetatagSchema.Standard.Unknown)
         {
-            StandardMappings? standardMappings = StandardsMappings.GetStandardsMappingFromType(directory.GetType().Name);
+            StandardMappings? standardMappings = MetatagStandards.GetStandardsMappingFromType(directory.GetType().Name);
 
             standard = standardMappings != null ? MetatagSchema.GetStandardFromString(standardMappings.Tag) : MetatagSchema.Standard.Unknown;
         }

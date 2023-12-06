@@ -14,7 +14,7 @@ public class PseMetadata: INotifyPropertyChanged
     private string m_tag = string.Empty;
     private bool m_migrate = false;
     private string m_pseDatatype = string.Empty;
-    private string m_description;
+    private string m_description = string.Empty;
 
     public int PseID
     {

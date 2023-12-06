@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace Thetacat.Migration.Elements.Metadata
         {
             HashSet<string> mappings = new();
 
-            foreach (StandardMappings mapping in StandardsMappings.KnownStandards.Values)
+            foreach (StandardMappings mapping in MetatagStandards.KnownStandards.Values)
             {
                 mappings.Add(mapping.Tag);
             }
@@ -56,12 +57,13 @@ namespace Thetacat.Migration.Elements.Metadata
         ----------------------------------------------------------------------------*/
         private void StandardSelected(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is string)
             {
-                string standard = (string)e.AddedItems[0];
+                string? standard = (string?)e.AddedItems[0];
 
                 // get the matching standard
-                IEnumerable<StandardMappings> mappings = StandardsMappings.GetStandardsMappingFromStandardName(standard);
+                Debug.Assert(standard != null, nameof(standard) + " != null");
+                IEnumerable<StandardMappings> mappings = MetatagStandards.GetStandardsMappingFromStandardName(standard);
 
                 TagName.Items.Clear();
                 List<string> tagNames = new();

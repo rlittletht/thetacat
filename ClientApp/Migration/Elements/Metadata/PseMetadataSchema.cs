@@ -15,15 +15,15 @@ public class PseMetadataSchema
 
     void FillMetadataFromSchemaMapping<T>(PseMetadata metadata, SchemaMapping<T> pseMapping)
     {
-        if (pseMapping.StandardId == StandardsMappings.Builtin.User)
+        if (pseMapping.StandardId == MetatagStandards.Builtin.User)
         {
             metadata.Standard = "user";
             metadata.Tag = pseMapping.Name;
             metadata.Description = pseMapping.Description;
         }
-        else if (pseMapping.StandardId != StandardsMappings.Builtin.Unknown)
+        else if (pseMapping.StandardId != MetatagStandards.Builtin.Unknown)
         {
-            StandardMappings mapping = StandardsMappings.GetBuiltinStandard(pseMapping.StandardId);
+            StandardMappings mapping = MetatagStandards.GetBuiltinStandard(pseMapping.StandardId);
 
             metadata.Standard = mapping.Tag;
             metadata.Tag = mapping.Properties[pseMapping.ItemTag].TagName;

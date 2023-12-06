@@ -71,11 +71,10 @@ public partial class StandardMetadataMigration : UserControl
 
     private void EditSelected(object sender, RoutedEventArgs e)
     {
-        PseMetadata? metadata = metadataListView.SelectedValue as PseMetadata;
-
-        if (metadata != null)
+        if (metadataListView.SelectedValue is PseMetadata metadata)
         {
-            DefineMetadataMap define = new DefineMetadataMap(m_appState, metadata.PseIdentifier);
+            Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
+            DefineMetadataMap define = new(m_appState, metadata.PseIdentifier);
 
             bool? defined = define.ShowDialog();
 

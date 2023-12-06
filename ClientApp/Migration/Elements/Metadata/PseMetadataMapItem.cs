@@ -6,10 +6,10 @@ namespace Thetacat.Migration.Elements.Metadata;
 
 public class PseMetadataMapItem: INotifyPropertyChanged
 {
-    private string m_pseIdentifier;
-    private string m_rootTag;
-    private string m_tagName;
-    private string m_description;
+    private string m_pseIdentifier = string.Empty;
+    private string m_rootTag = string.Empty;
+    private string m_tagName = string.Empty;
+    private string m_description = string.Empty;
 
     public string PseIdentifier
     {
