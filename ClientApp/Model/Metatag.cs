@@ -44,6 +44,19 @@ public class Metatag: IMetatag
                };
     }
 
+    public Metatag Clone()
+    {
+        return new Metatag()
+               {
+                   ID = Guid.NewGuid(),
+                   Parent = Parent,
+                   Name = Name,
+                   Description = Description,
+                   Standard = Standard,
+                   LocalOnly = LocalOnly
+               };
+    }
+
     public static bool operator ==(Metatag? left, Metatag? right)
     {
         if (object.ReferenceEquals(left, null) && object.ReferenceEquals(right, null)) return true;

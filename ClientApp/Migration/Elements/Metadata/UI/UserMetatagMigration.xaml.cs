@@ -33,7 +33,10 @@ public partial class UserMetatagMigration : UserControl
     private SortAdorner? sortAdorner;
     private MetatagMigrate? m_migrate = null;
 
+    public delegate void SwitchToSummaryDelegate();
+
     IAppState? m_appState;
+    SwitchToSummaryDelegate? m_switchToSummaryDelegate;
 
     /// <summary>
     /// Interaction logic for UserMetatagMigration.xaml
@@ -53,10 +56,11 @@ public partial class UserMetatagMigration : UserControl
         Sort(metaTagsListView, sender as GridViewColumnHeader);
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
+    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate, SwitchToSummaryDelegate switchDelegate)
     {
         m_appState = appState;
         m_migrate = migrate;
+        m_switchToSummaryDelegate = switchDelegate;
 
         if (m_appState == null)
             throw new ArgumentNullException(nameof(appState));
@@ -133,7 +137,7 @@ public partial class UserMetatagMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-
+        m_switchToSummaryDelegate?.Invoke();
     }
 
     static void MatchAndInsertChildrenIfNeeded(
@@ -179,13 +183,26 @@ public partial class UserMetatagMigration : UserControl
         }
     }
 
-    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree liveTree, List<PseMetatag> tagsToSync)
+    /*----------------------------------------------------------------------------
+        %%Function: BuildTagsToInsert
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.UserMetatagMigration.BuildTagsToInsert
+
+        This takes the current tag tree for the live database. The tree starts
+        with all the tags under the "user" root, so every top level item we want
+        to add is actually parented to the 'user' standard root.
+    ----------------------------------------------------------------------------*/
+    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree currentUserMetatagTree, List<PseMetatag> tagsToSync, IMetatag userRoot)
     {
         // build a hierchical tree for the tags to sync
         PseMetatagTree treeToSync = new(tagsToSync);
 
         List<Model.Metatag> tagsToInsert = new();
-        MatchAndInsertChildrenIfNeeded(liveTree, treeToSync, tagsToInsert, null, new List<string>());
+        IMetatagTreeItem? userTreeItem = currentUserMetatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+
+        if (userTreeItem == null)
+            throw new Exception("no user root found");
+
+        MatchAndInsertChildrenIfNeeded(userTreeItem, treeToSync, tagsToInsert, userRoot.ID, new List<string>());
 
         return tagsToInsert;
     }
@@ -198,7 +215,7 @@ public partial class UserMetatagMigration : UserControl
     ----------------------------------------------------------------------------*/
     private void MigrateSelected(object sender, RoutedEventArgs e)
     {
-        if (m_appState == null || m_migrate == null)
+        if (m_appState == null || m_migrate == null || m_appState.MetatagSchema == null)
             throw new Exception("appstate or migrate uninitialized");
 
         // build a list of selected items
@@ -230,19 +247,19 @@ public partial class UserMetatagMigration : UserControl
 
         // now figure out what items (if any) we have to add to the live schema
         List<PseMetatag> tagsToSync = m_migrate.CollectDependentTags(liveTree, metatags);
-        List<Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync);
+        string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
+        IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName)) ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
-        MetatagSchemaDiff diff = new(LiveMetatags.SchemaVersion);
+        List<Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         foreach (Model.Metatag metatag in tagsToInsert)
         {
-            diff.InsertMetatag(metatag);
+            m_appState.MetatagSchema.AddMetatag(metatag);
         }
 
-        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(diff);
-        m_appState.RefreshMetatagSchema();
-
-        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
+//        m_appState.RefreshMetatagSchema();
+//
+//        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
+//        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
     }
 }

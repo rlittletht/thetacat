@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -53,6 +54,27 @@ public partial class MetatagTreeView : UserControl
 
     public int SchemaVersion => m_metatagSchemaVersion;
 
+#if NOTUSED
+    // if we ever decide to try to return the backing TreeItem for this control
+    // we will have to consider that we are bound the children of the treeitem
+    // of our root. this means that adds to that treeitem will be observable
+    // and show up in the control. but if we build our own observable collection
+    // as a virtual root, then that won't get auto updated. Hopefully we will
+    // never need this code.
+    private ObservableCollection<IMetatagTreeItem>? m_virtualRootMetatags;
+
+    public ObservableCollection<IMetatagTreeItem> RootTreeItems
+    {
+        get
+        {
+            if (m_virtualRootMetatags != null)
+                return m_virtualRootMetatags;
+            if (m_metatagTree == null)
+                throw new Exception("not initialized");
+            return m_metatagTree.Children;
+        }
+    }
+#endif
     /*----------------------------------------------------------------------------
         %%Function: Initialize
         %%Qualified: Thetacat.Controls.MetatagTreeView.Initialize
@@ -66,19 +88,29 @@ public partial class MetatagTreeView : UserControl
     ----------------------------------------------------------------------------*/
     public void Initialize(MetatagSchema schema, MetatagStandards.Standard? standardRoot = null)
     {
-        m_metatagTree = new MetatagTree(schema.Metatags);
-        m_metatagSchemaVersion = schema.SchemaVersion;
+        m_metatagTree = schema.WorkingTree;
+
+        m_metatagSchemaVersion = schema.SchemaVersionWorking;
 
         if (standardRoot != null)
         {
             IMetatagTreeItem? itemMatch = m_metatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
 
             if (itemMatch != null)
-                SetItems(itemMatch.Children, schema.SchemaVersion);
+            {
+#if NOTUSED
+                m_virtualRootMetatags = new ObservableCollection<IMetatagTreeItem>();
+                foreach (IMetatagTreeItem item in itemMatch.Children)
+                {
+                    m_virtualRootMetatags.Add(item);
+                }
+#endif
+                SetItems(itemMatch.Children, schema.SchemaVersionWorking);
+            }
         }
         else
         {
-            SetItems(m_metatagTree.Children, schema.SchemaVersion);
+            SetItems(m_metatagTree.Children, schema.SchemaVersionWorking);
         }
     }
 }

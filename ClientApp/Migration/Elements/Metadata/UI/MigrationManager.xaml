@@ -8,7 +8,7 @@
         xmlns:elements="clr-namespace:Thetacat.Migration.Elements.Metadata.UI"
         mc:Ignorable="d"
         Title="Migrate from Adobe Elements 8.0" Height="450" Width="800">
-    <TabControl >
+    <TabControl x:Name="MigrationTabs">
         <TabItem>
             <TabItem.Header>
                 <TextBlock>Standards Metadata</TextBlock>
@@ -26,6 +26,12 @@
                 <TextBlock>Media</TextBlock>
             </TabItem.Header>
             <elements:MediaMigration x:Name="MediaMigrationTab"/>
+        </TabItem>
+        <TabItem Selector.Selected="OnMetatagMigrateSummaryTabSelected">
+            <TabItem.Header>
+                <TextBlock>Metadata Migrate</TextBlock>
+            </TabItem.Header>
+            <elements:MetadataMigrateSummary x:Name="MetadataMigrateSummaryTab"/>
         </TabItem>
     </TabControl>
 </Window>

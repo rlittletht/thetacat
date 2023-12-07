@@ -2,10 +2,14 @@
 using Thetacat;
 using Thetacat.Migration.Elements.Metadata.UI;
 using NUnit.Framework;
+using Thetacat.Model;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.Standards;
 
 public class MetatagMigrationTests
 {
+    private static readonly Metatag userRoot = Metatag.Create(null, "user", "user root", MetatagStandards.Standard.User);
+
     [Test]
     public void TestBuildTagsToInsert_OneRoot_NoChildren_NoExisting()
     {
@@ -24,7 +28,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         Assert.AreEqual("Root", tagsToInsert[0].Name);
         Assert.AreEqual(null, tagsToInsert[0].Parent);
@@ -57,7 +61,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected =
             new()
@@ -100,7 +104,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected =
             new()
@@ -143,7 +147,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected = new();
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);
@@ -194,7 +198,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected = 
             new()
@@ -257,7 +261,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected =
             new()
@@ -316,7 +320,7 @@ public class MetatagMigrationTests
                                        }
                                    };
 
-        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync);
+        List<Thetacat.Model.Metatag> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, tagsToSync, userRoot);
 
         List<Thetacat.Model.Metatag> tagsExpected =
             new()

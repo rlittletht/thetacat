@@ -12,20 +12,59 @@ namespace Thetacat.Model;
 
 public class MetatagSchema
 {
-    public List<Metatag> Metatags { get; set; } = new List<Metatag>();
-    public int SchemaVersion { get; set; } = 0;
+    private MetatagSchemaDefinition? m_schemaWorking;
+    private MetatagSchemaDefinition? m_schemaBase;
 
-    private MetatagTree? m_tree = null;
-
-    /*----------------------------------------------------------------------------
-        %%Function: FindId
-        %%Qualified: Thetacat.Model.MetatagSchema.FindId
-
-        Find the given metatag by its id
-    ----------------------------------------------------------------------------*/
-    public Metatag? FindFirstMatchingItem(IMetatagMatcher<IMetatag> matcher)
+    public MetatagTree WorkingTree
     {
-        foreach (Metatag metatag in Metatags)
+        get
+        {
+            if (m_schemaWorking == null)
+                throw new Exception("not initialized");
+
+            return m_schemaWorking.Tree;
+        }
+    }
+
+    public List<Metatag> MetatagsWorking
+    {
+        get
+        {
+            if (m_schemaWorking == null)
+                throw new Exception("not initialized");
+
+            return m_schemaWorking.Metatags;
+        }
+    }
+
+    public int SchemaVersionWorking
+    {
+        get
+        {
+            if (m_schemaWorking == null)
+                throw new Exception("not initialized");
+
+            return m_schemaWorking.SchemaVersion;
+        }
+    }
+
+    void EnsureBaseAndVersion()
+    {
+        if (m_schemaWorking == null)
+        {
+            throw new Exception("not initialized");
+        }
+
+        if (m_schemaBase == null)
+        {
+            m_schemaBase = m_schemaWorking.Clone();
+            m_schemaWorking.SchemaVersion++;
+        }
+    }
+
+    static Metatag? FindFirstMatchingItemInSchemaDefinition(MetatagSchemaDefinition schemaDef, IMetatagMatcher<IMetatag> matcher)
+    {
+        foreach (Metatag metatag in schemaDef.Metatags)
         {
             if (matcher.IsMatch(metatag))
                 return metatag;
@@ -35,48 +74,70 @@ public class MetatagSchema
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: FindId
+        %%Qualified: Thetacat.Model.MetatagSchema.FindId
+
+        Find the given metatag by its id
+    ----------------------------------------------------------------------------*/
+    public Metatag? FindFirstMatchingItem(IMetatagMatcher<IMetatag> matcher)
+    {
+        if (m_schemaWorking == null)
+            return null;
+
+        return FindFirstMatchingItemInSchemaDefinition(m_schemaWorking, matcher);
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: FindByName
         %%Qualified: Thetacat.Model.MetatagSchema.FindByName
 
         Find the first metatag that matches the given name. Search only under
         parent (if given)
     ----------------------------------------------------------------------------*/
-    public Metatag? FindByName(Metatag? parent, string name)
+    public static Metatag? FindByNameInSchemaDefinition(MetatagSchemaDefinition schemaDef, Metatag? parent, string name)
     {
         if (parent != null)
         {
-            m_tree ??= new MetatagTree(Metatags);
+            IMetatagTreeItem? item = schemaDef.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(name), -1);
 
-            IMetatagTreeItem? item = m_tree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(name), -1);
-
-            return item != null ? FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.ID)) : null;
+            return item != null ? FindFirstMatchingItemInSchemaDefinition(schemaDef, MetatagMatcher.CreateIdMatch(item.ID)) : null;
         }
 
         // otherwise, just return the first matching name
-        return FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(name));
+        return FindFirstMatchingItemInSchemaDefinition(schemaDef, MetatagMatcher.CreateNameMatch(name));
+    }
+
+    public Metatag? FindByName(Metatag? parent, string name)
+    {
+        if (m_schemaWorking == null)
+            return null;
+
+        return FindByNameInSchemaDefinition(m_schemaWorking, parent, name);
     }
 
     void AddMetatagNoValidation(Metatag metatag)
     {
-        Metatags.Add(metatag);
+        if (m_schemaWorking == null)
+            throw new Exception("not initialized");
 
-        if (m_tree != null)
+        EnsureBaseAndVersion();
+
+        m_schemaWorking.Metatags.Add(metatag);
+
+        IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
+
+        if (metatag.Parent == null)
         {
-            IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
+            m_schemaWorking.Tree.Children.Add(newItem);
+        }
+        else
+        {
+            IMetatagTreeItem? parent = m_schemaWorking.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatag.Parent.Value.ToString()), -1);
 
-            if (metatag.Parent == null)
-            {
-                m_tree.Children.Add(newItem);
-            }
-            else
-            {
-                IMetatagTreeItem? parent = m_tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatag.Parent.Value.ToString()), -1);
+            if (parent == null)
+                throw new Exception($"must provide an existing parent ID when adding a metatag: ${metatag}");
 
-                if (parent == null)
-                    throw new Exception($"must provide an existing parent ID when adding a metatag: ${metatag}");
-
-                parent.Children.Add(newItem);
-            }
+            parent.Children.Add(newItem);
         }
     }
 
@@ -130,17 +191,21 @@ public class MetatagSchema
 
     public static MetatagSchema CreateFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
-        MetatagSchema schema = new();
+        MetatagSchema schema =
+            new()
+            {
+                m_schemaWorking = new MetatagSchemaDefinition()
+            };
 
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
             {
-                schema.Metatags.Add(Metatag.CreateFromService(serviceMetatag));
+                schema.m_schemaWorking.Metatags.Add(Metatag.CreateFromService(serviceMetatag));
             }
         }
 
-        schema.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+        schema.m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
         return schema;
     }
 }
