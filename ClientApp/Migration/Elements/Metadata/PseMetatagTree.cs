@@ -14,7 +14,7 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 ----------------------------------------------------------------------------*/
 public class PseMetatagTree : IMetatagTreeItem
 {
-    private readonly Dictionary<string, PseMetatagTreeItem> IdMap = new();
+    private readonly Dictionary<int, PseMetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
     public string Description => string.Empty;
@@ -40,49 +40,49 @@ public class PseMetatagTree : IMetatagTreeItem
             else
             {
                 treeItem = PseMetatagTreeItem.CreateFromMetatag(metatag);
-                IdMap.Add(treeItem.ItemId, treeItem);
+                IdMap.Add(int.Parse(treeItem.ItemId), treeItem);
             }
 
             if (!string.IsNullOrEmpty(treeItem.ParentId) && treeItem.ParentId != "0")
             {
-                if (!IdMap.ContainsKey(treeItem.ParentId))
+                if (!IdMap.ContainsKey(int.Parse(treeItem.ParentId)))
                 {
                     IdMap.Add(
-                        treeItem.ParentId,
-                        PseMetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId));
+                        int.Parse(treeItem.ParentId),
+                        PseMetatagTreeItem.CreateParentPlaceholder(int.Parse(treeItem.ParentId)));
                 }
 
-                IdMap[treeItem.ParentId].AddChild(treeItem);
+                IdMap[int.Parse(treeItem.ParentId)].AddChild(treeItem);
             }
         }
         // lastly, clean up anything that is just placeholders and fixup their
         // parents to be empty
-        HashSet<string> keysToDelete = new();
+        HashSet<int> keysToDelete = new();
 
-        foreach (string id in IdMap.Keys)
+        foreach (int id in IdMap.Keys)
         {
             PseMetatagTreeItem item = IdMap[id];
 
-            if (!string.IsNullOrEmpty(item.ParentId))
+            if (!string.IsNullOrEmpty(item.ParentId) && item.ParentId != "0")
             {
                 if (item.IsPlaceholder)
                     keysToDelete.Add(id);
 
-                if (!IdMap.ContainsKey(item.ParentId) || IdMap[item.ParentId].IsPlaceholder)
+                if (!IdMap.ContainsKey(int.Parse(item.ParentId)) || IdMap[int.Parse(item.ParentId)].IsPlaceholder)
                     item.MakeOrphan();
             }
 
-            if (string.IsNullOrEmpty(item.ParentId))
+            if (string.IsNullOrEmpty(item.ParentId) || item.ParentId == "0")
                 RootMetatags.Add(item);
         }
 
-        foreach (string key in keysToDelete)
+        foreach (int key in keysToDelete)
         {
             IdMap.Remove(key);
         }
     }
 
-    public PseMetatag GetTagFromId(string id)
+    public PseMetatag GetTagFromId(int id)
     {
         return IdMap[id].Item;
     }

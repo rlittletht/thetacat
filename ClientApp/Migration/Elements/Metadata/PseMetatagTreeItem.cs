@@ -14,13 +14,13 @@ public class PseMetatagTreeItem : IMetatagTreeItem
 {
     private PseMetatag? m_metatag;
 
-    public string ItemId => m_metatag?.ID ?? string.Empty;
-    public string? ParentId => m_metatag?.ParentID;
+    public string ItemId => m_metatag?.ID.ToString() ?? string.Empty;
+    public string? ParentId => m_metatag?.ParentID.ToString();
     public ObservableCollection<IMetatagTreeItem> Children { get; } = new();
     public string Description => string.Empty;
 
     public string Name => m_metatag?.Name ?? string.Empty;
-    public string ID => m_metatag?.ID ?? string.Empty;
+    public string ID => m_metatag?.ID.ToString() ?? string.Empty;
 
     public PseMetatag Item => m_metatag ?? new PseMetatag();
 
@@ -29,7 +29,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public void MakeOrphan()
     {
         Debug.Assert(m_metatag != null, nameof(m_metatag) + " != null");
-        m_metatag.ParentID = string.Empty;
+        m_metatag.ParentID = 0;
     }
 
     public static PseMetatagTreeItem CreateFromMetatag(PseMetatag item)
@@ -41,7 +41,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
         return pseMetatag;
     }
 
-    public static PseMetatagTreeItem CreateParentPlaceholder(string id)
+    public static PseMetatagTreeItem CreateParentPlaceholder(int id)
     {
         PseMetatagTreeItem pseMetatag = new()
         {

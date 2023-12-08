@@ -24,13 +24,13 @@ public class PseMetatagBuilder
         return this;
     }
 
-    public PseMetatagBuilder SetID(string id)
+    public PseMetatagBuilder SetID(int id)
     {
         m_building.ID = id;
         return this;
     }
 
-    public PseMetatagBuilder SetParentID(string parentID)
+    public PseMetatagBuilder SetParentID(int parentID)
     {
         m_building.ParentID = parentID;
         return this;

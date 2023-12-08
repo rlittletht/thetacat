@@ -45,7 +45,7 @@ public class MetatagMigrate
         }
     }
 
-    readonly Dictionary<string, PseMetatag> m_metatagDictionary = new();
+    readonly Dictionary<int, PseMetatag> m_metatagDictionary = new();
 
     public PseMetatagTree PseTree
     {
@@ -77,7 +77,7 @@ public class MetatagMigrate
         m_metatagTree = new PseMetatagTree(m_metatags);
     }
 
-    public PseMetatag GetMetatagFromID(string ID)
+    public PseMetatag GetMetatagFromID(int ID)
     {
         return m_metatagDictionary[ID];
     }
@@ -88,7 +88,7 @@ public class MetatagMigrate
 
     // since we don't have an elements metatag tree, we either have to build one to do this,
     // or we need to make a new class to build on (preferred so its reusable)
-    void CollectTagAndParents(Dictionary<string, PseMetatag> collected, PseMetatag tag)
+    void CollectTagAndParents(Dictionary<int, PseMetatag> collected, PseMetatag tag)
     {
         if (m_metatagTree == null)
         {
@@ -100,7 +100,7 @@ public class MetatagMigrate
 
         collected.Add(tag.ID, tag);
 
-        if (string.IsNullOrEmpty(tag.ParentID) || tag.ParentID == "0")
+        if (tag.ParentID == 0)
             return;
 
         CollectTagAndParents(collected, m_metatagTree.GetTagFromId(tag.ParentID));
@@ -115,7 +115,7 @@ public class MetatagMigrate
     ----------------------------------------------------------------------------*/
     public List<PseMetatag> CollectDependentTags(Metatags.MetatagTree tree, List<PseMetatag> tags)
     {
-        Dictionary<string, PseMetatag> collected = new();
+        Dictionary<int, PseMetatag> collected = new();
 
         foreach (PseMetatag tag in tags)
         {

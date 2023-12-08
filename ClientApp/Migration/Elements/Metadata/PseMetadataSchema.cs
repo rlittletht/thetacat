@@ -8,7 +8,7 @@ public class PseMetadataSchema
 {
     public ObservableCollection<PseMetadata> MetadataItems { get; init; }
 
-    public PseMetadataSchema(List<PseMetadata> metadataItems)
+    public PseMetadataSchema(IEnumerable<PseMetadata> metadataItems)
     {
         MetadataItems = new ObservableCollection<PseMetadata>(metadataItems);
     }

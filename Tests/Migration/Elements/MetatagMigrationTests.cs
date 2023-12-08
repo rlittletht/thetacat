@@ -25,10 +25,10 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        }
                                    };
@@ -54,18 +54,18 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        }
                                    };
@@ -98,18 +98,18 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        }
                                    };
@@ -142,18 +142,18 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        }
                                    };
@@ -181,34 +181,34 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "11",
+                                           ID = 11,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root-Child1",
-                                           ParentID = "1",
+                                           ParentID = 1,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "21",
+                                           ID = 21,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2-Child1",
-                                           ParentID = "2",
+                                           ParentID = 2,
                                            ParentName = ""
                                        }
                                    };
@@ -245,34 +245,34 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "11",
+                                           ID = 11,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root-Child1",
-                                           ParentID = "1",
+                                           ParentID = 1,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "21",
+                                           ID = 21,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2-Child1",
-                                           ParentID = "2",
+                                           ParentID = 2,
                                            ParentName = ""
                                        }
                                    };
@@ -305,34 +305,34 @@ public class MetatagMigrationTests
                                    {
                                        new PseMetatag()
                                        {
-                                           ID = "1",
+                                           ID = 1,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "2",
+                                           ID = 2,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2",
-                                           ParentID = "0",
+                                           ParentID = 0,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "11",
+                                           ID = 11,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root-Child1",
-                                           ParentID = "1",
+                                           ParentID = 1,
                                            ParentName = ""
                                        },
                                        new PseMetatag()
                                        {
-                                           ID = "21",
+                                           ID = 21,
                                            ElementsTypeName = string.Empty,
                                            Name = "Root2-Child1",
-                                           ParentID = "2",
+                                           ParentID = 2,
                                            ParentName = ""
                                        }
                                    };

@@ -14,8 +14,9 @@ public class PseMetatag : INotifyPropertyChanged
     private bool m_isSelected = false;
     private Guid? m_catId;
     public string Name { get; set; } = string.Empty;
-    public string ID { get; set; } = string.Empty;
-    public string ParentID { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int ID { get; set; }
+    public int ParentID { get; set; }
     public string ParentName { get; set; } = string.Empty;
     public string ElementsTypeName { get; set; } = string.Empty;
 

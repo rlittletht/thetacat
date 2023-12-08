@@ -31,6 +31,9 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Name}">
                             <GridViewColumnHeader Tag="Name" Click="SortType" Content="Name" />
                         </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Description}">
+                            <GridViewColumnHeader Tag="Description" Click="SortType" Content="Description"/>
+                        </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=ParentID}">
                             <GridViewColumnHeader Tag="ParentID" Click="SortType" Content="Parent ID" />
                         </GridViewColumn>

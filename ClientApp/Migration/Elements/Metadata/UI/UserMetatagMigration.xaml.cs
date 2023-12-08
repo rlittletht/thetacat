@@ -224,7 +224,7 @@ public partial class UserMetatagMigration : UserControl
             null /*unmatchedDelegate*/,
             (item, match) =>
             {
-                m_migrate.GetMetatagFromID(item.ID).CatID = Guid.Parse(match.ID);
+                m_migrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID);
             }
         );
     }
@@ -318,7 +318,7 @@ public partial class UserMetatagMigration : UserControl
         foreach (MetatagPair pair in tagsToInsert)
         {
             m_appState.MetatagSchema.AddMetatag(pair.Metatag);
-            m_migrate.GetMetatagFromID(pair.PseId).CatID = pair.Metatag.ID;
+            m_migrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
         }
 
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
