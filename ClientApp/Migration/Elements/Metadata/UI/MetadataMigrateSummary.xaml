@@ -37,6 +37,12 @@
                 </GridView>
             </ListView.View>
         </ListView>
-
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+        <Button Content="Migrate Metatags" IsDefault="True"
+                Click="DoMigrate" Grid.Column="0" Height="24" />
+        </Grid>
     </Grid>
 </UserControl>

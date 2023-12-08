@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -88,5 +89,21 @@ public partial class MetadataMigrateSummary : UserControl
         {
             m_metatagMigrationItems.Add(new MetatagMigrationItem(op));
         }
+    }
+
+    private void DoMigrate(object sender, RoutedEventArgs e)
+    {
+        if (m_diff == null)
+            return;
+
+        // commit all the diff ops
+        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
+
+        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
+
+        m_appState.RefreshMetatagSchema();
+        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null"); 
+        m_migrate.ReloadSchemas();
+        MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }
 }

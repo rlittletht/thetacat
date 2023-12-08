@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -25,7 +26,7 @@ namespace Thetacat.Controls;
 /// <summary>
 /// Interaction logic for MetatagTreeView.xaml
 /// </summary>
-public partial class MetatagTreeView : UserControl
+public partial class MetatagTreeView : UserControl, INotifyPropertyChanged
 {
     public MetatagTreeView()
     {
@@ -36,11 +37,11 @@ public partial class MetatagTreeView : UserControl
     public void SetItems(ObservableCollection<IMetatagTreeItem> items, int schemaVersion)
     {
         Tree.ItemsSource = items;
-        m_metatagSchemaVersion = schemaVersion;
+        SchemaVersion = schemaVersion;
     }
 
     private MetatagTree? m_metatagTree;
-    private int m_metatagSchemaVersion = 0;
+    private int m_schemaVersion;
 
     public MetatagTree Model
     {
@@ -52,7 +53,11 @@ public partial class MetatagTreeView : UserControl
         }
     }
 
-    public int SchemaVersion => m_metatagSchemaVersion;
+    public int SchemaVersion
+    {
+        get => m_schemaVersion;
+        set => SetField(ref m_schemaVersion, value);
+    }
 
 #if NOTUSED
     // if we ever decide to try to return the backing TreeItem for this control
@@ -90,7 +95,7 @@ public partial class MetatagTreeView : UserControl
     {
         m_metatagTree = schema.WorkingTree;
 
-        m_metatagSchemaVersion = schema.SchemaVersionWorking;
+        SchemaVersion = schema.SchemaVersionWorking;
 
         if (standardRoot != null)
         {
@@ -112,5 +117,20 @@ public partial class MetatagTreeView : UserControl
         {
             SetItems(m_metatagTree.Children, schema.SchemaVersionWorking);
         }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

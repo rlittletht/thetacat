@@ -27,7 +27,7 @@ public class PseMetadataSchema
             metadata.StandardTag = "builtin";
             metadata.PropertyTag = string.Empty;
             metadata.Description = string.Empty;
-            metadata.Migrate = true;
+            metadata.Migrate = false; // these are builtin so they don't need a metatag definition
         }
         else if (pseMapping.StandardId != MetatagStandards.Standard.Unknown)
         {

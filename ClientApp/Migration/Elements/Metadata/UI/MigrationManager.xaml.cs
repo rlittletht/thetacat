@@ -37,12 +37,18 @@ public partial class MigrationManager : Window
         Dispatcher.BeginInvoke((Action)((() => MigrationTabs.SelectedIndex = 3)));
     }
 
+    void ReloadSchemas()
+    {
+        MetatagMigrationTab.RefreshForSchemaChange();
+        MetadataMigrationTab.RefreshForSchemaChange();
+    }
+
     void BuildMetadataReportFromDatabase(string database)
     {
         ElementsDb db = ElementsDb.Create(database);
 
         MediaMigrationTab.Initialize(m_appState, db, m_migrate);
-        MetatagMigrationTab.Initialize(m_appState, db, m_migrate, new UserMetatagMigration.SwitchToSummaryDelegate(SwitchToSummaryTab));
+        MetatagMigrationTab.Initialize(m_appState, db, m_migrate);
         MetadataMigrationTab.Initialize(m_appState, db, m_migrate);
         MetadataMigrateSummaryTab.Initialize(m_appState, m_migrate);
 
@@ -54,7 +60,7 @@ public partial class MigrationManager : Window
         m_appState = appState;
         InitializeComponent();
 
-        m_migrate = new MetatagMigrate();
+        m_migrate = new MetatagMigrate(SwitchToSummaryTab, ReloadSchemas);
         BuildMetadataReportFromDatabase(database);
         m_appState.RegisterWindowPlace(this, "ElementsMigrationManager");
     }

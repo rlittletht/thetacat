@@ -12,7 +12,6 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="100*" />
             <RowDefinition Height="24" />
-            <RowDefinition Height="24" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="5 5 0 10">Migrate user-defined tags from Photoshop Elements to Thetacat by checking the tags below and click Migrate! to create tags in Thetacat</TextBlock>
         <ListView Name="metaTagsListView" Grid.Row="1">
@@ -59,13 +58,6 @@
             <Button Content="Toggle Selected"
                     Click="DoToggleSelected" Grid.Column="1" Height="24" />
             <Button Content="Migrate!" Click="MigrateSelected" Grid.Column="2" Height="24" />
-        </Grid>
-        <Grid Grid.Row="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Button Content="Migrate all to Thetacat" IsDefault="True"
-                    Click="DoMigrate" Grid.Column="0" Height="24" />
         </Grid>
     </Grid>
 </UserControl>

@@ -16,8 +16,13 @@ public class MetatagMigrate
     private PseMetatagTree? m_metatagTree;
     private PseMetadataSchema? m_metadataSchema = null;
     private ObservableCollection<PseMetatag>? m_metatags;
-
     private ObservableCollection<MetatagSchemaDiff>? m_schemaDiff;
+
+    public delegate void SwitchToSummaryDelegate();
+    public delegate void ReloadSchemasDelegate();
+
+    public SwitchToSummaryDelegate SwitchToSummaryTab { get; }
+    public ReloadSchemasDelegate ReloadSchemas { get; }
 
     public PseMetadataSchema MetadataSchema
     {
@@ -52,7 +57,12 @@ public class MetatagMigrate
             return m_metatagTree;
         }
     }
-    public MetatagMigrate() { }
+
+    public MetatagMigrate(SwitchToSummaryDelegate switchToSummaryDelegate, ReloadSchemasDelegate reloadSchemasDelegate)
+    {
+        SwitchToSummaryTab = switchToSummaryDelegate;
+        ReloadSchemas = reloadSchemasDelegate;
+    }
 
     public void SetUserMetatags(IEnumerable<PseMetatag> metatags)
     {

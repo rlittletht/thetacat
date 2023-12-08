@@ -35,10 +35,7 @@ public partial class UserMetatagMigration : UserControl
     private SortAdorner? sortAdorner;
     private MetatagMigrate? m_migrate = null;
 
-    public delegate void SwitchToSummaryDelegate();
-
     IAppState? m_appState;
-    SwitchToSummaryDelegate? m_switchToSummaryDelegate;
 
     /// <summary>
     /// Interaction logic for UserMetatagMigration.xaml
@@ -58,11 +55,23 @@ public partial class UserMetatagMigration : UserControl
         Sort(metaTagsListView, sender as GridViewColumnHeader);
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate, SwitchToSummaryDelegate switchDelegate)
+    public void RefreshForSchemaChange()
+    {
+        if (m_migrate?.UserMetatags == null)
+            return;
+
+        foreach (PseMetatag metatag in m_migrate.UserMetatags)
+        {
+            metatag.CatID = null;
+        }
+
+        MarkExistingMetatags();
+    }
+
+    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
         m_migrate = migrate;
-        m_switchToSummaryDelegate = switchDelegate;
 
         if (m_appState == null)
             throw new ArgumentNullException(nameof(appState));
@@ -140,7 +149,7 @@ public partial class UserMetatagMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        m_switchToSummaryDelegate?.Invoke();
+        m_migrate?.SwitchToSummaryTab();
     }
 
     delegate Guid UnmatchedDelegate(List<string> nameHistory, IMetatagTreeItem item, Guid? idParent);
@@ -312,9 +321,6 @@ public partial class UserMetatagMigration : UserControl
             m_migrate.GetMetatagFromID(pair.PseId).CatID = pair.Metatag.ID;
         }
 
-//        m_appState.RefreshMetatagSchema();
-//
-//        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-//        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
+        MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
 }
