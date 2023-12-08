@@ -5,6 +5,60 @@ using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
+/*
+NOTES on Elements database
+
+The tables are an indulgence of abstractions. Lots of reuse of names, so I will assign [KEY] names that identify
+names across tables (so you can relate them)
+
+media_table
+    holds all the actual media items. ID is the unique id for the media [MEDIA_ID]
+
+tag_table
+    defines all of the metatags available. ID is the unqique ID for each tag definition [TAG_ID].
+    these are stored hiearchically, so Parent ID is the [TAG_ID] of the parent tag (or 0 for no parent)
+
+    each row defines a single tag
+
+metadata_blob_table
+metadata_decimal_table
+metadata_integer_table
+metadata_string_table
+    stores the value of a single metadata/value pair, indexed by [METADATA_ID]. Each table stores only its
+    respective type (so real numbers in *_decimal_table, whole numbers in *_integer_table, etc). 
+
+    any time you see something point to [METADATA_ID], it means it is referring to (metadata/value) pair.
+    description_id [DESCRIPTION_ID] uniquely identifies the NAME of the metadata
+
+metadata_description_table
+    stores a description of a single metadata item (not a value). ID [DESCRIPTION_ID] is the unique identifier for
+    each metadata item 
+
+media_to_metadata_table
+    maps [MEDIA_ID] to [METADATA_ID]. All metadata values can be fetched this way
+
+tag_to_media_table
+    maps [TAG_ID] to [MEDIA_ID], associating one or more metatags (from tag_table) with a media item. this is how
+    metatags are 'painted' onto media. (i.e. the tag for "2019Vacation" defined in tag_table with [TAG_ID]=100
+    might be associated with 2 pictures with [MEDIA_ID] = 10 and 20 as:
+        [TAG_ID]:100, [MEDIA_ID]:10
+        [TAG_ID]:100, [MEDIA_ID]:20
+
+tag_to_metadata_table
+    maps [TAG_ID] to [METADATA_ID], associeated one ore more metadata values with a metatag TAG. This is for things
+    like metadata ABOUT a tag. For example, tag "2019Vacation" could have metadata like a note "Vacation to Hawaii in 2019".
+    (also things like icons for a TAG, or import details if the TAG is for a particular import
+
+useful queries:
+
+    Show all the string-type metadata values for all of the media in the library. One row per metadata / media pair.
+
+    SELECT MMT.media_id, MT.full_filepath, MST.value, MDT.identifier from media_to_metadata_table AS MMT
+    INNER JOIN media_table MT on MT.id = MMT.media_id
+    INNER JOIN metadata_string_table MST on MST.id = MMT.metadata_id
+    INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id    
+
+ */
 public class ElementsDb
 {
     private SQLiteConnection? m_connection;
