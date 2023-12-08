@@ -1,4 +1,5 @@
-﻿using Thetacat.Migration.Elements.Metadata.UI.Media;
+﻿using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Standards;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;

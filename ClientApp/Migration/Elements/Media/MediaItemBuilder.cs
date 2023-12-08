@@ -5,7 +5,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Thetacat.Migration.Elements.Metadata.UI.Media;
+namespace Thetacat.Migration.Elements.Media;
 
 class MediaItemBuilder
 {
@@ -13,7 +13,7 @@ class MediaItemBuilder
 
     public static MediaItemBuilder Create() => new();
 
-    public MediaItemBuilder SetID(string id)
+    public MediaItemBuilder SetID(int id)
     {
         m_building.ID = id;
         return this;

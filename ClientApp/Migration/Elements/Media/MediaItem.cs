@@ -14,13 +14,15 @@ using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements.Metadata.UI.Media;
+namespace Thetacat.Migration.Elements.Media;
 
 public class MediaItem : INotifyPropertyChanged, IMediaItem
 {
     private TriState m_pathVerified;
-    private Dictionary<Guid, string> _metatagValues = new();
-    public string ID { get; set; } = string.Empty;
+    private Dictionary<Guid, string>? m_metatagValues;
+    private Dictionary<int, string>? m_pseMetatagValues;
+    private Guid m_catId;
+    private int m_id;
 
     public string Filename { get; set; } = string.Empty;
     public string FullPath { get; set; } = string.Empty;
@@ -32,26 +34,34 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
     public int ImageHeight { get; set; }
     public DateTime FileDateOriginal { get; set; }
 
+    public int ID
+    {
+        get => m_id;
+        set => SetField(ref m_id, value);
+    }
+
+    public Guid CatID
+    {
+        get => m_catId;
+        set => SetField(ref m_catId, value);
+    }
+
+    public Dictionary<int, string> PseMetatagValues
+    {
+        get => m_pseMetatagValues ??= new();
+        set => SetField(ref m_pseMetatagValues, value);
+    }
+
     public Dictionary<Guid, string> MetatagValues
     {
-        get => _metatagValues;
-        set
-        {
-            if (Equals(value, _metatagValues)) return;
-            _metatagValues = value;
-            OnPropertyChanged();
-        }
+        get => m_metatagValues ??= new();
+        set => SetField(ref m_metatagValues, value);
     }
 
     public TriState PathVerified
     {
         get => m_pathVerified;
-        set
-        {
-            if (value == m_pathVerified) return;
-            m_pathVerified = value;
-            OnPropertyChanged();
-        }
+        set => SetField(ref m_pathVerified, value);
     }
 
     public MediaItem()

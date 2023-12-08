@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
+using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
@@ -31,11 +32,13 @@ public partial class MediaMigration : UserControl
     private IAppState? m_appState;
     private List<MediaItem>? m_items;
     private readonly List<PathSubstitution> m_pathSubstitutions = new();
-    private MetatagMigrate? m_migrate;
+    private MetatagMigrate? m_metatagMigrate;
+    private MediaMigrate? m_mediaMigrate;
 
     public MediaMigration()
     {
         InitializeComponent();
+        m_mediaMigrate = new MediaMigrate();
     }
 
     private void VerifyPaths(object sender, RoutedEventArgs e)
@@ -52,7 +55,7 @@ public partial class MediaMigration : UserControl
     {
         m_appState = appState;
         m_items = db.ReadMediaItems();
-        m_migrate = migrate;
+        m_metatagMigrate = migrate;
         
         mediaItemsListView.ItemsSource = m_items;
 

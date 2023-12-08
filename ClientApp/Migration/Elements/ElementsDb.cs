@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Thetacat.Migration.Elements.Metadata.UI.Media;
-using Thetacat.Migration.Elements.Metadata.UI;
+using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -134,7 +129,7 @@ public class ElementsDb
             items.Add(
                 MediaItemBuilder
                    .Create()
-                   .SetID(reader.GetInt32(0).ToString())
+                   .SetID(reader.GetInt32(0))
                    .SetFilename(reader.GetString(3))
                    .SetFilePath(reader.GetString(2))
                    .SetFullPath(reader.GetString(1))
