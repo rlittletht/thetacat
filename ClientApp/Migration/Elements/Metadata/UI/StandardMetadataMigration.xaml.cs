@@ -189,7 +189,7 @@ public partial class StandardMetadataMigration : UserControl
             if (item.CatID != null)
             {
                 // make sure its really there
-                if (m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                if (m_appState?.MetatagSchema?.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
                     continue;
 
                 Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");
@@ -214,7 +214,7 @@ public partial class StandardMetadataMigration : UserControl
 
                 if (userRoot == null)
                 {
-                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
+                    m_appState?.MetatagSchema?.AddNewStandardRoot(standard);
                     userRoot = m_appState?.MetatagSchema?.WorkingTree.FindMatchingChild(
                         MetatagTreeItemMatcher.CreateNameMatch(rootName),
                         1);
@@ -227,7 +227,7 @@ public partial class StandardMetadataMigration : UserControl
                 if (existing == null)
                 {
                     Metatag parentTag = Metatag.Create(Guid.Parse(userRoot.ID), item.StandardTag, item.StandardTag, MetatagStandards.Standard.User);
-                    m_appState.MetatagSchema.AddMetatag(parentTag);
+                    m_appState?.MetatagSchema.AddMetatag(parentTag);
                     existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
                 }
 
@@ -242,7 +242,7 @@ public partial class StandardMetadataMigration : UserControl
 
                 if (root == null)
                 {
-                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
+                    m_appState?.MetatagSchema?.AddNewStandardRoot(standard);
                     root = GetRootForMetadataItem(item);
                     if (root == null)
                         throw new Exception("failed to create standard root");
@@ -267,7 +267,7 @@ public partial class StandardMetadataMigration : UserControl
                     Parent = Guid.Parse(parent.ID)
                 };
 
-            m_appState.MetatagSchema.AddMetatag(newTag);
+            m_appState?.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
         }
     }

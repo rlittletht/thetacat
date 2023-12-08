@@ -7,6 +7,36 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-            
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="100*"/>
+            <RowDefinition Height="24"/>
+        </Grid.RowDefinitions>
+        <TextBlock TextWrapping="Wrap">
+            These are the operations that will be executed against the database to migrate metatag definitions. Use this tab to fine-tune the
+            operations before committing them.
+        </TextBlock>
+        <ListView Name="diffOpListView" Grid.Row="1">
+            <ListView.View>
+                <GridView>
+                    <GridView.Columns>
+                        <GridViewColumn Header="Include">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Name="Include" IsChecked="{Binding Path=Include}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=OpType}">
+                            <GridViewColumnHeader Tag="OpType" Click="SortType" Content="OpType" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Details}">
+                            <GridViewColumnHeader Tag="Standard" Click="SortType" Content="Details" />
+                        </GridViewColumn>
+                    </GridView.Columns>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
     </Grid>
 </UserControl>

@@ -48,7 +48,7 @@ public class Metatag: IMetatag
     {
         return new Metatag()
                {
-                   ID = Guid.NewGuid(),
+                   ID = ID,
                    Parent = Parent,
                    Name = Name,
                    Description = Description,

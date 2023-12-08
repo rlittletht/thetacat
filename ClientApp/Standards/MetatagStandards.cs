@@ -10,7 +10,7 @@ public class MetatagStandards
     public enum Standard
     {
         Unknown,
-        Tcat,
+        Cat,
         Pse,
         Jpeg,
         Jfif,
@@ -22,14 +22,14 @@ public class MetatagStandards
         User,
     };
 
-    public static StandardDefinitions Tcat =
+    public static StandardDefinitions Cat =
         new(
-            Standard.Tcat,
-            "TCAT",
+            Standard.Cat,
+            "CAT",
             Array.Empty<string>(),
             new Dictionary<int, StandardDefinition>
             {
-                { ThetacatTags.DescriptionTag, new(ThetacatTags.DescriptionTag, "Description") }
+                { CatTags.DescriptionTag, new(CatTags.DescriptionTag, "Description") }
             });
 
     public static StandardDefinitions Pse =
@@ -566,7 +566,7 @@ public class MetatagStandards
     public static Dictionary<Standard, StandardDefinitions> KnownStandards =
         new()
         {
-            { Standard.Tcat, Tcat },
+            { Standard.Cat, Cat },
             { Standard.Pse, Pse },
             { Standard.Jpeg, Jpeg },
             { Standard.Jfif, Jfif },

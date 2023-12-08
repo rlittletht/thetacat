@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace Thetacat.Model;
@@ -38,5 +39,58 @@ public class MetatagSchemaDiff
     public void UpdateMetatag(Metatag original, Metatag updated)
     {
         m_ops.Add(MetatagSchemaDiffOp.CreateUpdate(original, updated));
+    }
+
+    public static Dictionary<Guid, Metatag> BuildMetatagDictionary(IEnumerable<Metatag> metatags)
+    {
+        Dictionary<Guid, Metatag> dictionary = new();
+
+        foreach (Metatag metatag in metatags)
+        {
+            dictionary.Add(metatag.ID, metatag);
+        }
+
+        return dictionary;
+    }
+
+    public static MetatagSchemaDiff CreateFromSchemas(MetatagSchemaDefinition baseSchema, MetatagSchemaDefinition working)
+    {
+        MetatagSchemaDiff diff = new MetatagSchemaDiff(baseSchema.SchemaVersion);
+
+        // build dictionaries for both for faster access
+        Dictionary<Guid, Metatag> baseDictionary = BuildMetatagDictionary(baseSchema.Metatags);
+        Dictionary<Guid, Metatag> workingDictionary = BuildMetatagDictionary(working.Metatags);
+
+        // find all deleted items (tags in base not in working)
+        foreach (Guid key in baseDictionary.Keys)
+        {
+            if (!workingDictionary.ContainsKey(key))
+                diff.DeleteMetatag(baseDictionary[key]);
+        }
+
+        // find all inserted items (tags in working not in base)
+        foreach (Guid key in workingDictionary.Keys)
+        {
+            if (!baseDictionary.ContainsKey(key))
+                diff.InsertMetatag(workingDictionary[key]);
+        }
+
+        // lastly, find all changed items
+        foreach (Guid key in baseDictionary.Keys)
+        {
+            if (!workingDictionary.ContainsKey(key))
+                continue;
+
+            Metatag baseTag = baseDictionary[key];
+            Metatag workingTag = workingDictionary[key];
+
+            if (baseTag == workingTag)
+                continue;
+
+            // we have a difference
+            diff.UpdateMetatag(baseTag, workingTag);
+        }
+
+        return diff;
     }
 }

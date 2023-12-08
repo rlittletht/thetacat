@@ -10,7 +10,7 @@ public class SchemaMappings
         new()
         {
             // from metadata_string_table
-            { "tiff:ImageDescription", SchemaMapping<string>.CreateStandard(MetatagStandards.Standard.Tcat, ThetacatTags.DescriptionTag) },
+            { "tiff:ImageDescription", SchemaMapping<string>.CreateStandard(MetatagStandards.Standard.Cat, CatTags.DescriptionTag) },
             { "pse:FileNameOriginal", SchemaMapping<string>.CreateStandard(MetatagStandards.Standard.Pse, PhotoshopElementsTags.FileNameOriginal) },
             { "pse:ImportSourceName", SchemaMapping<string>.CreateStandard(MetatagStandards.Standard.Pse, PhotoshopElementsTags.ImportSourceName) },
             { "pse:ImportSourcePath", SchemaMapping<string>.CreateStandard(MetatagStandards.Standard.Pse, PhotoshopElementsTags.ImportSourcePath) },

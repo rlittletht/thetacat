@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Thetacat.Model;
 
@@ -71,4 +73,29 @@ public class MetatagSchemaDiffOp
         return op;
     }
 
+    public override string ToString()
+    {
+        switch (Action)
+        {
+            case ActionType.Insert:
+                return $"INSERT {m_metatag}";
+            case ActionType.Delete:
+                return $"DELETE {ID}";
+            case ActionType.Update:
+                List<string> changes = new();
+
+                if (IsNameChanged)
+                    changes.Add($"Name=>'{Metatag.Name}'");
+                if (IsDescriptionChanged)
+                    changes.Add($"Description=>'{Metatag.Description}'");
+                if (IsParentChanged)
+                    changes.Add($"Parent=>{Metatag.Parent}");
+                if (IsStandardChanged)
+                    changes.Add($"Standard={Metatag.Standard}");
+
+                return $"UPDATE {Metatag.ID}: {string.Join(",", changes)}";
+        }
+
+        return "";
+    }
 }

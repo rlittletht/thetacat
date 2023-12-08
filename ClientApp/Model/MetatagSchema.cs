@@ -177,11 +177,12 @@ public class MetatagSchema
     public Metatag AddNewStandardRoot(MetatagStandards.Standard standard)
     {
         StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
+        string name = MetatagStandards.GetMetadataRootFromStandardTag(definitions.StandardTag);
 
         Metatag metatag = MetatagBuilder
            .Create()
-           .SetName(definitions.StandardTag)
-           .SetDescription($"{definitions.StandardTag} root")
+           .SetName(name)
+           .SetDescription($"{name} root")
            .Build();
 
         AddMetatagNoValidation(metatag);
@@ -207,5 +208,14 @@ public class MetatagSchema
 
         schema.m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
         return schema;
+    }
+
+    public MetatagSchemaDiff BuildDiffForSchemas()
+    {
+        EnsureBaseAndVersion();
+        if (m_schemaBase == null || m_schemaWorking == null)
+            throw new Exception("no schemas");
+
+        return MetatagSchemaDiff.CreateFromSchemas(m_schemaBase, m_schemaWorking);
     }
 }
