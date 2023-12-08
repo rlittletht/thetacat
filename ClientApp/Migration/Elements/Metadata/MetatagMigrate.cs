@@ -14,18 +14,18 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 public class MetatagMigrate
 {
     private PseMetatagTree? m_metatagTree;
-    private PseMetadataSchema? m_schema = null;
+    private PseMetadataSchema? m_metadataSchema = null;
     private ObservableCollection<PseMetatag>? m_metatags;
 
     private ObservableCollection<MetatagSchemaDiff>? m_schemaDiff;
 
-    public PseMetadataSchema Schema
+    public PseMetadataSchema MetadataSchema
     {
         get
         {
-            if (m_schema == null)
+            if (m_metadataSchema == null)
                 throw new Exception("not initialized");
-            return m_schema;
+            return m_metadataSchema;
         }
     }
 
@@ -40,12 +40,19 @@ public class MetatagMigrate
         }
     }
 
-    public MetatagMigrate() { }
+    readonly Dictionary<string, PseMetatag> m_metatagDictionary = new();
 
-    public void BuildMetatagTree(IEnumerable<PseMetatag> tags)
+    public PseMetatagTree PseTree
     {
-        m_metatagTree = new PseMetatagTree(tags);
+        get
+        {
+            if (m_metatagTree == null)
+                throw new Exception("not initialized");
+
+            return m_metatagTree;
+        }
     }
+    public MetatagMigrate() { }
 
     public void SetUserMetatags(IEnumerable<PseMetatag> metatags)
     {
@@ -54,12 +61,19 @@ public class MetatagMigrate
         foreach (PseMetatag metatag in metatags)
         {
             m_metatags.Add(metatag);
+            m_metatagDictionary.Add(metatag.ID, metatag);
         }
+
+        m_metatagTree = new PseMetatagTree(m_metatags);
     }
 
-    public void SetMetatagSchema(PseMetadataSchema schema)
+    public PseMetatag GetMetatagFromID(string ID)
     {
-        m_schema = schema;
+        return m_metatagDictionary[ID];
+    }
+    public void SetMetadataSchema(PseMetadataSchema schema)
+    {
+        m_metadataSchema = schema;
     }
 
     // since we don't have an elements metatag tree, we either have to build one to do this,

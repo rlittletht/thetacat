@@ -615,7 +615,7 @@ public class MetatagStandards
     public static StandardDefinitions GetStandardMappings(Standard standard)
     {
         if (!KnownStandards.ContainsKey(standard))
-            throw new Exception($"unknown standard standard: ${standard}");
+            throw new Exception($"unknown standard standard: {standard}");
 
         return KnownStandards[standard];
     }
@@ -626,7 +626,7 @@ public class MetatagStandards
 
         foreach (StandardDefinitions standard in KnownStandards.Values)
         {
-            if (string.Compare(standard.Tag, standardName, StringComparison.InvariantCultureIgnoreCase) == 0)
+            if (string.Compare(standard.StandardTag, standardName, StringComparison.InvariantCultureIgnoreCase) == 0)
                 standardMappings.Add(standard);
         }
 
@@ -639,11 +639,22 @@ public class MetatagStandards
         {
             StandardDefinitions definitions = KnownStandards[standard];
 
-            if (definitions.Tag == standardTag)
+            if (string.Compare(definitions.StandardTag, standardTag, StringComparison.InvariantCultureIgnoreCase) == 0)
                 return standard;
         }
 
         return Standard.Unknown;
+    }
+
+    public static string GetMetadataRootFromStandard(Standard standard)
+    {
+        return GetStandardsTagFromStandard(standard).ToLowerInvariant();
+    }
+
+
+    public static string GetMetadataRootFromStandardTag(string standardTag)
+    {
+        return standardTag.ToLowerInvariant();
     }
 
     public static string GetStandardsTagFromStandard(Standard standard)
@@ -654,7 +665,7 @@ public class MetatagStandards
         if (standard == Standard.User)
             return "user";
 
-        return KnownStandards[standard].Tag;
+        return KnownStandards[standard].StandardTag;
     }
 
 }

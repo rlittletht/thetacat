@@ -24,9 +24,9 @@ public class PseMetadataBuilder
         return this;
     }
 
-    public PseMetadataBuilder SetID(Guid id)
+    public PseMetadataBuilder SetCatID(Guid id)
     {
-        m_building.ID = id;
+        m_building.CatID = id;
         return this;
     }
 
@@ -38,13 +38,13 @@ public class PseMetadataBuilder
 
     public PseMetadataBuilder Standard(string standard)
     {
-        m_building.Standard = standard;
+        m_building.StandardTag = standard;
         return this;
     }
 
     public PseMetadataBuilder SetTag(string tag)
     {
-        m_building.Tag = tag;
+        m_building.PropertyTag = tag;
         return this;
     }
 

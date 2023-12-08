@@ -10,11 +10,12 @@ public class PseMetadata: INotifyPropertyChanged
 {
     private int m_pseID;
     private string m_pseIdentifier = string.Empty;
-    private string m_standard = string.Empty;
-    private string m_tag = string.Empty;
+    private string m_standardTag = string.Empty;
+    private string m_propertyTag = string.Empty;
     private bool m_migrate = false;
     private string m_pseDatatype = string.Empty;
     private string m_description = string.Empty;
+    private Guid? m_catId;
 
     public int PseID
     {
@@ -40,16 +41,16 @@ public class PseMetadata: INotifyPropertyChanged
         set => SetField(ref m_pseIdentifier, value);
     }
 
-    public string Standard
+    public string StandardTag
     {
-        get => m_standard;
-        set => SetField(ref m_standard, value);
+        get => m_standardTag;
+        set => SetField(ref m_standardTag, value);
     }
 
-    public string Tag
+    public string PropertyTag
     {
-        get => m_tag;
-        set => SetField(ref m_tag, value);
+        get => m_propertyTag;
+        set => SetField(ref m_propertyTag, value);
     }
 
     public string Description
@@ -58,7 +59,11 @@ public class PseMetadata: INotifyPropertyChanged
         set => SetField(ref m_description, value);
     }
 
-    public Guid ID { get; set; }
+    public Guid? CatID
+    {
+        get => m_catId;
+        set => SetField(ref m_catId, value);
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

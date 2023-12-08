@@ -4,13 +4,13 @@ namespace Thetacat.Standards;
 
 public class StandardDefinition
 {
-    public int Tag { get; init; }
-    public string TagName { get; init; }
+    public int PropertyTag { get; init; }
+    public string PropertyTagName { get; init; }
     public bool Include { get; init; }
-    public StandardDefinition(int tag, string tagName, bool include = true)
+    public StandardDefinition(int propertyTag, string propertyTagName, bool include = true)
     {
-        Tag = tag;
-        TagName = tagName;
+        PropertyTag = propertyTag;
+        PropertyTagName = propertyTagName;
         Include = include;
     }
 }

@@ -180,8 +180,8 @@ public class MetatagSchema
 
         Metatag metatag = MetatagBuilder
            .Create()
-           .SetName(definitions.Tag)
-           .SetDescription($"{definitions.Tag} root")
+           .SetName(definitions.StandardTag)
+           .SetDescription($"{definitions.StandardTag} root")
            .Build();
 
         AddMetatagNoValidation(metatag);

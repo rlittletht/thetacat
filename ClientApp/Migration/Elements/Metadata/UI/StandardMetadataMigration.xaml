@@ -9,11 +9,17 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition />
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="100*" />
             <RowDefinition Height="24" />
-            <RowDefinition Height="24" />
         </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="5 5 0 10">
+            Photoshop Elements stores metadata about media using a combination of Metadata standards (EXIF, IPTC, JPEG, etc). 
+            Thetacat supports some of these as builtin properties (like tiff:ImageWidth), and others it supports in the metatag
+            database. Many of these mappings are automatically created. Create mappings for additional metatags by clicking
+            on the items below and edit them to create Thetacat metatags. Click "Migrate!" to create the tags in the Thetacat
+            database.
+        </TextBlock>
         <ListView Name="metadataListView" Grid.Row="1">
             <ListView.View>
                 <GridView>
@@ -28,14 +34,17 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=PseIdentifier}">
                             <GridViewColumnHeader Tag="PseIdentifier" Click="SortType" Content="PseIdentifier" />
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Standard}">
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=StandardTag}">
                             <GridViewColumnHeader Tag="Standard" Click="SortType" Content="Standard" />
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Tag}">
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=PropertyTag}">
                             <GridViewColumnHeader Tag="Tag" Click="SortType" Content="Tag" />
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Description}">
                             <GridViewColumnHeader Tag="Tag" Click="SortType" Content="Description" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=CatID}">
+                            <GridViewColumnHeader Tag="CatID" Click="SortType" Content="CatID"/>
                         </GridViewColumn>
                     </GridView.Columns>
                 </GridView>
@@ -46,12 +55,10 @@
                 <ColumnDefinition />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <Button Content="Toggle Selected"
-                    Click="DoToggleSelected" Grid.Column="1" Height="24" />
             <Button Content="Edit Selected"
                     Click="EditSelected" Grid.Column="0" Height="24" />
+            <Button Content="Migrate!"
+                    Click="DoMigrate" Grid.Column="1" Height="24" />
         </Grid>
-        <Button Content="Migrate all to Thetacat" IsDefault="True"
-                Click="DoMigrate" Grid.Column="0" Height="24" Grid.Row="3" />
     </Grid>
 </UserControl>

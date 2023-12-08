@@ -15,7 +15,7 @@
             <TextBlock VerticalAlignment="Bottom">Metadata tag</TextBlock>
             <ComboBox IsEditable="True" x:Name="TagName" />
             <TextBlock VerticalAlignment="Bottom">Tag description</TextBlock>
-            <TextBox Text="{Binding Description}"/>
+            <TextBox x:Name="Description" Text="{Binding Description}"/>
             <Grid HorizontalAlignment="Right" Margin="0 10 0 5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="64" />

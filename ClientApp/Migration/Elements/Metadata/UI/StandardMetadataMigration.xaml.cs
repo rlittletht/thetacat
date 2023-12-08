@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -21,6 +22,7 @@ using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.Standards;
 using Thetacat.Types;
 using MetatagTree = Thetacat.Metatags.MetatagTree;
 
@@ -52,6 +54,46 @@ public partial class StandardMetadataMigration : UserControl
         Sort(metadataListView, sender as GridViewColumnHeader);
     }
 
+    IMetatagTreeItem? GetRootForMetadataItem(PseMetadata item)
+    {
+        return m_appState?.MetatagSchema?.WorkingTree.FindMatchingChild(
+            MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandardTag(item.StandardTag)),
+            1);
+    }
+
+    IMetatagTreeItem? GetCatMetadataForMetadataItem(IMetatagTreeItem root, PseMetadata item)
+    {
+        return root.FindMatchingChild(
+            MetatagTreeItemMatcher.CreateNameMatch(item.PropertyTag),
+            1);
+    }
+
+    void MarkExistingMetadata()
+    {
+        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null");
+
+        foreach (PseMetadata item in m_migrate.MetadataSchema.MetadataItems)
+        {
+            if (item.StandardTag == string.Empty)
+                continue;
+
+            // see if there's a match in the database already
+            IMetatagTreeItem? root = GetRootForMetadataItem(item);
+
+            if (root == null)
+                continue;
+
+            IMetatagTreeItem? match = GetCatMetadataForMetadataItem(root, item);
+
+            if (match == null)
+                continue;
+
+            // found a matching item in the cat database. mark it here
+            item.CatID = Guid.Parse(match.ID);
+            item.Migrate = false; // no need to migrate. its already there
+        }
+    }
+
     public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
@@ -61,10 +103,11 @@ public partial class StandardMetadataMigration : UserControl
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        m_migrate.SetMetatagSchema(db.ReadMetadataSchema());
-        m_migrate.Schema.PopulateBuiltinMappings();
+        m_migrate.SetMetadataSchema(db.ReadMetadataSchema());
+        m_migrate.MetadataSchema.PopulateBuiltinMappings();
+        MarkExistingMetadata();
 
-        metadataListView.ItemsSource = m_migrate.Schema.MetadataItems;
+        metadataListView.ItemsSource = m_migrate.MetadataSchema.MetadataItems;
 
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();
@@ -81,8 +124,9 @@ public partial class StandardMetadataMigration : UserControl
 
             if (defined != null && defined.Value)
             {
-                metadata.Standard = define.Standard.Text;
-                metadata.Tag = define.TagName.Text;
+                metadata.StandardTag = define.Standard.Text;
+                metadata.PropertyTag = define.TagName.Text;
+                metadata.Description = define.Description.Text;
                 metadata.Migrate = true;
             }
         }
@@ -131,6 +175,100 @@ public partial class StandardMetadataMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
+        if (m_appState == null || m_migrate == null || m_appState.MetatagSchema == null)
+            throw new Exception("appstate or migrate uninitialized");
 
+        // build a list of selected items
+        List<PseMetadata> metadatas = new();
+
+        foreach (PseMetadata? item in metadataListView.Items)
+        {
+            if (!(item?.Migrate ?? false))
+                continue;
+
+            if (item.CatID != null)
+            {
+                // make sure its really there
+                if (m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                    continue;
+
+                Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");
+            }
+
+            MetatagStandards.Standard standard = MetatagStandards.GetStandardFromStandardTag(item.StandardTag);
+
+            IMetatagTreeItem parent;
+
+            // don't migrate unknown standards
+            if (standard == MetatagStandards.Standard.Unknown)
+            {
+                if (item.StandardTag == "builtin")
+                    continue;
+
+                // otherwise this is a user-define element
+                standard = MetatagStandards.Standard.User;
+                string rootName = MetatagStandards.GetMetadataRootFromStandard(standard);
+                IMetatagTreeItem? userRoot = m_appState?.MetatagSchema?.WorkingTree.FindMatchingChild(
+                    MetatagTreeItemMatcher.CreateNameMatch(rootName),
+                    1);
+
+                if (userRoot == null)
+                {
+                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
+                    userRoot = m_appState?.MetatagSchema?.WorkingTree.FindMatchingChild(
+                        MetatagTreeItemMatcher.CreateNameMatch(rootName),
+                        1);
+                }
+
+                if (userRoot == null)
+                    throw new Exception("failed to create user root");
+
+                IMetatagTreeItem? existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
+                if (existing == null)
+                {
+                    Metatag parentTag = Metatag.Create(Guid.Parse(userRoot.ID), item.StandardTag, item.StandardTag, MetatagStandards.Standard.User);
+                    m_appState.MetatagSchema.AddMetatag(parentTag);
+                    existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
+                }
+
+                if (existing == null)
+                    throw new Exception("could not find or add parent tag");
+
+                parent = existing;
+            }
+            else
+            {
+                IMetatagTreeItem? root = GetRootForMetadataItem(item);
+
+                if (root == null)
+                {
+                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
+                    root = GetRootForMetadataItem(item);
+                    if (root == null)
+                        throw new Exception("failed to create standard root");
+                }
+
+                parent = root;
+            }
+
+            // make sure its not already there
+            if (GetCatMetadataForMetadataItem(parent, item) != null)
+            {
+                Debug.Assert(false, "strange. we didn't already know about this item but its in the working schema...");
+                continue;
+            }
+
+            Model.Metatag newTag =
+                new()
+                {
+                    ID = Guid.NewGuid(),
+                    Description = item.Description,
+                    Name = item.PropertyTag,
+                    Parent = Guid.Parse(parent.ID)
+                };
+
+            m_appState.MetatagSchema.AddMetatag(newTag);
+            item.CatID = newTag.ID;
+        }
     }
 }

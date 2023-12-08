@@ -10,11 +10,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms.VisualStyles;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Emgu.CV.Features2D;
 using Thetacat.Controls;
 using Thetacat.Metatags;
 using Thetacat.Migration.Elements.Metadata.UI;
@@ -66,15 +68,16 @@ public partial class UserMetatagMigration : UserControl
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        m_migrate.SetUserMetatags(db.ReadMetadataTags());
-        
-        metaTagsListView.ItemsSource = m_migrate.UserMetatags;
 
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();
 
+        m_migrate.SetUserMetatags(db.ReadMetadataTags());
+        MarkExistingMetatags();
+
+        metaTagsListView.ItemsSource = m_migrate.UserMetatags;
+
         Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        LiveMetatags.Initialize(m_appState.MetatagSchema, MetatagStandards.Standard.User);
     }
 
     private void RemoveSelected(object sender, RoutedEventArgs e)
@@ -140,12 +143,16 @@ public partial class UserMetatagMigration : UserControl
         m_switchToSummaryDelegate?.Invoke();
     }
 
+    delegate Guid UnmatchedDelegate(List<string> nameHistory, IMetatagTreeItem item, Guid? idParent);
+    delegate void MatchedDelegate(IMetatagTreeItem item, IMetatagTreeItem matchedItem);
+
     static void MatchAndInsertChildrenIfNeeded(
         IMetatagTreeItem? liveParent,
         IMetatagTreeItem parent,
-        List<Model.Metatag> tagsToInsert,
         Guid? idParent,
-        List<string> nameHistory)
+        List<string> nameHistory,
+        UnmatchedDelegate? unmatchedDelegate,
+        MatchedDelegate? matchedDelegate)
     {
         // we have to build the tags to sync from the parent to the leaf in order to make sure we
         // build the correct relationships (we may have duplicate names in the tree, but they might
@@ -156,31 +163,61 @@ public partial class UserMetatagMigration : UserControl
         {
             // look for a matching root in the current schema
             IMetatagTreeItem? match = liveParent?.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.Name), 1/*levelsToRecurse*/);
-            Guid parentId;
+            Guid? parentId;
 
             nameHistory.Add(item.Name);
 
             if (match == null)
             {
-                Model.Metatag newTag = new()
-                {
-                    ID = Guid.NewGuid(),
-                    Description = string.Join(":", nameHistory.ToArray()),
-                    Name = item.Name,
-                    Parent = idParent
-                };
+                Guid? newID = unmatchedDelegate?.Invoke(nameHistory, item, idParent);
 
-                tagsToInsert.Add(newTag);
-                parentId = newTag.ID;
+                // if we didn't get a new ID inserted, then we can't recurse
+                parentId = newID;
             }
             else
             {
+                matchedDelegate?.Invoke(item, match);
                 parentId = Guid.Parse(match.ID);
             }
 
-            MatchAndInsertChildrenIfNeeded(match, item, tagsToInsert, parentId, nameHistory);
+            // if we don't have a parentId (because we didn't have a match and we didn't insert a new item),
+            // then we can't recurse (the parent chain would be broken). just continue with the siblings...
+            if (parentId != null)
+                MatchAndInsertChildrenIfNeeded(match, item, parentId, nameHistory, unmatchedDelegate, matchedDelegate);
             nameHistory.RemoveAt(nameHistory.Count - 1);
         }
+    }
+
+    public void MarkExistingMetatags()
+    {
+        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
+        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
+        Debug.Assert(m_appState.MetatagSchema.WorkingTree != null, "m_appState.MetatagSchema.WorkingTree != null");
+        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null");
+
+        string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
+        IMetatag? userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
+
+        // if there's no user root, then no tags are already in the cat
+        if (userRoot == null)
+            return;
+
+        IMetatagTreeItem? userTreeItem = m_appState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+
+        if (userTreeItem == null)
+            throw new Exception("no user root found");
+
+        MatchAndInsertChildrenIfNeeded(
+            userTreeItem,
+            m_migrate.PseTree,
+            userRoot.ID,
+            new List<string>(),
+            null /*unmatchedDelegate*/,
+            (item, match) =>
+            {
+                m_migrate.GetMetatagFromID(item.ID).CatID = Guid.Parse(match.ID);
+            }
+        );
     }
 
     /*----------------------------------------------------------------------------
@@ -191,18 +228,34 @@ public partial class UserMetatagMigration : UserControl
         with all the tags under the "user" root, so every top level item we want
         to add is actually parented to the 'user' standard root.
     ----------------------------------------------------------------------------*/
-    public static List<Model.Metatag> BuildTagsToInsert(Metatags.MetatagTree currentUserMetatagTree, List<PseMetatag> tagsToSync, IMetatag userRoot)
+    public static List<MetatagPair> BuildTagsToInsert(Metatags.MetatagTree currentUserMetatagTree, PseMetatagTree treeToSync, IMetatag userRoot)
     {
-        // build a hierchical tree for the tags to sync
-        PseMetatagTree treeToSync = new(tagsToSync);
-
-        List<Model.Metatag> tagsToInsert = new();
+        List<MetatagPair> tagsToInsert = new();
         IMetatagTreeItem? userTreeItem = currentUserMetatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
 
         if (userTreeItem == null)
             throw new Exception("no user root found");
 
-        MatchAndInsertChildrenIfNeeded(userTreeItem, treeToSync, tagsToInsert, userRoot.ID, new List<string>());
+        MatchAndInsertChildrenIfNeeded(
+            userTreeItem,
+            treeToSync,
+            userRoot.ID,
+            new List<string>(),
+            (nameHistory, item, idParent) =>
+            {
+                Model.Metatag newTag = new()
+                                       {
+                                           ID = Guid.NewGuid(),
+                                           Description = string.Join(":", nameHistory.ToArray()),
+                                           Name = item.Name,
+                                           Parent = idParent
+                                       };
+
+                tagsToInsert.Add(new MetatagPair(newTag, item.ID));
+                return newTag.ID;
+            },
+            null /*matchedDelegate*/
+        );
 
         return tagsToInsert;
     }
@@ -241,20 +294,22 @@ public partial class UserMetatagMigration : UserControl
         // is only a diff summary of what we will upload. Basically
         // its just a user control that takes two SchemaModels (base and new)
         // and build the diff ops and lists those in the control.
-        m_migrate.BuildMetatagTree(m_migrate.UserMetatags);
 
-        Metatags.MetatagTree liveTree = LiveMetatags.Model;
+        Metatags.MetatagTree liveTree = m_appState.MetatagSchema.WorkingTree;
 
         // now figure out what items (if any) we have to add to the live schema
         List<PseMetatag> tagsToSync = m_migrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
         IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName)) ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
-        List<Metatag> tagsToInsert = BuildTagsToInsert(liveTree, tagsToSync, userRoot);
+        PseMetatagTree treeToSync = new(tagsToSync);
 
-        foreach (Model.Metatag metatag in tagsToInsert)
+        List<MetatagPair> tagsToInsert = BuildTagsToInsert(liveTree, treeToSync, userRoot);
+
+        foreach (MetatagPair pair in tagsToInsert)
         {
-            m_appState.MetatagSchema.AddMetatag(metatag);
+            m_appState.MetatagSchema.AddMetatag(pair.Metatag);
+            m_migrate.GetMetatagFromID(pair.PseId).CatID = pair.Metatag.ID;
         }
 
 //        m_appState.RefreshMetatagSchema();

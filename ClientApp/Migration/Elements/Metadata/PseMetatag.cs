@@ -11,22 +11,24 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class PseMetatag : INotifyPropertyChanged
 {
-    private bool _isSelected = false;
+    private bool m_isSelected = false;
+    private Guid? m_catId;
     public string Name { get; set; } = string.Empty;
     public string ID { get; set; } = string.Empty;
     public string ParentID { get; set; } = string.Empty;
     public string ParentName { get; set; } = string.Empty;
     public string ElementsTypeName { get; set; } = string.Empty;
 
+    public Guid? CatID
+    {
+        get => m_catId;
+        set => SetField(ref m_catId, value);
+    }
+
     public bool IsSelected
     {
-        get => _isSelected;
-        set
-        {
-            if (value == _isSelected) return;
-            _isSelected = value;
-            OnPropertyChanged();
-        }
+        get => m_isSelected;
+        set => SetField(ref m_isSelected, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

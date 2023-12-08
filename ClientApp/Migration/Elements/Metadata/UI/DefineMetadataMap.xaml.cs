@@ -30,8 +30,10 @@ public partial class DefineMetadataMap : Window
 
         foreach (StandardDefinitions mapping in MetatagStandards.KnownStandards.Values)
         {
-            mappings.Add(mapping.Tag);
+            mappings.Add(mapping.StandardTag);
         }
+
+        mappings.Add("USER");
 
         foreach (string tag in mappings)
         {
@@ -72,7 +74,7 @@ public partial class DefineMetadataMap : Window
             {
                 foreach (StandardDefinition mappingItem in mapping.Properties.Values)
                 {
-                    tagNames.Add(mappingItem.TagName);
+                    tagNames.Add(mappingItem.PropertyTagName);
                 }
             }
 
