@@ -11,6 +11,29 @@ public class MetatagMigrationTests
     private static readonly Metatag userRoot = Metatag.Create(null, "user", "user root", MetatagStandards.Standard.User);
 
     [Test]
+    public void TestCreateTreeItemFromMetatag()
+    {
+        PseMetatag metatag =
+            new PseMetatag()
+            {
+                ID = 1,
+                ElementsTypeName = string.Empty,
+                Name = "Root",
+                ParentID = 0,
+                ParentName = "",
+                Description = "test Description"
+            };
+
+        PseMetatagTreeItem treeItem = PseMetatagTreeItem.CreateFromMetatag(metatag);
+
+        Assert.AreEqual(metatag.ID, int.Parse(treeItem.ID));
+        Assert.AreEqual(metatag.Description, treeItem.Description);
+        Assert.AreEqual(metatag.ParentID, int.Parse(treeItem.ParentId ?? "0"));
+
+        Assert.AreEqual(metatag, treeItem.Item);
+    }
+
+    [Test]
     public void TestBuildTagsToInsert_OneRoot_NoChildren_NoExisting()
     {
         List<Thetacat.Model.Metatag> liveTags =
@@ -22,16 +45,16 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
@@ -51,32 +74,44 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
         List<MetatagPair> tagsExpected =
             new()
             {
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build(), "1"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(), "2")
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root")
+                       .SetDescription("Root")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "1"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root2")
+                       .SetDescription("Root2")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "2")
             };
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);
         Assert.AreEqual(tagsExpected, tagsToInsert);
@@ -95,31 +130,37 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
         List<MetatagPair> tagsExpected =
             new()
             {
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build(), "1")
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root")
+                       .SetDescription("Root")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "1")
             };
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);
         Assert.AreEqual(tagsExpected, tagsToInsert);
@@ -139,24 +180,24 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
@@ -176,59 +217,83 @@ public class MetatagMigrationTests
 
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
-        
+
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 11,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root-Child1",
-                                           ParentID = 1,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 21,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2-Child1",
-                                           ParentID = 2,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 11,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root-Child1",
+                                              ParentID = 1,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 21,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2-Child1",
+                                              ParentID = 2,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
         List<MetatagPair> tagsExpected =
             new()
             {
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build(), "1"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root-Child1").SetDescription("Root:Root-Child1").SetParentID(tagsToInsert[0].Metatag.ID).Build(), "11"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(), "2"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root2-Child1").SetDescription("Root2:Root2-Child1").SetParentID(tagsToInsert[2].Metatag.ID).Build(), "21")
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root")
+                       .SetDescription("Root")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "1"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root-Child1")
+                       .SetDescription("Root:Root-Child1")
+                       .SetParentID(tagsToInsert[0].Metatag.ID)
+                       .Build(),
+                    "11"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root2")
+                       .SetDescription("Root2")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "2"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root2-Child1")
+                       .SetDescription("Root2:Root2-Child1")
+                       .SetParentID(tagsToInsert[2].Metatag.ID)
+                       .Build(),
+                    "21")
             };
 
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);
         Assert.AreEqual(tagsExpected, tagsToInsert);
     }
-    [Test]
 
+    [Test]
     public void TestBuildTagsToInsert_TwoRoots_BothWithOne_ParentsExisting()
     {
         List<Thetacat.Model.Metatag> liveTags =
@@ -242,48 +307,60 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 11,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root-Child1",
-                                           ParentID = 1,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 21,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2-Child1",
-                                           ParentID = 2,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 11,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root-Child1",
+                                              ParentID = 1,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 21,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2-Child1",
+                                              ParentID = 2,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
         List<MetatagPair> tagsExpected =
             new()
             {
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root-Child1").SetDescription("Root:Root-Child1").SetParentID(liveTags[2].ID).Build(), "11"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root2-Child1").SetDescription("Root2:Root2-Child1").SetParentID(liveTags[1].ID).Build(), "21")
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root-Child1")
+                       .SetDescription("Root:Root-Child1")
+                       .SetParentID(liveTags[2].ID)
+                       .Build(),
+                    "11"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root2-Child1")
+                       .SetDescription("Root2:Root2-Child1")
+                       .SetParentID(liveTags[1].ID)
+                       .Build(),
+                    "21")
             };
 
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);
@@ -302,49 +379,67 @@ public class MetatagMigrationTests
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
 
         List<PseMetatag> tagsToSync = new()
-                                   {
-                                       new PseMetatag()
-                                       {
-                                           ID = 1,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 2,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2",
-                                           ParentID = 0,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 11,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root-Child1",
-                                           ParentID = 1,
-                                           ParentName = ""
-                                       },
-                                       new PseMetatag()
-                                       {
-                                           ID = 21,
-                                           ElementsTypeName = string.Empty,
-                                           Name = "Root2-Child1",
-                                           ParentID = 2,
-                                           ParentName = ""
-                                       }
-                                   };
+                                      {
+                                          new PseMetatag()
+                                          {
+                                              ID = 1,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 2,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2",
+                                              ParentID = 0,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 11,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root-Child1",
+                                              ParentID = 1,
+                                              ParentName = ""
+                                          },
+                                          new PseMetatag()
+                                          {
+                                              ID = 21,
+                                              ElementsTypeName = string.Empty,
+                                              Name = "Root2-Child1",
+                                              ParentID = 2,
+                                              ParentName = ""
+                                          }
+                                      };
 
         List<MetatagPair> tagsToInsert = UserMetatagMigration.BuildTagsToInsert(liveTree, new PseMetatagTree(tagsToSync), userRoot);
 
         List<MetatagPair> tagsExpected =
             new()
             {
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build(), "1"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root-Child1").SetDescription("Root:Root-Child1").SetParentID(tagsToInsert[0].Metatag.ID).Build(), "11"),
-                new MetatagPair(Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny).SetName("Root2-Child1").SetDescription("Root2:Root2-Child1").SetParentID(liveTags[1].ID).Build(), "21")
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root")
+                       .SetDescription("Root")
+                       .SetParentID(userRoot.ID)
+                       .Build(),
+                    "1"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root-Child1")
+                       .SetDescription("Root:Root-Child1")
+                       .SetParentID(tagsToInsert[0].Metatag.ID)
+                       .Build(),
+                    "11"),
+                new MetatagPair(
+                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                       .SetName("Root2-Child1")
+                       .SetDescription("Root2:Root2-Child1")
+                       .SetParentID(liveTags[1].ID)
+                       .Build(),
+                    "21")
             };
 
         Assert.AreEqual(tagsExpected.Count, tagsToInsert.Count);

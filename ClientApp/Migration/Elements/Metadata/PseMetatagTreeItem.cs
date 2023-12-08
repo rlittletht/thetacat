@@ -17,7 +17,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public string ItemId => m_metatag?.ID.ToString() ?? string.Empty;
     public string? ParentId => m_metatag?.ParentID.ToString();
     public ObservableCollection<IMetatagTreeItem> Children { get; } = new();
-    public string Description => string.Empty;
+    public string Description => m_metatag?.Description ?? string.Empty;
 
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID.ToString() ?? string.Empty;

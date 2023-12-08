@@ -63,6 +63,7 @@ public partial class UserMetatagMigration : UserControl
         foreach (PseMetatag metatag in m_migrate.UserMetatags)
         {
             metatag.CatID = null;
+            metatag.IsSelected = false;
         }
 
         MarkExistingMetatags();
@@ -131,7 +132,7 @@ public partial class UserMetatagMigration : UserControl
 
     public void RemoveItems(IEnumerable<object?>? items)
     {
-        if (items == null|| m_migrate == null)
+        if (items == null || m_migrate == null)
             return;
 
         List<object> removeList = new();
@@ -171,7 +172,7 @@ public partial class UserMetatagMigration : UserControl
         foreach (IMetatagTreeItem item in parent.Children)
         {
             // look for a matching root in the current schema
-            IMetatagTreeItem? match = liveParent?.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.Name), 1/*levelsToRecurse*/);
+            IMetatagTreeItem? match = liveParent?.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.Name), 1 /*levelsToRecurse*/);
             Guid? parentId;
 
             nameHistory.Add(item.Name);
@@ -211,7 +212,8 @@ public partial class UserMetatagMigration : UserControl
         if (userRoot == null)
             return;
 
-        IMetatagTreeItem? userTreeItem = m_appState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+        IMetatagTreeItem? userTreeItem =
+            m_appState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
 
         if (userTreeItem == null)
             throw new Exception("no user root found");
@@ -222,10 +224,7 @@ public partial class UserMetatagMigration : UserControl
             userRoot.ID,
             new List<string>(),
             null /*unmatchedDelegate*/,
-            (item, match) =>
-            {
-                m_migrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID);
-            }
+            (item, match) => { m_migrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID); }
         );
     }
 
@@ -252,10 +251,15 @@ public partial class UserMetatagMigration : UserControl
             new List<string>(),
             (nameHistory, item, idParent) =>
             {
+                string description =
+                    item.Description != ""
+                        ? item.Description
+                        : string.Join(":", nameHistory.ToArray());
+
                 Model.Metatag newTag = new()
                                        {
                                            ID = Guid.NewGuid(),
-                                           Description = string.Join(":", nameHistory.ToArray()),
+                                           Description = description,
                                            Name = item.Name,
                                            Parent = idParent
                                        };
@@ -309,7 +313,8 @@ public partial class UserMetatagMigration : UserControl
         // now figure out what items (if any) we have to add to the live schema
         List<PseMetatag> tagsToSync = m_migrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName)) ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
+        IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
+            ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
         PseMetatagTree treeToSync = new(tagsToSync);
 
