@@ -32,13 +32,11 @@ public partial class MediaMigration : UserControl
     private IAppState? m_appState;
     private List<MediaItem>? m_items;
     private readonly List<PathSubstitution> m_pathSubstitutions = new();
-    private MetatagMigrate? m_metatagMigrate;
-    private MediaMigrate? m_mediaMigrate;
+    private ElementsMigrate? m_migrate;
 
     public MediaMigration()
     {
         InitializeComponent();
-        m_mediaMigrate = new MediaMigrate();
     }
 
     private void VerifyPaths(object sender, RoutedEventArgs e)
@@ -51,12 +49,12 @@ public partial class MediaMigration : UserControl
         CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource).Refresh();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
+    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
     {
         m_appState = appState;
-        m_metatagMigrate = migrate;
+        m_migrate = migrate;
 
-        m_items = new List<MediaItem>(db.ReadMediaItems(m_metatagMigrate));
+        m_items = new List<MediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate));
       
         mediaItemsListView.ItemsSource = m_items;
 

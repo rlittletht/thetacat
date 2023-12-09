@@ -31,7 +31,7 @@ public partial class StandardMetadataMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private MetatagMigrate? m_migrate = null;
+    private ElementsMigrate? m_migrate = null;
 
     IAppState? m_appState;
 
@@ -71,7 +71,7 @@ public partial class StandardMetadataMigration : UserControl
     {
         Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null");
 
-        foreach (PseMetadata item in m_migrate.MetadataSchema.MetadataItems)
+        foreach (PseMetadata item in m_migrate.MetatagMigrate.MetadataSchema.MetadataItems)
         {
             if (item.StandardTag == string.Empty)
                 continue;
@@ -95,10 +95,10 @@ public partial class StandardMetadataMigration : UserControl
 
     public void RefreshForSchemaChange()
     {
-        if (m_migrate?.MetadataSchema?.MetadataItems == null)
+        if (m_migrate?.MetatagMigrate.MetadataSchema.MetadataItems == null)
             return;
 
-        foreach (PseMetadata item in m_migrate.MetadataSchema.MetadataItems)
+        foreach (PseMetadata item in m_migrate.MetatagMigrate.MetadataSchema.MetadataItems)
         {
             item.CatID = null;
             item.Migrate = false;
@@ -107,7 +107,7 @@ public partial class StandardMetadataMigration : UserControl
         MarkExistingMetadata();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
+    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
     {
         m_appState = appState;
         m_migrate = migrate;
@@ -116,11 +116,11 @@ public partial class StandardMetadataMigration : UserControl
             throw new ArgumentNullException(nameof(appState));
 
         m_appState = appState;
-        m_migrate.SetMetadataSchema(db.ReadMetadataSchema());
-        m_migrate.MetadataSchema.PopulateBuiltinMappings();
+        m_migrate.MetatagMigrate.SetMetadataSchema(db.ReadMetadataSchema());
+        m_migrate.MetatagMigrate.MetadataSchema.PopulateBuiltinMappings();
         MarkExistingMetadata();
 
-        metadataListView.ItemsSource = m_migrate.MetadataSchema.MetadataItems;
+        metadataListView.ItemsSource = m_migrate.MetatagMigrate.MetadataSchema.MetadataItems;
 
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();

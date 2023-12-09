@@ -391,4 +391,32 @@ public class ElementsDb
         return map.Values;
     }
 
+    private static readonly string s_queryMediaStacks = @"
+        SELECT VS.stack_tag_id, VS.media_id, VS.media_index
+            FROM version_stack_to_media_table VS";
+
+    public List<PseMediaStackItem> ReadMediaStacks()
+    {
+        using SQLiteCommand cmd = new()
+                                  {
+                                      CommandType = CommandType.Text,
+                                      Connection = m_connection,
+                                      Transaction = null,
+                                  };
+
+
+        cmd.CommandText = s_queryMediaStacks;
+
+        List<PseMediaStackItem> items = new();
+
+        using SQLiteDataReader reader = cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            items.Add(new PseMediaStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
+        }
+
+        reader.Close();
+        return items;
+    }
 }

@@ -9,12 +9,19 @@ public class MediaMigrate
     private List<MediaItem>? m_mediaItems;
     private Dictionary<int, IMediaItem>? m_mapPseMedia;
     private Dictionary<Guid, IMediaItem>? m_mapCatMedia;
+    private List<PseMediaStackItem>? m_mediaStackItems;
 
     public List<MediaItem> MediaItems => m_mediaItems ??= new List<MediaItem>();
+    public List<PseMediaStackItem> MediaStacks => m_mediaStackItems ??= new List<PseMediaStackItem>();
 
     public void SetMediaItems(List<MediaItem> media)
     {
         m_mediaItems = media;
+    }
+
+    public void SetMediaStacks(List<PseMediaStackItem> stacks)
+    {
+        m_mediaStackItems = stacks;
     }
 
     Dictionary<int, IMediaItem> BuildPseMap()

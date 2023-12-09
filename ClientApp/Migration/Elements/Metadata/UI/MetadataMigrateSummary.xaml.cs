@@ -31,7 +31,7 @@ public partial class MetadataMigrateSummary : UserControl
     private SortAdorner? sortAdorner;
 
     private IAppState? m_appState;
-    private MetatagMigrate? m_migrate;
+    private ElementsMigrate? m_migrate;
 
     private readonly ObservableCollection<MetatagMigrationItem> m_metatagMigrationItems = new ObservableCollection<MetatagMigrationItem>();
     private MetatagSchemaDiff? m_diff;
@@ -42,7 +42,7 @@ public partial class MetadataMigrateSummary : UserControl
         diffOpListView.ItemsSource = m_metatagMigrationItems;
     }
 
-    public void Initialize(IAppState appState, MetatagMigrate migrate)
+    public void Initialize(IAppState appState, ElementsMigrate migrate)
     {
         m_migrate = migrate;
         m_appState = appState;
@@ -103,7 +103,7 @@ public partial class MetadataMigrateSummary : UserControl
 
         m_appState.RefreshMetatagSchema();
         Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null"); 
-        m_migrate.ReloadSchemas();
+        m_migrate.MetatagMigrate.ReloadSchemas();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }
 }

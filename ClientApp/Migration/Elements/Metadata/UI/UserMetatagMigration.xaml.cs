@@ -32,7 +32,7 @@ public partial class UserMetatagMigration : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private MetatagMigrate? m_migrate = null;
+    private ElementsMigrate? m_migrate = null;
 
     IAppState? m_appState;
 
@@ -56,10 +56,10 @@ public partial class UserMetatagMigration : UserControl
 
     public void RefreshForSchemaChange()
     {
-        if (m_migrate?.UserMetatags == null)
+        if (m_migrate?.MetatagMigrate.UserMetatags == null)
             return;
 
-        foreach (PseMetatag metatag in m_migrate.UserMetatags)
+        foreach (PseMetatag metatag in m_migrate.MetatagMigrate.UserMetatags)
         {
             metatag.CatID = null;
             metatag.IsSelected = false;
@@ -68,7 +68,7 @@ public partial class UserMetatagMigration : UserControl
         MarkExistingMetatags();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
+    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
     {
         m_appState = appState;
         m_migrate = migrate;
@@ -81,10 +81,10 @@ public partial class UserMetatagMigration : UserControl
         if (m_appState.MetatagSchema == null)
             m_appState.RefreshMetatagSchema();
 
-        m_migrate.SetUserMetatags(db.ReadMetadataTags());
+        m_migrate.MetatagMigrate.SetUserMetatags(db.ReadMetadataTags());
         MarkExistingMetatags();
 
-        metaTagsListView.ItemsSource = m_migrate.UserMetatags;
+        metaTagsListView.ItemsSource = m_migrate.MetatagMigrate.UserMetatags;
 
         Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
     }
@@ -143,13 +143,13 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (PseMetatag tag in removeList)
         {
-            m_migrate.UserMetatags.Remove(tag);
+            m_migrate.MetatagMigrate.UserMetatags.Remove(tag);
         }
     }
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        m_migrate?.SwitchToSummaryTab();
+        m_migrate?.MetatagMigrate.SwitchToSummaryTab();
     }
 
     delegate Guid UnmatchedDelegate(List<string> nameHistory, IMetatagTreeItem item, Guid? idParent);
@@ -219,11 +219,11 @@ public partial class UserMetatagMigration : UserControl
 
         MatchAndInsertChildrenIfNeeded(
             userTreeItem,
-            m_migrate.PseTree,
+            m_migrate.MetatagMigrate.PseTree,
             userRoot.ID,
             new List<string>(),
             null /*unmatchedDelegate*/,
-            (item, match) => { m_migrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID); }
+            (item, match) => { m_migrate.MetatagMigrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID); }
         );
     }
 
@@ -310,7 +310,7 @@ public partial class UserMetatagMigration : UserControl
         Metatags.MetatagTree liveTree = m_appState.MetatagSchema.WorkingTree;
 
         // now figure out what items (if any) we have to add to the live schema
-        List<PseMetatag> tagsToSync = m_migrate.CollectDependentTags(liveTree, metatags);
+        List<PseMetatag> tagsToSync = m_migrate.MetatagMigrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
         IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
             ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
@@ -322,7 +322,7 @@ public partial class UserMetatagMigration : UserControl
         foreach (MetatagPair pair in tagsToInsert)
         {
             m_appState.MetatagSchema.AddMetatag(pair.Metatag);
-            m_migrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
+            m_migrate.MetatagMigrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
         }
 
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
