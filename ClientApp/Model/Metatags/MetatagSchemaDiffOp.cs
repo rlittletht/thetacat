@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Metatags;
 
 public class MetatagSchemaDiffOp
 {
@@ -36,31 +36,31 @@ public class MetatagSchemaDiffOp
     public static MetatagSchemaDiffOp CreateDelete(Guid id)
     {
         return new MetatagSchemaDiffOp()
-               {
-                   Action = ActionType.Delete,
-                   ID = id
-               };
+        {
+            Action = ActionType.Delete,
+            ID = id
+        };
     }
 
     public static MetatagSchemaDiffOp CreateInsert(Metatag metatag)
     {
         return new MetatagSchemaDiffOp()
-               {
-                   Action = ActionType.Insert,
-                   ID = metatag.ID,
-                   m_metatag =  metatag
-               };
+        {
+            Action = ActionType.Insert,
+            ID = metatag.ID,
+            m_metatag = metatag
+        };
     }
 
     public static MetatagSchemaDiffOp CreateUpdate(Metatag original, Metatag updated)
     {
-        MetatagSchemaDiffOp op = 
+        MetatagSchemaDiffOp op =
             new MetatagSchemaDiffOp()
-               {
-                   Action = ActionType.Update,
-                   ID = updated.ID,
-                   m_metatag = updated
-               };
+            {
+                Action = ActionType.Update,
+                ID = updated.ID,
+                m_metatag = updated
+            };
 
         if (original.Name != updated.Name)
             op.m_updatedValues |= UpdatedValues.Name;

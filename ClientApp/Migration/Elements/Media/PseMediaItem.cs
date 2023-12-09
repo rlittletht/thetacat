@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Xmp;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 

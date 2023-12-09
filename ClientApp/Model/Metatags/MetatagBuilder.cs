@@ -4,9 +4,8 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
-using Thetacat.Model;
 
-namespace Thetacat.Metatags;
+namespace Thetacat.Model.Metatags;
 
 public class MetatagBuilder
 {
@@ -15,9 +14,9 @@ public class MetatagBuilder
     public MetatagBuilder(Guid id)
     {
         m_building = new()
-                     {
-                         ID = id
-                     };
+        {
+            ID = id
+        };
     }
 
     public static MetatagBuilder Create()

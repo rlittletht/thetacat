@@ -1,5 +1,5 @@
 ﻿using System.Windows;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Types;

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using MetadataExtractor;
 using Microsoft.Identity.Client;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 
 namespace Thetacat.Migration.Elements;
 

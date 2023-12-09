@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 
 namespace Thetacat.Types;
 

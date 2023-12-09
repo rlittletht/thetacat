@@ -8,7 +8,7 @@ using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Metatags;
 
 public class MetatagSchema
 {

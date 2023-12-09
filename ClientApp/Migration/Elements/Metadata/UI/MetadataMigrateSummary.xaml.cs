@@ -17,7 +17,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Thetacat.Controls;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;

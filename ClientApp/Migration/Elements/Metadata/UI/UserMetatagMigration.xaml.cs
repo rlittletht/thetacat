@@ -19,7 +19,7 @@ using System.Windows.Shapes;
 using Emgu.CV.Features2D;
 using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
@@ -255,7 +255,7 @@ public partial class UserMetatagMigration : UserControl
                         ? item.Description
                         : string.Join(":", nameHistory.ToArray());
 
-                Model.Metatag newTag = new()
+                Metatag newTag = new()
                                        {
                                            ID = Guid.NewGuid(),
                                            Description = description,

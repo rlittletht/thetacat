@@ -4,9 +4,9 @@ using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Metatags;
 
-public class Metatag: IMetatag
+public class Metatag : IMetatag
 {
     public static Guid IdMatchAny = new Guid(0x09080706, 0x0001, 0x0002, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11);
 
@@ -21,46 +21,46 @@ public class Metatag: IMetatag
     public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard)
     {
         return new Metatag()
-               {
-                   ID = Guid.NewGuid(),
-                   Parent = parent,
-                   Name = name,
-                   Description = description,
-                   Standard = MetatagStandards.GetStandardsTagFromStandard(standard),
-                   LocalOnly = true
-               };
+        {
+            ID = Guid.NewGuid(),
+            Parent = parent,
+            Name = name,
+            Description = description,
+            Standard = MetatagStandards.GetStandardsTagFromStandard(standard),
+            LocalOnly = true
+        };
     }
 
     public static Metatag CreateFromService(ServiceMetatag serviceMetatag)
     {
         return new Metatag()
-               {
-                   ID = serviceMetatag.ID, 
-                   Parent = serviceMetatag.Parent, 
-                   Name = serviceMetatag.Name ?? string.Empty,
-                   Description = serviceMetatag.Description ?? string.Empty,
-                   Standard = serviceMetatag.Standard ?? string.Empty,
-                   LocalOnly = false
-               };
+        {
+            ID = serviceMetatag.ID,
+            Parent = serviceMetatag.Parent,
+            Name = serviceMetatag.Name ?? string.Empty,
+            Description = serviceMetatag.Description ?? string.Empty,
+            Standard = serviceMetatag.Standard ?? string.Empty,
+            LocalOnly = false
+        };
     }
 
     public Metatag Clone()
     {
         return new Metatag()
-               {
-                   ID = ID,
-                   Parent = Parent,
-                   Name = Name,
-                   Description = Description,
-                   Standard = Standard,
-                   LocalOnly = LocalOnly
-               };
+        {
+            ID = ID,
+            Parent = Parent,
+            Name = Name,
+            Description = Description,
+            Standard = Standard,
+            LocalOnly = LocalOnly
+        };
     }
 
     public static bool operator ==(Metatag? left, Metatag? right)
     {
-        if (object.ReferenceEquals(left, null) && object.ReferenceEquals(right, null)) return true;
-        if (object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null)) return false;
+        if (ReferenceEquals(left, null) && ReferenceEquals(right, null)) return true;
+        if (ReferenceEquals(left, null) || ReferenceEquals(right, null)) return false;
 
         if (left.ID != right.ID && left.ID != IdMatchAny && right.ID != IdMatchAny) return false;
         if (left.Name != right.Name) return false;

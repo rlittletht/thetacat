@@ -2,9 +2,9 @@
 using Thetacat;
 using Thetacat.Migration.Elements.Metadata.UI;
 using NUnit.Framework;
-using Thetacat.Model;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
+using Thetacat.Model.Metatags;
 
 public class MetatagMigrationTests
 {
@@ -36,7 +36,7 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_OneRoot_NoChildren_NoExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot
@@ -66,7 +66,7 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_TwoRoots_NoChildren_NoExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot
@@ -99,14 +99,14 @@ public class MetatagMigrationTests
             new()
             {
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
                        .Build(),
                     "1"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root2")
                        .SetDescription("Root2")
                        .SetParentID(userRoot.ID)
@@ -120,11 +120,11 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_TwoRoots_NoChildren_OneExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot,
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -155,7 +155,7 @@ public class MetatagMigrationTests
             new()
             {
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
@@ -169,12 +169,12 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_TwoRoots_NoChildren_BothExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot,
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -209,7 +209,7 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_TwoRoots_BothWithOne_NoneExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot
@@ -260,28 +260,28 @@ public class MetatagMigrationTests
             new()
             {
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
                        .Build(),
                     "1"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root-Child1")
                        .SetDescription("Root:Root-Child1")
                        .SetParentID(tagsToInsert[0].Metatag.ID)
                        .Build(),
                     "11"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root2")
                        .SetDescription("Root2")
                        .SetParentID(userRoot.ID)
                        .Build(),
                     "2"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root2-Child1")
                        .SetDescription("Root2:Root2-Child1")
                        .SetParentID(tagsToInsert[2].Metatag.ID)
@@ -296,12 +296,12 @@ public class MetatagMigrationTests
     [Test]
     public void TestBuildTagsToInsert_TwoRoots_BothWithOne_ParentsExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot,
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -348,14 +348,14 @@ public class MetatagMigrationTests
             new()
             {
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root-Child1")
                        .SetDescription("Root:Root-Child1")
                        .SetParentID(liveTags[2].ID)
                        .Build(),
                     "11"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root2-Child1")
                        .SetDescription("Root2:Root2-Child1")
                        .SetParentID(liveTags[1].ID)
@@ -369,11 +369,11 @@ public class MetatagMigrationTests
 
     public void TestBuildTagsToInsert_TwoRoots_BothWithOne_OneParentExisting()
     {
-        List<Thetacat.Model.Metatag> liveTags =
+        List<Metatag> liveTags =
             new()
             {
                 userRoot,
-                Thetacat.Metatags.MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -420,21 +420,21 @@ public class MetatagMigrationTests
             new()
             {
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
                        .Build(),
                     "1"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root-Child1")
                        .SetDescription("Root:Root-Child1")
                        .SetParentID(tagsToInsert[0].Metatag.ID)
                        .Build(),
                     "11"),
                 new MetatagPair(
-                    Thetacat.Metatags.MetatagBuilder.Create(Thetacat.Model.Metatag.IdMatchAny)
+                    MetatagBuilder.Create(Metatag.IdMatchAny)
                        .SetName("Root2-Child1")
                        .SetDescription("Root2:Root2-Child1")
                        .SetParentID(liveTags[1].ID)

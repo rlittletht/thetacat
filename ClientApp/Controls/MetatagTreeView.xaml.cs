@@ -17,7 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Metatags;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 

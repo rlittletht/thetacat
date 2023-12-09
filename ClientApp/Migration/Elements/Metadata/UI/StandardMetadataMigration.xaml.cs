@@ -18,7 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
@@ -259,7 +259,7 @@ public partial class StandardMetadataMigration : UserControl
                 continue;
             }
 
-            Model.Metatag newTag =
+            Metatag newTag =
                 new()
                 {
                     ID = Guid.NewGuid(),
