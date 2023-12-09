@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using MetadataExtractor;
 using Microsoft.Identity.Client;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 
-namespace Thetacat.Migration.Elements.Metadata.UI;
+namespace Thetacat.Migration.Elements;
 
 /*----------------------------------------------------------------------------
     %%Class: MetatagMigrate

@@ -20,7 +20,6 @@ using Thetacat.Controls;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
-using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;

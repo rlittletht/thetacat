@@ -17,7 +17,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
