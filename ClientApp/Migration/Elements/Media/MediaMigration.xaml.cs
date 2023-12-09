@@ -54,7 +54,8 @@ public partial class MediaMigration : UserControl
     public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
-        m_items = db.ReadMediaItems();
+        m_items = new List<MediaItem>(db.ReadMediaItems());
+
         m_metatagMigrate = migrate;
         
         mediaItemsListView.ItemsSource = m_items;

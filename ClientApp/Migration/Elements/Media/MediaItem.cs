@@ -20,7 +20,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string>? m_metatagValues;
-    private Dictionary<int, string>? m_pseMetatagValues;
+    private Dictionary<string, string>? m_pseMetatagValues;
     private Guid m_catId;
     private int m_id;
 
@@ -46,7 +46,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         set => SetField(ref m_catId, value);
     }
 
-    public Dictionary<int, string> PseMetatagValues
+    public Dictionary<string, string> PseMetatagValues
     {
         get => m_pseMetatagValues ??= new();
         set => SetField(ref m_pseMetatagValues, value);

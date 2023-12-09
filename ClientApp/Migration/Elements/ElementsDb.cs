@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Globalization;
+using System.Windows;
 using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -211,30 +214,48 @@ public class ElementsDb
 
     private static string[] s_ignoreMetadata =
     {
-        "pse:FileSize",
-        "pse:FileSizeOriginal",
-        "pse:TagIconMediaId",
-        "pse:FileNameOriginal",
-        "pse:TagNotes",
-        "pre:ca:xmpPath",
-        "pse:FaceDectectorBreezePath",
-        "pse:FaceData",
-        "pse:ImportSourceId",
-        "pse:PrinterName",
-        "pse:TagIconMediaCropRect",
-        "pse:albumStyleXmlPath",
-        "pse:guid",
-        "pse:FileDate",
-        "pse:FileDateOriginal",
-        "pse:TagDate",
-        "xmp:CreateDate"
+        "'pse::FaceDectectorBreezePath'",
+        "'pse::FaceDectectorVersion'",
+        "'pse::FaceRecognizerVersion'",
+        "'xmp:Rating'",
+        "'xmpDM:Duration'",
+        "'pse::VisualSimilarityIndexed'",
+        "'pse:FaceData'",
+        "'pse:FileSize'",
+        "'pse:FileSizeOriginal'",
+        "'pse:TagIconMediaId'",
+        "'pre:ca:xmpPath'",
+        "'pse:ImportSourceType'",
+        "'pse:PrinterName'",
+        "'pse:TagIconMediaCropRect'",
+        "'pse:albumStyleXmlPath'",
+        "'pse:guid'",
+        "'pse:FileDate'",
+        "'pse:FileDateOriginal'",
+        "'pse:TagDate'",
+        "'xmp:CreateDate'"
     };
 
-//    private static string s_queryReadStringMediaTagValues = @"
-//        SELECT 
-//";
+    private static string s_queryReadMediaTagValues = $@"
+        SELECT MMT.media_id, MST.value, MDT.identifier from media_to_metadata_table AS MMT
+            INNER JOIN media_table MT on MT.id = MMT.media_id
+            INNER JOIN metadata_string_table MST on MST.id = MMT.metadata_id
+            INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
+        WHERE MDT.identifier not in ({string.Join(",", s_ignoreMetadata)})
+        UNION 
+        SELECT MMT.media_id, MST.value, MDT.identifier from media_to_metadata_table AS MMT
+            INNER JOIN media_table MT on MT.id = MMT.media_id
+            INNER JOIN metadata_integer_table MST on MST.id = MMT.metadata_id
+            INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
+        WHERE MDT.identifier not in ({string.Join(",", s_ignoreMetadata)})
+        UNION 
+            SELECT MMT.media_id, MST.value, MDT.identifier from media_to_metadata_table AS MMT
+            INNER JOIN media_table MT on MT.id = MMT.media_id
+            INNER JOIN metadata_decimal_table MST on MST.id = MMT.metadata_id
+            INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
+        WHERE MDT.identifier not in ({string.Join(",", s_ignoreMetadata)})";
 
-    public List<MediaTagValue> ReadMediaTagValues()
+    void ReadMediaTagValues(Dictionary<int, MediaItem> items)
     {
         using SQLiteCommand cmd = new()
                                   {
@@ -244,16 +265,47 @@ public class ElementsDb
                                   };
 
 
+        cmd.CommandText = s_queryReadMediaTagValues;
+
         using SQLiteDataReader reader = cmd.ExecuteReader();
-        List<MediaTagValue> tags = new();
+
         while (reader.Read())
         {
+            string value;
+
+            if (reader.GetFieldAffinity(1) == TypeAffinity.Text)
+            {
+                value = reader.GetString(1);
+            }
+            else if (reader.GetFieldAffinity(1) == TypeAffinity.Int64)
+            {
+                value = reader.GetInt32(1).ToString();
+            }
+            else if (reader.GetFieldAffinity(1) == TypeAffinity.Double)
+            {
+                value = reader.GetDouble(1).ToString(CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                throw new Exception($"unknown type: {reader.GetFieldAffinity(1)}");
+            }
+
+            int mediaId = reader.GetInt32(0);
+            string tagIdentifier = reader.GetString(2);
+
+            if (items.TryGetValue(mediaId, out MediaItem? item))
+                item.PseMetatagValues.Add(tagIdentifier, value);
+            else
+                m_log.Add($"could not find media {mediaId} referenced in metatag {tagIdentifier}");
         }
 
-        return tags;
+        if (m_log.Count > 0)
+            MessageBox.Show($"warnings: {string.Join(",", m_log)}");
     }
 
-    public List<MediaItem> ReadMediaItems()
+    private List<string> m_log = new();
+
+    private Dictionary<int, MediaItem> ReadMediaDictionary()
     {
         using SQLiteCommand cmd = new()
                                   {
@@ -267,13 +319,16 @@ public class ElementsDb
 
         using SQLiteDataReader reader = cmd.ExecuteReader();
 
-        List<MediaItem> items = new();
+        Dictionary<int, MediaItem> items = new();
         while (reader.Read())
         {
+            int pseId = reader.GetInt32(0);
+
             items.Add(
+                pseId,
                 MediaItemBuilder
                    .Create()
-                   .SetID(reader.GetInt32(0))
+                   .SetID(pseId)
                    .SetFilename(reader.GetString(3))
                    .SetFilePath(reader.GetString(2))
                    .SetFullPath(reader.GetString(1))
@@ -286,4 +341,13 @@ public class ElementsDb
         reader.Close();
         return items;
     }
+
+    public IEnumerable<MediaItem> ReadMediaItems()
+    {
+        Dictionary<int, MediaItem> map = ReadMediaDictionary();
+        ReadMediaTagValues(map);
+
+        return map.Values;
+    }
+
 }
