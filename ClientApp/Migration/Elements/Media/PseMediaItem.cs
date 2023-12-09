@@ -17,7 +17,7 @@ using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Media;
 
-public class MediaItem : INotifyPropertyChanged, IMediaItem
+public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string>? m_metadataValues;
@@ -76,25 +76,25 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         set => SetField(ref m_pathVerified, value);
     }
 
-    public MediaItem()
+    public PseMediaItem()
     {
         PathVerified = TriState.Maybe;
     }
 
-    private List<MediaTagValue>? m_mediaTagValues;
+    private List<PseMediaTagValue>? m_mediaTagValues;
     private bool m_migrate;
 
-    public IEnumerable<MediaTagValue> Metadata => m_mediaTagValues ??= BuildTagValues();
+    public IEnumerable<PseMediaTagValue> Metadata => m_mediaTagValues ??= BuildTagValues();
 
-    private List<MediaTagValue> BuildTagValues()
+    private List<PseMediaTagValue> BuildTagValues()
     {
-        List<MediaTagValue> tags = new();
+        List<PseMediaTagValue> tags = new();
         foreach (string identifier in PseMetadataValues.Keys)
         {
             string value = PseMetadataValues[identifier];
 
             tags.Add(
-                new MediaTagValue()
+                new PseMediaTagValue()
                 {
                     MediaId = ID,
                     Value = value,

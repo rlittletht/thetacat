@@ -5,7 +5,7 @@ using Thetacat.Model;
 
 namespace Thetacat.Migration.Elements.Media;
 
-public interface IMediaItem
+public interface IPseMediaItem
 {
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
@@ -13,7 +13,7 @@ public interface IMediaItem
 
     public int ID { get; set; }
     public string FullPath { get; set; }
-    public IEnumerable<MediaTagValue> Metadata { get; }
+    public IEnumerable<PseMediaTagValue> Metadata { get; }
     public IEnumerable<PseMetatag> Tags { get; }
 
 }

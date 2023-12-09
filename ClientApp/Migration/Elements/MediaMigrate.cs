@@ -7,17 +7,17 @@ namespace Thetacat.Migration.Elements.Media;
 
 public class MediaMigrate
 {
-    private List<MediaItem>? m_mediaItems;
-    private Dictionary<int, IMediaItem>? m_mapPseMedia;
-    private Dictionary<Guid, IMediaItem>? m_mapCatMedia;
+    private List<PseMediaItem>? m_mediaItems;
+    private Dictionary<int, IPseMediaItem>? m_mapPseMedia;
+    private Dictionary<Guid, IPseMediaItem>? m_mapCatMedia;
     private List<PseMediaStackItem>? m_mediaStackItems;
 
     public readonly ObservableCollection<PathSubstitution> PathSubstitutions = new();
 
-    public List<MediaItem> MediaItems => m_mediaItems ??= new List<MediaItem>();
+    public List<PseMediaItem> MediaItems => m_mediaItems ??= new List<PseMediaItem>();
     public List<PseMediaStackItem> MediaStacks => m_mediaStackItems ??= new List<PseMediaStackItem>();
     
-    public void SetMediaItems(List<MediaItem> media)
+    public void SetMediaItems(List<PseMediaItem> media)
     {
         m_mediaItems = media;
     }
@@ -27,11 +27,11 @@ public class MediaMigrate
         m_mediaStackItems = stacks;
     }
 
-    Dictionary<int, IMediaItem> BuildPseMap()
+    Dictionary<int, IPseMediaItem> BuildPseMap()
     {
-        Dictionary<int, IMediaItem>? mapPseMedia = new();
+        Dictionary<int, IPseMediaItem>? mapPseMedia = new();
 
-        foreach (MediaItem item in MediaItems)
+        foreach (PseMediaItem item in MediaItems)
         {
             mapPseMedia.Add(item.ID, item);
         }
@@ -39,11 +39,11 @@ public class MediaMigrate
         return mapPseMedia;
     }
 
-    Dictionary<Guid, IMediaItem> BuildCatMap()
+    Dictionary<Guid, IPseMediaItem> BuildCatMap()
     {
-        Dictionary<Guid, IMediaItem> mapCatMedia = new();
+        Dictionary<Guid, IPseMediaItem> mapCatMedia = new();
 
-        foreach (MediaItem item in MediaItems)
+        foreach (PseMediaItem item in MediaItems)
         {
             mapCatMedia.Add(item.CatID, item);
         }
@@ -51,21 +51,21 @@ public class MediaMigrate
         return mapCatMedia;
     }
 
-    public IMediaItem? GetMediaFromPseId(int id)
+    public IPseMediaItem? GetMediaFromPseId(int id)
     {
         m_mapPseMedia ??= BuildPseMap();
 
-        if (m_mapPseMedia.TryGetValue(id, out IMediaItem? media))
+        if (m_mapPseMedia.TryGetValue(id, out IPseMediaItem? media))
             return media;
 
         return null;
     }
 
-    public IMediaItem? GetMediaFromCatId(Guid id)
+    public IPseMediaItem? GetMediaFromCatId(Guid id)
     {
         m_mapCatMedia ??= BuildCatMap();
 
-        if (m_mapCatMedia.TryGetValue(id, out IMediaItem? media))
+        if (m_mapCatMedia.TryGetValue(id, out IPseMediaItem? media))
             return media;
 
         return null;

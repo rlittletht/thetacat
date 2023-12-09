@@ -2,7 +2,7 @@
 
 namespace Thetacat.Migration.Elements.Media;
 
-public class MediaTagValue
+public class PseMediaTagValue
 {
     public int MediaId { get; set; }
     public string PseIdentifier { get; set; } = string.Empty;

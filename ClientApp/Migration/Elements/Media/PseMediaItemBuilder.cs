@@ -7,55 +7,55 @@ using System.Threading.Tasks;
 
 namespace Thetacat.Migration.Elements.Media;
 
-class MediaItemBuilder
+class PseMediaItemBuilder
 {
-    private MediaItem m_building = new MediaItem();
+    private PseMediaItem m_building = new PseMediaItem();
 
-    public static MediaItemBuilder Create() => new();
+    public static PseMediaItemBuilder Create() => new();
 
-    public MediaItemBuilder SetID(int id)
+    public PseMediaItemBuilder SetID(int id)
     {
         m_building.ID = id;
         return this;
     }
 
-    public MediaItemBuilder SetFilename(string name)
+    public PseMediaItemBuilder SetFilename(string name)
     {
         m_building.Filename = name;
         return this;
     }
 
-    public MediaItemBuilder SetFullPath(string path)
+    public PseMediaItemBuilder SetFullPath(string path)
     {
         m_building.FullPath = path;
         return this;
     }
 
-    public MediaItemBuilder SetFilePath(string path)
+    public PseMediaItemBuilder SetFilePath(string path)
     {
         m_building.FilePathSearch = path;
         return this;
     }
 
-    public MediaItemBuilder SetMimeType(string mimeType)
+    public PseMediaItemBuilder SetMimeType(string mimeType)
     {
         m_building.MimeType = mimeType;
         return this;
     }
 
-    public MediaItemBuilder SetVolumeId(string volumeId)
+    public PseMediaItemBuilder SetVolumeId(string volumeId)
     {
         m_building.VolumeId = volumeId;
         return this;
     }
 
-    public MediaItemBuilder SetVolumeName(string volumenName)
+    public PseMediaItemBuilder SetVolumeName(string volumenName)
     {
         m_building.VolumeName = volumenName;
         return this;
     }
 
-    public MediaItem Build()
+    public PseMediaItem Build()
     {
         return m_building;
     }

@@ -6,7 +6,7 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public class SchemaMapping<T>
 {
-    public delegate void SetMediaItemDelegate<T1>(IMediaItem mediaItem, T1 t);
+    public delegate void SetMediaItemDelegate<T1>(IPseMediaItem pseMediaItem, T1 t);
     public MetatagStandards.Standard StandardId { get; init; }
     public int ItemTag { get; init; }
     public string Name { get; init; }

@@ -256,7 +256,7 @@ public class ElementsDb
             INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
         WHERE MDT.identifier not in ({string.Join(",", s_ignoreMetadata)})";
 
-    void ReadMediaTagValues(Dictionary<int, MediaItem> items)
+    void ReadMediaTagValues(Dictionary<int, PseMediaItem> items)
     {
         using SQLiteCommand cmd = new()
                                   {
@@ -294,7 +294,7 @@ public class ElementsDb
             int mediaId = reader.GetInt32(0);
             string tagIdentifier = reader.GetString(2);
 
-            if (items.TryGetValue(mediaId, out MediaItem? item))
+            if (items.TryGetValue(mediaId, out PseMediaItem? item))
                 item.PseMetadataValues.Add(tagIdentifier, value);
             else
                 m_log.Add($"could not find media {mediaId} referenced in metadata {tagIdentifier}");
@@ -309,7 +309,7 @@ public class ElementsDb
             FROM tag_to_media_table TMT
         INNER JOIN tag_table TT on TT.id=TMT.tag_id";
 
-    void ReadMediaMetatags(MetatagMigrate metatagMigrate, Dictionary<int, MediaItem> items)
+    void ReadMediaMetatags(MetatagMigrate metatagMigrate, Dictionary<int, PseMediaItem> items)
     {
         using SQLiteCommand cmd = new()
                                   {
@@ -334,7 +334,7 @@ public class ElementsDb
             if (metatag == null)
                 continue;
 
-            if (items.TryGetValue(mediaId, out MediaItem? item))
+            if (items.TryGetValue(mediaId, out PseMediaItem? item))
                 item.PseMetatags.Add(metatag);
             else
                 m_log.Add($"could not find media {mediaId} referenced in metatag {tagId}");
@@ -346,7 +346,7 @@ public class ElementsDb
 
     private List<string> m_log = new();
 
-    private Dictionary<int, MediaItem> ReadMediaDictionary()
+    private Dictionary<int, PseMediaItem> ReadMediaDictionary()
     {
         using SQLiteCommand cmd = new()
                                   {
@@ -360,14 +360,14 @@ public class ElementsDb
 
         using SQLiteDataReader reader = cmd.ExecuteReader();
 
-        Dictionary<int, MediaItem> items = new();
+        Dictionary<int, PseMediaItem> items = new();
         while (reader.Read())
         {
             int pseId = reader.GetInt32(0);
 
             items.Add(
                 pseId,
-                MediaItemBuilder
+                PseMediaItemBuilder
                    .Create()
                    .SetID(pseId)
                    .SetFilename(reader.GetString(3))
@@ -383,9 +383,9 @@ public class ElementsDb
         return items;
     }
 
-    public IEnumerable<MediaItem> ReadMediaItems(MetatagMigrate metatagMigrate)
+    public IEnumerable<PseMediaItem> ReadMediaItems(MetatagMigrate metatagMigrate)
     {
-        Dictionary<int, MediaItem> map = ReadMediaDictionary();
+        Dictionary<int, PseMediaItem> map = ReadMediaDictionary();
         ReadMediaTagValues(map);
         ReadMediaMetatags(metatagMigrate, map);
         return map.Values;

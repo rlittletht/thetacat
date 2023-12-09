@@ -19,12 +19,12 @@ namespace Thetacat.Migration.Elements.Media.UI
     /// </summary>
     public partial class MediaItemDetails : Window
     {
-        private readonly IMediaItem m_mediaItem;
+        private readonly IPseMediaItem m_mediaItem;
 
-        public MediaItemDetails(IMediaItem mediaItem)
+        public MediaItemDetails(IPseMediaItem pseMediaItem)
         {
             InitializeComponent();
-            m_mediaItem = mediaItem;
+            m_mediaItem = pseMediaItem;
             DataContext = m_mediaItem;
         }
     }

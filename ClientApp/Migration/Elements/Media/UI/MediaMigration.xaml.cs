@@ -52,7 +52,7 @@ public partial class MediaMigration : UserControl
         m_appState = appState;
         m_migrate = migrate;
 
-        m_migrate.MediaMigrate.SetMediaItems(new List<MediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate)));
+        m_migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate)));
 
         mediaItemsListView.ItemsSource = m_migrate.MediaMigrate.MediaItems;
 
@@ -64,7 +64,7 @@ public partial class MediaMigration : UserControl
 
     bool FilterMediaItem(object o)
     {
-        MediaItem item = (MediaItem)o;
+        PseMediaItem item = (PseMediaItem)o;
 
         if (FilterItems.SelectedItem == null)
             return true;
@@ -113,7 +113,7 @@ public partial class MediaMigration : UserControl
 
         TriState tri = TriState.Maybe;
 
-        foreach (MediaItem item in m_migrate.MediaMigrate.MediaItems)
+        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
         {
             if (item.PathVerified == TriState.No)
                 tri = TriState.No;
@@ -201,8 +201,8 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // build the list to check (only the marked items)
-        List<MediaItem> checkedItems = new List<MediaItem>();
-        foreach (MediaItem item in m_migrate.MediaMigrate.MediaItems)
+        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
+        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
         {
             if (item.Migrate)
                 checkedItems.Add(item);
@@ -228,7 +228,7 @@ public partial class MediaMigration : UserControl
 
     private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        MediaItem? selected = mediaItemsListView.SelectedItem as MediaItem;
+        PseMediaItem? selected = mediaItemsListView.SelectedItem as PseMediaItem;
 
         if (selected != null)
         {
