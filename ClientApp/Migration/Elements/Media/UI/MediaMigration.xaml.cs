@@ -18,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
@@ -54,10 +55,10 @@ public partial class MediaMigration : UserControl
     public void Initialize(IAppState appState, ElementsDb db, MetatagMigrate migrate)
     {
         m_appState = appState;
-        m_items = new List<MediaItem>(db.ReadMediaItems());
-
         m_metatagMigrate = migrate;
-        
+
+        m_items = new List<MediaItem>(db.ReadMediaItems(m_metatagMigrate));
+      
         mediaItemsListView.ItemsSource = m_items;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);
@@ -224,5 +225,17 @@ public partial class MediaMigration : UserControl
 
         if (segStart < m_items.Count)
             VerifyPathSet(segStart, m_items.Count, pathSubst);
+    }
+
+    private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        MediaItem? selected = mediaItemsListView.SelectedItem as MediaItem;
+
+        if (selected != null)
+        {
+            MediaItemDetails details = new MediaItemDetails(selected);
+
+            details.ShowDialog();
+        }
     }
 }

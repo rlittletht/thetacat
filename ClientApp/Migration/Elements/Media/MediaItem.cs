@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Xmp;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Types;
@@ -19,8 +20,10 @@ namespace Thetacat.Migration.Elements.Media;
 public class MediaItem : INotifyPropertyChanged, IMediaItem
 {
     private TriState m_pathVerified;
-    private Dictionary<Guid, string>? m_metatagValues;
-    private Dictionary<string, string>? m_pseMetatagValues;
+    private Dictionary<Guid, string>? m_metadataValues;
+    private Dictionary<string, string>? m_pseMetadataValues;
+    private List<PseMetatag>? m_pseMetatagValues;
+
     private Guid m_catId;
     private int m_id;
 
@@ -46,16 +49,19 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         set => SetField(ref m_catId, value);
     }
 
-    public Dictionary<string, string> PseMetatagValues
+    public IEnumerable<PseMetatag> Tags => m_pseMetatagValues ??= new();
+    public List<PseMetatag> PseMetatags => m_pseMetatagValues ??= new();
+
+    public Dictionary<string, string> PseMetadataValues
     {
-        get => m_pseMetatagValues ??= new();
-        set => SetField(ref m_pseMetatagValues, value);
+        get => m_pseMetadataValues ??= new();
+        set => SetField(ref m_pseMetadataValues, value);
     }
 
-    public Dictionary<Guid, string> MetatagValues
+    public Dictionary<Guid, string> MetadataValues
     {
-        get => m_metatagValues ??= new();
-        set => SetField(ref m_metatagValues, value);
+        get => m_metadataValues ??= new();
+        set => SetField(ref m_metadataValues, value);
     }
 
     public TriState PathVerified
@@ -67,6 +73,29 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
     public MediaItem()
     {
         PathVerified = TriState.Maybe;
+    }
+
+    private List<MediaTagValue>? m_mediaTagValues;
+
+    public IEnumerable<MediaTagValue> Metadata => m_mediaTagValues ??= BuildTagValues();
+
+    private List<MediaTagValue> BuildTagValues()
+    {
+        List<MediaTagValue> tags = new();
+        foreach (string identifier in PseMetadataValues.Keys)
+        {
+            string value = PseMetadataValues[identifier];
+
+            tags.Add(
+                new MediaTagValue()
+                {
+                    MediaId = ID,
+                    Value = value,
+                    PseIdentifier = identifier
+                });
+        }
+
+        return tags;
     }
 
     public void MigrateMetadataForDirectory(IAppState appState, Metatag? parent, MetadataExtractor.Directory directory, MetatagStandards.Standard standard)
@@ -98,7 +127,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
             }
 
             // Description is the value
-            MetatagValues.Add(metatag.ID, tag.Description ?? string.Empty);
+            MetadataValues.Add(metatag.ID, tag.Description ?? string.Empty);
         }
     }
 

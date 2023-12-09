@@ -19,7 +19,7 @@
                         <RowDefinition Height="30*" />
                         <RowDefinition Height="36" />
                     </Grid.RowDefinitions>
-                    <ListView Name="mediaItemsListView" ItemsSource="{Binding Path=ElementsMediaItem}" Grid.Row="0">
+                    <ListView Name="mediaItemsListView" ItemsSource="{Binding Path=ElementsMediaItem}" Grid.Row="0" MouseDoubleClick="HandleDoubleClick">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="Valid" DisplayMemberBinding="{Binding PathVerified}" />

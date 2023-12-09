@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Globalization;
 using System.Windows;
+using Emgu.CV.Util;
 using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -294,9 +295,49 @@ public class ElementsDb
             string tagIdentifier = reader.GetString(2);
 
             if (items.TryGetValue(mediaId, out MediaItem? item))
-                item.PseMetatagValues.Add(tagIdentifier, value);
+                item.PseMetadataValues.Add(tagIdentifier, value);
             else
-                m_log.Add($"could not find media {mediaId} referenced in metatag {tagIdentifier}");
+                m_log.Add($"could not find media {mediaId} referenced in metadata {tagIdentifier}");
+        }
+
+        if (m_log.Count > 0)
+            MessageBox.Show($"warnings: {string.Join(",", m_log)}");
+    }
+
+    private static readonly string s_queryMediaTags = @"
+        SELECT TMT.media_id, TT.id
+            FROM tag_to_media_table TMT
+        INNER JOIN tag_table TT on TT.id=TMT.tag_id";
+
+    void ReadMediaMetatags(MetatagMigrate metatagMigrate, Dictionary<int, MediaItem> items)
+    {
+        using SQLiteCommand cmd = new()
+                                  {
+                                      CommandType = CommandType.Text,
+                                      Connection = m_connection,
+                                      Transaction = null,
+                                  };
+
+
+        cmd.CommandText = s_queryMediaTags;
+
+        using SQLiteDataReader reader = cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            int mediaId = reader.GetInt32(0);
+            int tagId = reader.GetInt32(1);
+
+            PseMetatag? metatag = metatagMigrate.TryGetMetatagFromID(tagId);
+
+            // there are many metatags we don't use (history, import, etc)
+            if (metatag == null)
+                continue;
+
+            if (items.TryGetValue(mediaId, out MediaItem? item))
+                item.PseMetatags.Add(metatag);
+            else
+                m_log.Add($"could not find media {mediaId} referenced in metatag {tagId}");
         }
 
         if (m_log.Count > 0)
@@ -342,11 +383,11 @@ public class ElementsDb
         return items;
     }
 
-    public IEnumerable<MediaItem> ReadMediaItems()
+    public IEnumerable<MediaItem> ReadMediaItems(MetatagMigrate metatagMigrate)
     {
         Dictionary<int, MediaItem> map = ReadMediaDictionary();
         ReadMediaTagValues(map);
-
+        ReadMediaMetatags(metatagMigrate, map);
         return map.Values;
     }
 

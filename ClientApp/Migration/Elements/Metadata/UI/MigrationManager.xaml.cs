@@ -47,10 +47,10 @@ public partial class MigrationManager : Window
     {
         ElementsDb db = ElementsDb.Create(database);
 
-        MediaMigrationTab.Initialize(m_appState, db, m_migrate);
         MetatagMigrationTab.Initialize(m_appState, db, m_migrate);
         MetadataMigrationTab.Initialize(m_appState, db, m_migrate);
         MetadataMigrateSummaryTab.Initialize(m_appState, m_migrate);
+        MediaMigrationTab.Initialize(m_appState, db, m_migrate);
 
         db.Close();
     }

@@ -81,6 +81,15 @@ public class MetatagMigrate
     {
         return m_metatagDictionary[ID];
     }
+
+    public PseMetatag? TryGetMetatagFromID(int ID)
+    {
+        if (m_metatagDictionary.TryGetValue(ID, out PseMetatag? id))
+            return id;
+
+        return null;
+    }
+
     public void SetMetadataSchema(PseMetadataSchema schema)
     {
         m_metadataSchema = schema;
