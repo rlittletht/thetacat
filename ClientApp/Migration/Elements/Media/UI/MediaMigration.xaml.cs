@@ -32,21 +32,37 @@ public partial class MediaMigration : UserControl
     private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
 
+    /*----------------------------------------------------------------------------
+        %%Function: MediaMigration
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.MediaMigration
+    ----------------------------------------------------------------------------*/
     public MediaMigration()
     {
         InitializeComponent();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: VerifyPaths
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPaths
+    ----------------------------------------------------------------------------*/
     private void VerifyPaths(object sender, RoutedEventArgs e)
     {
         VerifyPaths();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoFilterItemChanged
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.DoFilterItemChanged
+    ----------------------------------------------------------------------------*/
     private void DoFilterItemChanged(object sender, SelectionChangedEventArgs e)
     {
         CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource).Refresh();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: Initialize
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.Initialize
+    ----------------------------------------------------------------------------*/
     public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
     {
         m_appState = appState;
@@ -62,6 +78,10 @@ public partial class MediaMigration : UserControl
         SetSubstitutionsFromSettings();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: FilterMediaItem
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.FilterMediaItem
+    ----------------------------------------------------------------------------*/
     bool FilterMediaItem(object o)
     {
         PseMediaItem item = (PseMediaItem)o;
@@ -84,6 +104,10 @@ public partial class MediaMigration : UserControl
         return true;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: SetSubstitutionsFromSettings
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.SetSubstitutionsFromSettings
+    ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
         if (m_appState == null || m_migrate == null)
@@ -106,6 +130,10 @@ public partial class MediaMigration : UserControl
 
     private int m_countRunningVerifyTasks = 0;
 
+    /*----------------------------------------------------------------------------
+        %%Function: SetVerifyResult
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.SetVerifyResult
+    ----------------------------------------------------------------------------*/
     void SetVerifyResult()
     {
         if (m_appState == null || m_migrate == null)
@@ -144,6 +172,10 @@ public partial class MediaMigration : UserControl
         VerifyResult.Visibility = Visibility.Visible;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: CompleteVerifyTask
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.CompleteVerifyTask
+    ----------------------------------------------------------------------------*/
     void CompleteVerifyTask()
     {
         if (VerifyStatus == null)
@@ -157,6 +189,10 @@ public partial class MediaMigration : UserControl
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: VerifyPathSet
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPathSet
+    ----------------------------------------------------------------------------*/
     void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
     {
         if (m_migrate == null || m_appState == null)
@@ -176,6 +212,10 @@ public partial class MediaMigration : UserControl
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: VerifyPaths
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPaths
+    ----------------------------------------------------------------------------*/
     public void VerifyPaths()
     {
         if (m_appState == null || m_migrate == null)
@@ -226,6 +266,10 @@ public partial class MediaMigration : UserControl
             VerifyPathSet(segStart, checkedItems.Count, pathSubst);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: HandleDoubleClick
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.HandleDoubleClick
+    ----------------------------------------------------------------------------*/
     private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
     {
         PseMediaItem? selected = mediaItemsListView.SelectedItem as PseMediaItem;
