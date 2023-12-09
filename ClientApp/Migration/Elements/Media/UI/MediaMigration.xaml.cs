@@ -200,22 +200,30 @@ public partial class MediaMigration : UserControl
         VerifyResult.Visibility = Visibility.Hidden;
         VerifyStatus.Visibility = Visibility.Visible;
 
+        // build the list to check (only the marked items)
+        List<MediaItem> checkedItems = new List<MediaItem>();
+        foreach (MediaItem item in m_migrate.MediaMigrate.MediaItems)
+        {
+            if (item.Migrate)
+                checkedItems.Add(item);
+        }
+
         // split the list into 4 parts and do them in parallel
-        int segLength = m_migrate.MediaMigrate.MediaItems.Count; //  / 10;
+        int segLength = checkedItems.Count; //  / 10;
         int segStart = 0;
         for (int iSeg = 0; iSeg < 10; iSeg++)
         {
-            int segEnd = Math.Min(segStart + segLength, m_migrate.MediaMigrate.MediaItems.Count);
+            int segEnd = Math.Min(segStart + segLength, checkedItems.Count);
 
             VerifyPathSet(segStart, segEnd, pathSubst);
             segStart += segLength;
 
-            if (segEnd == m_migrate.MediaMigrate.MediaItems.Count)
+            if (segEnd == checkedItems.Count)
                 break;
         }
 
-        if (segStart < m_migrate.MediaMigrate.MediaItems.Count)
-            VerifyPathSet(segStart, m_migrate.MediaMigrate.MediaItems.Count, pathSubst);
+        if (segStart < checkedItems.Count)
+            VerifyPathSet(segStart, checkedItems.Count, pathSubst);
     }
 
     private void HandleDoubleClick(object sender, MouseButtonEventArgs e)

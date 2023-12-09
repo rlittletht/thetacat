@@ -22,6 +22,13 @@
                     <ListView Name="mediaItemsListView" ItemsSource="{Binding Path=ElementsMediaItem}" Grid.Row="0" MouseDoubleClick="HandleDoubleClick">
                         <ListView.View>
                             <GridView>
+                                <GridViewColumn Header="Migrate">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Name="Migrate" IsChecked="{Binding Path=Migrate}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                                 <GridViewColumn Header="Valid" DisplayMemberBinding="{Binding PathVerified}" />
                                 <GridViewColumn Header="ID" DisplayMemberBinding="{Binding Path=ID}" />
                                 <GridViewColumn Header="Filename" DisplayMemberBinding="{Binding Path=Filename}" />

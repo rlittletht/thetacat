@@ -37,6 +37,12 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
     public int ImageHeight { get; set; }
     public DateTime FileDateOriginal { get; set; }
 
+    public bool Migrate
+    {
+        get => m_migrate;
+        set => SetField(ref m_migrate, value);
+    }
+
     public int ID
     {
         get => m_id;
@@ -76,6 +82,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
     }
 
     private List<MediaTagValue>? m_mediaTagValues;
+    private bool m_migrate;
 
     public IEnumerable<MediaTagValue> Metadata => m_mediaTagValues ??= BuildTagValues();
 
@@ -113,7 +120,10 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         {
             // we have to create one
             dirTag = Metatag.Create(parent?.ID, directory.Name, directory.Name, standard);
-            appState.MetatagSchema.AddMetatag(dirTag);
+            if (parent == null)
+                appState.MetatagSchema.AddStandardRoot(dirTag);
+            else
+                appState.MetatagSchema.AddMetatag(dirTag);
         }
 
         foreach (Tag tag in directory.Tags)
@@ -124,6 +134,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
             {
                 // need to create a new one
                 metatag = Metatag.Create(dirTag?.ID, tag.Name, tag.Name, standard);
+                appState.MetatagSchema.AddMetatag(metatag);
             }
 
             // Description is the value
@@ -136,7 +147,7 @@ public class MediaItem : INotifyPropertyChanged, IMediaItem
         if (PathVerified == TriState.Yes)
             return;
 
-        string newPath = FullPath;
+        string newPath = $"{VolumeName}/{FullPath}";
 
         foreach (string key in subst.Keys)
         {
