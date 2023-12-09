@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 
 namespace Thetacat.Migration.Elements.Media;
@@ -11,9 +12,11 @@ public class MediaMigrate
     private Dictionary<Guid, IMediaItem>? m_mapCatMedia;
     private List<PseMediaStackItem>? m_mediaStackItems;
 
+    public readonly ObservableCollection<PathSubstitution> PathSubstitutions = new();
+
     public List<MediaItem> MediaItems => m_mediaItems ??= new List<MediaItem>();
     public List<PseMediaStackItem> MediaStacks => m_mediaStackItems ??= new List<PseMediaStackItem>();
-
+    
     public void SetMediaItems(List<MediaItem> media)
     {
         m_mediaItems = media;

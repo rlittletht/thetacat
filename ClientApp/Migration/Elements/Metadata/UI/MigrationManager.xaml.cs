@@ -30,7 +30,7 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 public partial class MigrationManager : Window
 {
     private readonly IAppState m_appState;
-    private ElementsMigrate m_migrate;
+    private readonly ElementsMigrate m_migrate;
 
     void SwitchToSummaryTab()
     {

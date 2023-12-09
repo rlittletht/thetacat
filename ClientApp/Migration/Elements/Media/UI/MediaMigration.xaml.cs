@@ -30,8 +30,6 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 public partial class MediaMigration : UserControl
 {
     private IAppState? m_appState;
-    private List<MediaItem>? m_items;
-    private readonly List<PathSubstitution> m_pathSubstitutions = new();
     private ElementsMigrate? m_migrate;
 
     public MediaMigration()
@@ -54,14 +52,13 @@ public partial class MediaMigration : UserControl
         m_appState = appState;
         m_migrate = migrate;
 
-        m_items = new List<MediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate));
-      
-        mediaItemsListView.ItemsSource = m_items;
+        m_migrate.MediaMigrate.SetMediaItems(new List<MediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate)));
+
+        mediaItemsListView.ItemsSource = m_migrate.MediaMigrate.MediaItems;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);
         view.Filter = FilterMediaItem;
 
-        mediaItemsListView.ItemsSource = m_items;
         SetSubstitutionsFromSettings();
     }
 
@@ -89,7 +86,7 @@ public partial class MediaMigration : UserControl
 
     public void SetSubstitutionsFromSettings()
     {
-        if (m_appState == null)
+        if (m_appState == null || m_migrate == null)
             throw new Exception("Not initialized");
 
         foreach (string s in m_appState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
@@ -101,31 +98,31 @@ public partial class MediaMigration : UserControl
                 continue;
             }
 
-            m_pathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
+            m_migrate.MediaMigrate.PathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
         }
 
-        substDatagrid.ItemsSource = m_pathSubstitutions;
+        substDatagrid.ItemsSource = m_migrate.MediaMigrate.PathSubstitutions;
     }
 
     private int m_countRunningVerifyTasks = 0;
 
     void SetVerifyResult()
     {
+        if (m_appState == null || m_migrate == null)
+            throw new Exception("Not initialized");
+
         TriState tri = TriState.Maybe;
 
-        if (m_items != null)
+        foreach (MediaItem item in m_migrate.MediaMigrate.MediaItems)
         {
-            foreach (MediaItem item in m_items)
-            {
-                if (item.PathVerified == TriState.No)
-                    tri = TriState.No;
+            if (item.PathVerified == TriState.No)
+                tri = TriState.No;
 
-                if (item.PathVerified == TriState.Yes && tri != TriState.No)
-                    tri = TriState.Yes;
+            if (item.PathVerified == TriState.Yes && tri != TriState.No)
+                tri = TriState.Yes;
 
-                if (item.PathVerified == TriState.Maybe && tri != TriState.No)
-                    tri = TriState.Maybe;
-            }
+            if (item.PathVerified == TriState.Maybe && tri != TriState.No)
+                tri = TriState.Maybe;
         }
 
         switch (tri)
@@ -162,8 +159,8 @@ public partial class MediaMigration : UserControl
 
     void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
     {
-        Debug.Assert(m_items != null, nameof(m_items) + " != null");
-        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
+        if (m_migrate == null || m_appState == null)
+            throw new Exception("not initialized");
 
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
@@ -173,7 +170,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        m_items[i].CheckPath(m_appState, subs);
+                        m_migrate.MediaMigrate.MediaItems[i].CheckPath(m_appState, subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -181,17 +178,14 @@ public partial class MediaMigration : UserControl
 
     public void VerifyPaths()
     {
-        if (m_appState == null)
+        if (m_appState == null || m_migrate == null)
             throw new Exception("Not initialized");
-
-        if (m_items == null)
-            return;
 
         Dictionary<string, string> pathSubst = new();
 
         List<string> regValues = new();
 
-        foreach (PathSubstitution sub in m_pathSubstitutions)
+        foreach (PathSubstitution sub in m_migrate.MediaMigrate.PathSubstitutions)
         {
             pathSubst.Add(sub.From, sub.To);
             regValues.Add($"{sub.From},{sub.To}");
@@ -207,21 +201,21 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // split the list into 4 parts and do them in parallel
-        int segLength = m_items.Count; //  / 10;
+        int segLength = m_migrate.MediaMigrate.MediaItems.Count; //  / 10;
         int segStart = 0;
         for (int iSeg = 0; iSeg < 10; iSeg++)
         {
-            int segEnd = Math.Min(segStart + segLength, m_items.Count);
+            int segEnd = Math.Min(segStart + segLength, m_migrate.MediaMigrate.MediaItems.Count);
 
             VerifyPathSet(segStart, segEnd, pathSubst);
             segStart += segLength;
 
-            if (segEnd == m_items.Count)
+            if (segEnd == m_migrate.MediaMigrate.MediaItems.Count)
                 break;
         }
 
-        if (segStart < m_items.Count)
-            VerifyPathSet(segStart, m_items.Count, pathSubst);
+        if (segStart < m_migrate.MediaMigrate.MediaItems.Count)
+            VerifyPathSet(segStart, m_migrate.MediaMigrate.MediaItems.Count, pathSubst);
     }
 
     private void HandleDoubleClick(object sender, MouseButtonEventArgs e)

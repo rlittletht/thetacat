@@ -33,7 +33,7 @@ public partial class MetadataMigrateSummary : UserControl
     private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
 
-    private readonly ObservableCollection<MetatagMigrationItem> m_metatagMigrationItems = new ObservableCollection<MetatagMigrationItem>();
+    private readonly ObservableCollection<MetatagMigrationItem> m_metatagMigrationItems = new();
     private MetatagSchemaDiff? m_diff;
 
     public MetadataMigrateSummary()
