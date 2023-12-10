@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using Thetacat.Model;
+using Thetacat.ServiceClient;
 
 namespace Thetacat.Import;
 
@@ -49,6 +50,6 @@ public class MediaImport
 
         // at this point, we have an ID created for the media. Go ahead and commit
         // the import to the database
-
+        ServiceInterop.InsertImportItems(ImportItems);
     }
 }

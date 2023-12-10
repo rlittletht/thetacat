@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Windows.Documents.DocumentStructures;
 using TCore;
+using Thetacat.Import;
 
 namespace Thetacat.ServiceClient.LocalService;
 
 public class Import
 {
     private static Dictionary<string, string> s_aliases =
-    new()
-    {
+        new()
+        {
             { "tcat_import", "IMP" },
-    };
+        };
 
     private static readonly string s_baseQuery = $@"
         SELECT 
@@ -52,7 +54,7 @@ public class Import
                                 Source = !reader.Reader.IsDBNull(5) ? reader.Reader.GetString(5) : null
                             };
 
-                            building.Add(item);
+                        building.Add(item);
                     },
                     (cmd) => cmd.Parameters.AddWithValue("@SourceClient", sourceClient));
 
@@ -64,4 +66,71 @@ public class Import
         }
     }
 
+    private static readonly string s_queryUpdateState = @"
+        UPDATE tcat_import SET state=@NewState WHERE id=@MediaID";
+
+    public static void UpdateImportStateForItem(Guid id, ImportItem item, ImportItem.ImportState newState)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        LocalServiceClient.Sql.ExecuteNonQuery(
+            new SqlCommandTextInit(s_queryUpdateState, s_aliases),
+            (cmd) =>
+            {
+                cmd.Parameters.AddWithValue("@MediaID", id);
+                cmd.Parameters.AddWithValue("@NewState", newState);
+            });
+    }
+
+    private static readonly string s_queryInsertImportItem = @"
+        INSERT INTO tcat_import
+            (id, state, sourcePath, sourceServer, source)
+        VALUES ";
+
+    public static void InsertImportItems(IEnumerable<ImportItem> items)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+        StringBuilder sb = new StringBuilder();
+
+        LocalServiceClient.Sql.BeginTransaction();
+
+        try
+        {
+            int current = 0;
+
+            sb.Clear();
+            sb.Append(s_queryInsertImportItem);
+
+            foreach (ImportItem item in items)
+            {
+                if (current == 1000)
+                {
+                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(s_queryUpdateState, s_aliases));
+                    current = 0;
+                    sb.Clear();
+                    sb.Append(s_queryInsertImportItem);
+                }
+
+                if (current > 0)
+                    sb.Append(",");
+
+                sb.Append(
+                    $"('{Sql.Sqlify(item.ID.ToString())}', '{item.State}', '{Sql.Sqlify(item.SourcePath)}', '{Sql.Sqlify(item.SourceServer)}', '{Sql.Nullable(item.Source)}') ");
+
+                current++;
+            }
+
+            if (current > 0)
+                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(s_queryUpdateState, s_aliases));
+        }
+        catch (Exception ex)
+        {
+            LocalServiceClient.Sql.Rollback();
+            throw;
+        }
+
+        LocalServiceClient.Sql.Commit();
+    }
 }
