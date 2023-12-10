@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
+using Thetacat.Import;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
@@ -212,6 +213,38 @@ public partial class MediaMigration : UserControl
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
     }
 
+    private List<PseMediaItem> BuildCheckedItems()
+    {
+        if (m_appState == null || m_migrate == null)
+            throw new Exception("Not initialized");
+
+        // build the list to check (only the marked items)
+        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
+        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
+        {
+            if (item.Migrate)
+                checkedItems.Add(item);
+        }
+
+        return checkedItems;
+    }
+
+    private List<PseMediaItem> BuildCheckedVerifiedItems()
+    {
+        if (m_appState == null || m_migrate == null)
+            throw new Exception("Not initialized");
+
+        // build the list to check (only the marked items)
+        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
+        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
+        {
+            if (item.Migrate && item.PathVerified == TriState.Yes)
+                checkedItems.Add(item);
+        }
+
+        return checkedItems;
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: VerifyPaths
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPaths
@@ -241,12 +274,7 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
-        {
-            if (item.Migrate)
-                checkedItems.Add(item);
-        }
+        List<PseMediaItem> checkedItems = BuildCheckedItems();
 
         // split the list into 4 parts and do them in parallel
         int segLength = checkedItems.Count; //  / 10;
@@ -280,5 +308,28 @@ public partial class MediaMigration : UserControl
 
             details.ShowDialog();
         }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddToCatalog
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.AddToCatalog
+
+        Take the checked items and add them to the catalog (and mark them pending
+        for upload). This can only happen on items with verified paths
+    ----------------------------------------------------------------------------*/
+    private void AddToCatalog(object sender, RoutedEventArgs e)
+    {
+        if (m_appState?.MetatagSchema == null || m_migrate == null)
+            throw new Exception("Not initialized");
+
+        List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
+        MediaImport import = new MediaImport(checkedItems, Environment.MachineName);
+
+        import.CreateCatalogItemsAndUpdateImportTable(m_appState.Catalog, m_appState.MetatagSchema);
+    }
+
+    private void MigrateMetadata(object sender, RoutedEventArgs e)
+    {
+
     }
 }

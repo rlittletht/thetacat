@@ -17,7 +17,7 @@ using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Media;
 
-public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem
+public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFile
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string>? m_metadataValues;
@@ -142,12 +142,19 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem
         }
     }
 
+    string GetFullyQualifiedForSlashed()
+    {
+        return $"{VolumeName}/{FullPath}";
+    }
+
+    public string FullyQualifiedPath => $"{VolumeName}/{FullPath}".Replace("/", "\\");
+
     public void CheckPath(IAppState appState, Dictionary<string, string> subst)
     {
         if (PathVerified == TriState.Yes)
             return;
 
-        string newPath = $"{VolumeName}/{FullPath}";
+        string newPath = GetFullyQualifiedForSlashed();
 
         foreach (string key in subst.Keys)
         {
@@ -158,16 +165,16 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem
 
         PathVerified = Path.Exists(newPath) ? TriState.Yes : TriState.No;
 
-        if (PathVerified == TriState.Yes)
-        {
-            // load exif and other data from this item.
-            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(newPath);
-
-            foreach (MetadataExtractor.Directory directory in directories)
-            {
-                MigrateMetadataForDirectory(appState, null, directory, MetatagStandards.Standard.Unknown);
-            }
-        }
+//        if (PathVerified == TriState.Yes)
+//        {
+//            // load exif and other data from this item.
+//            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(newPath);
+//
+//            foreach (MetadataExtractor.Directory directory in directories)
+//            {
+//                MigrateMetadataForDirectory(appState, null, directory, MetatagStandards.Standard.Unknown);
+//            }
+//        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

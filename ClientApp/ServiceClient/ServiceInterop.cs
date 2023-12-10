@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Thetacat.Import;
+using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient.LocalService;
 
@@ -31,5 +32,10 @@ public class ServiceInterop
     public static void UpdateImportStateForItem(Guid id, ImportItem item, ImportItem.ImportState newState)
     {
         LocalService.Import.UpdateImportStateForItem(id, item, newState);
+    }
+
+    public static void InsertNewMediaItems(IEnumerable<MediaItem> newItems)
+    {
+        LocalService.Media.InsertNewMediaItems(newItems);
     }
 }

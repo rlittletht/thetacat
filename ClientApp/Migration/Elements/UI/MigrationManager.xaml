@@ -21,17 +21,17 @@
             </TabItem.Header>
             <elements:UserMetatagMigration x:Name="MetatagMigrationTab" />
         </TabItem>
+        <TabItem Selector.Selected="OnMetatagMigrateSummaryTabSelected">
+            <TabItem.Header>
+                <TextBlock>Metadata Migrate</TextBlock>
+            </TabItem.Header>
+            <elements:MetadataMigrateSummary x:Name="MetadataMigrateSummaryTab" />
+        </TabItem>
         <TabItem>
             <TabItem.Header>
                 <TextBlock>Media</TextBlock>
             </TabItem.Header>
             <elements:MediaMigration x:Name="MediaMigrationTab"/>
-        </TabItem>
-        <TabItem Selector.Selected="OnMetatagMigrateSummaryTabSelected">
-            <TabItem.Header>
-                <TextBlock>Metadata Migrate</TextBlock>
-            </TabItem.Header>
-            <elements:MetadataMigrateSummary x:Name="MetadataMigrateSummaryTab"/>
         </TabItem>
     </TabControl>
 </Window>

@@ -3,5 +3,6 @@
 public enum MediaItemState
 {
     Pending,
-    Active
+    Active,
+    Unknown
 }

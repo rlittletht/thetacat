@@ -11,7 +11,38 @@ public class ImportItem: INotifyPropertyChanged
     {
         PendingMediaCreate,
         PendingUpload,
-        Complete
+        Complete,
+        Unknown
+    }
+
+    public static ImportState StateFromString(string state)
+    {
+        switch (state.ToUpper())
+        {
+            case "PENDING-CREATE":
+                return ImportState.PendingMediaCreate;
+            case "PENDING-UPLOAD":
+                return ImportState.PendingUpload;
+            case "COMPLETE":
+                return ImportState.Complete;
+        }
+
+        return ImportState.Unknown;
+    }
+
+    public static string StringFromState(ImportState state)
+    {
+        switch (state)
+        {
+            case ImportState.PendingMediaCreate:
+                return "pending-create";
+            case ImportState.PendingUpload:
+                return "pending-upload";
+            case ImportState.Complete:
+                return "complete";
+            default:
+                return "unknown";
+        }
     }
 
     private Guid m_id;

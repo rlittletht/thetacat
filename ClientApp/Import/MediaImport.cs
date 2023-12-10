@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows;
 using Thetacat.Model;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
+using Thetacat.Types;
 
 namespace Thetacat.Import;
 
@@ -26,6 +29,17 @@ public class MediaImport
 {
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
+    public MediaImport(IEnumerable<IMediaItemFile> files, string source)
+    {
+        foreach (IMediaItemFile file in files)
+        {
+            string pathRoot = Path.GetPathRoot(file.FullyQualifiedPath)?.Replace("\\", "/") ?? string.Empty;
+            string path = Path.GetRelativePath(pathRoot, file.FullyQualifiedPath).Replace("\\", "/");
+
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path));
+        }
+    }
+
     public MediaImport(IEnumerable<string> files, string source)
     {
         foreach (string file in files)
@@ -37,7 +51,7 @@ public class MediaImport
         }
     }
 
-    public void CreateCatalogItemsAndUpdateImportTable(Catalog catalog)
+    public void CreateCatalogItemsAndUpdateImportTable(Catalog catalog, MetatagSchema metatagSchema)
     {
         foreach (ImportItem item in ImportItems)
         {
@@ -45,11 +59,25 @@ public class MediaImport
             MediaItem mediaItem = new(item);
 
             catalog.AddNewMediaItem(mediaItem);
+            mediaItem.LocalPath = Path.Combine(item.SourceServer, item.SourcePath);
+
+            List<string>? log = mediaItem.ReadMetadataFromFile(metatagSchema);
+
+            if (log != null && log.Count != 0)
+                MessageBox.Show($"Found tag differences: {string.Join(", ", log)}");
+
             item.ID = mediaItem.ID;
+
+
+            // go ahead and mark pending upload -- we're going to create the item in the
+            // catalog before we insert the import items...
+            item.State = ImportItem.ImportState.PendingUpload;
         }
 
-        // at this point, we have an ID created for the media. Go ahead and commit
-        // the import to the database
+        // at this point, we have an ID created for the media. Go ahead and insert the
+        // new media items and commit the import to the database
+        catalog.FlushPendingCreates();
         ServiceInterop.InsertImportItems(ImportItems);
     }
+
 }

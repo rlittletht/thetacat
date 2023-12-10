@@ -7,7 +7,7 @@ namespace Thetacat.Model;
 public class MediaTag
 {
     public Metatag Metatag { get; init; }
-    public string? Value { get; init; }
+    public string? Value { get; set; }
 
     public MediaTag(Metatag metatag, string? value)
     {

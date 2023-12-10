@@ -79,7 +79,7 @@ public class Import
             (cmd) =>
             {
                 cmd.Parameters.AddWithValue("@MediaID", id);
-                cmd.Parameters.AddWithValue("@NewState", newState);
+                cmd.Parameters.AddWithValue("@NewState", ImportItem.StringFromState(newState));
             });
     }
 
@@ -107,7 +107,7 @@ public class Import
             {
                 if (current == 1000)
                 {
-                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(s_queryUpdateState, s_aliases));
+                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
                     current = 0;
                     sb.Clear();
                     sb.Append(s_queryInsertImportItem);
@@ -117,15 +117,15 @@ public class Import
                     sb.Append(",");
 
                 sb.Append(
-                    $"('{Sql.Sqlify(item.ID.ToString())}', '{item.State}', '{Sql.Sqlify(item.SourcePath)}', '{Sql.Sqlify(item.SourceServer)}', '{Sql.Nullable(item.Source)}') ");
+                    $"('{Sql.Sqlify(item.ID.ToString())}', '{ImportItem.StringFromState(item.State)}', '{Sql.Sqlify(item.SourcePath)}', '{Sql.Sqlify(item.SourceServer)}', {Sql.Nullable(item.Source)}) ");
 
                 current++;
             }
 
             if (current > 0)
-                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(s_queryUpdateState, s_aliases));
+                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             LocalServiceClient.Sql.Rollback();
             throw;
