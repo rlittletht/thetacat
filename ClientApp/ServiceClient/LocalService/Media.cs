@@ -13,6 +13,7 @@ public class Media
         new()
         {
             { "tcat_media", "MT" },
+            { "tcat_mediatags", "TMT"}
         };
 
     private static readonly string s_queryInsertMedia = @"
@@ -54,6 +55,10 @@ public class Media
             LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: InsertNewMediaItems
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.InsertNewMediaItems
+    ----------------------------------------------------------------------------*/
     public static void InsertNewMediaItems(IEnumerable<MediaItem> items)
     {
         Guid crid = Guid.NewGuid();
@@ -106,6 +111,71 @@ public class Media
         }
 
         LocalServiceClient.Sql.Commit();
+    }
+
+    static string s_queryFullCatalogWithTags = @"
+            SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value
+            FROM $$#tcat_media$$
+            INNER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id";
+
+    public static ServiceCatalog ReadFullCatalog()
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(s_queryFullCatalogWithTags);
+        selectTags.AddAliases(s_aliases);
+
+        string sQuery = selectTags.ToString();
+
+        // need to not insert media items more than once...but we will get a row for every
+        // mediatag, which means lots and lots of duplicate media ids...
+        HashSet<Guid> mediaAdded = new HashSet<Guid>();
+
+        try
+        {
+            ServiceCatalog serviceCatalog =
+                SqlReader.DoGenericQueryDelegateRead(
+                    LocalServiceClient.Sql,
+                    crid,
+                    sQuery,
+                    (SqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
+                    {
+                        if (building.MediaItems == null || building.MediaTags == null)
+                        {
+                            building.MediaItems = new List<ServiceMediaItem>();
+                            building.MediaTags = new List<ServiceMediaTag>();
+                        }
+
+                        Guid mediaId = reader.Reader.GetGuid(0);
+                        if (!mediaAdded.Contains(mediaId))
+                        {
+                            building.MediaItems.Add(new ServiceMediaItem()
+                                                    {
+                                                        Id = mediaId,
+                                                        VirtualPath = reader.Reader.GetString(1),
+                                                        MimeType = reader.Reader.GetString(2),
+                                                        State = reader.Reader.GetString(3),
+                                                        Sha5 = reader.Reader.GetString(4)
+                                                    });
+                            mediaAdded.Add(mediaId);
+                        }
+                        building.MediaTags.Add(new ServiceMediaTag()
+                                               {
+                                                   Id = reader.Reader.GetGuid(4),
+                                                   Value = reader.Reader.IsDBNull(5) ? null : reader.Reader.GetString(5)
+                                               });
+
+                    });
+
+            return serviceCatalog;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new ServiceCatalog();
+        }
     }
 
 }

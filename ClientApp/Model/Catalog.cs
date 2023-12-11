@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Windows.Documents;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Model;
@@ -37,6 +39,49 @@ public class Catalog
         foreach (MediaItem item in creating)
         {
             item.ClearPendingCreate();
+        }
+    }
+
+    public void AddMediaTag(Guid id, MediaTag tag)
+    {
+        if (!m_items.ContainsKey(id))
+            throw new Exception("media not present");
+
+        m_items[id]
+           .Tags.AddOrUpdate(
+                tag.Metatag.ID,
+                tag,
+                (key, oldTag) =>
+                {
+                    oldTag.Value = tag.Value;
+                    return oldTag;
+                });
+    }
+
+    public void ReadFullCatalogFromServer(MetatagSchema schema)
+    {
+        ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
+
+        m_items.Keys.Clear();
+        m_items.Values.Clear();
+
+        if (catalog.MediaItems == null || catalog.MediaTags == null)
+            return;
+        
+        foreach (ServiceMediaItem item in catalog.MediaItems)
+        {
+            MediaItem mediaItem = new MediaItem(item);
+            m_items.Add(mediaItem.ID, mediaItem);
+        }
+
+        foreach (ServiceMediaTag tag in catalog.MediaTags)
+        {
+            Metatag? metatag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(tag.Id));
+
+            if (metatag == null)
+                throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema");
+
+            AddMediaTag(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
     }
 }

@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Markup;
 using Thetacat.Import;
 using Thetacat.Model.Metatags;
+using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -152,6 +153,11 @@ public class MediaItem
     {
         m_working = new MediaItemData(importItem);
         m_pendingOps.Add(PendingOp.Create);
+    }
+
+    public MediaItem(ServiceMediaItem item)
+    {
+        m_working = new MediaItemData(item);
     }
 
     public static string StringFromState(MediaItemState state)

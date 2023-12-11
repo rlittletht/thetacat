@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Thetacat.Import;
+using Thetacat.ServiceClient;
 using Thetacat.Util;
 
 namespace Thetacat.Model;
@@ -46,6 +47,19 @@ public class MediaItemData : INotifyPropertyChanged
         m_state = source.m_state;
         m_tags = new ConcurrentDictionary<Guid, MediaTag>(source.Tags);
         m_virtualPath = source.m_virtualPath;
+    }
+
+    public MediaItemData(ServiceMediaItem item)
+    {
+        if (item.Id == null || item.MimeType == null || item.Sha5 == null || item.State == null || item.VirtualPath == null)
+            throw new ArgumentNullException(nameof(item));
+
+        m_id = item.Id.Value;
+        m_mimeType = item.MimeType;
+        m_sha5 = item.Sha5;
+        m_state = MediaItem.StateFromString(item.State);
+        m_virtualPath = new PathSegment(item.VirtualPath);
+        m_tags = new ConcurrentDictionary<Guid, MediaTag>();
     }
 
     public MediaItemData(ImportItem importItem)

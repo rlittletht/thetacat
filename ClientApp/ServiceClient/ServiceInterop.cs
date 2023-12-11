@@ -38,4 +38,9 @@ public class ServiceInterop
     {
         LocalService.Media.InsertNewMediaItems(newItems);
     }
+
+    public static ServiceCatalog ReadFullCatalog()
+    {
+        return LocalService.Media.ReadFullCatalog();
+    }
 }
