@@ -7,6 +7,7 @@ using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Import;
 
@@ -33,8 +34,8 @@ public class MediaImport
     {
         foreach (IMediaItemFile file in files)
         {
-            string pathRoot = Path.GetPathRoot(file.FullyQualifiedPath)?.Replace("\\", "/") ?? string.Empty;
-            string path = Path.GetRelativePath(pathRoot, file.FullyQualifiedPath).Replace("\\", "/");
+            PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
+            PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
             ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path));
         }
@@ -44,8 +45,8 @@ public class MediaImport
     {
         foreach (string file in files)
         {
-            string pathRoot = Path.GetPathRoot(file) ?? string.Empty;
-            string path = Path.GetRelativePath(pathRoot, file);
+            PathSegment pathRoot = PathSegment.GetPathRoot(file) ?? PathSegment.Empty;
+            PathSegment path = PathSegment.GetRelativePath(pathRoot, file);
 
             ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path));
         }
@@ -59,7 +60,7 @@ public class MediaImport
             MediaItem mediaItem = new(item);
 
             catalog.AddNewMediaItem(mediaItem);
-            mediaItem.LocalPath = Path.Combine(item.SourceServer, item.SourcePath);
+            mediaItem.LocalPath = PathSegment.Combine(item.SourceServer, item.SourcePath).Local;
 
             List<string>? log = mediaItem.ReadMetadataFromFile(metatagSchema);
 

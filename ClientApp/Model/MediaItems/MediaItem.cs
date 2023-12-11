@@ -12,6 +12,7 @@ using Thetacat.Import;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Model;
 
@@ -57,7 +58,7 @@ public class MediaItem
 
     public Guid ID => m_working.ID;
 
-    public string VirtualPath
+    public PathSegment VirtualPath
     {
         get => m_working.VirtualPath;
         private set

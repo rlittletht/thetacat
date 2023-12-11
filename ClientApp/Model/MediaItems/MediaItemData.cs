@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Thetacat.Import;
+using Thetacat.Util;
 
 namespace Thetacat.Model;
 
@@ -12,7 +13,7 @@ public class MediaItemData : INotifyPropertyChanged
 {
     private MediaItemState m_state;
     private string m_sha5;
-    private string m_virtualPath;
+    private PathSegment m_virtualPath;
     private Guid m_id;
     private string m_mimeType;
     private ConcurrentDictionary<Guid, MediaTag> m_tags;
@@ -21,7 +22,7 @@ public class MediaItemData : INotifyPropertyChanged
 
     public string MimeType                           { get => m_mimeType;    set => SetField(ref m_mimeType, value); }
     public Guid ID                                   { get => m_id;          private set => SetField(ref m_id, value); }
-    public string VirtualPath                        { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
+    public PathSegment VirtualPath                   { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
     public string Sha5                               { get => m_sha5;        set => SetField(ref m_sha5, value); }
     public MediaItemState State                      { get => m_state;       set => SetField(ref m_state, value); }
     public ConcurrentDictionary<Guid, MediaTag> Tags { get => m_tags;        set => SetField(ref m_tags, value); }
@@ -33,7 +34,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_id = Guid.NewGuid();
         m_sha5 = string.Empty;
         m_mimeType = string.Empty;
-        m_virtualPath = string.Empty;
+        m_virtualPath = PathSegment.Empty;
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
     }
 
