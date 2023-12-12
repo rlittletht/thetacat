@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="Thetacat.Migration.Elements.Metadata.UI.MetadataMigrateSummary"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Thetacat.Migration.Elements.Metadata.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="100*"/>
+            <RowDefinition Height="24"/>
+        </Grid.RowDefinitions>
+        <TextBlock TextWrapping="Wrap">
+            These are the operations that will be executed against the database to migrate metatag definitions. Use this tab to fine-tune the
+            operations before committing them.
+        </TextBlock>
+        <ListView Name="diffOpListView" Grid.Row="1">
+            <ListView.View>
+                <GridView>
+                    <GridView.Columns>
+                        <GridViewColumn Header="Include">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Name="Include" IsChecked="{Binding Path=Include}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=OpType}">
+                            <GridViewColumnHeader Tag="OpType" Click="SortType" Content="OpType" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Details}">
+                            <GridViewColumnHeader Tag="Standard" Click="SortType" Content="Details" />
+                        </GridViewColumn>
+                    </GridView.Columns>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+        <Button Content="Migrate Metatags" IsDefault="True"
+                Click="DoMigrate" Grid.Column="0" Height="24" />
+        </Grid>
+    </Grid>
+</UserControl>
