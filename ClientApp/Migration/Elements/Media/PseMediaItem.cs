@@ -14,6 +14,7 @@ using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Media;
 
@@ -36,6 +37,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
     public DateTime FileDateOriginal { get; set; }
+    public PathSegment? VerifiedPath { get; set; }
 
     public bool Migrate
     {
@@ -144,10 +146,10 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     string GetFullyQualifiedForSlashed()
     {
-        return $"{VolumeName}/{FullPath}";
+        return VerifiedPath?.ToString() ?? $"{VolumeName}/{FullPath}";
     }
 
-    public string FullyQualifiedPath => $"{VolumeName}/{FullPath}".Replace("/", "\\");
+    public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;
 
     public void CheckPath(IAppState appState, Dictionary<string, string> subst)
     {
@@ -164,6 +166,9 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         newPath = newPath.Replace("/", "\\");
 
         PathVerified = Path.Exists(newPath) ? TriState.Yes : TriState.No;
+
+        if (PathVerified == TriState.Yes)
+            VerifiedPath = new PathSegment(newPath);
 
 //        if (PathVerified == TriState.Yes)
 //        {

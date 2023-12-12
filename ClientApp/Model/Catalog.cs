@@ -11,6 +11,13 @@ public class Catalog
 {
     private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
 
+    public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
+
+//    public void Clear()
+//    {
+//        m_items.Clear();
+//    }
+
     public Catalog()
     {
         m_items = new();
@@ -62,8 +69,9 @@ public class Catalog
     {
         ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
 
-        m_items.Keys.Clear();
-        m_items.Values.Clear();
+        IObservableConcurrentDictionary<Guid, MediaItem> dict = m_items;
+
+        dict.Clear();
 
         if (catalog.MediaItems == null || catalog.MediaTags == null)
             return;
@@ -74,12 +82,22 @@ public class Catalog
             m_items.Add(mediaItem.ID, mediaItem);
         }
 
+        bool refreshedSchema = false;
         foreach (ServiceMediaTag tag in catalog.MediaTags)
         {
             Metatag? metatag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(tag.Id));
 
             if (metatag == null)
-                throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema");
+            {
+                if (!refreshedSchema)
+                {
+                    schema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+                    metatag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(tag.Id));
+                }
+
+                if (metatag == null)
+                    throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema, even after refreshing the schema");
+            }
 
             AddMediaTag(tag.MediaId, new MediaTag(metatag, tag.Value));
         }

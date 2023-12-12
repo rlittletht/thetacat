@@ -18,7 +18,7 @@ public class Media
 
     private static readonly string s_queryInsertMedia = @"
         INSERT INTO tcat_media
-            (id, virtualPath, mimeType, state)
+            (id, virtualPath, mimeType, state, md5)
         VALUES ";
 
     private static readonly string s_queryInsertMediaTag = @"
@@ -91,7 +91,7 @@ public class Media
                     }
 
                     return
-                        $"('{Sql.Sqlify(item.ID.ToString())}', '{Sql.Sqlify(item.VirtualPath)}', '{Sql.Sqlify(item.MimeType)}', '{MediaItem.StringFromState(item.State)}') ";
+                        $"('{Sql.Sqlify(item.ID.ToString())}', '{Sql.Sqlify(item.VirtualPath)}', '{Sql.Sqlify(item.MimeType)}', '{MediaItem.StringFromState(item.State)}', '{Sql.Sqlify(item.MD5)}') ";
                 },
                 s_aliases);
 
@@ -114,7 +114,7 @@ public class Media
     }
 
     static string s_queryFullCatalogWithTags = @"
-            SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value
+            SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value, $$tcat_media$$.md5
             FROM $$#tcat_media$$
             INNER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id";
 
@@ -158,12 +158,13 @@ public class Media
                                                         VirtualPath = reader.Reader.GetString(1),
                                                         MimeType = reader.Reader.GetString(2),
                                                         State = reader.Reader.GetString(3),
-                                                        Sha5 = reader.Reader.GetString(4)
+                                                        MD5 = reader.Reader.GetString(6)
                                                     });
                             mediaAdded.Add(mediaId);
                         }
                         building.MediaTags.Add(new ServiceMediaTag()
                                                {
+                                                   MediaId = mediaId,
                                                    Id = reader.Reader.GetGuid(4),
                                                    Value = reader.Reader.IsDBNull(5) ? null : reader.Reader.GetString(5)
                                                });

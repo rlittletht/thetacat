@@ -13,7 +13,7 @@ namespace Thetacat.Model;
 public class MediaItemData : INotifyPropertyChanged
 {
     private MediaItemState m_state;
-    private string m_sha5;
+    private string m_md5;
     private PathSegment m_virtualPath;
     private Guid m_id;
     private string m_mimeType;
@@ -24,7 +24,7 @@ public class MediaItemData : INotifyPropertyChanged
     public string MimeType                           { get => m_mimeType;    set => SetField(ref m_mimeType, value); }
     public Guid ID                                   { get => m_id;          private set => SetField(ref m_id, value); }
     public PathSegment VirtualPath                   { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
-    public string Sha5                               { get => m_sha5;        set => SetField(ref m_sha5, value); }
+    public string MD5                                { get => m_md5;         set => SetField(ref m_md5, value); }
     public MediaItemState State                      { get => m_state;       set => SetField(ref m_state, value); }
     public ConcurrentDictionary<Guid, MediaTag> Tags { get => m_tags;        set => SetField(ref m_tags, value); }
 
@@ -33,7 +33,7 @@ public class MediaItemData : INotifyPropertyChanged
     public MediaItemData()
     {
         m_id = Guid.NewGuid();
-        m_sha5 = string.Empty;
+        m_md5 = string.Empty;
         m_mimeType = string.Empty;
         m_virtualPath = PathSegment.Empty;
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
@@ -43,7 +43,7 @@ public class MediaItemData : INotifyPropertyChanged
     {
         m_id = source.m_id;
         m_mimeType = source.m_mimeType;
-        m_sha5 = source.m_sha5;
+        m_md5 = source.m_md5;
         m_state = source.m_state;
         m_tags = new ConcurrentDictionary<Guid, MediaTag>(source.Tags);
         m_virtualPath = source.m_virtualPath;
@@ -51,12 +51,12 @@ public class MediaItemData : INotifyPropertyChanged
 
     public MediaItemData(ServiceMediaItem item)
     {
-        if (item.Id == null || item.MimeType == null || item.Sha5 == null || item.State == null || item.VirtualPath == null)
+        if (item.Id == null || item.MimeType == null || item.MD5 == null || item.State == null || item.VirtualPath == null)
             throw new ArgumentNullException(nameof(item));
 
         m_id = item.Id.Value;
         m_mimeType = item.MimeType;
-        m_sha5 = item.Sha5;
+        m_md5 = item.MD5;
         m_state = MediaItem.StateFromString(item.State);
         m_virtualPath = new PathSegment(item.VirtualPath);
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
@@ -65,7 +65,7 @@ public class MediaItemData : INotifyPropertyChanged
     public MediaItemData(ImportItem importItem)
     {
         m_state = MediaItemState.Pending;
-        m_sha5 = string.Empty;
+        m_md5 = string.Empty;
         m_mimeType = string.Empty;
         m_virtualPath = importItem.SourcePath;
         ID = Guid.NewGuid();

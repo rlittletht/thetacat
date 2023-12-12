@@ -12,49 +12,15 @@ namespace Thetacat.Model.Metatags;
 
 public class MetatagSchema
 {
-    private MetatagSchemaDefinition? m_schemaWorking;
+    private MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
 
-    public MetatagTree WorkingTree
-    {
-        get
-        {
-            if (m_schemaWorking == null)
-                throw new Exception("not initialized");
-
-            return m_schemaWorking.Tree;
-        }
-    }
-
-    public List<Metatag> MetatagsWorking
-    {
-        get
-        {
-            if (m_schemaWorking == null)
-                throw new Exception("not initialized");
-
-            return m_schemaWorking.Metatags;
-        }
-    }
-
-    public int SchemaVersionWorking
-    {
-        get
-        {
-            if (m_schemaWorking == null)
-                throw new Exception("not initialized");
-
-            return m_schemaWorking.SchemaVersion;
-        }
-    }
+    public MetatagTree WorkingTree => m_schemaWorking.Tree;
+    public List<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
+    public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
 
     void EnsureBaseAndVersion()
     {
-        if (m_schemaWorking == null)
-        {
-            throw new Exception("not initialized");
-        }
-
         if (m_schemaBase == null)
         {
             m_schemaBase = m_schemaWorking.Clone();
@@ -190,32 +156,39 @@ public class MetatagSchema
         return metatag;
     }
 
-    public static MetatagSchema CreateFromService(ServiceMetatagSchema serviceMetatagSchema)
+    public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
-        MetatagSchema schema =
-            new()
-            {
-                m_schemaWorking = new MetatagSchemaDefinition()
-            };
+        m_schemaBase = null;
+        m_schemaWorking.Metatags.Clear();
 
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
             {
-                schema.m_schemaWorking.Metatags.Add(Metatag.CreateFromService(serviceMetatag));
+                m_schemaWorking.Metatags.Add(Metatag.CreateFromService(serviceMetatag));
             }
         }
 
-        schema.m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
-        return schema;
+        m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
     }
 
     public MetatagSchemaDiff BuildDiffForSchemas()
     {
         EnsureBaseAndVersion();
-        if (m_schemaBase == null || m_schemaWorking == null)
+        if (m_schemaBase == null)
             throw new Exception("no schemas");
 
         return MetatagSchemaDiff.CreateFromSchemas(m_schemaBase, m_schemaWorking);
+    }
+
+    public void UpdateServer()
+    {
+        // need to handle 3WM here if we get an exception (because schema changed)
+        MetatagSchemaDiff diff = BuildDiffForSchemas();
+        if (!diff.IsEmpty)
+        {
+            ServiceInterop.UpdateMetatagSchema(diff);
+            m_schemaBase = null; // working is now the base
+        }
     }
 }

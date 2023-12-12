@@ -51,6 +51,9 @@ public partial class Migration : Window, INotifyPropertyChanged
     public Migration(IAppState appState)
     {
         m_appState = appState;
+        if (appState.MetatagSchema.SchemaVersionWorking == 0)
+            appState.RefreshMetatagSchema();
+
         InitializeComponent();
         DataContext = this;
         ElementsDb = m_appState.Settings.Settings.SValue("LastElementsDb");

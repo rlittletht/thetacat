@@ -9,9 +9,9 @@ namespace Thetacat.ServiceClient;
 
 public class ServiceInterop
 {
-    public static MetatagSchema GetMetatagSchema()
+    public static ServiceMetatagSchema GetMetatagSchema()
     {
-        return MetatagSchema.CreateFromService(LocalService.Metatags.GetMetatagSchema());
+        return LocalService.Metatags.GetMetatagSchema();
     }
 
     public static void UpdateMetatagSchema(MetatagSchemaDiff schemaDiff)

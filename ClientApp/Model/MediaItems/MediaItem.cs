@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Markup;
 using Thetacat.Import;
@@ -29,7 +31,7 @@ public class MediaItem
         Delete,
         ChangeMimeType,
         ChangePath,
-        ChangeSha5,
+        ChangeMD5,
         ChangeState,
         ChangeTags
     }
@@ -70,14 +72,14 @@ public class MediaItem
         }
     }
 
-    public string Sha5
+    public string MD5
     {
-        get => m_working.Sha5;
+        get => m_working.MD5;
         set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangeSha5);
-            m_working.Sha5 = value;
+            PushOp(PendingOp.ChangeMD5);
+            m_working.MD5 = value;
         }
     }
 
@@ -229,8 +231,6 @@ public class MediaItem
 
         foreach (Tag tag in directory.Tags)
         {
-            Metatag? metatag = metatagSchema.FindByName(dirTag, tag.Name);
-
             if (!standardDefinitions.Properties.TryGetValue(tag.Type, out StandardDefinition? def))
             {
 #if verbose_standard
@@ -241,6 +241,7 @@ public class MediaItem
 
             if (!def.Include)
                 continue;
+            Metatag? metatag = metatagSchema.FindByName(dirTag, def.PropertyTagName);
 
             string value = tag.Description ?? string.Empty;
 
@@ -285,6 +286,23 @@ public class MediaItem
 
     private List<string>? log;
 
+    private string CalculateMD5Hash(string localPath)
+    {
+        using FileStream fs = File.Open(
+            localPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+
+        using MD5 md5 = System.Security.Cryptography.MD5.Create();
+
+        byte[] hash = md5.ComputeHash(fs);
+
+        string fullContentMd5 = Convert.ToBase64String(hash);
+
+        return fullContentMd5;
+    }
+
     public List<string>? ReadMetadataFromFile(MetatagSchema metatagSchema)
     {
         log = new List<string>();
@@ -293,7 +311,9 @@ public class MediaItem
 
         // load exif and other data from this item.
         IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
-
+            
+        this.MD5 = CalculateMD5Hash(file);
+        
         bool changed = false;
 
         foreach (MetadataExtractor.Directory directory in directories)

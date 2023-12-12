@@ -8,5 +8,5 @@ public class ServiceMediaItem
     public string? VirtualPath { get; set; }
     public string? MimeType { get; set; }
     public string? State { get; set; }
-    public string? Sha5 { get; set; }
+    public string? MD5 { get; set; }
 }

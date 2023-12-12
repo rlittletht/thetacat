@@ -7,10 +7,16 @@ using System.Threading;
 
 namespace System.Collections.Concurrent;
 
-[DebuggerDisplay("Count={Count}")]
-public class ObservableConcurrentDictionary<TKey, TValue> :
+public interface IObservableConcurrentDictionary<TKey, TValue> :
     ICollection<KeyValuePair<TKey, TValue>>, IDictionary<TKey, TValue>,
     INotifyCollectionChanged, INotifyPropertyChanged where TKey : notnull
+{
+}
+
+[DebuggerDisplay("Count={Count}")]
+public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurrentDictionary<TKey, TValue> where TKey : notnull
+    //    ICollection<KeyValuePair<TKey, TValue>>, IDictionary<TKey, TValue>,
+    //    INotifyCollectionChanged, INotifyPropertyChanged where TKey : notnull
 {
     private readonly SynchronizationContext _context;
     private readonly ConcurrentDictionary<TKey, TValue> _dictionary;

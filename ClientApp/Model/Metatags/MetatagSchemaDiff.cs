@@ -93,4 +93,6 @@ public class MetatagSchemaDiff
 
         return diff;
     }
+
+    public bool IsEmpty => m_ops.Count == 0;
 }

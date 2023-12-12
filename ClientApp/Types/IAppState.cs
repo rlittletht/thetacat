@@ -11,9 +11,9 @@ namespace Thetacat.Types;
 
 public interface IAppState
 {
-    Catalog Catalog { get; set; }
-    TcSettings.TcSettings Settings { get; set; }
-    MetatagSchema? MetatagSchema { get; set; }
+    Catalog Catalog { get; }
+    TcSettings.TcSettings Settings { get; }
+    MetatagSchema MetatagSchema { get; }
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema();
 }

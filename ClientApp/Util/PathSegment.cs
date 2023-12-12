@@ -44,6 +44,11 @@ public class PathSegment
         return new PathSegment(Path.Combine(a.Local, b.Local));
     }
 
+    public static PathSegment Combine(string a, string b)
+    {
+        return PathSegment.Combine(new PathSegment(a), new PathSegment(b));
+    }
+
     public PathSegment? GetPathRoot()
     {
         return PathSegment.CreateFromString(Path.GetPathRoot(Local));

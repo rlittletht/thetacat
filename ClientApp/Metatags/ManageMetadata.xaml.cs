@@ -88,7 +88,9 @@ namespace Thetacat.Metatags
                     SchemaVersion = 1
                 };
 
-            return MetatagSchema.CreateFromService(serviceMetatagSchema);
+            MetatagSchema schema = new MetatagSchema();
+            schema.ReplaceFromService(serviceMetatagSchema);
+            return schema;
         }
 
         private void LoadMetatags(object sender, RoutedEventArgs e)

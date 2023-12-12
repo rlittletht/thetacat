@@ -75,9 +75,13 @@ public class MediaImport
             item.State = ImportItem.ImportState.PendingUpload;
         }
 
+        metatagSchema.UpdateServer();
+
         // at this point, we have an ID created for the media. Go ahead and insert the
         // new media items and commit the import to the database
         catalog.FlushPendingCreates();
+        // also flush any pending schema changes now
+
         ServiceInterop.InsertImportItems(ImportItems);
     }
 
