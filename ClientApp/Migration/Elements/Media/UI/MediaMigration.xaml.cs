@@ -33,6 +33,26 @@ public partial class MediaMigration : UserControl
     private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
 
+    private ElementsMigrate _Migrate
+    {
+        get
+        {
+            if (m_migrate == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_migrate;
+        }
+    }
+
+    private IAppState _AppState
+    {
+        get
+        {
+            if (m_appState == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_appState;
+        }
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: MediaMigration
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.MediaMigration
@@ -69,9 +89,9 @@ public partial class MediaMigration : UserControl
         m_appState = appState;
         m_migrate = migrate;
 
-        m_migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(m_migrate.MetatagMigrate)));
+        _Migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(_Migrate.MetatagMigrate)));
 
-        mediaItemsListView.ItemsSource = m_migrate.MediaMigrate.MediaItems;
+        mediaItemsListView.ItemsSource = _Migrate.MediaMigrate.MediaItems;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);
         view.Filter = FilterMediaItem;
@@ -111,10 +131,7 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
-        if (m_appState == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
-        foreach (string s in m_appState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
+        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
             string[] pair = s.Split(",");
             if (pair.Length != 2)
@@ -123,10 +140,10 @@ public partial class MediaMigration : UserControl
                 continue;
             }
 
-            m_migrate.MediaMigrate.PathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
+            _Migrate.MediaMigrate.PathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
         }
 
-        substDatagrid.ItemsSource = m_migrate.MediaMigrate.PathSubstitutions;
+        substDatagrid.ItemsSource = _Migrate.MediaMigrate.PathSubstitutions;
     }
 
     private int m_countRunningVerifyTasks = 0;
@@ -137,12 +154,9 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     void SetVerifyResult()
     {
-        if (m_appState == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
         TriState tri = TriState.Maybe;
 
-        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
+        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
         {
             if (item.PathVerified == TriState.No)
                 tri = TriState.No;
@@ -196,9 +210,6 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
     {
-        if (m_migrate == null || m_appState == null)
-            throw new Exception("not initialized");
-
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
@@ -207,7 +218,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        m_migrate.MediaMigrate.MediaItems[i].CheckPath(m_appState, subs);
+                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(_AppState, subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -215,12 +226,9 @@ public partial class MediaMigration : UserControl
 
     private List<PseMediaItem> BuildCheckedItems()
     {
-        if (m_appState == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
         // build the list to check (only the marked items)
         List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
+        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
         {
             if (item.Migrate)
                 checkedItems.Add(item);
@@ -231,12 +239,9 @@ public partial class MediaMigration : UserControl
 
     private List<PseMediaItem> BuildCheckedVerifiedItems()
     {
-        if (m_appState == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
         // build the list to check (only the marked items)
         List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in m_migrate.MediaMigrate.MediaItems)
+        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
         {
             if (item.Migrate && item.PathVerified == TriState.Yes)
                 checkedItems.Add(item);
@@ -251,22 +256,19 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void VerifyPaths()
     {
-        if (m_appState == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
         Dictionary<string, string> pathSubst = new();
 
         List<string> regValues = new();
 
-        foreach (PathSubstitution sub in m_migrate.MediaMigrate.PathSubstitutions)
+        foreach (PathSubstitution sub in _Migrate.MediaMigrate.PathSubstitutions)
         {
             pathSubst.Add(sub.From, sub.To);
             regValues.Add($"{sub.From},{sub.To}");
         }
 
         // persist the paths to the registry here
-        m_appState.Settings.Settings.SetRgsValue("LastElementsSubstitutions", regValues.ToArray());
-        m_appState.Settings.Settings.Save();
+        _AppState.Settings.Settings.SetRgsValue("LastElementsSubstitutions", regValues.ToArray());
+        _AppState.Settings.Settings.Save();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 
@@ -319,13 +321,10 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     private void AddToCatalog(object sender, RoutedEventArgs e)
     {
-        if (m_appState?.MetatagSchema == null || m_migrate == null)
-            throw new Exception("Not initialized");
-
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
         MediaImport import = new MediaImport(checkedItems, Environment.MachineName);
 
-        import.CreateCatalogItemsAndUpdateImportTable(m_appState.Catalog, m_appState.MetatagSchema);
+        import.CreateCatalogItemsAndUpdateImportTable(_AppState.Catalog, _AppState.MetatagSchema);
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)

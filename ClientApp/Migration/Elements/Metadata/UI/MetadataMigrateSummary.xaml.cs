@@ -29,9 +29,28 @@ public partial class MetadataMigrateSummary : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-
     private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
+
+    private ElementsMigrate _Migrate
+    {
+        get
+        {
+            if (m_migrate == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_migrate;
+        }
+    }
+
+    private IAppState _AppState
+    {
+        get
+        {
+            if (m_appState == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_appState;
+        }
+    }
 
     private readonly ObservableCollection<MetatagMigrationItem> m_metatagMigrationItems = new();
     private MetatagSchemaDiff? m_diff;
@@ -78,11 +97,8 @@ public partial class MetadataMigrateSummary : UserControl
 
     public void RebuildSchemaDiff()
     {
-        if (m_appState?.MetatagSchema == null)
-            throw new Exception("not initialized");
-
         // build the schema differences for all the metadata and metatag migration tabs
-        m_diff = m_appState.MetatagSchema.BuildDiffForSchemas();
+        m_diff = _AppState.MetatagSchema.BuildDiffForSchemas();
         m_metatagMigrationItems.Clear();
 
         foreach (MetatagSchemaDiffOp op in m_diff.Ops)
@@ -99,11 +115,8 @@ public partial class MetadataMigrateSummary : UserControl
         // commit all the diff ops
         ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
 
-        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
-
-        m_appState.RefreshMetatagSchema();
-        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null"); 
-        m_migrate.MetatagMigrate.ReloadSchemas();
+        _AppState.RefreshMetatagSchema();
+        _Migrate.MetatagMigrate.ReloadSchemas();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }
 }

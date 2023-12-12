@@ -33,8 +33,27 @@ public partial class UserMetatagMigration : UserControl
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
     private ElementsMigrate? m_migrate = null;
-
     IAppState? m_appState;
+
+    private ElementsMigrate _Migrate
+    {
+        get
+        {
+            if (m_migrate == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_migrate;
+        }
+    }
+
+    private IAppState _AppState
+    {
+        get
+        {
+            if (m_appState == null )
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_appState;
+        }
+    }
 
     /// <summary>
     /// Interaction logic for UserMetatagMigration.xaml
@@ -56,10 +75,7 @@ public partial class UserMetatagMigration : UserControl
 
     public void RefreshForSchemaChange()
     {
-        if (m_migrate?.MetatagMigrate.UserMetatags == null)
-            return;
-
-        foreach (PseMetatag metatag in m_migrate.MetatagMigrate.UserMetatags)
+        foreach (PseMetatag metatag in _Migrate.MetatagMigrate.UserMetatags)
         {
             metatag.CatID = null;
             metatag.IsSelected = false;
@@ -73,20 +89,13 @@ public partial class UserMetatagMigration : UserControl
         m_appState = appState;
         m_migrate = migrate;
 
-        if (m_appState == null)
-            throw new ArgumentNullException(nameof(appState));
-
-        m_appState = appState;
-
-        if (m_appState.MetatagSchema == null)
+        if (m_appState.MetatagSchema.SchemaVersionWorking == 0)
             m_appState.RefreshMetatagSchema();
 
         m_migrate.MetatagMigrate.SetUserMetatags(db.ReadMetadataTags());
         MarkExistingMetatags();
 
         metaTagsListView.ItemsSource = m_migrate.MetatagMigrate.UserMetatags;
-
-        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
     }
 
     private void RemoveSelected(object sender, RoutedEventArgs e)
@@ -199,31 +208,26 @@ public partial class UserMetatagMigration : UserControl
 
     public void MarkExistingMetatags()
     {
-        Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
-        Debug.Assert(m_appState.MetatagSchema != null, "m_appState.MetatagSchema != null");
-        Debug.Assert(m_appState.MetatagSchema.WorkingTree != null, "m_appState.MetatagSchema.WorkingTree != null");
-        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null");
-
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag? userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
+        IMetatag? userRoot = _AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
 
         // if there's no user root, then no tags are already in the cat
         if (userRoot == null)
             return;
 
         IMetatagTreeItem? userTreeItem =
-            m_appState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+            _AppState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
 
         if (userTreeItem == null)
             throw new Exception("no user root found");
 
         MatchAndInsertChildrenIfNeeded(
             userTreeItem,
-            m_migrate.MetatagMigrate.PseTree,
+            _Migrate.MetatagMigrate.PseTree,
             userRoot.ID,
             new List<string>(),
             null /*unmatchedDelegate*/,
-            (item, match) => { m_migrate.MetatagMigrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID); }
+            (item, match) => { _Migrate.MetatagMigrate.GetMetatagFromID(int.Parse(item.ID)).CatID = Guid.Parse(match.ID); }
         );
     }
 
@@ -280,9 +284,6 @@ public partial class UserMetatagMigration : UserControl
     ----------------------------------------------------------------------------*/
     private void MigrateSelected(object sender, RoutedEventArgs e)
     {
-        if (m_appState == null || m_migrate == null || m_appState.MetatagSchema == null)
-            throw new Exception("appstate or migrate uninitialized");
-
         // build a list of selected items
         List<PseMetatag> metatags = new();
 
@@ -307,13 +308,13 @@ public partial class UserMetatagMigration : UserControl
         // its just a user control that takes two SchemaModels (base and new)
         // and build the diff ops and lists those in the control.
 
-        Metatags.MetatagTree liveTree = m_appState.MetatagSchema.WorkingTree;
+        Metatags.MetatagTree liveTree = _AppState.MetatagSchema.WorkingTree;
 
         // now figure out what items (if any) we have to add to the live schema
-        List<PseMetatag> tagsToSync = m_migrate.MetatagMigrate.CollectDependentTags(liveTree, metatags);
+        List<PseMetatag> tagsToSync = _Migrate.MetatagMigrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag userRoot = m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
-            ?? m_appState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
+        IMetatag userRoot = _AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
+            ?? _AppState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
         PseMetatagTree treeToSync = new(tagsToSync);
 
@@ -321,8 +322,8 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (MetatagPair pair in tagsToInsert)
         {
-            m_appState.MetatagSchema.AddMetatag(pair.Metatag);
-            m_migrate.MetatagMigrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
+            _AppState.MetatagSchema.AddMetatag(pair.Metatag);
+            _Migrate.MetatagMigrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
         }
 
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");

@@ -32,8 +32,27 @@ public partial class StandardMetadataMigration : UserControl
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
     private ElementsMigrate? m_migrate = null;
-
     IAppState? m_appState;
+
+    private ElementsMigrate _Migrate
+    {
+        get
+        {
+            if (m_migrate == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_migrate;
+        }
+    }
+
+    private IAppState _AppState
+    {
+        get
+        {
+            if (m_appState == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_appState;
+        }
+    }
 
     /// <summary>
     /// Interaction logic for UserMetatagMigration.xaml
@@ -55,7 +74,7 @@ public partial class StandardMetadataMigration : UserControl
 
     IMetatagTreeItem? GetRootForMetadataItem(PseMetadata item)
     {
-        return m_appState?.MetatagSchema?.WorkingTree.FindMatchingChild(
+        return _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
             MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandardTag(item.StandardTag)),
             1);
     }
@@ -69,9 +88,7 @@ public partial class StandardMetadataMigration : UserControl
 
     void MarkExistingMetadata()
     {
-        Debug.Assert(m_migrate != null, nameof(m_migrate) + " != null");
-
-        foreach (PseMetadata item in m_migrate.MetatagMigrate.MetadataSchema.MetadataItems)
+        foreach (PseMetadata item in _Migrate.MetatagMigrate.MetadataSchema.MetadataItems)
         {
             if (item.StandardTag == string.Empty)
                 continue;
@@ -95,10 +112,10 @@ public partial class StandardMetadataMigration : UserControl
 
     public void RefreshForSchemaChange()
     {
-        if (m_migrate?.MetatagMigrate.MetadataSchema.MetadataItems == null)
+        if (_Migrate?.MetatagMigrate.MetadataSchema.MetadataItems == null)
             return;
 
-        foreach (PseMetadata item in m_migrate.MetatagMigrate.MetadataSchema.MetadataItems)
+        foreach (PseMetadata item in _Migrate.MetatagMigrate.MetadataSchema.MetadataItems)
         {
             item.CatID = null;
             item.Migrate = false;
@@ -112,26 +129,21 @@ public partial class StandardMetadataMigration : UserControl
         m_appState = appState;
         m_migrate = migrate;
 
-        if (m_appState == null)
-            throw new ArgumentNullException(nameof(appState));
-
-        m_appState = appState;
-        m_migrate.MetatagMigrate.SetMetadataSchema(db.ReadMetadataSchema());
-        m_migrate.MetatagMigrate.MetadataSchema.PopulateBuiltinMappings();
+        _Migrate.MetatagMigrate.SetMetadataSchema(db.ReadMetadataSchema());
+        _Migrate.MetatagMigrate.MetadataSchema.PopulateBuiltinMappings();
         MarkExistingMetadata();
 
-        metadataListView.ItemsSource = m_migrate.MetatagMigrate.MetadataSchema.MetadataItems;
+        metadataListView.ItemsSource = _Migrate.MetatagMigrate.MetadataSchema.MetadataItems;
 
-        if (m_appState.MetatagSchema == null)
-            m_appState.RefreshMetatagSchema();
+        if (_AppState.MetatagSchema.SchemaVersionWorking == 0)
+            _AppState.RefreshMetatagSchema();
     }
 
     private void EditSelected(object sender, RoutedEventArgs e)
     {
         if (metadataListView.SelectedValue is PseMetadata metadata)
         {
-            Debug.Assert(m_appState != null, nameof(m_appState) + " != null");
-            DefineMetadataMap define = new(m_appState, metadata.PseIdentifier);
+            DefineMetadataMap define = new(_AppState, metadata.PseIdentifier);
 
             bool? defined = define.ShowDialog();
 
@@ -182,7 +194,7 @@ public partial class StandardMetadataMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        if (m_appState?.MetatagSchema == null || m_migrate == null)
+        if (m_appState?.MetatagSchema == null || _Migrate == null)
             throw new Exception("appstate or migrate uninitialized");
 
         foreach (PseMetadata? item in metadataListView.Items)
@@ -193,7 +205,7 @@ public partial class StandardMetadataMigration : UserControl
             if (item.CatID != null)
             {
                 // make sure its really there
-                if (m_appState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                if (_AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
                     continue;
 
                 Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");
@@ -212,14 +224,14 @@ public partial class StandardMetadataMigration : UserControl
                 // otherwise this is a user-define element
                 standard = MetatagStandards.Standard.User;
                 string rootName = MetatagStandards.GetMetadataRootFromStandard(standard);
-                IMetatagTreeItem? userRoot = m_appState.MetatagSchema.WorkingTree.FindMatchingChild(
+                IMetatagTreeItem? userRoot = _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
                     MetatagTreeItemMatcher.CreateNameMatch(rootName),
                     1);
 
                 if (userRoot == null)
                 {
-                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
-                    userRoot = m_appState.MetatagSchema.WorkingTree.FindMatchingChild(
+                    _AppState.MetatagSchema.AddNewStandardRoot(standard);
+                    userRoot = _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
                         MetatagTreeItemMatcher.CreateNameMatch(rootName),
                         1);
                 }
@@ -231,7 +243,7 @@ public partial class StandardMetadataMigration : UserControl
                 if (existing == null)
                 {
                     Metatag parentTag = Metatag.Create(Guid.Parse(userRoot.ID), item.StandardTag, item.StandardTag, MetatagStandards.Standard.User);
-                    m_appState.MetatagSchema.AddMetatag(parentTag);
+                    _AppState.MetatagSchema.AddMetatag(parentTag);
                     existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
                 }
 
@@ -243,7 +255,7 @@ public partial class StandardMetadataMigration : UserControl
 
                 if (root == null)
                 {
-                    m_appState.MetatagSchema.AddNewStandardRoot(standard);
+                    _AppState.MetatagSchema.AddNewStandardRoot(standard);
                     root = GetRootForMetadataItem(item);
                     if (root == null)
                         throw new Exception("failed to create standard root");
@@ -268,7 +280,7 @@ public partial class StandardMetadataMigration : UserControl
                     Parent = Guid.Parse(parent.ID)
                 };
 
-            m_appState.MetatagSchema.AddMetatag(newTag);
+            _AppState.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
 
             MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
