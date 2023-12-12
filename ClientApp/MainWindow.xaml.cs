@@ -30,6 +30,7 @@ using NUnit.Framework;
 using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
+using Thetacat.UI.Options;
 
 
 namespace Thetacat
@@ -104,6 +105,16 @@ namespace Thetacat
         private void LoadCatalog(object sender, RoutedEventArgs e)
         {
             m_appState.Catalog.ReadFullCatalogFromServer(m_appState.MetatagSchema);
+        }
+
+        private void LaunchOptions(object sender, RoutedEventArgs e)
+        {
+            CatOptions options = new CatOptions(m_appState);
+            if (options.ShowDialog() ?? false)
+            {
+                options.SaveToSettings();
+                m_appState.Settings.WriteSettings();
+            }
         }
     }
 }

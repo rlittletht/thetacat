@@ -22,6 +22,9 @@ public class TcSettings
 
     public static string s_uri = "http://schemas.thetasoft.com/Thetacat/settings/2023";
     public string ElementsDatabase = string.Empty;
+    public string CacheLocation = string.Empty;
+    public string CacheType = string.Empty;
+
     public List<MapPair> ElementsSubstitutions = new();
 
     public TcSettings()
@@ -39,6 +42,11 @@ public class TcSettings
                     TcSettings.CommitElementsSubstitutionRepeatItem)
                .AddAttribute("From", GetSubstitutionFrom, SetSubstitutionFrom)
                .AddAttribute("To", GetSubstitutionTo, SetSubstitutionTo)
+               .Pop()
+               .Pop()
+               .AddElement("CacheOptions")
+               .AddChildElement("CacheLocation", GetCacheLocationValue, SetCacheLocationValue)
+               .AddAttribute("Type", GetCacheTypeValue, SetCacheTypeValue)
                .Pop();
 
         try
@@ -66,11 +74,14 @@ public class TcSettings
     private readonly string m_settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
     private readonly XmlDescription<TcSettings> XmlSettingsDescription;
 
-    private static void SetElementsDatabaseValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) =>
-        settings.ElementsDatabase = value;
+    private static void SetElementsDatabaseValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.ElementsDatabase = value;
+    private static string GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.ElementsDatabase;
 
-    private static string GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) =>
-        settings.ElementsDatabase;
+    private static void SetCacheLocationValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheLocation = value;
+    private static string GetCacheLocationValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheLocation;
+
+    private static void SetCacheTypeValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheType = value;
+    private static string GetCacheTypeValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheType;
 
     private IEnumerator<MapPair>? SubEnum;
 

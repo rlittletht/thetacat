@@ -7,25 +7,23 @@ namespace Thetacat.Types;
 
 public class AppState : IAppState
 {
-    private readonly Catalog m_catalog;
-    private readonly MetatagSchema m_metatagSchema;
-    private readonly TcSettings.TcSettings m_settings;
+    public TcSettings.TcSettings Settings { get; }
 
-    public TcSettings.TcSettings Settings => m_settings;
-    public MetatagSchema MetatagSchema => m_metatagSchema; 
-    public Catalog Catalog => m_catalog;
+    public MetatagSchema MetatagSchema { get; }
+
+    public Catalog Catalog { get; }
 
     public void RefreshMetatagSchema()
     {
-        m_metatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+        MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
 
     }
 
     public AppState()
     {
-        m_settings = new TcSettings.TcSettings();
-        m_catalog = new Catalog();
-        m_metatagSchema = new MetatagSchema();
+        Settings = new TcSettings.TcSettings();
+        Catalog = new Catalog();
+        MetatagSchema = new MetatagSchema();
     }
 
     public void RegisterWindowPlace(Window window, string key)
