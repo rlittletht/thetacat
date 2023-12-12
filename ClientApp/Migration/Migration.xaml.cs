@@ -1,20 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration;
 
@@ -56,7 +46,7 @@ public partial class Migration : Window, INotifyPropertyChanged
 
         InitializeComponent();
         DataContext = this;
-        ElementsDb = m_appState.Settings.Settings.SValue("LastElementsDb");
+        ElementsDb = m_appState.Settings.ElementsDatabase;
 
         m_appState.RegisterWindowPlace(this, "Migration");
     }
@@ -70,10 +60,12 @@ public partial class Migration : Window, INotifyPropertyChanged
 
     private void SaveSettingsIfNeeded()
     {
-        if (m_appState.Settings.Settings.SValue("LastElementsDb") != ElementsDb)
+        PathSegment path = new PathSegment(ElementsDb);
+
+        if (m_appState.Settings.ElementsDatabase != path)
         {
-            m_appState.Settings.Settings.SetSValue("LastElementsDb", ElementsDb);
-            m_appState.Settings.Settings.Save();
+            m_appState.Settings.ElementsDatabase = path;
+            m_appState.Settings.WriteSettings();
         }
     }
 }

@@ -23,7 +23,7 @@ public class AppState : IAppState
 
     public AppState()
     {
-        m_settings = TcSettings.TcSettings.LoadSettings();
+        m_settings = new TcSettings.TcSettings();
         m_catalog = new Catalog();
         m_metatagSchema = new MetatagSchema();
     }

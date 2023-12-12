@@ -131,16 +131,17 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
-        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
+        foreach(TcSettings.TcSettings.MapPair subst in _AppState.Settings.ElementsSubstitutions)
+//        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
-            string[] pair = s.Split(",");
-            if (pair.Length != 2)
-            {
-                MessageBox.Show($"bad subst setting in registry: {s}");
-                continue;
-            }
-
-            _Migrate.MediaMigrate.PathSubstitutions.Add(new PathSubstitution { From = pair[0], To = pair[1] });
+//            string[] pair = s.Split(",");
+//            if (pair.Length != 2)
+//            {
+//                MessageBox.Show($"bad subst setting in registry: {s}");
+//                continue;
+//            }
+//
+            _Migrate.MediaMigrate.PathSubstitutions.Add(new PathSubstitution { From = subst.From, To = subst.To });
         }
 
         substDatagrid.ItemsSource = _Migrate.MediaMigrate.PathSubstitutions;
@@ -260,15 +261,18 @@ public partial class MediaMigration : UserControl
 
         List<string> regValues = new();
 
+        _AppState.Settings.ElementsSubstitutions.Clear();
         foreach (PathSubstitution sub in _Migrate.MediaMigrate.PathSubstitutions)
         {
-            pathSubst.Add(sub.From, sub.To);
-            regValues.Add($"{sub.From},{sub.To}");
+            _AppState.Settings.ElementsSubstitutions.Add(
+                new TcSettings.TcSettings.MapPair()
+                {
+                    From = sub.From,
+                    To = sub.To,
+                });
         }
 
-        // persist the paths to the registry here
-        _AppState.Settings.Settings.SetRgsValue("LastElementsSubstitutions", regValues.ToArray());
-        _AppState.Settings.Settings.Save();
+        _AppState.Settings.WriteSettings();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 

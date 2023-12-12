@@ -15,7 +15,7 @@
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
-    <PackageReference Include="TCore.Settings" Version="1.1.3" />
+    <PackageReference Include="TCore.XmlSettings" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
