@@ -46,7 +46,7 @@ public partial class Migration : Window, INotifyPropertyChanged
 
         InitializeComponent();
         DataContext = this;
-        ElementsDb = m_appState.Settings.ElementsDatabase;
+        ElementsDb = m_appState.Settings.ElementsDatabase ?? string.Empty;
 
         m_appState.RegisterWindowPlace(this, "Migration");
     }

@@ -43,4 +43,24 @@ public class ServiceInterop
     {
         return LocalService.Media.ReadFullCatalog();
     }
+
+    public static List<ServiceWorkgroup> GetAvailableWorkgroups()
+    {
+        return LocalService.Workgroup.ReadWorkgroups();
+    }
+
+    public static void CreateWorkgroup(ServiceWorkgroup workgroup)
+    {
+        LocalService.Workgroup.CreateWorkgroup(workgroup);
+    }
+
+    public static void UpdateWorkgroup(ServiceWorkgroup workgroup)
+    {
+        LocalService.Workgroup.UpdateWorkgroup(workgroup);
+    }
+
+    public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
+    {
+        return LocalService.Workgroup.GetWorkgroupDetails(id);
+    }
 }

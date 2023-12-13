@@ -15,7 +15,8 @@
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
-    <PackageReference Include="TCore.XmlSettings" Version="1.1.0" />
+    <PackageReference Include="TCore.Sql" Version="2.2.3" />
+    <PackageReference Include="TCore.XmlSettings" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,10 +25,6 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\liblet\cs\sql\sql.csproj" />
   </ItemGroup>
 
   <ItemGroup>

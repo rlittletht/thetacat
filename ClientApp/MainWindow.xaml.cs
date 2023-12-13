@@ -71,15 +71,30 @@ namespace Thetacat
             Sort(CatalogView, sender as GridViewColumnHeader);
         }
 
-        private AppState m_appState;
+        private AppState? m_appState;
+
+        private IAppState _AppState
+        {
+            get
+            {
+                if (m_appState == null)
+                    throw new Exception($"initialize never called on {this.GetType().Name}");
+                return m_appState;
+            }
+        }
 
         public MainWindow()
         {
             InitializeComponent();
-            m_appState = new AppState();
+            InitializeThetacat();
 
-            m_appState.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = m_appState.Catalog.Items;
+            _AppState.RegisterWindowPlace(this, "MainWindow");
+            CatalogView.ItemsSource = _AppState.Catalog.Items;
+        }
+
+        void InitializeThetacat()
+        {
+            m_appState = new AppState();
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -91,29 +106,29 @@ namespace Thetacat
 
         private void LaunchMigration(object sender, RoutedEventArgs e)
         {
-            Migration.Migration migration = new(m_appState);
+            Migration.Migration migration = new(_AppState);
 
             migration.ShowDialog();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
-            Metatags.ManageMetadata manage = new(m_appState);
+            Metatags.ManageMetadata manage = new(_AppState);
             manage.ShowDialog();
         }
 
         private void LoadCatalog(object sender, RoutedEventArgs e)
         {
-            m_appState.Catalog.ReadFullCatalogFromServer(m_appState.MetatagSchema);
+            _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
         }
 
         private void LaunchOptions(object sender, RoutedEventArgs e)
         {
-            CatOptions options = new CatOptions(m_appState);
+            CatOptions options = new CatOptions(_AppState);
             if (options.ShowDialog() ?? false)
             {
                 options.SaveToSettings();
-                m_appState.Settings.WriteSettings();
+                _AppState.Settings.WriteSettings();
             }
         }
     }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Microsoft.Identity.Client;
 using TCore.XmlSettings;
 
@@ -21,9 +22,13 @@ public class TcSettings
     // Public Settings. Use LoadSettings
 
     public static string s_uri = "http://schemas.thetasoft.com/Thetacat/settings/2023";
-    public string ElementsDatabase = string.Empty;
-    public string CacheLocation = string.Empty;
-    public string CacheType = string.Empty;
+    public string? ElementsDatabase;
+    public string? CacheLocation;
+    public string? CacheType;
+    public string? WorkgroupId;
+    public string? WorkgroupCacheServer;
+    public string? WorkgroupCacheRoot;
+    public string? WorkgroupName;
 
     public List<MapPair> ElementsSubstitutions = new();
 
@@ -45,8 +50,20 @@ public class TcSettings
                .Pop()
                .Pop()
                .AddElement("CacheOptions")
-               .AddChildElement("CacheLocation", GetCacheLocationValue, SetCacheLocationValue)
+               .AddChildElement("CacheType")
                .AddAttribute("Type", GetCacheTypeValue, SetCacheTypeValue)
+               .AddElement("PrivateCache")
+               .AddChildElement("CacheLocation", GetCacheLocationValue, SetCacheLocationValue)
+               .Pop()
+               .AddElement("WorkgroupCache")
+               .AddChildElement("Workgroup")
+               .AddAttribute("ID", GetWorkgroupIDValue, SetWorkgroupIDValue)
+               .AddElement("CachedValues")
+               .AddAttribute("Server", GetWorkgroupCacheServerValue, SetWorkgroupCacheServerValue)
+               .AddAttribute("CacheRoot", GetWorkgroupCacheRootValue, SetWorkgroupCacheRootValue)
+               .AddAttribute("Name", GetWorkgroupNameValue, SetWorkgroupNameValue)
+               .Pop()
+               .Pop()
                .Pop();
 
         try
@@ -59,6 +76,10 @@ public class TcSettings
              || ex is FileNotFoundException)
         {
             // this is fine, we just don't have any options to load
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Caught exception reading settings: {ex.Message}");
         }
     }
 
@@ -74,14 +95,26 @@ public class TcSettings
     private readonly string m_settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
     private readonly XmlDescription<TcSettings> XmlSettingsDescription;
 
-    private static void SetElementsDatabaseValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.ElementsDatabase = value;
-    private static string GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.ElementsDatabase;
+    private static void SetElementsDatabaseValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase = value;
+    private static string? GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase;
 
-    private static void SetCacheLocationValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheLocation = value;
-    private static string GetCacheLocationValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheLocation;
+    private static void SetCacheLocationValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheLocation = value;
+    private static string? GetCacheLocationValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheLocation;
 
-    private static void SetCacheTypeValue(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheType = value;
-    private static string GetCacheTypeValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext repeatItemContext) => settings.CacheType;
+    private static void SetCacheTypeValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheType = value;
+    private static string? GetCacheTypeValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheType;
+
+    private static void   SetWorkgroupIDValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupId = value;
+    private static string? GetWorkgroupIDValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupId;
+
+    private static void   SetWorkgroupCacheServerValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheServer = value;
+    private static string? GetWorkgroupCacheServerValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheServer;
+
+    private static void   SetWorkgroupCacheRootValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheRoot = value;
+    private static string? GetWorkgroupCacheRootValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheRoot;
+
+    private static void   SetWorkgroupNameValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName = value;
+    private static string? GetWorkgroupNameValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName;
 
     private IEnumerator<MapPair>? SubEnum;
 
@@ -89,7 +122,7 @@ public class TcSettings
     private static RepeatContext<TcSettings>.RepeatItemContext CreateElementsSubstitutionRepeatContext(
         TcSettings settings,
         Element<TcSettings> element,
-        RepeatContext<TcSettings>.RepeatItemContext parent)
+        RepeatContext<TcSettings>.RepeatItemContext? parent)
     {
         if (settings.SubEnum != null)
         {
@@ -102,7 +135,7 @@ public class TcSettings
         return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, new MapPair());
     }
 
-    private static bool AreRemainingElementsSubstitutions(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext itemContext)
+    private static bool AreRemainingElementsSubstitutions(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
     {
         if (settings.ElementsSubstitutions.Count == 0)
             return false;
@@ -112,23 +145,34 @@ public class TcSettings
         return settings.SubEnum.MoveNext();
     }
 
-    private static void CommitElementsSubstitutionRepeatItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext itemContext)
+    private static void CommitElementsSubstitutionRepeatItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
     {
+        if (itemContext == null)
+            throw new ArgumentNullException(nameof(itemContext));
+
         MapPair nested = (MapPair)itemContext.RepeatKey;
-        settings.ElementsSubstitutions ??= new List<MapPair>();
 
         settings.ElementsSubstitutions.Add(nested);
     }
 
-    private static string GetSubstitutionFrom(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext context) => ((MapPair)context.RepeatKey).From;
+    private static string GetSubstitutionFrom(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((MapPair?)context?.RepeatKey)?.From ?? throw new ArgumentNullException(nameof(context));
+    private static void SetSubstitutionFrom(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context?.RepeatKey == null) 
+            throw new ArgumentNullException(nameof(context));
 
-    private static void SetSubstitutionFrom(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext context) =>
         ((MapPair)context.RepeatKey).From = value;
+    }
 
-    private static string GetSubstitutionTo(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext context) => ((MapPair)context.RepeatKey).To;
+    private static string GetSubstitutionTo(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((MapPair?)context?.RepeatKey)?.To ?? throw new ArgumentNullException(nameof(context));
 
-    private static void SetSubstitutionTo(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext context) =>
+    private static void SetSubstitutionTo(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context == null) 
+            throw new ArgumentNullException(nameof(context));
+
         ((MapPair)context.RepeatKey).To = value;
+    }
 
 #endregion
 }

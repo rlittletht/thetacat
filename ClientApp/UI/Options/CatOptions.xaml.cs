@@ -34,11 +34,13 @@ public partial class CatOptions : Window
 
     public void SaveToSettings()
     {
-        CacheConfigTab.SaveToSettings();
+        if (CacheConfigTab.FSaveSettings())
+            m_appState.Settings.WriteSettings();
     }
 
     private void DoSave(object sender, RoutedEventArgs e)
     {
+        // launcher will interrogate us and save the settings if we return true.
         DialogResult = true;
     }
 }
