@@ -100,7 +100,7 @@ public partial class CacheConfig : UserControl
             return false;
         }
 
-        string fullPath = PathSegment.Combine(_Model.WorkgroupServerPath, _Model.WorkgroupCacheRoot).Local;
+        string fullPath = PathSegment.Join(_Model.WorkgroupServerPath, _Model.WorkgroupCacheRoot).Local;
 
         if (!Path.Exists(fullPath))
         {

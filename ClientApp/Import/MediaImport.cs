@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
+using HeyRed.Mime;
+using Thetacat.Azure;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
@@ -25,6 +28,8 @@ namespace Thetacat.Import;
             Set its state to pending
         
      
+    If the constructor is given just the source string, then this will
+    return the pending-upload items for this source (presumably this client)
 ----------------------------------------------------------------------------*/
 public class MediaImport
 {
@@ -37,7 +42,7 @@ public class MediaImport
             PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
         }
     }
 
@@ -48,7 +53,23 @@ public class MediaImport
             PathSegment pathRoot = PathSegment.GetPathRoot(file) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
+        }
+    }
+
+    public MediaImport(string source)
+    {
+        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(source);
+
+        foreach (ServiceImportItem item in items)
+        {
+            ImportItems.Add(
+                new ImportItem(
+                    item.ID,
+                    source,
+                    PathSegment.CreateFromString(item.SourceServer),
+                    PathSegment.CreateFromString(item.SourcePath),
+                    ImportItem.StateFromString(item.State ?? string.Empty)));
         }
     }
 
@@ -60,7 +81,8 @@ public class MediaImport
             MediaItem mediaItem = new(item);
 
             catalog.AddNewMediaItem(mediaItem);
-            mediaItem.LocalPath = PathSegment.Combine(item.SourceServer, item.SourcePath).Local;
+            mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
+            mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
 
             List<string>? log = mediaItem.ReadMetadataFromFile(metatagSchema);
 
@@ -85,4 +107,30 @@ public class MediaImport
         ServiceInterop.InsertImportItems(ImportItems);
     }
 
+    public async Task UploadMedia()
+    {
+        AzureCat.EnsureCreated("thetacattest");
+
+        foreach (ImportItem item in ImportItems)
+        {
+            if (item.State == ImportItem.ImportState.PendingUpload)
+            {
+                PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
+                
+                TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
+                MediaItem media = MainWindow._AppState.Catalog.Items[item.ID];
+
+                if (media.MD5 != blob.ContentMd5)
+                {
+                    MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                    media.MD5 = blob.ContentMd5;
+                }
+
+                item.State = ImportItem.ImportState.Complete;
+                item.UploadDate = DateTime.Now;
+                
+                ServiceInterop.CompleteImportForItem(item.ID);
+            }
+        }
+    }
 }

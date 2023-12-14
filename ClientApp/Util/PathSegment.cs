@@ -39,14 +39,26 @@ public class PathSegment
     public override string ToString() => m_segment;
     public string Local => m_local ??= m_segment.Replace("/", "\\");
 
-    public static PathSegment Combine(PathSegment a, PathSegment b)
+    public static PathSegment Join(PathSegment a, params PathSegment[] paths)
     {
-        return new PathSegment(Path.Combine(a.Local, b.Local));
+        foreach (PathSegment path in paths)
+        {
+            a = new PathSegment(Path.Join(a.Local, path.Local));
+        }
+
+        return a;
     }
 
-    public static PathSegment Combine(string a, string b)
+    public static PathSegment Join(string a, params string[] paths)
     {
-        return PathSegment.Combine(new PathSegment(a), new PathSegment(b));
+        PathSegment segment = new PathSegment(a);
+
+        foreach (string path in paths)
+        {
+            segment = new PathSegment(Path.Join(segment.Local, path));
+        }
+
+        return segment;
     }
 
     public PathSegment? GetPathRoot()

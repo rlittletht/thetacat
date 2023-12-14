@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using TCore;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -45,7 +46,7 @@ public class Cache
         throw new ArgumentException("bad cache type argument");
     }
 
-    void InitializeWorkgroupCache(TcSettings.TcSettings settings)
+    void ConnectToWorkgroupCache(TcSettings.TcSettings settings)
     {
         if (Type != CacheType.Workgroup)
             throw new InvalidOperationException("intializing a non-workgroup");
@@ -62,23 +63,28 @@ public class Cache
             throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
         }
 
-        LocalPath = Workgroup.FullyQualifiedPath;
+        // make sure the directory exists
+        Directory.CreateDirectory(Workgroup.FullyQualifiedPath);
 
-        // read the media items we know about
-        List<ServiceWorkgroupItemClient> media = ServiceInterop.ReadWorkgroupMedia(id);
+        Workgroup.RefreshWorkgroupMedia();
 
-        foreach (ServiceWorkgroupItemClient mediaItem in media)
-        {
-            ICacheEntry entry = new WorkgroupCacheEntry(
-                mediaItem.Item.MediaId ?? throw new CatExceptionServiceDataFailure(),
-                PathSegment.CreateFromString(mediaItem.Item.Path),
-                mediaItem.Item.CachedBy ?? throw new CatExceptionServiceDataFailure(),
-                mediaItem.Item.CachedDate ?? throw new CatExceptionServiceDataFailure());
-
-            // if we have a duplicate ID its a service failure
-            if (!Entries.TryAdd(entry.ID, entry))
-                throw new CatExceptionServiceDataFailure();
-        }
+//        LocalPath = Workgroup.FullyQualifiedPath;
+//
+//        // read the media items we know about
+//        List<ServiceWorkgroupItemClient> media = ServiceInterop.ReadWorkgroupMedia(id);
+//
+//        foreach (ServiceWorkgroupItemClient mediaItem in media)
+//        {
+//            ICacheEntry entry = new WorkgroupCacheEntry(
+//                mediaItem.Item.MediaId ?? throw new CatExceptionServiceDataFailure(),
+//                PathSegment.CreateFromString(mediaItem.Item.Path),
+//                mediaItem.Item.CachedBy ?? throw new CatExceptionServiceDataFailure(),
+//                mediaItem.Item.CachedDate ?? throw new CatExceptionServiceDataFailure());
+//
+//            // if we have a duplicate ID its a service failure
+//            if (!Entries.TryAdd(entry.ID, entry))
+//                throw new CatExceptionServiceDataFailure();
+//        }
     }
 
     public bool IsItemCached(Guid id)
@@ -107,6 +113,6 @@ public class Cache
             return;
 
         if (Type == CacheType.Workgroup)
-            InitializeWorkgroupCache(settings);
+            ConnectToWorkgroupCache(settings);
     }
 }

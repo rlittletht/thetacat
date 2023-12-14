@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -29,8 +30,10 @@ using NUnit.Framework;
 using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
+using Thetacat.Import;
+using Thetacat.Model;
 using Thetacat.UI.Options;
-
+using Thetacat.Azure;
 
 namespace Thetacat
 {
@@ -85,6 +88,8 @@ namespace Thetacat
             }
         }
 
+        public static string ClientName = Environment.MachineName;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -132,6 +137,18 @@ namespace Thetacat
                 options.SaveToSettings();
                 _AppState.Settings.WriteSettings();
             }
+        }
+
+        private void DoCacheItems(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private async void UploadItems(object sender, RoutedEventArgs e)
+        {
+            MediaImport import = new MediaImport(MainWindow.ClientName);
+            
+            await import.UploadMedia();
         }
     }
 }

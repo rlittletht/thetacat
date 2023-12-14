@@ -207,7 +207,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(MainWindow._AppState, subs);
+                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -258,6 +258,7 @@ public partial class MediaMigration : UserControl
                     From = sub.From,
                     To = sub.To,
                 });
+            pathSubst.Add(sub.From, sub.To);
         }
 
         MainWindow._AppState.Settings.WriteSettings();
@@ -314,7 +315,7 @@ public partial class MediaMigration : UserControl
     private void AddToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
-        MediaImport import = new MediaImport(checkedItems, Environment.MachineName);
+        MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
 
         import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
     }

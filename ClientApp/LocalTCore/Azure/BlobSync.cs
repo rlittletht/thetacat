@@ -3,6 +3,7 @@ using Azure.Identity;
 using Azure.Storage.Blobs;
 using System;
 using System.Threading.Tasks;
+using Azure;
 
 namespace Thetacat;
 
@@ -25,12 +26,17 @@ class BlobSync
 
     public static async Task<TcBlobContainer> OpenContainer(string containerName)
     {
-        Uri uri = new Uri($"https://{m_storageAccountName}.blob.core.windows.net/{containerName}");
+        return await OpenContainer(containerName, m_storageAccountName, m_credential);
+    }
 
-        BlobContainerClient container = new BlobContainerClient(uri, m_credential);
+    public static async Task<TcBlobContainer> OpenContainer(string containerName, string accountName, TokenCredential? credential)
+    {
+        Uri uri = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}");
+
+        BlobContainerClient container = new BlobContainerClient(uri, credential);
 
         // make sure this exists
-        Azure.Response<bool> exists = await container.ExistsAsync();
+        Response<bool> exists = await container.ExistsAsync();
 
         if (!exists.HasValue)
             throw new Exception("no response from azure");

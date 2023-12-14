@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Data.SQLite;
+using System.IO;
 using Thetacat.ServiceClient;
 using Thetacat.Util;
 
@@ -11,8 +13,9 @@ public class Workgroup
     public string Name { get; }
     public PathSegment Server { get; }
     public PathSegment CacheRoot { get; }
+    private PathSegment Database => PathSegment.Join(Server, CacheRoot, new PathSegment("workgroup-cache.db"));
 
-    public string FullyQualifiedPath => PathSegment.Combine(Server, CacheRoot).Local;
+    public string FullyQualifiedPath => PathSegment.Join(Server, CacheRoot).Local;
 
     public Workgroup(Guid id)
     {
@@ -25,4 +28,13 @@ public class Workgroup
         Server = PathSegment.CreateFromString(serviceWorkgroup.ServerPath) ?? throw new InvalidOperationException("no servername from server");
         CacheRoot = PathSegment.CreateFromString(serviceWorkgroup.CacheRoot) ?? throw new InvalidOperationException("no name from server");
     }
+
+    private WorkgroupDb? m_db;
+
+    public void RefreshWorkgroupMedia()
+    {
+        m_db ??= new WorkgroupDb(Database);
+    }
+
+
 }

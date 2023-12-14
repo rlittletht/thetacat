@@ -78,10 +78,10 @@ public class Metatags
 
     static string BuildInsertSql(MetatagSchemaDiffOp diffOp)
     {
-        string description = TCore.Sql.Sqlify(diffOp.Metatag.Description);
-        string name = TCore.Sql.Sqlify(diffOp.Metatag.Name);
-        string parent = TCore.Sql.Nullable(diffOp.Metatag.Parent);
-        string standard = TCore.Sql.Sqlify(diffOp.Metatag.Standard);
+        string description = Sql.Sqlify(diffOp.Metatag.Description);
+        string name = Sql.Sqlify(diffOp.Metatag.Name);
+        string parent = Sql.Nullable(diffOp.Metatag.Parent);
+        string standard = Sql.Sqlify(diffOp.Metatag.Standard);
 
         return "INSERT INTO tcat_metatags (Description, ID, Name, Parent, Standard) "
             + $"VALUES ('{description}', '{diffOp.ID.ToString()}', '{name}', {parent}, '{standard}') ";
@@ -97,13 +97,13 @@ public class Metatags
         List<string> sets = new();
 
         if (diffOp.IsNameChanged)
-            sets.Add($"Name='{TCore.Sql.Sqlify(diffOp.Metatag.Name)}'");
+            sets.Add($"Name='{Sql.Sqlify(diffOp.Metatag.Name)}'");
         if (diffOp.IsDescriptionChanged)
-            sets.Add($"Description='{TCore.Sql.Sqlify(diffOp.Metatag.Description)}'");
+            sets.Add($"Description='{Sql.Sqlify(diffOp.Metatag.Description)}'");
         if (diffOp.IsParentChanged)
-            sets.Add($"Parent={TCore.Sql.Nullable(diffOp.Metatag.Parent)}");
+            sets.Add($"Parent={Sql.Nullable(diffOp.Metatag.Parent)}");
         if (diffOp.IsStandardChanged)
-            sets.Add($"Standard={TCore.Sql.Nullable(diffOp.Metatag.Standard)}");
+            sets.Add($"Standard={Sql.Nullable(diffOp.Metatag.Standard)}");
 
         if (sets.Count == 0)
             return "";

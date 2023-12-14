@@ -36,8 +36,8 @@ public class TcSettings
     {
         XmlSettingsDescription =
             XmlDescriptionBuilder<TcSettings>
-               .Build(s_uri, "settings")
-               .AddChildElement("migration")
+               .Build(s_uri, "Settings")
+               .AddChildElement("Migration")
                .AddChildElement("ElementsDatabase", GetElementsDatabaseValue, SetElementsDatabaseValue)
                .AddElement("Substitutions")
                .AddChildElement("Substitution")

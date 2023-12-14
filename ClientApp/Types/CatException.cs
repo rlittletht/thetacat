@@ -63,3 +63,39 @@ public class CatExceptionServiceDataFailure : CatException
         public CatExceptionServiceDataFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
 #pragma warning restore format // @formatter:on
 }
+
+public class CatExceptionInitializationFailure : CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionInitializationFailure() : base(Guid.Empty) { }
+        public CatExceptionInitializationFailure(Guid crids) : base(crids) { }
+        public CatExceptionInitializationFailure(string errorMessage) : base(errorMessage) { }
+        public CatExceptionInitializationFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionInitializationFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionInitializationFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
+public class CatExceptionAzureFailure : CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionAzureFailure() : base(Guid.Empty) { }
+        public CatExceptionAzureFailure(Guid crids) : base(crids) { }
+        public CatExceptionAzureFailure(string errorMessage) : base(errorMessage) { }
+        public CatExceptionAzureFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionAzureFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionAzureFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
+public class CatExceptionInternalFailure : CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionInternalFailure() : base(Guid.Empty) { }
+        public CatExceptionInternalFailure(Guid crids) : base(crids) { }
+        public CatExceptionInternalFailure(string errorMessage) : base(errorMessage) { }
+        public CatExceptionInternalFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionInternalFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionInternalFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}

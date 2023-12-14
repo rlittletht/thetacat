@@ -38,7 +38,7 @@ public class PathSegmentTests
         PathSegment segmentA = new PathSegment(pathA);
         PathSegment segmentB = new PathSegment(pathB);
 
-        PathSegment actual = PathSegment.Combine(segmentA, segmentB);
+        PathSegment actual = PathSegment.Join(segmentA, segmentB);
 
         Assert.AreEqual(expected, actual);
     }

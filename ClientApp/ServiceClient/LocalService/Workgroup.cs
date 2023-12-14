@@ -23,11 +23,13 @@ public class Workgroup
             FROM $$#tcat_workgroups$$
             WHERE $$tcat_workgroups$$.id = @Id";
 
+#if WG_ON_SQL
     static readonly string s_queryWorkgroupMedia = @"
             SELECT $$tcat_workgroup_media$$.workgroup, $$tcat_workgroup_media$$.media, $$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cachedDate, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.authID
             FROM $$#tcat_workgroup_media$$
             INNER JOIN $$#tcat_workgroup_clients$$ ON $$tcat_workgroup_media$$.cachedBy = $$tcat_workgroup_clients$$.id
             WHERE $$tcat_workgroup_media$$.media = @WorkgroupId";
+#endif
 
     private static readonly string s_insertWorkgroup = @"
             INSERT INTO tcat_workgroups (id, name, serverPath, cacheRoot) VALUES (@Id, @Name, @ServerPath, @CacheRoot)";
@@ -55,6 +57,7 @@ public class Workgroup
             });
     }
 
+#if WG_ON_SQL
     public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
     {
         HashSet<Guid> mediaAdded = new();
@@ -91,6 +94,7 @@ public class Workgroup
             }
             );
     }
+#endif
 
     public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
     {
@@ -101,8 +105,8 @@ public class Workgroup
             {
                 building.ID = reader.Reader.GetGuid(0);
                 building.Name = reader.Reader.GetString(1);
-                building.CacheRoot = reader.Reader.GetString(2);
-                building.ServerPath = reader.Reader.GetString(3);
+                building.ServerPath = reader.Reader.GetString(2);
+                building.CacheRoot = reader.Reader.GetString(3);
             },
             (cmd) =>
             {

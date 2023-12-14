@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows.Documents.DocumentStructures;
 using TCore;
 using Thetacat.Import;
+using Thetacat.Model;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -17,10 +18,10 @@ public class Import
 
     private static readonly string s_baseQuery = $@"
         SELECT 
-            $$tcat_import.id, $$tcat_import.state, $$tcat_import.sourcePath, 
-            $$tcat_import.sourceServer, $$tcat_import.uploadDate, $$tcat_import.source,
-        FROM $$#$$tcat_import
-        WHERE source = @SourceClient'";
+            $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
+            $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
+        FROM $$#tcat_import$$
+        WHERE $$tcat_import$$.source = @SourceClient";
 
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
@@ -69,18 +70,44 @@ public class Import
     private static readonly string s_queryUpdateState = @"
         UPDATE tcat_import SET state=@NewState WHERE id=@MediaID";
 
-    public static void UpdateImportStateForItem(Guid id, ImportItem item, ImportItem.ImportState newState)
+    private static readonly string s_updateMediaState = @"
+        UPDATE tcat_media SET state=@NewState WHERE id=@MediaID";
+
+
+    public static void CompleteImportForItem(Guid id)
     {
         Guid crid = Guid.NewGuid();
         LocalServiceClient.EnsureConnected();
 
-        LocalServiceClient.Sql.ExecuteNonQuery(
-            new SqlCommandTextInit(s_queryUpdateState, s_aliases),
-            (cmd) =>
-            {
-                cmd.Parameters.AddWithValue("@MediaID", id);
-                cmd.Parameters.AddWithValue("@NewState", ImportItem.StringFromState(newState));
-            });
+        LocalServiceClient.Sql.BeginTransaction();
+
+        try
+        {
+            LocalServiceClient.Sql.ExecuteNonQuery(
+                new SqlCommandTextInit(s_queryUpdateState, s_aliases),
+                (cmd) =>
+                {
+                    cmd.Parameters.AddWithValue("@MediaID", id);
+                    cmd.Parameters.AddWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.Complete));
+                });
+
+            LocalServiceClient.Sql.ExecuteNonQuery(
+                new SqlCommandTextInit(s_updateMediaState, s_aliases),
+                (cmd) =>
+                {
+                    cmd.Parameters.AddWithValue("@MediaID", id);
+                    cmd.Parameters.AddWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
+                });
+        }
+        catch
+        {
+            LocalServiceClient.Sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            LocalServiceClient.Sql.Commit();
+        }
     }
 
     private static readonly string s_queryInsertImportItem = @"

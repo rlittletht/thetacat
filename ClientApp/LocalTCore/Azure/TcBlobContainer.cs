@@ -6,13 +6,14 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.VisualBasic;
 
 namespace Thetacat;
 
-class TcBlobContainer
+public class TcBlobContainer
 {
     readonly BlobContainerClient m_client;
 
@@ -42,7 +43,7 @@ class TcBlobContainer
 
         fs.Seek(0, SeekOrigin.Begin);
 
-        Azure.Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
+        Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
 
         if (!info.HasValue)
             throw new Exception($"upload {localPath}->{blobName} failed!");
@@ -50,7 +51,7 @@ class TcBlobContainer
         BlobClient blob = m_client.GetBlobClient(blobName);
 
         Dictionary<string, string> metadata = new() { { TcBlob.META_FULL_CONTENT_MD5, fullContentMd5 } };
-        Azure.Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
+        Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
 
         if (!blobInfo.HasValue)
             throw new Exception($"could not get properties for {blobName}");
