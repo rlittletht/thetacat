@@ -64,9 +64,9 @@ public class ServiceInterop
         return LocalService.Workgroup.GetWorkgroupDetails(id);
     }
 
-    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia()
+    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
     {
-        return LocalService.Workgroup.ReadWorkgroupMedia();
+        return LocalService.Workgroup.ReadWorkgroupMedia(id);
     }
 
 }

@@ -24,10 +24,10 @@ public class Workgroup
             WHERE $$tcat_workgroups$$.id = @Id";
 
     static readonly string s_queryWorkgroupMedia = @"
-            SELECT $$tcat_workgroup_media$$.workgroup, $$tcat_workgroup_media$$.media, $$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cacheDate, $$tcat_workgroup_client$$.name, $$tcat_workgroup_client$$.authID
+            SELECT $$tcat_workgroup_media$$.workgroup, $$tcat_workgroup_media$$.media, $$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cachedDate, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.authID
             FROM $$#tcat_workgroup_media$$
-            INNER JOIN $$#tcat_workgroup_clients$$ ON $$tcat_workgroup_media$$.cachedBy = $$tcat_workgroup_client$$.id
-            WHERE $$tcat_workgroup_media$$ = @WorkgroupId";
+            INNER JOIN $$#tcat_workgroup_clients$$ ON $$tcat_workgroup_media$$.cachedBy = $$tcat_workgroup_clients$$.id
+            WHERE $$tcat_workgroup_media$$.media = @WorkgroupId";
 
     private static readonly string s_insertWorkgroup = @"
             INSERT INTO tcat_workgroups (id, name, serverPath, cacheRoot) VALUES (@Id, @Name, @ServerPath, @CacheRoot)";
@@ -55,7 +55,7 @@ public class Workgroup
             });
     }
 
-    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia()
+    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
     {
         HashSet<Guid> mediaAdded = new();
 
@@ -84,7 +84,12 @@ public class Workgroup
                     };
 
                 building.Add(workgroupItemClient);
-            });
+            },
+            (cmd) =>
+            {
+                cmd.Parameters.AddWithValue("@WorkgroupId", id);
+            }
+            );
     }
 
     public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
@@ -98,6 +103,10 @@ public class Workgroup
                 building.Name = reader.Reader.GetString(1);
                 building.CacheRoot = reader.Reader.GetString(2);
                 building.ServerPath = reader.Reader.GetString(3);
+            },
+            (cmd) =>
+            {
+                cmd.Parameters.AddWithValue("@Id", id);
             });
     }
 

@@ -65,7 +65,7 @@ public class Cache
         LocalPath = Workgroup.FullyQualifiedPath;
 
         // read the media items we know about
-        List<ServiceWorkgroupItemClient> media = ServiceInterop.ReadWorkgroupMedia();
+        List<ServiceWorkgroupItemClient> media = ServiceInterop.ReadWorkgroupMedia(id);
 
         foreach (ServiceWorkgroupItemClient mediaItem in media)
         {
@@ -79,6 +79,11 @@ public class Cache
             if (!Entries.TryAdd(entry.ID, entry))
                 throw new CatExceptionServiceDataFailure();
         }
+    }
+
+    public bool IsItemCached(Guid id)
+    {
+        return Entries.ContainsKey(id);
     }
 
     /*----------------------------------------------------------------------------

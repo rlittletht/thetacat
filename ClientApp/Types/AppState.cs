@@ -24,8 +24,6 @@ public class AppState : IAppState
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
         Cache = new Cache(Settings);
-
-        throw new CatExceptionUnauthorized("test message");
     }
 
     public void RegisterWindowPlace(Window window, string key)

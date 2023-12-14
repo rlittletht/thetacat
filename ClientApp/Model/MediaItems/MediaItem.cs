@@ -94,6 +94,8 @@ public class MediaItem
         }
     }
 
+    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
+
     public ConcurrentDictionary<Guid, MediaTag> Tags
     {
         get => m_working.Tags;
