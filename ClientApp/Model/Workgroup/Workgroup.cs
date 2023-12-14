@@ -15,6 +15,11 @@ public class Workgroup
     public PathSegment CacheRoot { get; }
     private PathSegment Database => PathSegment.Join(Server, CacheRoot, new PathSegment("workgroup-cache.db"));
 
+    // the VC is the last version of the WG cache that we know about. if others have updated their notion
+    // of the cache, then it will be different than ours. 
+    private int m_vectorClock;
+    private int? m_vectorBase;
+
     public string FullyQualifiedPath => PathSegment.Join(Server, CacheRoot).Local;
 
     public Workgroup(Guid id)

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows;
 using TCore;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -114,5 +115,16 @@ public class Cache
 
         if (Type == CacheType.Workgroup)
             ConnectToWorkgroupCache(settings);
+    }
+
+    public void DoForegroundSync()
+    {
+        if (Type != CacheType.Workgroup)
+        {
+            MessageBox.Show("Private cachine NYI");
+            return;
+        }
+
+
     }
 }
