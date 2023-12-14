@@ -63,4 +63,10 @@ public class ServiceInterop
     {
         return LocalService.Workgroup.GetWorkgroupDetails(id);
     }
+
+    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia()
+    {
+        return LocalService.Workgroup.ReadWorkgroupMedia();
+    }
+
 }

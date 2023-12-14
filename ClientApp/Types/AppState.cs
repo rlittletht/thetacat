@@ -8,15 +8,14 @@ namespace Thetacat.Types;
 public class AppState : IAppState
 {
     public TcSettings.TcSettings Settings { get; }
-
     public MetatagSchema MetatagSchema { get; }
+    public Cache Cache { get; }
 
     public Catalog Catalog { get; }
 
     public void RefreshMetatagSchema()
     {
         MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
-
     }
 
     public AppState()
@@ -24,6 +23,9 @@ public class AppState : IAppState
         Settings = new TcSettings.TcSettings();
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
+        Cache = new Cache(Settings);
+
+        throw new CatExceptionUnauthorized("test message");
     }
 
     public void RegisterWindowPlace(Window window, string key)

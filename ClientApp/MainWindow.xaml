@@ -31,6 +31,9 @@
                             <GridViewColumn DisplayMemberBinding="{Binding Path=Value.State}">
                                 <GridViewColumnHeader Tag="State" Click="SortType" Content="State" />
                             </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value.Cached}">
+                                <GridViewColumnHeader Tag="Cached" Click="SortType" Content="Cached" />
+                            </GridViewColumn>
                         </GridView.Columns>
                     </GridView>
                 </ListView.View>

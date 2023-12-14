@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
@@ -40,36 +41,6 @@ public partial class CacheConfig : UserControl
         }
     }
 
-    public enum CacheType
-    {
-        Private,
-        Workgroup,
-        Unknown
-    }
-
-    CacheType CacheTypeFromString(string value)
-    {
-        if (String.Compare(value, "private", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Private;
-        else if (String.Compare(value, "workgroup", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Workgroup;
-
-        return CacheType.Unknown;
-    }
-
-    string StringFromCacheType(CacheType cacheType)
-    {
-        switch (cacheType)
-        {
-            case CacheType.Private:
-                return "private";
-            case CacheType.Workgroup:
-                return "workgroup";
-        }
-
-        throw new ArgumentException("bad cache type argument");
-    }
-
     public CacheConfig()
     {
         InitializeComponent();
@@ -80,7 +51,6 @@ public partial class CacheConfig : UserControl
     {
         m_appState = appState;
     }
-
 
     public void LoadFromSettings()
     {
@@ -114,13 +84,13 @@ public partial class CacheConfig : UserControl
             ComboBoxItem? item = (ComboBoxItem?)e.AddedItems[0];
             string? selected = (string?)item?.Content;
 
-            CacheType cacheType = CacheTypeFromString(selected ?? "private");
+            Cache.CacheType cacheType = Cache.CacheTypeFromString(selected ?? "private");
 
             if (WorkgroupOptions != null)
-                WorkgroupOptions.IsEnabled = cacheType == CacheType.Workgroup;
+                WorkgroupOptions.IsEnabled = cacheType == Cache.CacheType.Workgroup;
             if (LocalOptions != null)
-                LocalOptions.IsEnabled = cacheType == CacheType.Private;
-            if (cacheType != CacheType.Private)
+                LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
+            if (cacheType != Cache.CacheType.Private)
                 _Model.PopulateWorkgroups();
         }
     }
@@ -172,14 +142,14 @@ public partial class CacheConfig : UserControl
 
     public bool FSaveSettings()
     {
-        CacheType cacheType = CacheTypeFromString(CacheConfiguration.Text);
+        Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
         _AppState.Settings.CacheLocation = _Model.CacheLocation;
 
-        if (cacheType == CacheType.Private)
+        if (cacheType == Cache.CacheType.Private)
         {
             _AppState.Settings.WorkgroupId = null;
-            _AppState.Settings.CacheType = StringFromCacheType(cacheType);
+            _AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
         }
         else
         {

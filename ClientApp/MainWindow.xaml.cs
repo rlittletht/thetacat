@@ -24,7 +24,6 @@ using Emgu.CV.Rapid;
 using Emgu.CV.Structure;
 using Microsoft.Extensions.Azure;
 using Microsoft.Windows.Themes;
-
 using System.Security.Cryptography;
 using NUnit.Framework;
 using Thetacat.Types;
@@ -40,6 +39,8 @@ namespace Thetacat
     /// </summary>
     public partial class MainWindow : Window
     {
+#region Sort Support
+
         private GridViewColumnHeader? sortCol = null;
         private SortAdorner? sortAdorner;
 
@@ -71,6 +72,7 @@ namespace Thetacat
             Sort(CatalogView, sender as GridViewColumnHeader);
         }
 
+#endregion
         private AppState? m_appState;
 
         private IAppState _AppState
