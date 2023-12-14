@@ -13,8 +13,6 @@ namespace Thetacat.Migration;
 /// </summary>
 public partial class Migration : Window, INotifyPropertyChanged
 {
-    readonly IAppState m_appState;
-
     private string m_elementsDb = string.Empty;
 
     public string ElementsDb
@@ -38,23 +36,22 @@ public partial class Migration : Window, INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    public Migration(IAppState appState)
+    public Migration()
     {
-        m_appState = appState;
-        if (appState.MetatagSchema.SchemaVersionWorking == 0)
-            appState.RefreshMetatagSchema();
+        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
+            MainWindow._AppState.RefreshMetatagSchema();
 
         InitializeComponent();
         DataContext = this;
-        ElementsDb = m_appState.Settings.ElementsDatabase ?? string.Empty;
+        ElementsDb = MainWindow._AppState.Settings.ElementsDatabase ?? string.Empty;
 
-        m_appState.RegisterWindowPlace(this, "Migration");
+        MainWindow._AppState.RegisterWindowPlace(this, "Migration");
     }
 
     private void LaunchElementsMigration(object sender, RoutedEventArgs e)
     {
         SaveSettingsIfNeeded();
-        MigrationManager elements = new MigrationManager(ElementsDb, m_appState);
+        MigrationManager elements = new MigrationManager(ElementsDb);
         elements.ShowDialog();
     }
 
@@ -62,10 +59,10 @@ public partial class Migration : Window, INotifyPropertyChanged
     {
         PathSegment path = new PathSegment(ElementsDb);
 
-        if (m_appState.Settings.ElementsDatabase != path)
+        if (MainWindow._AppState.Settings.ElementsDatabase != path)
         {
-            m_appState.Settings.ElementsDatabase = path;
-            m_appState.Settings.WriteSettings();
+            MainWindow._AppState.Settings.ElementsDatabase = path;
+            MainWindow._AppState.Settings.WriteSettings();
         }
     }
 }

@@ -20,22 +20,18 @@ namespace Thetacat.UI.Options;
 /// </summary>
 public partial class CatOptions : Window
 {
-    private readonly IAppState m_appState;
-
-    public CatOptions(IAppState appState)
+    public CatOptions()
     {
         InitializeComponent();
-        m_appState = appState;
-        CacheConfigTab.Initialize(appState);
         CacheConfigTab.LoadFromSettings();
 
-        m_appState.RegisterWindowPlace(this, "CatOptions");
+        MainWindow._AppState.RegisterWindowPlace(this, "CatOptions");
     }
 
     public void SaveToSettings()
     {
         if (CacheConfigTab.FSaveSettings())
-            m_appState.Settings.WriteSettings();
+            MainWindow._AppState.Settings.WriteSettings();
     }
 
     private void DoSave(object sender, RoutedEventArgs e)

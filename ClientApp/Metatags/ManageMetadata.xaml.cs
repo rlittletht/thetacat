@@ -23,13 +23,10 @@ namespace Thetacat.Metatags
     /// </summary>
     public partial class ManageMetadata : Window
     {
-        private readonly IAppState m_appState;
-
-        public ManageMetadata(IAppState appState)
+        public ManageMetadata()
         {
-            m_appState = appState;
             InitializeComponent();
-            m_appState.RegisterWindowPlace(this, "ManageMetadata");
+            MainWindow._AppState.RegisterWindowPlace(this, "ManageMetadata");
         }
 
         MetatagSchema LoadSampleSchema()
@@ -94,8 +91,8 @@ namespace Thetacat.Metatags
 
         private void LoadMetatags(object sender, RoutedEventArgs e)
         {
-            m_appState.RefreshMetatagSchema();
-            MetatagsTree.Initialize(m_appState.MetatagSchema);
+            MainWindow._AppState.RefreshMetatagSchema();
+            MetatagsTree.Initialize(MainWindow._AppState.MetatagSchema);
         }
     }
 }

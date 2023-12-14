@@ -29,17 +29,6 @@ namespace Thetacat.UI.Options;
 public partial class CacheConfig : UserControl
 {
     readonly CacheConfigModel _Model = new CacheConfigModel();
-    private IAppState? m_appState;
-
-    private IAppState _AppState
-    {
-        get
-        {
-            if (m_appState == null)
-                throw new Exception($"initialize never called on {this.GetType().Name}");
-            return m_appState;
-        }
-    }
 
     public CacheConfig()
     {
@@ -47,18 +36,13 @@ public partial class CacheConfig : UserControl
         DataContext = _Model;
     }
 
-    public void Initialize(IAppState appState)
-    {
-        m_appState = appState;
-    }
-
     public void LoadFromSettings()
     {
-        _Model.CacheLocation = _AppState.Settings.CacheLocation ?? string.Empty;
-        _Model.CacheType = _AppState.Settings.CacheType ?? string.Empty;
-        if (_AppState.Settings.WorkgroupId != null)
+        _Model.CacheLocation = MainWindow._AppState.Settings.CacheLocation ?? string.Empty;
+        _Model.CacheType = MainWindow._AppState.Settings.CacheType ?? string.Empty;
+        if (MainWindow._AppState.Settings.WorkgroupId != null)
         {
-            _Model.WorkgroupID = _AppState.Settings.WorkgroupId;
+            _Model.WorkgroupID = MainWindow._AppState.Settings.WorkgroupId;
 
             try
             {
@@ -70,9 +54,9 @@ public partial class CacheConfig : UserControl
             }
             catch (Exception)
             {
-                _Model.WorkgroupName = _AppState.Settings.WorkgroupName ?? String.Empty;
-                _Model.WorkgroupCacheRoot = _AppState.Settings.WorkgroupCacheRoot ?? String.Empty;
-                _Model.WorkgroupServerPath = _AppState.Settings.WorkgroupCacheServer ?? String.Empty;
+                _Model.WorkgroupName = MainWindow._AppState.Settings.WorkgroupName ?? String.Empty;
+                _Model.WorkgroupCacheRoot = MainWindow._AppState.Settings.WorkgroupCacheRoot ?? String.Empty;
+                _Model.WorkgroupServerPath = MainWindow._AppState.Settings.WorkgroupCacheServer ?? String.Empty;
             }
         }
     }
@@ -144,12 +128,12 @@ public partial class CacheConfig : UserControl
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
-        _AppState.Settings.CacheLocation = _Model.CacheLocation;
+        MainWindow._AppState.Settings.CacheLocation = _Model.CacheLocation;
 
         if (cacheType == Cache.CacheType.Private)
         {
-            _AppState.Settings.WorkgroupId = null;
-            _AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
+            MainWindow._AppState.Settings.WorkgroupId = null;
+            MainWindow._AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
         }
         else
         {
@@ -186,7 +170,7 @@ public partial class CacheConfig : UserControl
                 ServiceInterop.UpdateWorkgroup(workgroup);
             }
 
-            _AppState.Settings.WorkgroupId = workgroup.ID.ToString();
+            MainWindow._AppState.Settings.WorkgroupId = workgroup.ID.ToString();
         }
         return true;
     }

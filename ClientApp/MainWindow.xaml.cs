@@ -73,15 +73,15 @@ namespace Thetacat
         }
 
 #endregion
-        private AppState? m_appState;
+        private static AppState? s_appState;
 
-        private IAppState _AppState
+        public static IAppState _AppState
         {
             get
             {
-                if (m_appState == null)
-                    throw new Exception($"initialize never called on {this.GetType().Name}");
-                return m_appState;
+                if (s_appState == null)
+                    throw new Exception($"app state uninitialized. _AppState queried too early");
+                return s_appState;
             }
         }
 
@@ -96,7 +96,7 @@ namespace Thetacat
 
         void InitializeThetacat()
         {
-            m_appState = new AppState();
+            s_appState = new AppState();
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -108,14 +108,14 @@ namespace Thetacat
 
         private void LaunchMigration(object sender, RoutedEventArgs e)
         {
-            Migration.Migration migration = new(_AppState);
+            Migration.Migration migration = new();
 
             migration.ShowDialog();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
-            Metatags.ManageMetadata manage = new(_AppState);
+            Metatags.ManageMetadata manage = new();
             manage.ShowDialog();
         }
 
@@ -126,7 +126,7 @@ namespace Thetacat
 
         private void LaunchOptions(object sender, RoutedEventArgs e)
         {
-            CatOptions options = new CatOptions(_AppState);
+            CatOptions options = new CatOptions();
             if (options.ShowDialog() ?? false)
             {
                 options.SaveToSettings();

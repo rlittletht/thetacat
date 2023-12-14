@@ -23,8 +23,6 @@ namespace Thetacat.UI
     /// </summary>
     public partial class Test : Window
     {
-        private AppState m_appState;
-
         //        public class ImageEntry
         //        {
         //            [PrimaryKey]
@@ -32,9 +30,8 @@ namespace Thetacat.UI
         public Test()
         {
             InitializeComponent();
-            m_appState = new AppState();
 
-            m_appState.RegisterWindowPlace(this, "MainWindow");
+            MainWindow._AppState.RegisterWindowPlace(this, "MainWindow");
         }
 
         SQLiteConnection OpenDatabase()
@@ -168,14 +165,14 @@ namespace Thetacat.UI
 
         private void LaunchMigration(object sender, RoutedEventArgs e)
         {
-            Migration.Migration migration = new(m_appState);
+            Migration.Migration migration = new();
 
             migration.ShowDialog();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
-            Metatags.ManageMetadata manage = new(m_appState);
+            Metatags.ManageMetadata manage = new();
             manage.ShowDialog();
         }
 
