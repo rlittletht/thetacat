@@ -6,12 +6,10 @@ using TCore;
 
 namespace Thetacat.TCore.TcSqlLite;
 
-public class SQLite
+public class SQLite : ISql
 {
-    public delegate void CustomizeCommandDelegate(SQLiteCommand command);
-
     private readonly SQLiteConnection? m_sqlc;
-    public bool InTransaction => m_transaction != null;
+    public bool InTransaction  => m_transaction != null;
 
     public SQLite()
     {
@@ -47,26 +45,28 @@ public class SQLite
         return new SQLite(sqlc, null);
     }
 
-    public SQLiteCommand CreateCommand()
+    public ISqlCommand CreateCommand()
     {
-        return Connection.CreateCommand();
+        return new TcSqlLite.SQLiteCommand(Connection.CreateCommand());
     }
 
     public void ExecuteNonQuery(
         string s,
-        SQLite.CustomizeCommandDelegate? customizeParams = null,
+        CustomizeCommandDelegate? customizeParams = null,
         Dictionary<string, string>? aliases = null)
     {
-        SQLiteCommand sqlcmd = CreateCommand();
+        ISqlCommand sqlcmd = CreateCommand();
 
         if (aliases != null)
             s = SqlWhere.ExpandAliases(s, aliases);
 
         sqlcmd.CommandText = s;
         if (customizeParams != null)
-            customizeParams(sqlcmd);
+            customizeParams(sqlcmd.AddParameterWithValue);
 
-        sqlcmd.Transaction = Transaction;
+        if (Transaction != null)
+            sqlcmd.SetTransaction(Transaction);
+
         sqlcmd.ExecuteNonQuery();
     }
 
@@ -79,12 +79,14 @@ public class SQLite
 
     public int NExecuteScalar(string sQuery, Dictionary<string, string>? aliases = null)
     {
-        SQLiteCommand sqlcmd = Connection.CreateCommand();
+        ISqlCommand sqlcmd = CreateCommand();
         if (aliases != null)
             sQuery = SqlWhere.ExpandAliases(sQuery, aliases);
 
         sqlcmd.CommandText = sQuery;
-        sqlcmd.Transaction = this.Transaction;
+        if (Transaction != null)
+            sqlcmd.SetTransaction(this.Transaction);
+
         Int64 n = (Int64)sqlcmd.ExecuteScalar();
 
         return (int)n;
@@ -95,7 +97,65 @@ public class SQLite
         return NExecuteScalar(cmdText.CommandText, cmdText.Aliases);
     }
 
+    public T DoGenericQueryDelegateRead<T>(
+        Guid crids,
+        string query,
+        Dictionary<string, string>? aliases,
+        ISqlReader.DelegateReader<T> delegateReader,
+        CustomizeCommandDelegate? customizeDelegate = null) where T : new()
+    {
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        if (aliases != null)
+            selectTags.AddAliases(aliases);
+
+        string sQuery = selectTags.ToString();
+
+        SQLiteReader? sqlr = null;
+
+        if (delegateReader == null)
+            throw new Exception("must provide delegate reader");
+
+        try
+        {
+            string sCmd = sQuery;
+
+            sqlr = new(this);
+            sqlr.ExecuteQuery(sQuery, null, customizeDelegate);
+
+            T t = new();
+            bool fOnce = false;
+
+            while (sqlr.Read())
+            {
+                delegateReader(sqlr, crids, ref t);
+                fOnce = true;
+            }
+
+            if (!fOnce)
+                throw new TcSqlExceptionNoResults();
+
+            return t;
+        }
+        finally
+        {
+            sqlr?.Close();
+        }
+    }
+
     private SQLiteTransaction? m_transaction;
+
+    public void BeginTransaction()
+    {
+        if (InTransaction)
+            throw new TcSqlExceptionInTransaction();
+
+        SQLiteReader.ExecuteWithDatabaseLockRetry(
+            () => m_transaction = Connection.BeginTransaction(),
+            250,
+            5000);
+    }
 
     public void BeginExclusiveTransaction()
     {

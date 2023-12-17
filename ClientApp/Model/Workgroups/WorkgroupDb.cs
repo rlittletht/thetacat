@@ -24,9 +24,9 @@ public class WorkgroupDb
         };
 
     private readonly PathSegment m_database;
-    private readonly SQLite? m_connection;
+    private readonly ISql? m_connection;
 
-    private SQLite _Connection
+    private ISql _Connection
     {
         get
         {
@@ -119,8 +119,6 @@ public class WorkgroupDb
 
         SQLite connection = OpenDatabase();
 
-        using SQLiteCommand cmd = connection.CreateCommand();
-
         connection.ExecuteNonQuery(s_createWorkgroupMedia);
         connection.ExecuteNonQuery(s_createWorkgroupClients);
         connection.ExecuteNonQuery(s_createWorkgroupVClock);
@@ -143,17 +141,17 @@ public class WorkgroupDb
     public ServiceWorkgroupClient? GetClientDetails(string clientName)
     {
         ServiceWorkgroupClient client =
-            SQLiteReader.DoGenericQueryWithAliases(
-                _Connection,
+            _Connection.DoGenericQueryDelegateRead(
+                Guid.NewGuid(),
                 s_queryWorkgroupClientDetailsByName,
                 s_aliases,
-                (SQLiteReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
+                (ISqlReader<SQLiteTransaction, SQLiteDataReader> reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                 {
                     _client.ClientId = reader.GetGuid(0);
                     _client.ClientName = reader.GetString(1);
                     _client.VectorClock = reader.GetInt32(2);
                 },
-                (cmd) => { cmd.Parameters.AddWithValue("@Name", clientName); });
+                adder => { adder("@Name", clientName); });
 
         // if we didn't read a client id, then we didn't read anything...
         if (client.ClientId == null)

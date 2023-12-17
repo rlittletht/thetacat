@@ -8,15 +8,12 @@ using Thetacat.Types;
 
 namespace Thetacat.TCore.TcSqlLite;
 
-public class SQLiteReader
+public class SQLiteReader: ISqlReader
 {
-    private SQLite? m_sql;
+    private ISql? m_sql;
     private bool m_fAttached = false;
     private SQLiteDataReader? m_sqlr = null;
     private Guid m_crids;
-
-    public delegate void DelegateMultiSetReader<T>(SQLiteReader sqlr, Guid crids, int recordSet, ref T t);
-    public delegate void DelegateReader<T>(SQLiteReader sqlr, Guid crids, ref T t);
 
     private SQLiteDataReader _Reader
     {
@@ -39,7 +36,7 @@ public class SQLiteReader
         m_crids = crids;
     }
 
-    public SQLiteReader(SQLite sql)
+    public SQLiteReader(ISql sql)
     {
         Attach(sql);
         m_crids = Guid.Empty;
@@ -55,7 +52,7 @@ public class SQLiteReader
         %%Function: Attach
         %%Qualified: TCore.SqlReader.Attach
     ----------------------------------------------------------------------------*/
-    public void Attach(SQLite sql)
+    public void Attach(ISql sql)
     {
         m_sql = sql;
         if (m_sql != null)
@@ -65,7 +62,7 @@ public class SQLiteReader
     public void ExecuteQuery(
         SqlCommandTextInit cmdText,
         string sResourceConnString,
-        SQLite.CustomizeCommandDelegate? customizeDelegate = null)
+        CustomizeCommandDelegate? customizeDelegate = null)
     {
         ExecuteQuery(cmdText.CommandText, sResourceConnString, customizeDelegate, cmdText.Aliases);
     }
@@ -116,7 +113,7 @@ public class SQLiteReader
     public void ExecuteQuery(
         string sQuery,
         string? sResourceConnString,
-        SQLite.CustomizeCommandDelegate? customizeDelegate = null,
+        CustomizeCommandDelegate? customizeDelegate = null,
         Dictionary<string, string>? aliases = null)
     {
         if (m_sql == null)
@@ -131,12 +128,13 @@ public class SQLiteReader
         if (m_sql == null)
             throw new TcSqlException("could not open sql connection");
 
-        SQLiteCommand sqlcmd = m_sql.Connection.CreateCommand();
+        ISqlCommand sqlcmd = m_sql.CreateCommand();
         sqlcmd.CommandText = sQuery;
-        sqlcmd.Transaction = m_sql.Transaction;
+        if (m_sql.Transaction != null)
+            sqlcmd.SetTransaction(m_sql.Transaction);
 
         if (customizeDelegate != null)
-            customizeDelegate(sqlcmd);
+            customizeDelegate(sqlcmd.AddParameterWithValue);
 
         if (m_sqlr != null)
         {
@@ -161,11 +159,11 @@ public class SQLiteReader
         %%Qualified: TCore.SqlReader.DoGenericQueryDelegateRead<T>
     ----------------------------------------------------------------------------*/
     public static T DoGenericQueryDelegateRead<T>(
-        SQLite sql,
+        ISql sql,
         Guid crids,
         string sQuery,
-        DelegateReader<T> delegateReader,
-        SQLite.CustomizeCommandDelegate? customizeDelegate = null) where T : new()
+        ISqlReader.DelegateReader<T> delegateReader,
+        CustomizeCommandDelegate? customizeDelegate = null) where T : new()
     {
         SQLiteReader? sqlr = null;
 
@@ -203,8 +201,8 @@ public class SQLiteReader
         SQLite sql,
         string query,
         Dictionary<string, string> aliases,
-        SQLiteReader.DelegateReader<T> delegateReader,
-        SQLite.CustomizeCommandDelegate? custDelegate = null) where T : new()
+        ISqlReader.DelegateReader<T> delegateReader,
+        CustomizeCommandDelegate? custDelegate = null) where T : new()
     {
         Guid crid = Guid.NewGuid();
 
@@ -237,7 +235,7 @@ public class SQLiteReader
         SQLite sql, 
         string query, 
         Dictionary<string, string>? aliases, 
-        SQLite.CustomizeCommandDelegate? custDelegate)
+        CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
         
@@ -266,8 +264,8 @@ public class SQLiteReader
         SQLite sql,
         Guid crids,
         string sQuery,
-        DelegateMultiSetReader<T> delegateReader,
-        SQLite.CustomizeCommandDelegate? customizeDelegate = null) where T : new()
+        ISqlReader.DelegateMultiSetReader<T> delegateReader,
+        CustomizeCommandDelegate? customizeDelegate = null) where T : new()
     {
         SQLiteReader? sqlr = null;
 
