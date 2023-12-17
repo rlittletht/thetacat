@@ -64,6 +64,18 @@ public class CatExceptionServiceDataFailure : CatException
 #pragma warning restore format // @formatter:on
 }
 
+public class CatExceptionDataCoherencyFailure : CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionDataCoherencyFailure() : base(Guid.Empty) { }
+        public CatExceptionDataCoherencyFailure(Guid crids) : base(crids) { }
+        public CatExceptionDataCoherencyFailure(string errorMessage) : base(errorMessage) { }
+        public CatExceptionDataCoherencyFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionDataCoherencyFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionDataCoherencyFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
 public class CatExceptionInitializationFailure : CatException
 {
 #pragma warning disable format // @formatter:off
@@ -97,5 +109,17 @@ public class CatExceptionInternalFailure : CatException
         public CatExceptionInternalFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
         public CatExceptionInternalFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
         public CatExceptionInternalFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
+public class CatExceptionDatabaseLockTimeout : CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionDatabaseLockTimeout() : base(Guid.Empty) { }
+        public CatExceptionDatabaseLockTimeout(Guid crids) : base(crids) { }
+        public CatExceptionDatabaseLockTimeout(string errorMessage) : base(errorMessage) { }
+        public CatExceptionDatabaseLockTimeout(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionDatabaseLockTimeout(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionDatabaseLockTimeout(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
 #pragma warning restore format // @formatter:on
 }

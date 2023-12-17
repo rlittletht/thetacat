@@ -24,6 +24,7 @@ public class MediaItem
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
     public string LocalPath { get; set; } = string.Empty;
+    public bool IsCachePending { get; set; } = false;
 
     public enum PendingOp
     {
@@ -288,7 +289,7 @@ public class MediaItem
 
     private List<string>? log;
 
-    private string CalculateMD5Hash(string localPath)
+    public static string CalculateMD5Hash(string localPath)
     {
         using FileStream fs = File.Open(
             localPath,

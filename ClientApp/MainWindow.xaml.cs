@@ -141,7 +141,7 @@ namespace Thetacat
 
         private void DoCacheItems(object sender, RoutedEventArgs e)
         {
-            
+            _AppState.Cache.DoForegroundCache();
         }
 
         private async void UploadItems(object sender, RoutedEventArgs e)

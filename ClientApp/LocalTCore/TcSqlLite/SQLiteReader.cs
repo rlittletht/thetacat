@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
+using System.Threading;
 using TCore;
+using Thetacat.Types;
 
 namespace Thetacat.TCore.TcSqlLite;
 
@@ -67,6 +70,49 @@ public class SQLiteReader
         ExecuteQuery(cmdText.CommandText, sResourceConnString, customizeDelegate, cmdText.Aliases);
     }
 
+    public delegate void RetriableDelegate();
+
+    /*----------------------------------------------------------------------------
+        %%Function: ExecuteWithDatabaseLockRetry
+        %%Qualified: Thetacat.TCore.TcSqlLite.SQLiteReader.ExecuteWithDatabaseLockRetry
+
+        This will retry for a max time of timeout ms, sleeping for retryInterval
+        between attempts.
+
+        this will ONLY retry on database locked errors
+
+        cannot have a timeout > 5 minutes
+    ----------------------------------------------------------------------------*/
+    public static void ExecuteWithDatabaseLockRetry(RetriableDelegate retriable, int retryInterval = 250, int timeout = 5000)
+    {
+        if (timeout <= 0 || timeout > 5 * 60 * 1000)
+            throw new ArgumentException($"{timeout} must be between 0 and 5 minutes");
+
+        if (retryInterval <= 0 || retryInterval > 60 * 1000)
+            throw new ArgumentException($"{retryInterval} must be between 0 and 60 seconds");
+
+        Stopwatch watch = Stopwatch.StartNew();
+
+        while (watch.Elapsed.Milliseconds < timeout)
+        {
+            try
+            {
+                retriable();
+                return;
+            }
+            catch (SQLiteException e)
+            {
+                if (!e.Message.Contains("locked", StringComparison.InvariantCultureIgnoreCase))
+                    throw;
+
+                Thread.Sleep(retryInterval);
+            }
+        }
+
+        // if we get here, we have timed out
+        throw new CatExceptionDatabaseLockTimeout();
+    }
+
     public void ExecuteQuery(
         string sQuery,
         string? sResourceConnString,
@@ -100,7 +146,9 @@ public class SQLiteReader
 
         try
         {
-            m_sqlr = sqlcmd.ExecuteReader();
+            ExecuteWithDatabaseLockRetry(
+                () => m_sqlr = sqlcmd.ExecuteReader());
+
         }
         catch (Exception exc)
         {
@@ -148,6 +196,69 @@ public class SQLiteReader
         finally
         {
             sqlr?.Close();
+        }
+    }
+
+    public static T DoGenericQueryWithAliases<T>(
+        SQLite sql,
+        string query,
+        Dictionary<string, string> aliases,
+        SQLiteReader.DelegateReader<T> delegateReader,
+        SQLite.CustomizeCommandDelegate? custDelegate = null) where T : new()
+    {
+        Guid crid = Guid.NewGuid();
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        selectTags.AddAliases(aliases);
+
+        string sQuery = selectTags.ToString();
+
+        try
+        {
+            T t =
+                SQLiteReader.DoGenericQueryDelegateRead(
+                    sql,
+                    crid,
+                    sQuery,
+                    delegateReader,
+                    custDelegate);
+
+            return t;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new T();
+        }
+    }
+
+    public static void DoGenericCommandWithAliases(
+        SQLite sql, 
+        string query, 
+        Dictionary<string, string>? aliases, 
+        SQLite.CustomizeCommandDelegate? custDelegate)
+    {
+        Guid crid = Guid.NewGuid();
+        
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        selectTags.AddAliases(aliases);
+
+        string sQuery = selectTags.ToString();
+
+        try
+        {
+            sql.ExecuteNonQuery(
+                new SqlCommandTextInit(query, aliases),
+                custDelegate);
+
+            return;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return;
         }
     }
 
@@ -200,10 +311,18 @@ public class SQLiteReader
     public Int16 GetInt16(int index) => _Reader.GetInt16(index);
     public Int32 GetInt32(int index) => _Reader.GetInt32(index);
     public string GetString(int index) => _Reader.GetString(index);
-    public Guid GetGuid(int index) => _Reader.GetGuid(index);
+    public Guid GetGuid(int index) => Guid.Parse(_Reader.GetString(index));
     public double GetDouble(int index) => _Reader.GetDouble(index);
     public Int64 GetInt64(int index) => _Reader.GetInt64(index);
+    public DateTime GetDateTime(int index) => _Reader.GetDateTime(index);
 
+    public Int16? GetNullableInt16(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetInt16(index);
+    public Int32? GetNullableInt32(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetInt32(index);
+    public string? GetNullableString(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetString(index);
+    public Guid? GetNullableGuid(int index) => _Reader.IsDBNull(index) ? null : Guid.Parse(_Reader.GetString(index));
+    public double? GetNullableDouble(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetDouble(index);
+    public Int64? GetNullableInt64(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetInt64(index);
+    public DateTime? GetNullableDateTime(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetDateTime(index);
 
     public bool NextResult() => m_sqlr?.NextResult() ?? false;
     public bool Read() => m_sqlr?.Read() ?? false;

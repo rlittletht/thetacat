@@ -2,8 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Windows;
+using HeyRed.Mime;
 using TCore;
+using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -20,9 +23,22 @@ public class Cache
     }
 
     public CacheType Type { get; private set; }
-    public Workgroup? Workgroup { get; private set; }
-    public string LocalPath { get; private set; } = string.Empty;
+
+    public Workgroup _Workgroup
+    {
+        get
+        {
+            if (m_workgroup == null)
+                throw new CatExceptionInitializationFailure();
+
+            return m_workgroup;
+        }
+    }
+
+    public PathSegment LocalPathToCacheRoot { get; }
+
     public ConcurrentDictionary<Guid, ICacheEntry> Entries = new ConcurrentDictionary<Guid, ICacheEntry>();
+    private Workgroup? m_workgroup;
 
     public static CacheType CacheTypeFromString(string? value)
     {
@@ -57,7 +73,7 @@ public class Cache
 
         try
         {
-            Workgroup = new Workgroup(id);
+            m_workgroup = new Workgroup(id);
         }
         catch (TcSqlExceptionNoResults e)
         {
@@ -65,27 +81,9 @@ public class Cache
         }
 
         // make sure the directory exists
-        Directory.CreateDirectory(Workgroup.FullyQualifiedPath);
+        Directory.CreateDirectory(_Workgroup.FullyQualifiedPath);
 
-        Workgroup.RefreshWorkgroupMedia();
-
-//        LocalPath = Workgroup.FullyQualifiedPath;
-//
-//        // read the media items we know about
-//        List<ServiceWorkgroupItemClient> media = ServiceInterop.ReadWorkgroupMedia(id);
-//
-//        foreach (ServiceWorkgroupItemClient mediaItem in media)
-//        {
-//            ICacheEntry entry = new WorkgroupCacheEntry(
-//                mediaItem.Item.MediaId ?? throw new CatExceptionServiceDataFailure(),
-//                PathSegment.CreateFromString(mediaItem.Item.Path),
-//                mediaItem.Item.CachedBy ?? throw new CatExceptionServiceDataFailure(),
-//                mediaItem.Item.CachedDate ?? throw new CatExceptionServiceDataFailure());
-//
-//            // if we have a duplicate ID its a service failure
-//            if (!Entries.TryAdd(entry.ID, entry))
-//                throw new CatExceptionServiceDataFailure();
-//        }
+        _Workgroup.RefreshWorkgroupMedia(Entries);
     }
 
     public bool IsItemCached(Guid id)
@@ -110,14 +108,70 @@ public class Cache
 
         Type = cacheType;
 
-        if (Type == CacheType.Unknown)
-            return;
-
         if (Type == CacheType.Workgroup)
+        {
             ConnectToWorkgroupCache(settings);
+            LocalPathToCacheRoot = new PathSegment(_Workgroup.FullPathToCacheRoot);
+        }
+        else
+        {
+            LocalPathToCacheRoot = new PathSegment();
+        }
     }
 
-    public void DoForegroundSync()
+    // This is the list of media items that we are going to try to download to the 
+    // cache. NOTE: We might hit a coherency failure when trying to update the workgroup
+    // db (in order to tell the world which items we're going to cache). if that happens,
+    // and if another client marked the same media for caching, then we need to NOT
+    // try to cache them (effectively, we need to cancel this item).
+    // since we can't remove from the middle of the queue, we will add to a 'cancel list'
+    // when we are asked to dequeue an item
+
+    readonly ConcurrentQueue<MediaItem> m_cacheQueue = new();
+    private readonly ConcurrentDictionary<Guid, byte> m_canceledQueueItems = new();
+
+    public static bool OkToUseLocalPathForItem(PathSegment fullPath, MediaItem item)
+    {
+        if (Path.Exists(fullPath.Local))
+            // yikes. file already exists
+            // last chance...is it already the file we want? (check the MD5 hash)
+
+            // if the MD5 matches, then the cache is already done. its ok to use
+            // this name. when we see the file already exists in the future we
+            // will know its OK to assume its the same file
+            return (MediaItem.CalculateMD5Hash(fullPath.Local) == item.MD5);
+
+        return true;
+    }
+
+    public static PathSegment EnsureUniqueLocalCacheVirtualPath(PathSegment localPathToCacheRoot, MediaItem item)
+    {
+        // easiest would be to use the virtual path
+
+        // if the virtual path is rooted, we can't use it
+        // just use a guid.
+        if (Path.IsPathRooted(item.VirtualPath.Local))
+        {
+            return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
+        }
+
+        PathSegment test = PathSegment.Join(localPathToCacheRoot, item.VirtualPath);
+
+        int count = 0;
+
+        while (!OkToUseLocalPathForItem(test, item))
+        {
+            // if we get to 50 collisions, give up and just use a guid
+            if (count > 50)
+                return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
+
+            test = PathSegment.Join(localPathToCacheRoot, item.VirtualPath.AppendLeafSuffix($"({++count})"));
+        }
+
+        return item.VirtualPath.AppendLeafSuffix($"({++count})");
+    }
+
+    public void DoForegroundCache()
     {
         if (Type != CacheType.Workgroup)
         {
@@ -125,6 +179,16 @@ public class Cache
             return;
         }
 
+        _Workgroup.RefreshWorkgroupMedia(Entries);
 
+        // now let's stake our claim to some items we're going to cache
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(100);
+        _Workgroup.PushChangesToDatabase(itemsForCache);
+
+        // lastly, queue all the items left in itemsForCache
+        foreach (MediaItem item in itemsForCache.Values)
+        {
+            m_cacheQueue.Enqueue(item);
+        }
     }
 }

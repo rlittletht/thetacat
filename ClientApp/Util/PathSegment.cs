@@ -95,6 +95,17 @@ public class PathSegment
 
     public static PathSegment Empty => new PathSegment(string.Empty);
 
+    public PathSegment AppendLeafSuffix(string suffix)
+    {
+        string local = this.Local;
+
+        string ext = Path.GetExtension(local);
+
+        // NOTE: we can't use ChangeExtension to put the extension back because then foo.txt.jpg -> foo.txt -> foo.jpg
+
+        return new PathSegment($"{Path.ChangeExtension(local, null)}{suffix}{ext}");
+    }
+
     public PathSegment Clone()
     {
         return new PathSegment()
