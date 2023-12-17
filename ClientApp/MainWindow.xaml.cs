@@ -34,6 +34,7 @@ using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.UI.Options;
 using Thetacat.Azure;
+using MessageBox = System.Windows.Forms.MessageBox;
 
 namespace Thetacat
 {
@@ -97,6 +98,11 @@ namespace Thetacat
 
             _AppState.RegisterWindowPlace(this, "MainWindow");
             CatalogView.ItemsSource = _AppState.Catalog.Items;
+        }
+
+        public static void SetStateForTests(AppState appState)
+        {
+            s_appState = appState;
         }
 
         void InitializeThetacat()

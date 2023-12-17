@@ -14,7 +14,7 @@ public interface IAppState
     Catalog Catalog { get; }
     TcSettings.TcSettings Settings { get; }
     MetatagSchema MetatagSchema { get; }
-    Cache Cache { get; }
+    ICache Cache { get; }
 
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema();

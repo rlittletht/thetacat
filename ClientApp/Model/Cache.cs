@@ -13,7 +13,7 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
-public class Cache
+public class Cache: ICache
 {
     public enum CacheType
     {
@@ -24,7 +24,7 @@ public class Cache
 
     public CacheType Type { get; private set; }
 
-    public Workgroup _Workgroup
+    public IWorkgroup _Workgroup
     {
         get
         {
@@ -37,8 +37,15 @@ public class Cache
 
     public PathSegment LocalPathToCacheRoot { get; }
 
-    public ConcurrentDictionary<Guid, ICacheEntry> Entries = new ConcurrentDictionary<Guid, ICacheEntry>();
-    private Workgroup? m_workgroup;
+    public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; } = new ConcurrentDictionary<Guid, ICacheEntry>();
+
+    private IWorkgroup? m_workgroup;
+
+    public Cache()
+    {
+        // only used for tests
+        LocalPathToCacheRoot = new PathSegment("//mock/server/mockroot");
+    }
 
     public static CacheType CacheTypeFromString(string? value)
     {
@@ -127,7 +134,7 @@ public class Cache
     // since we can't remove from the middle of the queue, we will add to a 'cancel list'
     // when we are asked to dequeue an item
 
-    readonly ConcurrentQueue<MediaItem> m_cacheQueue = new();
+    protected readonly ConcurrentQueue<MediaItem> m_cacheQueue = new();
     private readonly ConcurrentDictionary<Guid, byte> m_canceledQueueItems = new();
 
     public static bool OkToUseLocalPathForItem(PathSegment fullPath, MediaItem item)

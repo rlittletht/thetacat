@@ -70,7 +70,7 @@ hit a coherency failure and remove the queued items if another client queues the
             
 
  */
-public class Workgroup
+public class Workgroup: IWorkgroup
 {
     private Guid m_id;
 
@@ -85,7 +85,7 @@ public class Workgroup
 
     // the VC is the last version of the WG cache that we know about. if others have updated their notion
     // of the cache, then it will be different than ours. 
-    private int m_baseVectorClock;
+    protected int m_baseVectorClock;
     private int m_clientVectorClock;
 
     private WorkgroupDb _Database
@@ -101,6 +101,16 @@ public class Workgroup
 
     public PathSegment FullPathToCacheRoot => PathSegment.Join(Server, CacheRoot);
     public string FullyQualifiedPath => FullPathToCacheRoot.Local;
+
+    public Workgroup()
+    {
+        // for test mock only
+        m_id = Guid.NewGuid();
+        m_clientId = Guid.NewGuid();
+        Server = new PathSegment("//mock/server");
+        CacheRoot = new PathSegment("/mockroot");
+        Name = "mock-workgroup";
+    }
 
     public Workgroup(Guid id)
     {
@@ -152,10 +162,8 @@ public class Workgroup
 
     }
 
-    public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries)
+    protected void UpdateFromWorkgroupMediaClock(ConcurrentDictionary<Guid, ICacheEntry> entries, ServiceWorkgroupMediaClock mediaWithClock)
     {
-        ServiceWorkgroupMediaClock mediaWithClock = _Database.GetLatestWorkgroupMediaWithClock();
-
         // only update the entries if we have a different clock
         if (m_baseVectorClock == 0 || m_baseVectorClock != mediaWithClock.VectorClock)
         {
@@ -170,6 +178,13 @@ public class Workgroup
                 }
             }
         }
+    }
+
+    public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries)
+    {
+        ServiceWorkgroupMediaClock mediaWithClock = _Database.GetLatestWorkgroupMediaWithClock();
+
+        UpdateFromWorkgroupMediaClock(entries, mediaWithClock);
     }
 
     /*----------------------------------------------------------------------------

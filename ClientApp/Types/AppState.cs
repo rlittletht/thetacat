@@ -9,13 +9,18 @@ public class AppState : IAppState
 {
     public TcSettings.TcSettings Settings { get; }
     public MetatagSchema MetatagSchema { get; }
-    public Cache Cache { get; }
+    public ICache Cache { get; private set; }
 
     public Catalog Catalog { get; }
 
     public void RefreshMetatagSchema()
     {
         MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+    }
+
+    public void OverrideCache(ICache cache)
+    {
+        Cache = cache;
     }
 
     public AppState()
