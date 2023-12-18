@@ -22,6 +22,13 @@ public interface ISql
         SqlCommandTextInit cmdText,
         CustomizeCommandDelegate? customizeParams = null);
 
+    public T DoGenericQueryDelegateRead<T>(
+        Guid crids,
+        string query,
+        Dictionary<string, string>? aliases,
+        ISqlReader.DelegateReader<T> delegateReader,
+        CustomizeCommandDelegate? customizeDelegate = null) where T : new();
+
     public int NExecuteScalar(string sQuery, Dictionary<string, string>? aliases = null);
     public int NExecuteScalar(SqlCommandTextInit cmdText);
     public void BeginExclusiveTransaction();

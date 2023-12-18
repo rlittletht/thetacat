@@ -5,6 +5,7 @@ namespace Thetacat.TCore.TcSqlLite;
 public class SQLiteCommand : ISqlCommand
 {
     private readonly System.Data.SQLite.SQLiteCommand m_command;
+    private ISqlTransaction? m_transaction;
 
     public string CommandText
     {
@@ -12,14 +13,11 @@ public class SQLiteCommand : ISqlCommand
         set => m_command.CommandText = value;
     }
 
-    public SQLiteTransaction GetTransaction<SQLiteTransaction>()
-    {
-        return m_command.Transaction;
-    }
+    public ISqlTransaction? Transaction { get => m_transaction; set => m_transaction = value; }
 
-    public void SetTransaction(SQLiteTransaction transaction) => m_command.Transaction = transaction;
+    public ISqlReader ExecuteReader() => new SQLiteReader(m_command.ExecuteReader());
 
-    public SQLiteDataReader ExecuteReader() => m_command.ExecuteReader();
+    public SQLiteReader ExecuteReaderInternal() => new SQLiteReader(m_command.ExecuteReader());
 
     public SQLiteCommand(System.Data.SQLite.SQLiteCommand command)
     {
@@ -30,5 +28,5 @@ public class SQLiteCommand : ISqlCommand
 
     public object ExecuteScalar() => m_command.ExecuteScalar();
 
-    public void AddParameterWithValue(string parameterName, object value) => m_command.Parameters.AddWithValue(parameterName, value);
+    public void AddParameterWithValue(string parameterName, object? value) => m_command.Parameters.AddWithValue(parameterName, value);
 }

@@ -10,7 +10,7 @@ namespace Thetacat.TCore.TcSqlLite;
 
 public class SQLiteReader: ISqlReader
 {
-    private ISql? m_sql;
+    private SQLite? m_sql;
     private bool m_fAttached = false;
     private SQLiteDataReader? m_sqlr = null;
     private Guid m_crids;
@@ -30,13 +30,19 @@ public class SQLiteReader: ISqlReader
         m_crids = Guid.Empty;
     }
 
+    public SQLiteReader(SQLiteDataReader reader)
+    {
+        m_sqlr = reader;
+        m_fAttached = true;
+    }
+
     public SQLiteReader(Guid crids)
     {
         m_fAttached = false;
         m_crids = crids;
     }
 
-    public SQLiteReader(ISql sql)
+    public SQLiteReader(SQLite sql)
     {
         Attach(sql);
         m_crids = Guid.Empty;
@@ -52,7 +58,7 @@ public class SQLiteReader: ISqlReader
         %%Function: Attach
         %%Qualified: TCore.SqlReader.Attach
     ----------------------------------------------------------------------------*/
-    public void Attach(ISql sql)
+    public void Attach(SQLite sql)
     {
         m_sql = sql;
         if (m_sql != null)
@@ -128,13 +134,13 @@ public class SQLiteReader: ISqlReader
         if (m_sql == null)
             throw new TcSqlException("could not open sql connection");
 
-        ISqlCommand sqlcmd = m_sql.CreateCommand();
+        SQLiteCommand sqlcmd = m_sql.CreateCommandInternal();
         sqlcmd.CommandText = sQuery;
         if (m_sql.Transaction != null)
-            sqlcmd.SetTransaction(m_sql.Transaction);
+            sqlcmd.Transaction = m_sql.Transaction;
 
         if (customizeDelegate != null)
-            customizeDelegate(sqlcmd.AddParameterWithValue);
+            customizeDelegate(sqlcmd);
 
         if (m_sqlr != null)
         {
@@ -145,7 +151,7 @@ public class SQLiteReader: ISqlReader
         try
         {
             ExecuteWithDatabaseLockRetry(
-                () => m_sqlr = sqlcmd.ExecuteReader());
+                () => m_sqlr = sqlcmd.ExecuteReaderInternal()._Reader);
 
         }
         catch (Exception exc)
@@ -154,51 +160,8 @@ public class SQLiteReader: ISqlReader
         }
     }
 
-    /*----------------------------------------------------------------------------
-        %%Function: DoGenericQueryDelegateRead
-        %%Qualified: TCore.SqlReader.DoGenericQueryDelegateRead<T>
-    ----------------------------------------------------------------------------*/
-    public static T DoGenericQueryDelegateRead<T>(
-        ISql sql,
-        Guid crids,
-        string sQuery,
-        ISqlReader.DelegateReader<T> delegateReader,
-        CustomizeCommandDelegate? customizeDelegate = null) where T : new()
-    {
-        SQLiteReader? sqlr = null;
-
-        if (delegateReader == null)
-            throw new Exception("must provide delegate reader");
-
-        try
-        {
-            string sCmd = sQuery;
-
-            sqlr = new(sql);
-            sqlr.ExecuteQuery(sQuery, null, customizeDelegate);
-
-            T t = new();
-            bool fOnce = false;
-
-            while (sqlr.Read())
-            {
-                delegateReader(sqlr, crids, ref t);
-                fOnce = true;
-            }
-
-            if (!fOnce)
-                throw new TcSqlExceptionNoResults();
-
-            return t;
-        }
-        finally
-        {
-            sqlr?.Close();
-        }
-    }
-
     public static T DoGenericQueryWithAliases<T>(
-        SQLite sql,
+        ISql sql,
         string query,
         Dictionary<string, string> aliases,
         ISqlReader.DelegateReader<T> delegateReader,
@@ -216,10 +179,10 @@ public class SQLiteReader: ISqlReader
         try
         {
             T t =
-                SQLiteReader.DoGenericQueryDelegateRead(
-                    sql,
+                sql.DoGenericQueryDelegateRead<T>(
                     crid,
                     sQuery,
+                    null, // aliases
                     delegateReader,
                     custDelegate);
 

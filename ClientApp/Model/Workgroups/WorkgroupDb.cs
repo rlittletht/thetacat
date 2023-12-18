@@ -145,13 +145,13 @@ public class WorkgroupDb
                 Guid.NewGuid(),
                 s_queryWorkgroupClientDetailsByName,
                 s_aliases,
-                (ISqlReader<SQLiteTransaction, SQLiteDataReader> reader, Guid crids, ref ServiceWorkgroupClient _client) =>
+                (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                 {
                     _client.ClientId = reader.GetGuid(0);
                     _client.ClientName = reader.GetString(1);
                     _client.VectorClock = reader.GetInt32(2);
                 },
-                adder => { adder("@Name", clientName); });
+                cmd => { cmd.AddParameterWithValue("@Name", clientName); });
 
         // if we didn't read a client id, then we didn't read anything...
         if (client.ClientId == null)
@@ -170,11 +170,11 @@ public class WorkgroupDb
                 try
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
-                        SQLiteReader.DoGenericQueryWithAliases<ServiceWorkgroupMediaClock>(
-                            _Connection,
+                        _Connection.DoGenericQueryDelegateRead<ServiceWorkgroupMediaClock>(
+                            Guid.NewGuid(),
                             s_queryWorkgroupMediaClock,
                             s_aliases,
-                            (SQLiteReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
+                            (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
                             {
                                 ServiceWorkgroupItem item =
                                     new()
@@ -209,9 +209,9 @@ public class WorkgroupDb
             s_insertWorkgroupClient,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", client.ClientId.ToString());
-                cmd.Parameters.AddWithValue("@Name", client.ClientName);
-                cmd.Parameters.AddWithValue("@VectorClock", client.VectorClock);
+                cmd.AddParameterWithValue("@Id", client.ClientId.ToString());
+                cmd.AddParameterWithValue("@Name", client.ClientName);
+                cmd.AddParameterWithValue("@VectorClock", client.VectorClock);
             });
     }
 
@@ -221,8 +221,8 @@ public class WorkgroupDb
             s_updateClientClock,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", client.ClientId.ToString());
-                cmd.Parameters.AddWithValue("@VectorClock", newClock);
+                cmd.AddParameterWithValue("@Id", client.ClientId.ToString());
+                cmd.AddParameterWithValue("@VectorClock", newClock);
             });
     }
 
@@ -244,7 +244,7 @@ public class WorkgroupDb
         }
     }
 
-    private static void ExecutePartedCommands<T>(SQLite sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
+    private static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -331,14 +331,14 @@ public class WorkgroupDb
                 // and lastly, update the vector clocks
                 _Connection.ExecuteNonQuery(
                     new SqlCommandTextInit(s_updateWorkgroupClock),
-                    (cmd) => cmd.Parameters.AddWithValue("@VectorClock", baseClock + 1));
+                    (cmd) => cmd.AddParameterWithValue("@VectorClock", baseClock + 1));
 
                 _Connection.ExecuteNonQuery(
                     new SqlCommandTextInit(s_updateClientClock),
                     (cmd) =>
                     {
-                        cmd.Parameters.AddWithValue("@VectorClock", baseClock + 1);
-                        cmd.Parameters.AddWithValue("@Id", clientId.ToString());
+                        cmd.AddParameterWithValue("@VectorClock", baseClock + 1);
+                        cmd.AddParameterWithValue("@Id", clientId.ToString());
                     });
 
                 return true;

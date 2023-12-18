@@ -50,6 +50,11 @@ public class SQLite : ISql
         return new TcSqlLite.SQLiteCommand(Connection.CreateCommand());
     }
 
+    public SQLiteCommand CreateCommandInternal()
+    {
+        return new TcSqlLite.SQLiteCommand(Connection.CreateCommand());
+    }
+
     public void ExecuteNonQuery(
         string s,
         CustomizeCommandDelegate? customizeParams = null,
@@ -62,10 +67,10 @@ public class SQLite : ISql
 
         sqlcmd.CommandText = s;
         if (customizeParams != null)
-            customizeParams(sqlcmd.AddParameterWithValue);
+            customizeParams(sqlcmd);
 
         if (Transaction != null)
-            sqlcmd.SetTransaction(Transaction);
+            sqlcmd.Transaction = Transaction;
 
         sqlcmd.ExecuteNonQuery();
     }
@@ -85,7 +90,7 @@ public class SQLite : ISql
 
         sqlcmd.CommandText = sQuery;
         if (Transaction != null)
-            sqlcmd.SetTransaction(this.Transaction);
+            sqlcmd.Transaction = this.Transaction;
 
         Int64 n = (Int64)sqlcmd.ExecuteScalar();
 
@@ -152,7 +157,7 @@ public class SQLite : ISql
             throw new TcSqlExceptionInTransaction();
 
         SQLiteReader.ExecuteWithDatabaseLockRetry(
-            () => m_transaction = Connection.BeginTransaction(),
+            () => m_transaction = new SQLiteTransaction(Connection.BeginTransaction()),
             250,
             5000);
     }
@@ -163,7 +168,7 @@ public class SQLite : ISql
             throw new TcSqlExceptionInTransaction();
 
         SQLiteReader.ExecuteWithDatabaseLockRetry(
-            () => m_transaction = Connection.BeginTransaction(IsolationLevel.Serializable, false),
+            () => m_transaction = new SQLiteTransaction(Connection.BeginTransaction(IsolationLevel.Serializable, false)),
             250,
             5000);
     }
