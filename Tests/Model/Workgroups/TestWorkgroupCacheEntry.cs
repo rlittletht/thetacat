@@ -90,13 +90,13 @@ public class TestWorkgroupCacheEntry
             true,
             null);
 
-        entry.CacheDate = DateTime.Parse("8/21/1993");
+        entry.CachedDate = DateTime.Parse("8/21/1993");
 
         List<KeyValuePair<string, string>> updates = entry.MakeUpdatePairs();
 
         Assert.AreEqual(1, updates.Count);
         Assert.AreEqual("cachedDate", updates[0].Key);
-        Assert.AreEqual($"'{entry.CacheDate.ToString()}'", updates[0].Value);
+        Assert.AreEqual($"'{entry.CachedDate.ToString()}'", updates[0].Value);
     }
 
     [Test]
@@ -110,7 +110,7 @@ public class TestWorkgroupCacheEntry
             true,
             null);
 
-        entry.CacheDate = null;
+        entry.CachedDate = null;
 
         List<KeyValuePair<string, string>> updates = entry.MakeUpdatePairs();
 
@@ -171,13 +171,13 @@ public class TestWorkgroupCacheEntry
             1);
 
         entry.VectorClock = null;
-        entry.CacheDate = DateTime.Parse("8/21/1993");
+        entry.CachedDate = DateTime.Parse("8/21/1993");
 
         List<KeyValuePair<string, string>> updates = entry.MakeUpdatePairs();
 
         Assert.AreEqual(2, updates.Count);
         Assert.AreEqual("cachedDate", updates[0].Key);
-        Assert.AreEqual($"'{entry.CacheDate.ToString()}'", updates[0].Value);
+        Assert.AreEqual($"'{entry.CachedDate.ToString()}'", updates[0].Value);
         Assert.AreEqual("vectorClock", updates[1].Key);
         Assert.AreEqual("null", updates[1].Value);
     }

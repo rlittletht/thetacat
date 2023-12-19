@@ -39,12 +39,12 @@ So, this WG class has a base VC and a client VC. The client VC will only get set
 
 When a client starts caching, it grabs a bunch of upload-pending items that don't have cache entries (this prevents
 the client from duplicating other client work). Then it immediately sets the anticipated WG cache path, the client ID,
-a NULL CacheDate and the VC for when the client uploads this. THe database is then updated with this information
+a NULL CachedDate and the VC for when the client uploads this. THe database is then updated with this information
 (usually in a batch), that only uploaded if the base VC matches the current WG VC.
 
     IF IT DOES, then all of these are uploaded. For each queued cache entry:
         Download to the cache
-        Set the CacheDate in the CacheItem
+        Set the CachedDate in the CacheItem
         Upload changes to database
         At this point the item will have the cache date set to when it was 
             actually cache, and the VC set to when the client claimed it
@@ -340,7 +340,7 @@ public class Workgroup: IWorkgroup
             {
                 WorkgroupCacheEntry wgEntry = (WorkgroupCacheEntry)entry.Value;
 
-                if (!wgEntry.NeedsUpdate() && !wgEntry.LocalPending)
+                if (!wgEntry.NeedsUpdate() && wgEntry.VectorClock != 0)
                     continue;
 
                 // update the vectorclock to what the new clock will be
@@ -369,8 +369,14 @@ public class Workgroup: IWorkgroup
             }
             catch (CatExceptionDataCoherencyFailure)
             {
+                // reset all of the vectorclocks for the things we just tried to upload
+                foreach (WorkgroupCacheEntry entry in inserts)
+                {
+                    entry.VectorClock = 0;
+                }
+
                 if (retryCount == 0)
-                    throw;  // retry if we have failed too many times
+                    throw; // retry if we have failed too many times
 
                 DoThreeWayMerge(itemsForCache);
                 // fall through to continue

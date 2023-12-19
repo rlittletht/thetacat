@@ -5,6 +5,7 @@ using Azure.Identity;
 using System.Threading.Tasks;
 using Thetacat.Types;
 using System.ComponentModel;
+using System.Windows;
 using Thetacat.Model;
 
 namespace Thetacat.Azure;
@@ -20,7 +21,7 @@ public class AzureCat
     private TokenCredential? m_credential = null;
 
     private static AzureCat? s_azureCat;
-    private object m_lockObject = new object();
+    private readonly object m_lockObject = new object();
     private static readonly object s_globalLock = new object();
 
     public static AzureCat _Instance
@@ -79,5 +80,27 @@ public class AzureCat
         }
 
         return await m_catalogContainer!.Upload(source, destination);
+    }
+
+    public async Task<TcBlob> DownloadMedia(string destination, string source, string? md5Expected)
+    {
+        TcBlobContainer? container = null;
+
+        if (m_catalogContainer == null)
+        {
+            container = await OpenContainerForCatalog(s_catalog);
+            if (container == null)
+                throw new CatExceptionAzureFailure();
+        }
+
+        lock (m_lockObject)
+        {
+            if (m_catalogContainer == null && container == null)
+                throw new CatExceptionInternalFailure("m_catalogContainer was freed between check and lock");
+
+            m_catalogContainer ??= container;
+        }
+
+        return await m_catalogContainer!.Download(source, destination, md5Expected);
     }
 }

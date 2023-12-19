@@ -24,6 +24,9 @@ public class MediaItem
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
     public string LocalPath { get; set; } = string.Empty;
+
+    // this means we are waiting for this item to be cached. maybe by this client,
+    // maybe by another client
     public bool IsCachePending { get; set; } = false;
 
     public enum PendingOp

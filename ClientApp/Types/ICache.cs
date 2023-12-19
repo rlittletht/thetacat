@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System;
+using System.Threading.Tasks;
 using TCore;
 using Thetacat.Model;
 using Thetacat.Model.Workgroups;
@@ -16,5 +17,5 @@ public interface ICache
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
     public bool IsItemCached(Guid id);
-    public void DoForegroundCache(int chunkSize);
+    public Task DoForegroundCache(int chunkSize);
 }

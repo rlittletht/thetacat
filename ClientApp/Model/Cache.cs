@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
 using TCore;
+using Thetacat.Azure;
 using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -184,15 +186,39 @@ public class Cache: ICache
         return item.VirtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void DoForegroundCache(int chunkSize)
+    public void QueueCacheDownloads(int chunkSize)
     {
         if (Type != CacheType.Workgroup)
         {
-            MessageBox.Show("Private cachine NYI");
+            MessageBox.Show("Private caching NYI");
             return;
         }
 
         _Workgroup.RefreshWorkgroupMedia(Entries);
+
+        // first, find items in the WG DB that belong to our client and haven't been download
+        // and then put them in our queue (we claimed them in a previous session and didn't finish
+        // downloading them...)
+        foreach (KeyValuePair<Guid, ICacheEntry> entry in Entries)
+        {
+            if (entry.Value.LocalPending || entry.Value.CachedDate != null)
+                continue;
+
+            WorkgroupCacheEntry wgEntry = (WorkgroupCacheEntry)entry.Value;
+
+            if (wgEntry.CachedBy == _Workgroup.ClientId)
+            {
+                // add this to our queue
+                entry.Value.LocalPending = true;
+                MediaItem item = MainWindow._AppState.Catalog.Items[entry.Key];
+                item.IsCachePending = true;
+                m_cacheQueue.Enqueue(item);
+                chunkSize--;    // since we just added one
+            }
+        }
+
+        if (chunkSize <= 0)
+            return;
 
         // now let's stake our claim to some items we're going to cache
         Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(chunkSize);
@@ -203,5 +229,49 @@ public class Cache: ICache
         {
             m_cacheQueue.Enqueue(item);
         }
+    }
+
+    async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
+    {
+        if (item.IsCachePending)
+        {
+            TcBlob blob = await AzureCat._Instance.DownloadMedia(destination, item.ID.ToString(), item.MD5);
+            return true;
+        }
+
+        return false;
+    }
+
+    public string GetFullLocalPath(PathSegment localSegment)
+    {
+        return PathSegment.Join(LocalPathToCacheRoot, localSegment).Local;
+    }
+
+    public async Task DoForegroundCache(int chunkSize)
+    {
+        AzureCat.EnsureCreated("thetacattest");
+
+        QueueCacheDownloads(chunkSize);
+
+        // and now download
+        while (m_cacheQueue.TryDequeue(out MediaItem? item))
+        {
+            ICacheEntry cacheEntry = Entries[item.ID];
+
+            if (cacheEntry.LocalPending)
+            {
+                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
+                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
+                {
+
+                    item.LocalPath = fullLocalPath;
+                    item.IsCachePending = false;
+                    cacheEntry.LocalPending = false;
+                    cacheEntry.CachedDate = DateTime.Now;
+                }
+            }
+        }
+
+        _Workgroup.PushChangesToDatabase(null);
     }
 }

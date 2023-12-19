@@ -10,7 +10,10 @@ using Thetacat.Util;
 namespace Thetacat.Model.Workgroups;
 
 // LocalPending means THIS client owns caching it and we haven't cached it yet
-// VectorClock == 0 means that this entry exists local only and needs to be uploaded
+// VectorClock is the VC of the workgroup when this cache entry was creaed and
+// written to the WG DB
+// (we will optimistically set it to BASE + 1 and it will get set to the real
+// value when its uploaded.
 public class WorkgroupCacheEntry : ICacheEntry
 {
     private WorkgroupCacheEntryData m_currentEntry;
@@ -37,7 +40,7 @@ public class WorkgroupCacheEntry : ICacheEntry
         }
     }
 
-    public DateTime? CacheDate
+    public DateTime? CachedDate
     {
         get => m_currentEntry.CacheDate;
         set
@@ -85,7 +88,7 @@ public class WorkgroupCacheEntry : ICacheEntry
             updates.Add(new KeyValuePair<string, string>("cachedBy", $"'{m_currentEntry.CachedBy.ToString()}'"));
 
         if (m_baseEntry!.CacheDate != m_currentEntry.CacheDate)
-            updates.Add(new KeyValuePair<string, string>("cachedDate", Sql.Nullable(m_currentEntry.CacheDate?.ToString())));
+            updates.Add(new KeyValuePair<string, string>("cachedDate", Sql.Nullable(m_currentEntry.CacheDate?.ToUniversalTime().ToString("u"))));
 
         if (m_baseEntry!.VectorClock != m_currentEntry.VectorClock)
             updates.Add(new KeyValuePair<string, string>("vectorClock", Sql.Nullable(m_currentEntry.VectorClock)));

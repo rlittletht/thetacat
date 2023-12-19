@@ -145,9 +145,16 @@ namespace Thetacat
             }
         }
 
-        private void DoCacheItems(object sender, RoutedEventArgs e)
+        private async void DoCacheItems(object sender, RoutedEventArgs e)
         {
-            _AppState.Cache.DoForegroundCache(100);
+            try
+            {
+                await _AppState.Cache.DoForegroundCache(100);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Uncaught exception: {ex.Message}");
+            }
         }
 
         private async void UploadItems(object sender, RoutedEventArgs e)

@@ -296,14 +296,25 @@ public class WorkgroupDb
                 continue;
 
             StringBuilder builder = new StringBuilder("UPDATE tcat_workgroup_media SET");
-
+            bool first = true;
             foreach (KeyValuePair<string, string> value in updates)
             {
-                builder.Append(" ");
+                if (first)
+                {
+                    builder.Append(" ");
+                    first = false;
+                }
+                else
+                {
+                    builder.Append(", ");
+                }
+
                 builder.Append(value.Key);
                 builder.Append("=");
                 builder.Append(value.Value);
             }
+
+            builder.Append($" WHERE media='{key.ToString()}'");
             updateLines.Add(builder.ToString());
         }
 
@@ -329,7 +340,7 @@ public class WorkgroupDb
                     "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock) VALUES ",
                     inserts,
                     (entry) =>
-                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CacheDate?.ToString())}, {Sql.Nullable(entry.VectorClock)}) ",
+                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToString())}, {Sql.Nullable(entry.VectorClock)}) ",
                     100,
                     ",",
                     null);
