@@ -22,9 +22,9 @@ public class Cache: ICache
         Unknown
     }
 
-    public CacheType Type { get; private set; }
+    public virtual CacheType Type { get; }
 
-    public IWorkgroup _Workgroup
+    public virtual IWorkgroup _Workgroup
     {
         get
         {
@@ -155,6 +155,9 @@ public class Cache: ICache
     {
         // easiest would be to use the virtual path
 
+        if (localPathToCacheRoot == $"{Workgroup.s_mockServer}{Workgroup.s_mockRoot}")
+            return item.VirtualPath;
+
         // if the virtual path is rooted, we can't use it
         // just use a guid.
         if (Path.IsPathRooted(item.VirtualPath.Local))
@@ -175,10 +178,13 @@ public class Cache: ICache
             test = PathSegment.Join(localPathToCacheRoot, item.VirtualPath.AppendLeafSuffix($"({++count})"));
         }
 
-        return item.VirtualPath.AppendLeafSuffix($"({++count})");
+        if (count == 0)
+            return item.VirtualPath;
+
+        return item.VirtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void DoForegroundCache()
+    public void DoForegroundCache(int chunkSize)
     {
         if (Type != CacheType.Workgroup)
         {
@@ -189,7 +195,7 @@ public class Cache: ICache
         _Workgroup.RefreshWorkgroupMedia(Entries);
 
         // now let's stake our claim to some items we're going to cache
-        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(100);
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(chunkSize);
         _Workgroup.PushChangesToDatabase(itemsForCache);
 
         // lastly, queue all the items left in itemsForCache

@@ -24,9 +24,9 @@ public class WorkgroupDb
         };
 
     private readonly PathSegment m_database;
-    private readonly SQLite? m_connection;
+    private readonly ISql? m_connection;
 
-    private SQLite _Connection
+    private ISql _Connection
     {
         get
         {
@@ -35,6 +35,12 @@ public class WorkgroupDb
 
             return m_connection;
         }
+    }
+
+    public WorkgroupDb(ISql sql)
+    {
+        m_database = new PathSegment("mock");
+        m_connection = sql;
     }
 
     /*----------------------------------------------------------------------------
@@ -119,8 +125,6 @@ public class WorkgroupDb
 
         SQLite connection = OpenDatabase();
 
-        using SQLiteCommand cmd = connection.CreateCommand();
-
         connection.ExecuteNonQuery(s_createWorkgroupMedia);
         connection.ExecuteNonQuery(s_createWorkgroupClients);
         connection.ExecuteNonQuery(s_createWorkgroupVClock);
@@ -143,17 +147,17 @@ public class WorkgroupDb
     public ServiceWorkgroupClient? GetClientDetails(string clientName)
     {
         ServiceWorkgroupClient client =
-            SQLiteReader.DoGenericQueryWithAliases(
-                _Connection,
+            _Connection.DoGenericQueryDelegateRead(
+                Guid.NewGuid(),
                 s_queryWorkgroupClientDetailsByName,
                 s_aliases,
-                (SQLiteReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
+                (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                 {
                     _client.ClientId = reader.GetGuid(0);
                     _client.ClientName = reader.GetString(1);
                     _client.VectorClock = reader.GetInt32(2);
                 },
-                (cmd) => { cmd.Parameters.AddWithValue("@Name", clientName); });
+                cmd => { cmd.AddParameterWithValue("@Name", clientName); });
 
         // if we didn't read a client id, then we didn't read anything...
         if (client.ClientId == null)
@@ -172,11 +176,11 @@ public class WorkgroupDb
                 try
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
-                        SQLiteReader.DoGenericQueryWithAliases<ServiceWorkgroupMediaClock>(
-                            _Connection,
+                        _Connection.DoGenericQueryDelegateRead<ServiceWorkgroupMediaClock>(
+                            Guid.NewGuid(),
                             s_queryWorkgroupMediaClock,
                             s_aliases,
-                            (SQLiteReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
+                            (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
                             {
                                 ServiceWorkgroupItem item =
                                     new()
@@ -211,9 +215,9 @@ public class WorkgroupDb
             s_insertWorkgroupClient,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", client.ClientId.ToString());
-                cmd.Parameters.AddWithValue("@Name", client.ClientName);
-                cmd.Parameters.AddWithValue("@VectorClock", client.VectorClock);
+                cmd.AddParameterWithValue("@Id", client.ClientId.ToString());
+                cmd.AddParameterWithValue("@Name", client.ClientName);
+                cmd.AddParameterWithValue("@VectorClock", client.VectorClock);
             });
     }
 
@@ -223,8 +227,8 @@ public class WorkgroupDb
             s_updateClientClock,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", client.ClientId.ToString());
-                cmd.Parameters.AddWithValue("@VectorClock", newClock);
+                cmd.AddParameterWithValue("@Id", client.ClientId.ToString());
+                cmd.AddParameterWithValue("@VectorClock", newClock);
             });
     }
 
@@ -246,7 +250,7 @@ public class WorkgroupDb
         }
     }
 
-    private static void ExecutePartedCommands<T>(SQLite sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
+    private static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -333,14 +337,14 @@ public class WorkgroupDb
                 // and lastly, update the vector clocks
                 _Connection.ExecuteNonQuery(
                     new SqlCommandTextInit(s_updateWorkgroupClock),
-                    (cmd) => cmd.Parameters.AddWithValue("@VectorClock", baseClock + 1));
+                    (cmd) => cmd.AddParameterWithValue("@VectorClock", baseClock + 1));
 
                 _Connection.ExecuteNonQuery(
                     new SqlCommandTextInit(s_updateClientClock),
                     (cmd) =>
                     {
-                        cmd.Parameters.AddWithValue("@VectorClock", baseClock + 1);
-                        cmd.Parameters.AddWithValue("@Id", clientId.ToString());
+                        cmd.AddParameterWithValue("@VectorClock", baseClock + 1);
+                        cmd.AddParameterWithValue("@Id", clientId.ToString());
                     });
 
                 return true;

@@ -11,7 +11,7 @@ public class AppState : IAppState
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
 
-    public Catalog Catalog { get; }
+    public ICatalog Catalog { get; private set; }
 
     public void RefreshMetatagSchema()
     {
@@ -23,6 +23,10 @@ public class AppState : IAppState
         Cache = cache;
     }
 
+    public void OverrideCatalog(ICatalog catalog)
+    {
+        Catalog = catalog;
+    }
     public AppState()
     {
         Settings = new TcSettings.TcSettings();
