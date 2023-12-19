@@ -151,7 +151,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;
 
-    public void CheckPath(IAppState appState, Dictionary<string, string> subst)
+    public void CheckPath(Dictionary<string, string> subst)
     {
         if (PathVerified == TriState.Yes)
             return;

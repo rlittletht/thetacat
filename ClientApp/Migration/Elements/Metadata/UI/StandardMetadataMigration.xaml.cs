@@ -32,8 +32,6 @@ public partial class StandardMetadataMigration : UserControl
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
     private ElementsMigrate? m_migrate = null;
-    IAppState? m_appState;
-
     private ElementsMigrate _Migrate
     {
         get
@@ -41,16 +39,6 @@ public partial class StandardMetadataMigration : UserControl
             if (m_migrate == null)
                 throw new Exception($"initialize never called on {this.GetType().Name}");
             return m_migrate;
-        }
-    }
-
-    private IAppState _AppState
-    {
-        get
-        {
-            if (m_appState == null)
-                throw new Exception($"initialize never called on {this.GetType().Name}");
-            return m_appState;
         }
     }
 
@@ -74,7 +62,7 @@ public partial class StandardMetadataMigration : UserControl
 
     IMetatagTreeItem? GetRootForMetadataItem(PseMetadata item)
     {
-        return _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+        return MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
             MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandardTag(item.StandardTag)),
             1);
     }
@@ -124,9 +112,8 @@ public partial class StandardMetadataMigration : UserControl
         MarkExistingMetadata();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
+    public void Initialize(ElementsDb db, ElementsMigrate migrate)
     {
-        m_appState = appState;
         m_migrate = migrate;
 
         _Migrate.MetatagMigrate.SetMetadataSchema(db.ReadMetadataSchema());
@@ -135,15 +122,15 @@ public partial class StandardMetadataMigration : UserControl
 
         metadataListView.ItemsSource = _Migrate.MetatagMigrate.MetadataSchema.MetadataItems;
 
-        if (_AppState.MetatagSchema.SchemaVersionWorking == 0)
-            _AppState.RefreshMetatagSchema();
+        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
+            MainWindow._AppState.RefreshMetatagSchema();
     }
 
     private void EditSelected(object sender, RoutedEventArgs e)
     {
         if (metadataListView.SelectedValue is PseMetadata metadata)
         {
-            DefineMetadataMap define = new(_AppState, metadata.PseIdentifier);
+            DefineMetadataMap define = new(MainWindow._AppState, metadata.PseIdentifier);
 
             bool? defined = define.ShowDialog();
 
@@ -194,7 +181,7 @@ public partial class StandardMetadataMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        if (m_appState?.MetatagSchema == null || _Migrate == null)
+        if (MainWindow._AppState?.MetatagSchema == null || _Migrate == null)
             throw new Exception("appstate or migrate uninitialized");
 
         foreach (PseMetadata? item in metadataListView.Items)
@@ -205,7 +192,7 @@ public partial class StandardMetadataMigration : UserControl
             if (item.CatID != null)
             {
                 // make sure its really there
-                if (_AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                if (MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
                     continue;
 
                 Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");
@@ -224,14 +211,14 @@ public partial class StandardMetadataMigration : UserControl
                 // otherwise this is a user-define element
                 standard = MetatagStandards.Standard.User;
                 string rootName = MetatagStandards.GetMetadataRootFromStandard(standard);
-                IMetatagTreeItem? userRoot = _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+                IMetatagTreeItem? userRoot = MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
                     MetatagTreeItemMatcher.CreateNameMatch(rootName),
                     1);
 
                 if (userRoot == null)
                 {
-                    _AppState.MetatagSchema.AddNewStandardRoot(standard);
-                    userRoot = _AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+                    MainWindow._AppState.MetatagSchema.AddNewStandardRoot(standard);
+                    userRoot = MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
                         MetatagTreeItemMatcher.CreateNameMatch(rootName),
                         1);
                 }
@@ -243,7 +230,7 @@ public partial class StandardMetadataMigration : UserControl
                 if (existing == null)
                 {
                     Metatag parentTag = Metatag.Create(Guid.Parse(userRoot.ID), item.StandardTag, item.StandardTag, MetatagStandards.Standard.User);
-                    _AppState.MetatagSchema.AddMetatag(parentTag);
+                    MainWindow._AppState.MetatagSchema.AddMetatag(parentTag);
                     existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
                 }
 
@@ -255,7 +242,7 @@ public partial class StandardMetadataMigration : UserControl
 
                 if (root == null)
                 {
-                    _AppState.MetatagSchema.AddNewStandardRoot(standard);
+                    MainWindow._AppState.MetatagSchema.AddNewStandardRoot(standard);
                     root = GetRootForMetadataItem(item);
                     if (root == null)
                         throw new Exception("failed to create standard root");
@@ -280,7 +267,7 @@ public partial class StandardMetadataMigration : UserControl
                     Parent = Guid.Parse(parent.ID)
                 };
 
-            _AppState.MetatagSchema.AddMetatag(newTag);
+            MainWindow._AppState.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
 
             MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");

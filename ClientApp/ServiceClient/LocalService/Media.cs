@@ -13,7 +13,7 @@ public class Media
         new()
         {
             { "tcat_media", "MT" },
-            { "tcat_mediatags", "TMT"}
+            { "tcat_mediatags", "TMT" }
         };
 
     private static readonly string s_queryInsertMedia = @"
@@ -51,6 +51,7 @@ public class Media
 
             current++;
         }
+
         if (current > 0)
             LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
     }
@@ -75,7 +76,7 @@ public class Media
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
             ExecutePartedCommands(
-                s_queryInsertMedia, 
+                s_queryInsertMedia,
                 items,
                 item =>
                 {
@@ -113,70 +114,49 @@ public class Media
         LocalServiceClient.Sql.Commit();
     }
 
-    static string s_queryFullCatalogWithTags = @"
+    static readonly string s_queryFullCatalogWithTags = @"
             SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value, $$tcat_media$$.md5
             FROM $$#tcat_media$$
             INNER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id";
 
     public static ServiceCatalog ReadFullCatalog()
     {
-        Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        HashSet<Guid> mediaAdded = new();
 
-        SqlSelect selectTags = new SqlSelect();
+        return LocalServiceClient.DoGenericQueryWithAliases<ServiceCatalog>(
+            s_queryFullCatalogWithTags,
+            s_aliases,
+            (SqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
+            {
+                if (building.MediaItems == null || building.MediaTags == null)
+                {
+                    building.MediaItems = new List<ServiceMediaItem>();
+                    building.MediaTags = new List<ServiceMediaTag>();
+                }
 
-        selectTags.AddBase(s_queryFullCatalogWithTags);
-        selectTags.AddAliases(s_aliases);
+                Guid mediaId = reader.Reader.GetGuid(0);
+                if (!mediaAdded.Contains(mediaId))
+                {
+                    building.MediaItems.Add(
+                        new ServiceMediaItem()
+                        {
+                            Id = mediaId,
+                            VirtualPath = reader.Reader.GetString(1),
+                            MimeType = reader.Reader.GetString(2),
+                            State = reader.Reader.GetString(3),
+                            MD5 = reader.Reader.GetString(6)
+                        });
+                    mediaAdded.Add(mediaId);
+                }
 
-        string sQuery = selectTags.ToString();
-
-        // need to not insert media items more than once...but we will get a row for every
-        // mediatag, which means lots and lots of duplicate media ids...
-        HashSet<Guid> mediaAdded = new HashSet<Guid>();
-
-        try
-        {
-            ServiceCatalog serviceCatalog =
-                SqlReader.DoGenericQueryDelegateRead(
-                    LocalServiceClient.Sql,
-                    crid,
-                    sQuery,
-                    (SqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
+                building.MediaTags.Add(
+                    new ServiceMediaTag()
                     {
-                        if (building.MediaItems == null || building.MediaTags == null)
-                        {
-                            building.MediaItems = new List<ServiceMediaItem>();
-                            building.MediaTags = new List<ServiceMediaTag>();
-                        }
-
-                        Guid mediaId = reader.Reader.GetGuid(0);
-                        if (!mediaAdded.Contains(mediaId))
-                        {
-                            building.MediaItems.Add(new ServiceMediaItem()
-                                                    {
-                                                        Id = mediaId,
-                                                        VirtualPath = reader.Reader.GetString(1),
-                                                        MimeType = reader.Reader.GetString(2),
-                                                        State = reader.Reader.GetString(3),
-                                                        MD5 = reader.Reader.GetString(6)
-                                                    });
-                            mediaAdded.Add(mediaId);
-                        }
-                        building.MediaTags.Add(new ServiceMediaTag()
-                                               {
-                                                   MediaId = mediaId,
-                                                   Id = reader.Reader.GetGuid(4),
-                                                   Value = reader.Reader.IsDBNull(5) ? null : reader.Reader.GetString(5)
-                                               });
-
+                        MediaId = mediaId,
+                        Id = reader.Reader.GetGuid(4),
+                        Value = reader.Reader.IsDBNull(5) ? null : reader.Reader.GetString(5)
                     });
 
-            return serviceCatalog;
-        }
-        catch (TcSqlExceptionNoResults)
-        {
-            return new ServiceCatalog();
-        }
+            });
     }
-
 }

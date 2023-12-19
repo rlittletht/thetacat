@@ -26,8 +26,8 @@ public class PathSegmentTests
     [TestCase("path1", "path2\\2", "path1/path2/2", null)]
     [TestCase("path1/", "path2", "path1/path2", null)]
     [TestCase("\\path1", "path2", "/path1/path2", null)]
-    [TestCase("\\path1", "\\path2", "/path2", null)]
-    [TestCase("/path1", "/path2", "/path2", null)]
+    [TestCase("\\path1", "\\path2", "/path1/path2", null)]
+    [TestCase("/path1", "/path2", "/path1/path2", null)]
     [TestCase("", "/path2", "/path2", null)]
     [TestCase("path1", "", "path1", null)]
     [Test]
@@ -38,7 +38,7 @@ public class PathSegmentTests
         PathSegment segmentA = new PathSegment(pathA);
         PathSegment segmentB = new PathSegment(pathB);
 
-        PathSegment actual = PathSegment.Combine(segmentA, segmentB);
+        PathSegment actual = PathSegment.Join(segmentA, segmentB);
 
         Assert.AreEqual(expected, actual);
     }
@@ -59,5 +59,26 @@ public class PathSegmentTests
 
         Assert.AreEqual(expected, actual1);
         Assert.AreEqual(expected, actual2);
+    }
+
+    [TestCase("foo.txt", "1", "foo1.txt", "foo1.txt")]
+    [TestCase("/foo.txt", "1", "/foo1.txt", "\\foo1.txt")]
+    [TestCase("foo.txt.jpg", "1", "foo.txt1.jpg", "foo.txt1.jpg")]
+    [TestCase("\\foo.txt.jpg", "1", "/foo.txt1.jpg", "\\foo.txt1.jpg")]
+    [TestCase("//some/server/root/foo.txt.jpg", "1", "//some/server/root/foo.txt1.jpg", "\\\\some\\server\\root\\foo.txt1.jpg")]
+    [TestCase("foo.txt/noextension", "1", "foo.txt/noextension1", "foo.txt\\noextension1")]
+    [TestCase("foo.txt/noextension.", "1", "foo.txt/noextension1", "foo.txt\\noextension1")]
+    [TestCase("foo.txt/noextension..", "1", "foo.txt/noextension.1", "foo.txt\\noextension.1")]
+    [TestCase("foo.txt/noextension..foo", "1", "foo.txt/noextension.1.foo", "foo.txt\\noextension.1.foo")]
+    [Test]
+    public static void TestAppendLeafSuffix(string path, string suffix, string expectedSegment, string expectedLocal)
+    {
+        PathSegment start = new PathSegment(path);
+
+        PathSegment expected = new PathSegment(expectedSegment);
+        PathSegment actual = start.AppendLeafSuffix(suffix);
+
+        Assert.AreEqual(expected, actual);
+        Assert.AreEqual(expected.Local, expectedLocal);
     }
 }

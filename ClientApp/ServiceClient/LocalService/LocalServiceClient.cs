@@ -84,4 +84,64 @@ public class LocalServiceClient
             lsh?.Close();
         }
     }
+
+    public static T DoGenericQueryWithAliases<T>(
+        string query, 
+        Dictionary<string, string> aliases, 
+        SqlReader.DelegateReader<T> delegateReader, 
+        CustomizeCommandDelegate? custDelegate = null) where T : new()
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        selectTags.AddAliases(aliases);
+
+        string sQuery = selectTags.ToString();
+
+        try
+        {
+            T t =
+                SqlReader.DoGenericQueryDelegateRead(
+                    LocalServiceClient.Sql,
+                    crid,
+                    sQuery,
+                    delegateReader, 
+                    custDelegate);
+
+            return t;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new T();
+        }
+    }
+
+    public static void DoGenericCommandWithAliases(string query, Dictionary<string, string> aliases, CustomizeCommandDelegate? custDelegate)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        selectTags.AddAliases(aliases);
+
+        string sQuery = selectTags.ToString();
+
+        try
+        {
+            LocalServiceClient.Sql.ExecuteNonQuery(
+                new SqlCommandTextInit(query, aliases),
+                custDelegate);
+
+            return;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return;
+        }
+    }
 }

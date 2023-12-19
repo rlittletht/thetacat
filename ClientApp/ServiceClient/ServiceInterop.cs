@@ -29,9 +29,9 @@ public class ServiceInterop
         LocalService.Import.InsertImportItems(items);
     }
 
-    public static void UpdateImportStateForItem(Guid id, ImportItem item, ImportItem.ImportState newState)
+    public static void CompleteImportForItem(Guid id)
     {
-        LocalService.Import.UpdateImportStateForItem(id, item, newState);
+        LocalService.Import.CompleteImportForItem(id);
     }
 
     public static void InsertNewMediaItems(IEnumerable<MediaItem> newItems)
@@ -43,4 +43,31 @@ public class ServiceInterop
     {
         return LocalService.Media.ReadFullCatalog();
     }
+
+    public static List<ServiceWorkgroup> GetAvailableWorkgroups()
+    {
+        return LocalService.Workgroup.ReadWorkgroups();
+    }
+
+    public static void CreateWorkgroup(ServiceWorkgroup workgroup)
+    {
+        LocalService.Workgroup.CreateWorkgroup(workgroup);
+    }
+
+    public static void UpdateWorkgroup(ServiceWorkgroup workgroup)
+    {
+        LocalService.Workgroup.UpdateWorkgroup(workgroup);
+    }
+
+    public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
+    {
+        return LocalService.Workgroup.GetWorkgroupDetails(id);
+    }
+
+#if WG_ON_SQL
+    public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
+    {
+        return LocalService.Workgroup.ReadWorkgroupMedia(id);
+    }
+#endif
 }

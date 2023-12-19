@@ -25,6 +25,10 @@ public class MediaItem
     private readonly MediaItemData m_working;
     public string LocalPath { get; set; } = string.Empty;
 
+    // this means we are waiting for this item to be cached. maybe by this client,
+    // maybe by another client
+    public bool IsCachePending { get; set; } = false;
+
     public enum PendingOp
     {
         Create,
@@ -93,6 +97,8 @@ public class MediaItem
             m_working.State = value;
         }
     }
+
+    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
 
     public ConcurrentDictionary<Guid, MediaTag> Tags
     {
@@ -286,7 +292,7 @@ public class MediaItem
 
     private List<string>? log;
 
-    private string CalculateMD5Hash(string localPath)
+    public static string CalculateMD5Hash(string localPath)
     {
         using FileStream fs = File.Open(
             localPath,

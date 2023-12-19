@@ -30,7 +30,6 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 /// </summary>
 public partial class MediaMigration : UserControl
 {
-    private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
 
     private ElementsMigrate _Migrate
@@ -40,16 +39,6 @@ public partial class MediaMigration : UserControl
             if (m_migrate == null)
                 throw new Exception($"initialize never called on {this.GetType().Name}");
             return m_migrate;
-        }
-    }
-
-    private IAppState _AppState
-    {
-        get
-        {
-            if (m_appState == null)
-                throw new Exception($"initialize never called on {this.GetType().Name}");
-            return m_appState;
         }
     }
 
@@ -84,9 +73,8 @@ public partial class MediaMigration : UserControl
         %%Function: Initialize
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.Initialize
     ----------------------------------------------------------------------------*/
-    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
+    public void Initialize(ElementsDb db, ElementsMigrate migrate)
     {
-        m_appState = appState;
         m_migrate = migrate;
 
         _Migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(_Migrate.MetatagMigrate)));
@@ -131,7 +119,7 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
-        foreach(TcSettings.TcSettings.MapPair subst in _AppState.Settings.ElementsSubstitutions)
+        foreach(TcSettings.TcSettings.MapPair subst in MainWindow._AppState.Settings.ElementsSubstitutions)
 //        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
 //            string[] pair = s.Split(",");
@@ -219,7 +207,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(_AppState, subs);
+                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -261,18 +249,19 @@ public partial class MediaMigration : UserControl
 
         List<string> regValues = new();
 
-        _AppState.Settings.ElementsSubstitutions.Clear();
+        MainWindow._AppState.Settings.ElementsSubstitutions.Clear();
         foreach (PathSubstitution sub in _Migrate.MediaMigrate.PathSubstitutions)
         {
-            _AppState.Settings.ElementsSubstitutions.Add(
+            MainWindow._AppState.Settings.ElementsSubstitutions.Add(
                 new TcSettings.TcSettings.MapPair()
                 {
                     From = sub.From,
                     To = sub.To,
                 });
+            pathSubst.Add(sub.From, sub.To);
         }
 
-        _AppState.Settings.WriteSettings();
+        MainWindow._AppState.Settings.WriteSettings();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 
@@ -326,9 +315,9 @@ public partial class MediaMigration : UserControl
     private void AddToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
-        MediaImport import = new MediaImport(checkedItems, Environment.MachineName);
+        MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
 
-        import.CreateCatalogItemsAndUpdateImportTable(_AppState.Catalog, _AppState.MetatagSchema);
+        import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)

@@ -60,13 +60,13 @@ public class ImportItem: INotifyPropertyChanged
     public ImportState State { get => m_state; set => SetField(ref m_state, value); }
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
 
-    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath)
+    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state)
     {
         ID = id;
         m_source = source;
         m_sourceServer = sourceServer;
         m_sourcePath = sourcePath;
-        m_state = ImportState.PendingMediaCreate;
+        m_state = state;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

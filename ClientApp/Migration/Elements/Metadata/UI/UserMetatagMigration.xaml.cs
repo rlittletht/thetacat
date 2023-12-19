@@ -33,7 +33,6 @@ public partial class UserMetatagMigration : UserControl
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
     private ElementsMigrate? m_migrate = null;
-    IAppState? m_appState;
 
     private ElementsMigrate _Migrate
     {
@@ -42,16 +41,6 @@ public partial class UserMetatagMigration : UserControl
             if (m_migrate == null)
                 throw new Exception($"initialize never called on {this.GetType().Name}");
             return m_migrate;
-        }
-    }
-
-    private IAppState _AppState
-    {
-        get
-        {
-            if (m_appState == null )
-                throw new Exception($"initialize never called on {this.GetType().Name}");
-            return m_appState;
         }
     }
 
@@ -84,13 +73,12 @@ public partial class UserMetatagMigration : UserControl
         MarkExistingMetatags();
     }
 
-    public void Initialize(IAppState appState, ElementsDb db, ElementsMigrate migrate)
+    public void Initialize(ElementsDb db, ElementsMigrate migrate)
     {
-        m_appState = appState;
         m_migrate = migrate;
 
-        if (m_appState.MetatagSchema.SchemaVersionWorking == 0)
-            m_appState.RefreshMetatagSchema();
+        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
+            MainWindow._AppState.RefreshMetatagSchema();
 
         m_migrate.MetatagMigrate.SetUserMetatags(db.ReadMetadataTags());
         MarkExistingMetatags();
@@ -209,14 +197,14 @@ public partial class UserMetatagMigration : UserControl
     public void MarkExistingMetatags()
     {
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag? userRoot = _AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
+        IMetatag? userRoot = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
 
         // if there's no user root, then no tags are already in the cat
         if (userRoot == null)
             return;
 
         IMetatagTreeItem? userTreeItem =
-            _AppState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+            MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
 
         if (userTreeItem == null)
             throw new Exception("no user root found");
@@ -308,13 +296,13 @@ public partial class UserMetatagMigration : UserControl
         // its just a user control that takes two SchemaModels (base and new)
         // and build the diff ops and lists those in the control.
 
-        Metatags.MetatagTree liveTree = _AppState.MetatagSchema.WorkingTree;
+        Metatags.MetatagTree liveTree = MainWindow._AppState.MetatagSchema.WorkingTree;
 
         // now figure out what items (if any) we have to add to the live schema
         List<PseMetatag> tagsToSync = _Migrate.MetatagMigrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag userRoot = _AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
-            ?? _AppState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
+        IMetatag userRoot = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
+            ?? MainWindow._AppState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
         PseMetatagTree treeToSync = new(tagsToSync);
 
@@ -322,7 +310,7 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (MetatagPair pair in tagsToInsert)
         {
-            _AppState.MetatagSchema.AddMetatag(pair.Metatag);
+            MainWindow._AppState.MetatagSchema.AddMetatag(pair.Metatag);
             _Migrate.MetatagMigrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
         }
 

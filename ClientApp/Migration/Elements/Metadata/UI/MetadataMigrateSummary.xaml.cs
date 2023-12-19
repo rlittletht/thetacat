@@ -29,7 +29,6 @@ public partial class MetadataMigrateSummary : UserControl
 {
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
-    private IAppState? m_appState;
     private ElementsMigrate? m_migrate;
 
     private ElementsMigrate _Migrate
@@ -42,16 +41,6 @@ public partial class MetadataMigrateSummary : UserControl
         }
     }
 
-    private IAppState _AppState
-    {
-        get
-        {
-            if (m_appState == null)
-                throw new Exception($"initialize never called on {this.GetType().Name}");
-            return m_appState;
-        }
-    }
-
     private readonly ObservableCollection<MetatagMigrationItem> m_metatagMigrationItems = new();
     private MetatagSchemaDiff? m_diff;
 
@@ -61,10 +50,9 @@ public partial class MetadataMigrateSummary : UserControl
         diffOpListView.ItemsSource = m_metatagMigrationItems;
     }
 
-    public void Initialize(IAppState appState, ElementsMigrate migrate)
+    public void Initialize(ElementsMigrate migrate)
     {
         m_migrate = migrate;
-        m_appState = appState;
     }
 
     private void SortType(object sender, RoutedEventArgs e)
@@ -98,7 +86,7 @@ public partial class MetadataMigrateSummary : UserControl
     public void RebuildSchemaDiff()
     {
         // build the schema differences for all the metadata and metatag migration tabs
-        m_diff = _AppState.MetatagSchema.BuildDiffForSchemas();
+        m_diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
         m_metatagMigrationItems.Clear();
 
         foreach (MetatagSchemaDiffOp op in m_diff.Ops)
@@ -115,7 +103,7 @@ public partial class MetadataMigrateSummary : UserControl
         // commit all the diff ops
         ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
 
-        _AppState.RefreshMetatagSchema();
+        MainWindow._AppState.RefreshMetatagSchema();
         _Migrate.MetatagMigrate.ReloadSchemas();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }

@@ -29,7 +29,6 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 /// </summary>
 public partial class MigrationManager : Window
 {
-    private readonly IAppState m_appState;
     private readonly ElementsMigrate m_migrate;
 
     void SwitchToSummaryTab()
@@ -47,19 +46,18 @@ public partial class MigrationManager : Window
     {
         ElementsDb db = ElementsDb.Create(database);
 
-        MetatagMigrationTab.Initialize(m_appState, db, m_migrate);
-        MetadataMigrationTab.Initialize(m_appState, db, m_migrate);
-        MetadataMigrateSummaryTab.Initialize(m_appState, m_migrate);
-        MediaMigrationTab.Initialize(m_appState, db, m_migrate);
+        MetatagMigrationTab.Initialize(db, m_migrate);
+        MetadataMigrationTab.Initialize(db, m_migrate);
+        MetadataMigrateSummaryTab.Initialize(m_migrate);
+        MediaMigrationTab.Initialize(db, m_migrate);
 
         m_migrate.MediaMigrate.SetMediaStacks(db.ReadMediaStacks());
         
         db.Close();
     }
 
-    public MigrationManager(string database, IAppState appState)
+    public MigrationManager(string database)
     {
-        m_appState = appState;
         InitializeComponent();
 
         m_migrate = new ElementsMigrate(
@@ -67,7 +65,7 @@ public partial class MigrationManager : Window
             new MediaMigrate());
 
         BuildMetadataReportFromDatabase(database);
-        m_appState.RegisterWindowPlace(this, "ElementsMigrationManager");
+        MainWindow._AppState.RegisterWindowPlace(this, "ElementsMigrationManager");
     }
 
     private void OnMetatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)
