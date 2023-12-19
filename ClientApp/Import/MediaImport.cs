@@ -73,7 +73,7 @@ public class MediaImport
         }
     }
 
-    public void CreateCatalogItemsAndUpdateImportTable(Catalog catalog, MetatagSchema metatagSchema)
+    public void CreateCatalogItemsAndUpdateImportTable(ICatalog catalog, MetatagSchema metatagSchema)
     {
         foreach (ImportItem item in ImportItems)
         {

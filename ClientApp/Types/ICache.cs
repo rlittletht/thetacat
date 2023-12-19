@@ -16,5 +16,5 @@ public interface ICache
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
     public bool IsItemCached(Guid id);
-    public void DoForegroundCache();
+    public void DoForegroundCache(int chunkSize);
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCore;
+using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
 
 namespace Thetacat.TCore.TcSqlLite;
 

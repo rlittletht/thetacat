@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using TCore;
 using Thetacat.Types;
+using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
 
 namespace Thetacat.TCore.TcSqlLite;
 

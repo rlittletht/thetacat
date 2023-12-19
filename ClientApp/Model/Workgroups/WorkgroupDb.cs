@@ -37,6 +37,12 @@ public class WorkgroupDb
         }
     }
 
+    public WorkgroupDb(ISql sql)
+    {
+        m_database = new PathSegment("mock");
+        m_connection = sql;
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: WorkgroupDb
         %%Qualified: Thetacat.Model.WorkgroupDb.WorkgroupDb

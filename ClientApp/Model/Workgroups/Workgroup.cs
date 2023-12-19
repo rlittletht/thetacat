@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Windows.Forms;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -102,13 +104,26 @@ public class Workgroup: IWorkgroup
     public PathSegment FullPathToCacheRoot => PathSegment.Join(Server, CacheRoot);
     public string FullyQualifiedPath => FullPathToCacheRoot.Local;
 
+    public static readonly string s_mockServer = "//mock/server";
+    public static readonly string s_mockRoot = "/mockroot";
+
     public Workgroup()
     {
         // for test mock only
         m_id = Guid.NewGuid();
         m_clientId = Guid.NewGuid();
-        Server = new PathSegment("//mock/server");
-        CacheRoot = new PathSegment("/mockroot");
+        Server = new PathSegment(s_mockServer);
+        CacheRoot = new PathSegment(s_mockRoot);
+        Name = "mock-workgroup";
+    }
+
+    public Workgroup(ISql sql, Guid clientId)
+    {
+        m_db = new WorkgroupDb(sql);
+        m_id = Guid.NewGuid();
+        m_clientId = clientId;
+        Server = new PathSegment(s_mockServer);
+        CacheRoot = new PathSegment(s_mockRoot);
         Name = "mock-workgroup";
     }
 
@@ -180,7 +195,7 @@ public class Workgroup: IWorkgroup
         }
     }
 
-    public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries)
+    public virtual void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries)
     {
         ServiceWorkgroupMediaClock mediaWithClock = _Database.GetLatestWorkgroupMediaWithClock();
 

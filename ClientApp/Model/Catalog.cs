@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using System.Windows.Documents;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
+using Thetacat.Types;
 
 namespace Thetacat.Model;
 
-public class Catalog
+public class Catalog: ICatalog
 {
     private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
 

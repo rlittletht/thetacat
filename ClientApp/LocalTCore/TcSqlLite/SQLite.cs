@@ -34,6 +34,21 @@ public class SQLite : ISql
         }
     }
 
+    // we can't just call SqlWhere.ExpandAliases since the mapping order is different
+    // internally to Sql and externally in "SqlSelect.AddAliases"
+    public static string ExpandAliasesProperly(string query, Dictionary<string, string>? aliases)
+    {
+        if (aliases == null)
+            return query;
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(query);
+        selectTags.AddAliases(aliases);
+
+        return selectTags.ToString();
+    }
+
     public SQLiteTransaction? Transaction => m_transaction;
 
     public static SQLite OpenConnection(string sResourceConnString)
@@ -63,7 +78,7 @@ public class SQLite : ISql
         ISqlCommand sqlcmd = CreateCommand();
 
         if (aliases != null)
-            s = SqlWhere.ExpandAliases(s, aliases);
+            s = ExpandAliasesProperly(s, aliases);
 
         sqlcmd.CommandText = s;
         if (customizeParams != null)
@@ -86,7 +101,7 @@ public class SQLite : ISql
     {
         ISqlCommand sqlcmd = CreateCommand();
         if (aliases != null)
-            sQuery = SqlWhere.ExpandAliases(sQuery, aliases);
+            sQuery = ExpandAliasesProperly(sQuery, aliases);
 
         sqlcmd.CommandText = sQuery;
         if (Transaction != null)
