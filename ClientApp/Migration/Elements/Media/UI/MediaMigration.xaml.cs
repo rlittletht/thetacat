@@ -197,7 +197,7 @@ public partial class MediaMigration : UserControl
         %%Function: VerifyPathSet
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPathSet
     ----------------------------------------------------------------------------*/
-    void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
+    void VerifyPathSet(List<PseMediaItem> items, int start, int end, Dictionary<string, string> subs)
     {
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
@@ -207,7 +207,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(subs);
+                        items[i].CheckPath(subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -226,13 +226,17 @@ public partial class MediaMigration : UserControl
         return checkedItems;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: BuildCheckedVerifiedItems
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.BuildCheckedVerifiedItems
+    ----------------------------------------------------------------------------*/
     private List<PseMediaItem> BuildCheckedVerifiedItems()
     {
         // build the list to check (only the marked items)
         List<PseMediaItem> checkedItems = new List<PseMediaItem>();
         foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
         {
-            if (item.Migrate && item.PathVerified == TriState.Yes)
+            if (item.Migrate && item.PathVerified == TriState.Yes && item.InCatalog == false)
                 checkedItems.Add(item);
         }
 
@@ -278,7 +282,7 @@ public partial class MediaMigration : UserControl
         {
             int segEnd = Math.Min(segStart + segLength, checkedItems.Count);
 
-            VerifyPathSet(segStart, segEnd, pathSubst);
+            VerifyPathSet(checkedItems, segStart, segEnd, pathSubst);
             segStart += segLength;
 
             if (segEnd == checkedItems.Count)
@@ -286,7 +290,7 @@ public partial class MediaMigration : UserControl
         }
 
         if (segStart < checkedItems.Count)
-            VerifyPathSet(segStart, checkedItems.Count, pathSubst);
+            VerifyPathSet(checkedItems, segStart, checkedItems.Count, pathSubst);
     }
 
     /*----------------------------------------------------------------------------
@@ -318,10 +322,36 @@ public partial class MediaMigration : UserControl
         MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
 
         import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
+        foreach (PseMediaItem item in checkedItems)
+        {
+            item.UpdateCatalogStatus();
+        }
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)
     {
 
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: DoKeyDown
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.DoKeyDown
+
+        we might have to do something special here to prevent it from deselecting
+        our selection when space is pressed
+    ----------------------------------------------------------------------------*/
+    private void DoKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!e.IsRepeat && e.Key == Key.Space)
+        {
+            bool notMixed = mediaItemsListView.SelectedItems.Cast<object>().Any(item => ((PseMediaItem)item).Migrate)
+                ^ mediaItemsListView.SelectedItems.Cast<object>().Any(item => !((PseMediaItem)item).Migrate);
+
+            foreach (object? item in mediaItemsListView.SelectedItems)
+            {
+                if (item is PseMediaItem pseItem)
+                    pseItem.Migrate = !notMixed || !pseItem.Migrate;
+            }
+        }
     }
 }

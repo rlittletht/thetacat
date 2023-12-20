@@ -59,7 +59,7 @@ public class TestCache
     //   * Push the changes back to the server
 
     [Test]
-    public static void TestDoForegroundCache_Client1_NoCoherencyFailures_AllItemsQueued()
+    public static void TestQueueCacheDownloads_Client1_NoCoherencyFailures_AllItemsQueued()
     {
         // in this test, the media database has 4 items. initially this client get's all 4 items to queue, but 
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
@@ -166,14 +166,14 @@ public class TestCache
                         }))
             });
 
-        cacheMock.DoForegroundCache(4);
+        cacheMock.QueueCacheDownloads(4);
         
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { mediaItem1, mediaItem2, mediaItem3, mediaItem4 });
     }
 
     [Test]
-    public static void TestDoForegroundCache_Client1_SingleCoherencyFailure_PartialOverlap()
+    public static void TestQueueCacheDownloads_Client1_SingleCoherencyFailure_PartialOverlap()
     {
         // in this test, the media database has 4 items. initially this client get's all 4 items to queue, but 
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
@@ -301,14 +301,14 @@ public class TestCache
                         }))
             });
 
-        cacheMock.DoForegroundCache(4);
+        cacheMock.QueueCacheDownloads(4);
 
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { mediaItem1, mediaItem4 });
     }
 
     [Test]
-    public static void TestDoForegroundCache_Client1_SingleCoherencyFailure_FulllOverlap()
+    public static void TestQueueCacheDownloads_Client1_SingleCoherencyFailure_FulllOverlap()
     {
         // in this test, the media database has 4 items. initially this client get's all 4 items to queue, but 
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching all 4 itmes,
@@ -391,7 +391,7 @@ public class TestCache
                 // there are no updates
             });
 
-        cacheMock.DoForegroundCache(4);
+        cacheMock.QueueCacheDownloads(4);
 
         // our queue should be empty
         cacheMock.VerifyQueueContains(new MediaItem[] { });

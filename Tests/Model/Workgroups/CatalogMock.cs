@@ -49,4 +49,6 @@ public class CatalogMock: ICatalog
     {
         throw new NotImplementedException();
     }
+
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath) => throw new NotImplementedException();
 }

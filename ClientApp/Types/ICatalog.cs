@@ -12,4 +12,5 @@ public interface ICatalog
     public void FlushPendingCreates();
     public void AddMediaTag(Guid id, MediaTag tag);
     public void ReadFullCatalogFromServer(MetatagSchema schema);
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
 }

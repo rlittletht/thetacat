@@ -11,6 +11,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.VisualBasic;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat;
 
@@ -23,30 +24,48 @@ public class TcBlobContainer
         m_client = client;
     }
 
-    static async Task<string> GetMD5ForStream(Stream stm)
+    public async Task<ETag> DoUploadWithMetadataCheckOnRetry(string localPath, string blobName, FileStream fs, string expectedMd5)
     {
-        using MD5 md5 = MD5.Create();
+        try
+        {
+            Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
+            if (!info.HasValue)
+                throw new Exception($"upload {localPath}->{blobName} failed!");
 
-        byte[] hash = await md5.ComputeHashAsync(stm);
+            BlobClient blob = m_client.GetBlobClient(blobName);
 
-        string fullContentMd5 = Convert.ToBase64String(hash);
+            Dictionary<string, string> metadata = new() { { TcBlob.META_FULL_CONTENT_MD5, expectedMd5 } };
+            Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
 
-        return fullContentMd5;
+            if (!blobInfo.HasValue)
+                throw new Exception($"could not get properties for {blobName}");
+
+            return info.Value.ETag;
+        }
+        catch (RequestFailedException exc)
+        {
+            // probably because it already exists...check for that
+            BlobClient blob = m_client.GetBlobClient(blobName);
+            string? md5Blob = null;
+
+            BlobProperties properties = await blob.GetPropertiesAsync();
+
+            // find the MD5 prop
+            foreach (KeyValuePair<string, string> metadata in properties.Metadata)
+            {
+                if (metadata.Key == TcBlob.META_FULL_CONTENT_MD5)
+                    md5Blob = metadata.Value;
+            }
+
+            if (md5Blob == null || md5Blob != expectedMd5)
+                throw new CatExceptionAzureFailure($"upload {localPath}->{blobName} failed: {exc.Message}", exc);
+
+            // otherwise, the blob that's already there has the same md5, so we must have uploaded
+            // it before and didn't get to update our DB
+            return properties.ETag;
+        }
     }
 
-    static async Task<string> GetMD5ForPath(string path)
-    {
-        await using FileStream fs = File.Open(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read);
-
-        string md5 = await GetMD5ForStream(fs);
-        fs.Close();
-
-        return md5;
-    }
     public async Task<TcBlob> Upload(string localPath, string? blobName = null, string? virtualRoot = null)
     {
         blobName ??= Guid.NewGuid().ToString();
@@ -60,24 +79,13 @@ public class TcBlobContainer
             FileAccess.Read,
             FileShare.Read);
 
-        string fullContentMd5 = await GetMD5ForStream(fs);
+        string fullContentMd5 = await Checksum.GetMD5ForStream(fs);
 
         fs.Seek(0, SeekOrigin.Begin);
+        ETag etag = await DoUploadWithMetadataCheckOnRetry(localPath, blobName, fs, fullContentMd5);
 
-        Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
 
-        if (!info.HasValue)
-            throw new Exception($"upload {localPath}->{blobName} failed!");
-
-        BlobClient blob = m_client.GetBlobClient(blobName);
-
-        Dictionary<string, string> metadata = new() { { TcBlob.META_FULL_CONTENT_MD5, fullContentMd5 } };
-        Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
-
-        if (!blobInfo.HasValue)
-            throw new Exception($"could not get properties for {blobName}");
-
-        return new TcBlob(blobName, fullContentMd5, info.Value.ETag);
+        return new TcBlob(blobName, fullContentMd5, etag);
     }
 
     public async Task<TcBlob> Download(string blobName, string localPath, string? md5Expected)
@@ -87,7 +95,7 @@ public class TcBlobContainer
             // local path exists. Check to see if the MD5 hash matches
             if (md5Expected != null)
             {
-                string md5 = await GetMD5ForPath(localPath);
+                string md5 = await Checksum.GetMD5ForPath(localPath);
 
                 if (md5 == md5Expected)
                     return new TcBlob(blobName, md5, null);
@@ -120,7 +128,7 @@ public class TcBlobContainer
         if (response.IsError)
             throw new CatExceptionAzureFailure($"could not download for {localPath}: {response.ReasonPhrase}");
 
-        md5Blob ??= await GetMD5ForPath(localPath);
+        md5Blob ??= await Checksum.GetMD5ForPath(localPath);
 
         return new TcBlob(blobName, md5Blob, properties.ETag);
     }

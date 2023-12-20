@@ -96,7 +96,7 @@ public class TestWorkgroupCacheEntry
 
         Assert.AreEqual(1, updates.Count);
         Assert.AreEqual("cachedDate", updates[0].Key);
-        Assert.AreEqual($"'{entry.CachedDate.ToString()}'", updates[0].Value);
+        Assert.AreEqual($"'{entry.CachedDate.Value.ToUniversalTime():u}'", updates[0].Value);
     }
 
     [Test]
@@ -177,7 +177,7 @@ public class TestWorkgroupCacheEntry
 
         Assert.AreEqual(2, updates.Count);
         Assert.AreEqual("cachedDate", updates[0].Key);
-        Assert.AreEqual($"'{entry.CachedDate.ToString()}'", updates[0].Value);
+        Assert.AreEqual($"'{entry.CachedDate.Value.ToUniversalTime():u}'", updates[0].Value);
         Assert.AreEqual("vectorClock", updates[1].Key);
         Assert.AreEqual("null", updates[1].Value);
     }

@@ -96,6 +96,13 @@ namespace Thetacat
             InitializeComponent();
             InitializeThetacat();
 
+            // we have to load the catalog AND the pending upload list
+            // we also have to confirm that all the items int he pending
+            // upload list still exist in the catalog, and if they don't
+            // (or if they are marked as active in the catalog, which means
+            // they are already uploaded), then remove them from the import
+            // list
+
             _AppState.RegisterWindowPlace(this, "MainWindow");
             CatalogView.ItemsSource = _AppState.Catalog.Items;
         }

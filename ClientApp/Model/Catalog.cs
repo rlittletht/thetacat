@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Windows;
 using System.Windows.Documents;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Model;
 
@@ -27,6 +30,8 @@ public class Catalog: ICatalog
     public void AddNewMediaItem(MediaItem item)
     {
         m_items.Add(item.ID, item);
+        if (m_virtualLookupTable != null)
+            AddToVirtualLookup(m_virtualLookupTable, item);
     }
 
     public void FlushPendingCreates()
@@ -102,5 +107,56 @@ public class Catalog: ICatalog
 
             AddMediaTag(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
+    }
+
+    private ConcurrentDictionary<string, MediaItem>? m_virtualLookupTable;
+
+    private void AddToVirtualLookup(ConcurrentDictionary<string, MediaItem> lookupTable, MediaItem item)
+    {
+        if (string.IsNullOrEmpty(item.VirtualPath))
+            return;
+
+        String lookupValue = item.VirtualPath.ToString().ToUpperInvariant();
+        if (lookupTable.TryGetValue(lookupValue, out MediaItem? existing))
+        {
+            if (item.MD5 != existing.MD5)
+                MessageBox.Show($"duplicate virtual path: {item.VirtualPath} with different MD5");
+
+            // in either case we're going to skip it
+            return;
+        }
+
+        lookupTable.TryAdd(lookupValue, item);
+    }
+
+    private ConcurrentDictionary<string, MediaItem> BuildVirtualLookup()
+    {
+        ConcurrentDictionary<string, MediaItem> lookupTable = new();
+
+        foreach (KeyValuePair<Guid, MediaItem> item in m_items)
+        {
+            AddToVirtualLookup(lookupTable, item.Value);
+        }
+
+        return lookupTable;
+    }
+
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath)
+    {
+        m_virtualLookupTable ??= BuildVirtualLookup();
+
+        string lookup = virtualPath.ToUpperInvariant();
+        if (lookup.StartsWith("/"))
+            lookup = lookup.Substring(1);
+
+        if (m_virtualLookupTable.TryGetValue(lookup, out MediaItem? item))
+        {
+            // since we found a matching virtualPath, let's see if the MD5 matches
+            string md5 = Checksum.GetMD5ForPathSync(fullLocalPath);
+            if (md5 == item.MD5)
+                return item;
+        }
+
+        return null;
     }
 }
