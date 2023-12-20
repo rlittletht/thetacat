@@ -52,7 +52,7 @@ public partial class Migration : Window, INotifyPropertyChanged
     {
         SaveSettingsIfNeeded();
         MigrationManager elements = new MigrationManager(ElementsDb);
-        elements.ShowDialog();
+        elements.Show();
     }
 
     private void SaveSettingsIfNeeded()

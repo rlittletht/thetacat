@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.Types.Parallel;
 
 namespace Thetacat.Types;
 

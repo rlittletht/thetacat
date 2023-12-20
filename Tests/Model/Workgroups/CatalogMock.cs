@@ -1,8 +1,8 @@
-﻿using System.Collections.Concurrent;
-using Thetacat.Model;
+﻿using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.Types.Parallel;
 
 namespace Tests.Model.Workgroups;
 

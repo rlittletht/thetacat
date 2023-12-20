@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" Closing="OnClosing">
     <Window.Resources>
         <local:MathConverter x:Key="MathConverter" />
     </Window.Resources>
@@ -16,6 +16,9 @@
                 <MenuItem Header="Meta_tags" Click="ManageMetatags" />
                 <MenuItem Header="Options" Click="LaunchOptions"/>
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Async log" Click="ToggleAsyncLog"/>
+            </MenuItem>"
         </Menu>
         <Grid>
             <Grid.RowDefinitions>

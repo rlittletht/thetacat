@@ -34,7 +34,10 @@ using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.UI.Options;
 using Thetacat.Azure;
+using Thetacat.Logging;
+using Thetacat.UI;
 using MessageBox = System.Windows.Forms.MessageBox;
+using RestoreWindowPlace;
 
 namespace Thetacat
 {
@@ -78,6 +81,9 @@ namespace Thetacat
 
 #endregion
         private static AppState? s_appState;
+        private static CatLog? s_asyncLog;
+
+        public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
 
         public static IAppState _AppState
         {
@@ -105,6 +111,17 @@ namespace Thetacat
 
             _AppState.RegisterWindowPlace(this, "MainWindow");
             CatalogView.ItemsSource = _AppState.Catalog.Items;
+            if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
+                ShowAsyncLog();
+        }
+
+        void OnClosing(object sender, EventArgs e)
+        {
+            _AppState.Settings.ShowAsyncLogOnStart = m_asyncLog != null;
+            if (m_asyncLog != null)
+                m_asyncLog.Close();
+
+            _AppState.Settings.WriteSettings();
         }
 
         public static void SetStateForTests(AppState appState)
@@ -115,6 +132,7 @@ namespace Thetacat
         void InitializeThetacat()
         {
             s_appState = new AppState();
+            s_asyncLog = new CatLog();
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -128,13 +146,13 @@ namespace Thetacat
         {
             Migration.Migration migration = new();
 
-            migration.ShowDialog();
+            migration.Show();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
             Metatags.ManageMetadata manage = new();
-            manage.ShowDialog();
+            manage.Show();
         }
 
         private void LoadCatalog(object sender, RoutedEventArgs e)
@@ -169,6 +187,25 @@ namespace Thetacat
             MediaImport import = new MediaImport(MainWindow.ClientName);
             
             await import.UploadMedia();
+        }
+
+        private AsyncLog? m_asyncLog;
+
+        void ShowAsyncLog()
+        {
+            if (m_asyncLog != null)
+                return;
+
+            m_asyncLog = new AsyncLog();
+            m_asyncLog.Show();
+        }
+
+        private void ToggleAsyncLog(object sender, RoutedEventArgs e)
+        {
+            if (m_asyncLog != null)
+                m_asyncLog.Close();
+            else
+                ShowAsyncLog();
         }
     }
 }

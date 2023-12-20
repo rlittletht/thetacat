@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Xmp;
+using Thetacat.Logging;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
@@ -218,6 +219,8 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
             // see if we think we already have this item in our catalog
             UpdateCatalogStatus();
         }
+
+        MainWindow._AsyncLog.Log(new LogEntry(EventType.Verbose, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}"));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
