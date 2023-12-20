@@ -7,6 +7,7 @@ using System.Windows.Documents;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.Types.Parallel;
 using Thetacat.Util;
 
 namespace Thetacat.Model;

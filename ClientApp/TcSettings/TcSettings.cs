@@ -29,6 +29,7 @@ public class TcSettings
     public string? WorkgroupCacheServer;
     public string? WorkgroupCacheRoot;
     public string? WorkgroupName;
+    public bool? ShowAsyncLogOnStart;
 
     public List<MapPair> ElementsSubstitutions = new();
 
@@ -37,6 +38,11 @@ public class TcSettings
         XmlSettingsDescription =
             XmlDescriptionBuilder<TcSettings>
                .Build(s_uri, "Settings")
+               .AddChildElement("Options")
+               .AddChildElement("ShowAsyncLogOnStart")
+               .AddAttribute("value", GetShowAsyncLogOnStart, SetShowAsyncLogOnStart)
+               .Pop()
+               .Pop()
                .AddChildElement("Migration")
                .AddChildElement("ElementsDatabase", GetElementsDatabaseValue, SetElementsDatabaseValue)
                .AddElement("Substitutions")
@@ -95,6 +101,9 @@ public class TcSettings
 
     private readonly string m_settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
     private readonly XmlDescription<TcSettings> XmlSettingsDescription;
+
+    private static void SetShowAsyncLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart = bool.Parse(value ?? bool.FalseString);
+    private static string? GetShowAsyncLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart.ToString();
 
     private static void SetElementsDatabaseValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase = value;
     private static string? GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase;

@@ -30,8 +30,41 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public partial class UserMetatagMigration : UserControl
 {
+#region SortAdorner Support
+
     private GridViewColumnHeader? sortCol = null;
     private SortAdorner? sortAdorner;
+
+    public void Sort(ListView listView, GridViewColumnHeader? column)
+    {
+        if (column == null)
+            return;
+
+        string sortBy = column.Tag?.ToString() ?? string.Empty;
+
+        if (sortAdorner != null && sortCol != null)
+        {
+            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
+            listView.Items.SortDescriptions.Clear();
+        }
+
+        ListSortDirection newDir = ListSortDirection.Ascending;
+        if (sortCol == column && sortAdorner?.Direction == newDir)
+            newDir = ListSortDirection.Descending;
+
+        sortCol = column;
+        sortAdorner = new SortAdorner(sortCol, newDir);
+        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
+        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+    }
+
+    private void SortType(object sender, RoutedEventArgs e)
+    {
+        Sort(metaTagsListView, sender as GridViewColumnHeader);
+    }
+
+#endregion
+
     private ElementsMigrate? m_migrate = null;
 
     private ElementsMigrate _Migrate
@@ -55,11 +88,6 @@ public partial class UserMetatagMigration : UserControl
     private void DoToggleSelected(object sender, RoutedEventArgs e)
     {
         ToggleItems(metaTagsListView.SelectedItems as IEnumerable<object?>);
-    }
-
-    private void SortType(object sender, RoutedEventArgs e)
-    {
-        Sort(metaTagsListView, sender as GridViewColumnHeader);
     }
 
     public void RefreshForSchemaChange()
@@ -101,29 +129,6 @@ public partial class UserMetatagMigration : UserControl
             if (item != null)
                 item.IsSelected = !item.IsSelected;
         }
-    }
-
-    public void Sort(ListView listView, GridViewColumnHeader? column)
-    {
-        if (column == null)
-            return;
-
-        string sortBy = column.Tag?.ToString() ?? string.Empty;
-
-        if (sortAdorner != null && sortCol != null)
-        {
-            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
-            listView.Items.SortDescriptions.Clear();
-        }
-
-        ListSortDirection newDir = ListSortDirection.Ascending;
-        if (sortCol == column && sortAdorner?.Direction == newDir)
-            newDir = ListSortDirection.Descending;
-
-        sortCol = column;
-        sortAdorner = new SortAdorner(sortCol, newDir);
-        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
-        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
     }
 
     public void RemoveItems(IEnumerable<object?>? items)
@@ -248,12 +253,12 @@ public partial class UserMetatagMigration : UserControl
                         : string.Join(":", nameHistory.ToArray());
 
                 Metatag newTag = new()
-                                       {
-                                           ID = Guid.NewGuid(),
-                                           Description = description,
-                                           Name = item.Name,
-                                           Parent = idParent
-                                       };
+                                 {
+                                     ID = Guid.NewGuid(),
+                                     Description = description,
+                                     Name = item.Name,
+                                     Parent = idParent
+                                 };
 
                 tagsToInsert.Add(new MetatagPair(newTag, item.ID));
                 return newTag.ID;
