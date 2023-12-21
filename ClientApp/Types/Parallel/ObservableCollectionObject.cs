@@ -115,7 +115,7 @@ public abstract class ObservableCollectionObject : INotifyCollectionChanged, INo
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static object ExitFrame(object frame)
+    private static object? ExitFrame(object frame)
     {
         ((DispatcherFrame)frame).Continue = false;
         return null;
@@ -169,7 +169,7 @@ public abstract class ObservableCollectionObject : INotifyCollectionChanged, INo
 
 #region INotifyCollectionChanged
 
-    public virtual event NotifyCollectionChangedEventHandler CollectionChanged;
+    public virtual event NotifyCollectionChangedEventHandler? CollectionChanged;
 
     protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs args)
     {
@@ -207,11 +207,11 @@ public abstract class ObservableCollectionObject : INotifyCollectionChanged, INo
 
 #region INotifyPropertyChanged
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public void RaisePropertyChanged(string propertyName)
     {
-        var propertyChangedEventHandler = PropertyChanged;
+        PropertyChangedEventHandler? propertyChangedEventHandler = PropertyChanged;
 
         if (propertyChangedEventHandler != null)
         {

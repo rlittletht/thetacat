@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -14,6 +15,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Meziantou.Framework.WPF.Collections;
+using Thetacat.Logging;
+using Thetacat.Types.Parallel;
 
 namespace Thetacat.Controls
 {
@@ -58,8 +62,13 @@ namespace Thetacat.Controls
 
         void ScrollToBottom(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            LogEntries.Items.MoveCurrentToLast();
-            LogEntries.ScrollIntoView(LogEntries.Items.CurrentItem);
+            return;
+
+            lock (((ICollection)LogEntries.ItemsSource).SyncRoot)
+            {
+                LogEntries.Items.MoveCurrentToLast();
+                LogEntries.ScrollIntoView(LogEntries.Items[LogEntries.Items.Count - 1]);
+            }
         }
 
         public void SetAutoscroll()
@@ -76,5 +85,11 @@ namespace Thetacat.Controls
         {
             InitializeComponent();
         }
+
+//        public void ShowCount(object sender, RoutedEventArgs e)
+//        {
+//            //            MessageBox.Show($"Total count: {LogEntries.Items.Count}, ItemsSourceCount: {((ObservableImmutableList<ILogEntry>)LogEntries.ItemsSource).Count}");
+//            MessageBox.Show($"Total count: {LogEntries.Items.Count}, ItemsSourceCount: {((ConcurrentObservableCollection<ILogEntry>)LogEntries.ItemsSource).Count}");
+//        }
     }
 }

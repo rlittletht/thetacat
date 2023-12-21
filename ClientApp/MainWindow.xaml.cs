@@ -131,7 +131,7 @@ namespace Thetacat
 
         void InitializeThetacat()
         {
-            s_appState = new AppState();
+            s_appState = new AppState(CloseAsyncLog);
             s_asyncLog = new CatLog();
         }
 
@@ -200,10 +200,17 @@ namespace Thetacat
             m_asyncLog.Show();
         }
 
+        void CloseAsyncLog(bool skipClose)
+        {
+            if (!skipClose)
+                m_asyncLog?.Close();
+            m_asyncLog = null;
+        }
+
         private void ToggleAsyncLog(object sender, RoutedEventArgs e)
         {
             if (m_asyncLog != null)
-                m_asyncLog.Close();
+                CloseAsyncLog(false);
             else
                 ShowAsyncLog();
         }

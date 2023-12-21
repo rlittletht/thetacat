@@ -18,4 +18,5 @@ public interface IAppState
 
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema();
+    void CloseAsyncLog(bool skipClose);
 }

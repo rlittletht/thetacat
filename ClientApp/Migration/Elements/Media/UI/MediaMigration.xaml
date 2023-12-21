@@ -73,6 +73,8 @@
                             <!--                                <Button Content="Cancel" IsCancel="True" Grid.Column="0" Height="24" Margin="0 0 5 0" />
                                 <Button Content="Save" Click="DoSave" IsDefault="True" Grid.Column="1" Height="24"
                                         Margin="5 0 0 0" /> -->
+                            <!--<Button Content="Show Count" IsDefault="True"
+                                    Click="ShowCount" Grid.Column="3" Height="24" Margin="0 0 2 0" />-->
                             <Button Content="Verify Paths" IsDefault="True"
                                     Click="VerifyPaths" Grid.Column="0" Height="24" Margin="0 0 2 0" />
                             <Button Content="Add To Catalog" IsDefault="True"

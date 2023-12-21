@@ -60,6 +60,10 @@ public partial class MediaMigration : UserControl
         VerifyPaths();
     }
 
+    private void ShowCount(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show($"Total count: {_Migrate.MediaMigrate.MediaItems.Count}");
+    }
     /*----------------------------------------------------------------------------
         %%Function: DoFilterItemChanged
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.DoFilterItemChanged
@@ -276,9 +280,10 @@ public partial class MediaMigration : UserControl
         List<PseMediaItem> checkedItems = BuildCheckedItems();
 
         // split the list into 4 parts and do them in parallel
-        int segLength = checkedItems.Count; //  / 10;
+        int segCount = 10;
+        int segLength = checkedItems.Count / segCount;
         int segStart = 0;
-        for (int iSeg = 0; iSeg < 10; iSeg++)
+        for (int iSeg = 0; iSeg < segCount; iSeg++)
         {
             int segEnd = Math.Min(segStart + segLength, checkedItems.Count);
 

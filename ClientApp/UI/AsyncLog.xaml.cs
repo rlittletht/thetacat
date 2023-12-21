@@ -24,7 +24,7 @@ namespace Thetacat.UI
         public AsyncLog()
         {
             InitializeComponent();
-            AsyncLogView.LogEntries.ItemsSource = MainWindow._AsyncLog.Entries;
+            AsyncLogView.LogEntries.ItemsSource = MainWindow._AsyncLog.Entries.AsObservable;
             BindingOperations.EnableCollectionSynchronization(AsyncLogView.LogEntries.ItemsSource, lockObject);
             System.Diagnostics.PresentationTraceSources.SetTraceLevel(
                 AsyncLogView.LogEntries.ItemContainerGenerator,
@@ -36,6 +36,7 @@ namespace Thetacat.UI
         void OnClosing(object sender, EventArgs e)
         {
             AsyncLogView.UnsetAutoscroll();
+            MainWindow._AppState.CloseAsyncLog(true);
         }
     }
 }

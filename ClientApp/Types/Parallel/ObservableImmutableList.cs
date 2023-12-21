@@ -11,6 +11,7 @@ namespace Thetacat.Types.Parallel;
 
 public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICollection, IEnumerable, IList<T>, IImmutableList<T>, ICollection<T>,
                                           IEnumerable<T>, IReadOnlyList<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged
+    where T: class
 {
 #region Private
 
@@ -21,7 +22,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
 
 #region Constructors
 
-    public ObservableImmutableList() : this(new T[0], LockTypeEnum.SpinWait)
+    public ObservableImmutableList() : this(Array.Empty<T>(), LockTypeEnum.SpinWait)
     {
     }
 
@@ -29,7 +30,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
     {
     }
 
-    public ObservableImmutableList(LockTypeEnum lockType) : this(new T[0], lockType)
+    public ObservableImmutableList(LockTypeEnum lockType) : this(Array.Empty<T>(), lockType)
     {
     }
 
@@ -197,8 +198,8 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var kvp = valueProvider(currentItems);
-                var newItems = currentItems.Insert(kvp.Key, kvp.Value);
+                KeyValuePair<int, T> kvp = valueProvider(currentItems);
+                ImmutableList<T> newItems = currentItems.Insert(kvp.Key, kvp.Value);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, kvp.Value, kvp.Key));
@@ -213,7 +214,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
             currentItems =>
             {
                 T value;
-                var newItems = _items.Add(value = valueProvider(currentItems));
+                ImmutableList<T> newItems = _items.Add(value = valueProvider(currentItems));
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, value, currentItems.Count));
@@ -245,9 +246,9 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var index = valueProvider(currentItems);
-                var value = currentItems[index];
-                var newItems = currentItems.RemoveAt(index);
+                int index = valueProvider(currentItems);
+                T value = currentItems[index];
+                ImmutableList<T> newItems = currentItems.RemoveAt(index);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, value, index));
@@ -261,11 +262,11 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var kvp = valueProvider(currentItems);
-                var newValue = kvp.Value;
-                var index = kvp.Key;
-                var oldValue = currentItems[index];
-                var newItems = currentItems.SetItem(kvp.Key, newValue);
+                KeyValuePair<int, T> kvp = valueProvider(currentItems);
+                T newValue = kvp.Value;
+                int index = kvp.Key;
+                T oldValue = currentItems[index];
+                ImmutableList<T> newItems = currentItems.SetItem(kvp.Key, newValue);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, oldValue, newValue, index));
@@ -279,8 +280,8 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var kvp = valueProvider(currentItems);
-                var newItems = currentItems.Insert(kvp.Key, kvp.Value);
+                KeyValuePair<int, T> kvp = valueProvider(currentItems);
+                ImmutableList<T> newItems = currentItems.Insert(kvp.Key, kvp.Value);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, kvp.Value, kvp.Key));
@@ -295,7 +296,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
             currentItems =>
             {
                 T value;
-                var newItems = _items.Add(value = valueProvider(currentItems));
+                ImmutableList<T> newItems = _items.Add(value = valueProvider(currentItems));
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, value, currentItems.Count));
@@ -327,9 +328,9 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var index = valueProvider(currentItems);
-                var value = currentItems[index];
-                var newItems = currentItems.RemoveAt(index);
+                int index = valueProvider(currentItems);
+                T value = currentItems[index];
+                ImmutableList<T> newItems = currentItems.RemoveAt(index);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, value, index));
@@ -343,11 +344,11 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         (
             currentItems =>
             {
-                var kvp = valueProvider(currentItems);
-                var newValue = kvp.Value;
-                var index = kvp.Key;
-                var oldValue = currentItems[index];
-                var newItems = currentItems.SetItem(kvp.Key, newValue);
+                KeyValuePair<int, T> kvp = valueProvider(currentItems);
+                T newValue = kvp.Value;
+                int index = kvp.Key;
+                T oldValue = currentItems[index];
+                ImmutableList<T> newItems = currentItems.SetItem(kvp.Key, newValue);
                 return new KeyValuePair<ImmutableList<T>, NotifyCollectionChangedEventArgs>(
                     newItems,
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, oldValue, newValue, index));
@@ -382,35 +383,41 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
 
 #region IList
 
-    public int Add(object value)
+    public int Add(object? value)
     {
-        var val = (T)value;
+        if (value == null) throw new ArgumentNullException(nameof(value));
+
+        T val = (T)value;
         Add(val);
         return IndexOf(val);
     }
 
-    public bool Contains(object value)
+    public bool Contains(object? value)
     {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+
         return Contains((T)value);
     }
 
-    public int IndexOf(object value)
+    public int IndexOf(object? value)
     {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+
         return IndexOf((T)value);
     }
 
-    public void Insert(int index, object value)
+    public void Insert(int index, object? value)
     {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+
         Insert(index, (T)value);
     }
 
-    public bool IsFixedSize
-    {
-        get { return false; }
-    }
+    public bool IsFixedSize => false;
 
-    public void Remove(object value)
+    public void Remove(object? value)
     {
+        if (value == null) return;
         Remove((T)value);
     }
 
@@ -419,10 +426,10 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         RemoveAt(index);
     }
 
-    object IList.this[int index]
+    object? IList.this[int index]
     {
         get { return this[index]; }
-        set { SetItem(index, (T)value); }
+        set { SetItem(index, (T?)value); }
     }
 
     public void CopyTo(Array array, int index)
@@ -514,8 +521,10 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
 
 #region IImmutableList<T>
 
-    public IImmutableList<T> Add(T value)
+    public IImmutableList<T> Add(T? value)
     {
+        if (value == null) return this;
+
         var index = _items.Count;
         _items = _items.Add(value);
         RaiseNotifyCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, value, index));
@@ -536,13 +545,14 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         return this;
     }
 
-    public int IndexOf(T item, int index, int count, IEqualityComparer<T> equalityComparer)
+    public int IndexOf(T item, int index, int count, IEqualityComparer<T>? equalityComparer)
     {
         return _items.IndexOf(item, index, count, equalityComparer);
     }
 
-    public IImmutableList<T> Insert(int index, T element)
+    public IImmutableList<T> Insert(int index, T? element)
     {
+        if (element == null) return this;
         _items = _items.Insert(index, element);
         RaiseNotifyCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, element, index));
         return this;
@@ -555,12 +565,12 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         return this;
     }
 
-    public int LastIndexOf(T item, int index, int count, IEqualityComparer<T> equalityComparer)
+    public int LastIndexOf(T item, int index, int count, IEqualityComparer<T>? equalityComparer)
     {
         return _items.LastIndexOf(item, index, count, equalityComparer);
     }
 
-    public IImmutableList<T> Remove(T value, IEqualityComparer<T> equalityComparer)
+    public IImmutableList<T> Remove(T value, IEqualityComparer<T>? equalityComparer)
     {
         var index = _items.IndexOf(value, equalityComparer);
         RemoveAt(index);
@@ -589,14 +599,14 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
         return this;
     }
 
-    public IImmutableList<T> RemoveRange(IEnumerable<T> items, IEqualityComparer<T> equalityComparer)
+    public IImmutableList<T> RemoveRange(IEnumerable<T> items, IEqualityComparer<T>? equalityComparer)
     {
         _items = _items.RemoveRange(items, equalityComparer);
         RaiseNotifyCollectionChanged();
         return this;
     }
 
-    public IImmutableList<T> Replace(T oldValue, T newValue, IEqualityComparer<T> equalityComparer)
+    public IImmutableList<T> Replace(T oldValue, T newValue, IEqualityComparer<T>? equalityComparer)
     {
         var index = _items.IndexOf(oldValue, equalityComparer);
         SetItem(index, newValue);
@@ -605,6 +615,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
 
     public IImmutableList<T> SetItem(int index, T value)
     {
+        if (value == null) return this;
         var oldItem = _items[index];
         _items = _items.SetItem(index, value);
         RaiseNotifyCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, oldItem, value, index));
