@@ -220,7 +220,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
             UpdateCatalogStatus();
         }
 
-        MainWindow._AsyncLog.Log(new LogEntry(EventType.Verbose, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}"));
+        MainWindow.LogForAsync(EventType.Information, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

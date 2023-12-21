@@ -82,8 +82,23 @@ namespace Thetacat
 #endregion
         private static AppState? s_appState;
         private static CatLog? s_asyncLog;
+        private static CatLog? s_appLog;
 
         public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
+        public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
+
+        public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            _AsyncLog.Log(entry);
+            _AppLog.Log(entry);
+        }
+
+        public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            _AppLog.Log(entry);
+        }
 
         public static IAppState _AppState
         {
@@ -113,13 +128,20 @@ namespace Thetacat
             CatalogView.ItemsSource = _AppState.Catalog.Items;
             if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
                 ShowAsyncLog();
+            if (_AppState.Settings.ShowAppLogOnStart ?? false)
+                ShowAppLog();
         }
 
         void OnClosing(object sender, EventArgs e)
         {
-            _AppState.Settings.ShowAsyncLogOnStart = m_asyncLog != null;
-            if (m_asyncLog != null)
-                m_asyncLog.Close();
+            _AppState.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
+            _AppState.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
+
+            if (m_asyncLogMonitor != null)
+                CloseAsyncLog(false);
+
+            if (m_appLogMonitor != null)
+                CloseAppLog(false);
 
             _AppState.Settings.WriteSettings();
         }
@@ -131,8 +153,9 @@ namespace Thetacat
 
         void InitializeThetacat()
         {
-            s_appState = new AppState(CloseAsyncLog);
-            s_asyncLog = new CatLog();
+            s_appState = new AppState(CloseAsyncLog, CloseAppLog);
+            s_asyncLog = new CatLog(EventType.Information);
+            s_appLog = new CatLog(EventType.Warning);
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -189,30 +212,55 @@ namespace Thetacat
             await import.UploadMedia();
         }
 
-        private AsyncLog? m_asyncLog;
+        private AsyncLogMonitor? m_asyncLogMonitor;
+        private AppLogMonitor? m_appLogMonitor;
 
         void ShowAsyncLog()
         {
-            if (m_asyncLog != null)
+            if (m_asyncLogMonitor != null)
                 return;
 
-            m_asyncLog = new AsyncLog();
-            m_asyncLog.Show();
+            m_asyncLogMonitor = new AsyncLogMonitor();
+            m_asyncLogMonitor.Show();
         }
 
         void CloseAsyncLog(bool skipClose)
         {
             if (!skipClose)
-                m_asyncLog?.Close();
-            m_asyncLog = null;
+                m_asyncLogMonitor?.Close();
+            m_asyncLogMonitor = null;
         }
 
         private void ToggleAsyncLog(object sender, RoutedEventArgs e)
         {
-            if (m_asyncLog != null)
+            if (m_asyncLogMonitor != null)
                 CloseAsyncLog(false);
             else
                 ShowAsyncLog();
+        }
+
+        void ShowAppLog()
+        {
+            if (m_appLogMonitor != null)
+                return;
+
+            m_appLogMonitor = new AppLogMonitor();
+            m_appLogMonitor.Show();
+        }
+
+        void CloseAppLog(bool skipClose)
+        {
+            if (!skipClose)
+                m_appLogMonitor?.Close();
+            m_appLogMonitor = null;
+        }
+
+        private void ToggleAppLog(object sender, RoutedEventArgs e)
+        {
+            if (m_appLogMonitor != null)
+                CloseAppLog(false);
+            else
+                ShowAppLog();
         }
     }
 }

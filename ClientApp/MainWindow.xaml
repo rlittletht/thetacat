@@ -17,8 +17,9 @@
                 <MenuItem Header="Options" Click="LaunchOptions"/>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Async log" Click="ToggleAsyncLog"/>
-            </MenuItem>"
+                <MenuItem Header="App log monitor" Click="ToggleAppLog" />
+                <MenuItem Header="Async log monitor" Click="ToggleAsyncLog"/>
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.RowDefinitions>

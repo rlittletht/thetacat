@@ -63,12 +63,12 @@ namespace Thetacat.Controls
         void ScrollToBottom(object? sender, NotifyCollectionChangedEventArgs e)
         {
             return;
-
-            lock (((ICollection)LogEntries.ItemsSource).SyncRoot)
-            {
-                LogEntries.Items.MoveCurrentToLast();
-                LogEntries.ScrollIntoView(LogEntries.Items[LogEntries.Items.Count - 1]);
-            }
+            // this doesn't work
+//            lock (((ICollection)LogEntries.ItemsSource).SyncRoot)
+//            {
+//                LogEntries.Items.MoveCurrentToLast();
+//                LogEntries.ScrollIntoView(LogEntries.Items[LogEntries.Items.Count - 1]);
+//            }
         }
 
         public void SetAutoscroll()

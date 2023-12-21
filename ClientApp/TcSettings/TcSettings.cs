@@ -30,6 +30,7 @@ public class TcSettings
     public string? WorkgroupCacheRoot;
     public string? WorkgroupName;
     public bool? ShowAsyncLogOnStart;
+    public bool? ShowAppLogOnStart;
 
     public List<MapPair> ElementsSubstitutions = new();
 
@@ -41,6 +42,8 @@ public class TcSettings
                .AddChildElement("Options")
                .AddChildElement("ShowAsyncLogOnStart")
                .AddAttribute("value", GetShowAsyncLogOnStart, SetShowAsyncLogOnStart)
+               .AddElement("ShowAppLogOnStart")
+               .AddAttribute("value", GetShowAppLogOnStart, SetShowAppLogOnStart)
                .Pop()
                .Pop()
                .AddChildElement("Migration")
@@ -104,6 +107,9 @@ public class TcSettings
 
     private static void SetShowAsyncLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart = bool.Parse(value ?? bool.FalseString);
     private static string? GetShowAsyncLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart.ToString();
+
+    private static void SetShowAppLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart = bool.Parse(value ?? bool.FalseString);
+    private static string? GetShowAppLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart.ToString();
 
     private static void SetElementsDatabaseValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase = value;
     private static string? GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase;

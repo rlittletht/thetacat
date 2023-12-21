@@ -17,26 +17,26 @@ namespace Thetacat.UI
     /// <summary>
     /// Interaction logic for AsyncLog.xaml
     /// </summary>
-    public partial class AsyncLog : Window
+    public partial class AppLogMonitor : Window
     {
-        object lockObject = new object();
+        readonly object lockObject = new object();
 
-        public AsyncLog()
+        public AppLogMonitor()
         {
             InitializeComponent();
-            AsyncLogView.LogEntries.ItemsSource = MainWindow._AsyncLog.Entries.AsObservable;
-            BindingOperations.EnableCollectionSynchronization(AsyncLogView.LogEntries.ItemsSource, lockObject);
+            AppLogView.LogEntries.ItemsSource = MainWindow._AppLog.Entries.AsObservable;
+            BindingOperations.EnableCollectionSynchronization(AppLogView.LogEntries.ItemsSource, lockObject);
             System.Diagnostics.PresentationTraceSources.SetTraceLevel(
-                AsyncLogView.LogEntries.ItemContainerGenerator,
+                AppLogView.LogEntries.ItemContainerGenerator,
                 System.Diagnostics.PresentationTraceLevel.High);
-            MainWindow._AppState.RegisterWindowPlace(this, "asyncLogView");
-            AsyncLogView.SetAutoscroll();
+            MainWindow._AppState.RegisterWindowPlace(this, "appLogView");
+            AppLogView.SetAutoscroll();
         }
 
         void OnClosing(object sender, EventArgs e)
         {
-            AsyncLogView.UnsetAutoscroll();
-            MainWindow._AppState.CloseAsyncLog(true);
+            AppLogView.UnsetAutoscroll();
+            MainWindow._AppState.CloseAppLogMonitor(true);
         }
     }
 }

@@ -51,7 +51,11 @@ public class TestCache
 
     private static string Match1Value = "\\('[^']*',[ ]*'[^']*',[ ]*'[^']*',[ ]*null,[ ]*[0-9]+\\)[ ]*";
 
-    // DoForegroundCache is going to:
+    private static void CloseMonitorMock(bool skip)
+    {
+    }
+
+// DoForegroundCache is going to:
     //   * Call RefreshWorkgroupMedia
     //        * Sync workgroup media (to know which items are already cached/being cached by other clients)
     //        * Get the workgroup vector clock
@@ -65,7 +69,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
         // which leaves us media items 1 and 4 to cache. 
 
-        AppState state = new AppState();
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
@@ -179,7 +183,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
         // which leaves us media items 1 and 4 to cache. 
 
-        AppState state = new AppState();
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
@@ -314,7 +318,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching all 4 itmes,
         // which leaves us with nothing to update
 
-        AppState state = new AppState();
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
