@@ -49,8 +49,8 @@ public class Workgroup
                     {
                         ID = reader.Reader.GetGuid(0),
                         Name = reader.Reader.GetString(1),
-                        CacheRoot = reader.Reader.GetString(2),
-                        ServerPath = reader.Reader.GetString(3)
+                        ServerPath = reader.Reader.GetString(2),
+                        CacheRoot = reader.Reader.GetString(3)
                     };
 
                 building.Add(workgroup);

@@ -429,7 +429,7 @@ public class ObservableImmutableList<T> : ObservableCollectionObject, IList, ICo
     object? IList.this[int index]
     {
         get { return this[index]; }
-        set { SetItem(index, (T?)value); }
+        set { SetItem(index, (T)(value ?? throw new ArgumentNullException(nameof(value)))); }
     }
 
     public void CopyTo(Array array, int index)

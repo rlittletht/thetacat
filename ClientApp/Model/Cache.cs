@@ -249,7 +249,7 @@ public class Cache: ICache
 
     public async Task DoForegroundCache(int chunkSize)
     {
-        AzureCat.EnsureCreated("thetacattest");
+        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
 
         QueueCacheDownloads(chunkSize);
 

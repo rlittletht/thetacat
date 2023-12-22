@@ -15,6 +15,8 @@ public interface IAppState
     TcSettings.TcSettings Settings { get; }
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
+    public string AzureStorageAccount {get;}
+    public string StorageContainer { get; }
 
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema();

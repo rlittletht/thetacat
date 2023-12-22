@@ -109,7 +109,7 @@ public class MediaImport
 
     public async Task UploadMedia()
     {
-        AzureCat.EnsureCreated("thetacattest");
+        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
 
         foreach (ImportItem item in ImportItems)
         {

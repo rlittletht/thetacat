@@ -15,11 +15,9 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="5">
             <TextBlock >Local cache configuration</TextBlock>
-            <ComboBox Name="CacheConfiguration"
-                      Text="{Binding Path=CacheType}" SelectionChanged="ChangeCacheType">
-                <ComboBoxItem>Workgroup</ComboBoxItem>
-                <ComboBoxItem>Private</ComboBoxItem>
-            </ComboBox>
+            <ComboBox  Name="CacheConfiguration"
+                      SelectedItem="{Binding CurrentCacheType}" ItemsSource="{Binding CacheTypes}" />
+
         </StackPanel>
         <GroupBox Grid.Row="1" Margin="5" Name="LocalOptions">
             <GroupBox.Header>
@@ -36,7 +34,7 @@
             </GroupBox.Header>
             <StackPanel Margin="8 0 8 0">
                 <TextBlock Width="auto" Name="WorkgroupLabel">Workgroup</TextBlock>
-                <ComboBox Name="Workgroup" Width="auto" IsEditable="True" />
+                <ComboBox Name="Workgroup" Width="auto" IsEditable="True" SelectedItem="{Binding CurrentWorkgroup}" ItemsSource="{Binding Workbooks}" Text="{Binding WorkgroupItemName}"/>
                 <TextBlock>ID</TextBlock>
                 <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}"/>
                 <TextBlock>Name</TextBlock>

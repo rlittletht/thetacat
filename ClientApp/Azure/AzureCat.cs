@@ -15,7 +15,6 @@ public class AzureCat
     private static readonly string s_sAppID = "e1a078dd-755e-4b81-acb5-59d7770f96c8";
 //    private string s_sAppID = "bfbaffd7-2217-4deb-a85a-4f697e6bdf94";
     private static readonly string s_sAppTenant = "b90f9ef3-5e11-43e0-a75c-1f45e6b223fb";
-    private static readonly string s_catalog = "littles";
 
     private string m_storageAccountName = string.Empty;
     private TokenCredential? m_credential = null;
@@ -66,7 +65,7 @@ public class AzureCat
 
         if (m_catalogContainer == null)
         {
-            container = await OpenContainerForCatalog(s_catalog);
+            container = await OpenContainerForCatalog(MainWindow._AppState.StorageContainer);
             if (container == null)
                 throw new CatExceptionAzureFailure();
         }
@@ -88,7 +87,7 @@ public class AzureCat
 
         if (m_catalogContainer == null)
         {
-            container = await OpenContainerForCatalog(s_catalog);
+            container = await OpenContainerForCatalog(MainWindow._AppState.StorageContainer);
             if (container == null)
                 throw new CatExceptionAzureFailure();
         }
