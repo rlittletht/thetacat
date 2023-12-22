@@ -34,6 +34,11 @@ public class ServiceInterop
         LocalService.Import.CompleteImportForItem(id);
     }
 
+    public static void DeleteImportItem(Guid id)
+    {
+        LocalService.Import.DeleteImportItem(id);
+    }
+
     public static void InsertNewMediaItems(IEnumerable<MediaItem> newItems)
     {
         LocalService.Media.InsertNewMediaItems(newItems);

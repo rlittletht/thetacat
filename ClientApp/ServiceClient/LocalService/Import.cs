@@ -70,6 +70,9 @@ public class Import
     private static readonly string s_queryUpdateState = @"
         UPDATE tcat_import SET state=@NewState WHERE id=@MediaID";
 
+    private static readonly string s_deleteImportItem = @"
+        DELETE FROM tcat_import WHERE id=@MediaID";
+
     private static readonly string s_updateMediaState = @"
         UPDATE tcat_media SET state=@NewState WHERE id=@MediaID";
 
@@ -97,6 +100,33 @@ public class Import
                 {
                     cmd.Parameters.AddWithValue("@MediaID", id);
                     cmd.Parameters.AddWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
+                });
+        }
+        catch
+        {
+            LocalServiceClient.Sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            LocalServiceClient.Sql.Commit();
+        }
+    }
+
+    public static void DeleteImportItem(Guid id)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        LocalServiceClient.Sql.BeginTransaction();
+
+        try
+        {
+            LocalServiceClient.Sql.ExecuteNonQuery(
+                new SqlCommandTextInit(s_deleteImportItem, s_aliases),
+                (cmd) =>
+                {
+                    cmd.Parameters.AddWithValue("@MediaID", id);
                 });
         }
         catch

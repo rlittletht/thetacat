@@ -13,6 +13,7 @@ public class ImportItem: INotifyPropertyChanged
         PendingMediaCreate,
         PendingUpload,
         Complete,
+        MissingFromCatalog,
         Unknown
     }
 

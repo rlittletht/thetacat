@@ -178,9 +178,10 @@ namespace Thetacat
             manage.Show();
         }
 
-        private void LoadCatalog(object sender, RoutedEventArgs e)
+        private void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+            AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
         }
 
         private void LaunchOptions(object sender, RoutedEventArgs e)
@@ -207,8 +208,17 @@ namespace Thetacat
 
         private async void UploadItems(object sender, RoutedEventArgs e)
         {
-            MediaImport import = new MediaImport(MainWindow.ClientName);
-            
+            MediaImport? import = null;
+
+            try
+            {
+                import = new MediaImport(MainWindow.ClientName);
+            }
+            catch (CatExceptionCanceled)
+            {
+                return;
+            }
+
             await import.UploadMedia();
         }
 

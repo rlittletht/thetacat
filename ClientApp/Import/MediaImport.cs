@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
 using Thetacat.Azure;
+using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
@@ -60,16 +61,45 @@ public class MediaImport
     public MediaImport(string source)
     {
         List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(source);
+        bool skippedItems = false;
 
         foreach (ServiceImportItem item in items)
         {
-            ImportItems.Add(
-                new ImportItem(
-                    item.ID,
-                    source,
-                    PathSegment.CreateFromString(item.SourceServer),
-                    PathSegment.CreateFromString(item.SourcePath),
-                    ImportItem.StateFromString(item.State ?? string.Empty)));
+            if (!MainWindow._AppState.Catalog.Items.ContainsKey(item.ID))
+            {
+                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
+
+                skippedItems = true;
+                ImportItems.Add(
+                    new ImportItem(
+                        item.ID,
+                        source,
+                        PathSegment.CreateFromString(item.SourceServer),
+                        PathSegment.CreateFromString(item.SourcePath),
+                        ImportItem.ImportState.MissingFromCatalog));
+            }
+            else
+            {
+                ImportItems.Add(
+                    new ImportItem(
+                        item.ID,
+                        source,
+                        PathSegment.CreateFromString(item.SourceServer),
+                        PathSegment.CreateFromString(item.SourcePath),
+                        ImportItem.StateFromString(item.State ?? string.Empty)));
+            }
+        }
+
+        if (skippedItems)
+        {
+            if (MessageBox.Show(
+                    "One or more pending items was missing in the catalog. Do you want to continue and automatically remove these items?",
+                    "Thetacat",
+                    MessageBoxButton.OKCancel)
+                == MessageBoxResult.Cancel)
+            {
+                throw new CatExceptionCanceled();
+            }
         }
     }
 
@@ -128,8 +158,15 @@ public class MediaImport
 
                 item.State = ImportItem.ImportState.Complete;
                 item.UploadDate = DateTime.Now;
-                
+
                 ServiceInterop.CompleteImportForItem(item.ID);
+                MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+            }
+
+            if (item.State == ImportItem.ImportState.MissingFromCatalog)
+            {
+                ServiceInterop.DeleteImportItem(item.ID);
+                MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
             }
         }
     }
