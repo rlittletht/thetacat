@@ -315,13 +315,13 @@ public partial class MediaMigration : UserControl
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: AddToCatalog
-        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.AddToCatalog
+        %%Function: MigrateToCatalog
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.MigrateToCatalog
 
         Take the checked items and add them to the catalog (and mark them pending
         for upload). This can only happen on items with verified paths
     ----------------------------------------------------------------------------*/
-    private void AddToCatalog(object sender, RoutedEventArgs e)
+    private void MigrateToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
         MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
