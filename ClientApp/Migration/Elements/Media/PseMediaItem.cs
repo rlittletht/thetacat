@@ -85,6 +85,8 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public IEnumerable<PseMetatag> Tags => m_pseMetatagValues ??= new();
     public List<PseMetatag> PseMetatags => m_pseMetatagValues ??= new();
 
+    // this maps PseIdentifier to the value. The PseIdentifier is the identifier
+    // from the metadata_description_table (not the integer id)
     public Dictionary<string, string> PseMetadataValues
     {
         get => m_pseMetadataValues ??= new();

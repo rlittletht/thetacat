@@ -37,4 +37,6 @@ public class SchemaMapping<T>
     {
         return new SchemaMapping<T>(MetatagStandards.Standard.Unknown, 0, string.Empty, string.Empty, setMediaItem);
     }
+
+    public void SetMediaItemBuiltins(IPseMediaItem item, T t) => SetMediaItem?.Invoke(item, t);
 }

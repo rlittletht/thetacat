@@ -119,10 +119,18 @@ public class Cache: ICache
 
         Type = cacheType;
 
-        if (Type == CacheType.Workgroup)
+        if (Type == CacheType.Workgroup && settings.WorkgroupId != null)
         {
-            ConnectToWorkgroupCache(settings);
-            LocalPathToCacheRoot = new PathSegment(_Workgroup.FullPathToCacheRoot);
+            try
+            {
+                ConnectToWorkgroupCache(settings);
+                LocalPathToCacheRoot = new PathSegment(_Workgroup.FullPathToCacheRoot);
+            }
+            catch (CatExceptionWorkgroupNotFound)
+            {
+                MessageBox.Show("Workgroup id not found. Reconnect to workgroup");
+                LocalPathToCacheRoot = new PathSegment();
+            }
         }
         else
         {

@@ -11,5 +11,5 @@ public interface ISqlCommand
     public int ExecuteNonQuery();
     public object ExecuteScalar();
     public void AddParameterWithValue(string parameterName, object? value);
-
+    public void Close();
 }

@@ -146,24 +146,30 @@ public class WorkgroupDb
 
     public ServiceWorkgroupClient? GetClientDetails(string clientName)
     {
-        ServiceWorkgroupClient client =
-            _Connection.DoGenericQueryDelegateRead(
-                Guid.NewGuid(),
-                s_queryWorkgroupClientDetailsByName,
-                s_aliases,
-                (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
-                {
-                    _client.ClientId = reader.GetGuid(0);
-                    _client.ClientName = reader.GetString(1);
-                    _client.VectorClock = reader.GetInt32(2);
-                },
-                cmd => { cmd.AddParameterWithValue("@Name", clientName); });
+        try
+        {
+            ServiceWorkgroupClient client =
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryWorkgroupClientDetailsByName,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
+                    {
+                        _client.ClientId = reader.GetGuid(0);
+                        _client.ClientName = reader.GetString(1);
+                        _client.VectorClock = reader.GetInt32(2);
+                    },
+                    cmd => { cmd.AddParameterWithValue("@Name", clientName); });
 
-        // if we didn't read a client id, then we didn't read anything...
-        if (client.ClientId == null)
+            if (client.ClientId == null)
+                return null;
+
+            return client;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
             return null;
-
-        return client;
+        }
     }
 
     public ServiceWorkgroupMediaClock GetLatestWorkgroupMediaWithClock()

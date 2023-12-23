@@ -50,9 +50,9 @@ public partial class MigrationManager : Window
         MetadataMigrationTab.Initialize(db, m_migrate);
         MetadataMigrateSummaryTab.Initialize(m_migrate);
         MediaMigrationTab.Initialize(db, m_migrate);
+        StacksTab.Initialize(db, m_migrate);
 
-        m_migrate.MediaMigrate.SetMediaStacks(db.ReadMediaStacks());
-        
+        m_migrate.StacksMigrate.UpdateStackItemsFromMediaSet(m_migrate.MediaMigrate);
         db.Close();
     }
 
@@ -62,7 +62,8 @@ public partial class MigrationManager : Window
 
         m_migrate = new ElementsMigrate(
             new MetatagMigrate(SwitchToSummaryTab, ReloadSchemas),
-            new MediaMigrate());
+            new MediaMigrate(),
+            new StacksMigrate());
 
         BuildMetadataReportFromDatabase(database);
         MainWindow._AppState.RegisterWindowPlace(this, "ElementsMigrationManager");

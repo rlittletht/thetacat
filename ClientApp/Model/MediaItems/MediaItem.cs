@@ -239,12 +239,12 @@ public class MediaItem: INotifyPropertyChanged
         StandardDefinitions standardDefinitions = MetatagStandards.GetStandardMappings(standard);
 
         // match the current directory to a metatag
-        Metatag? dirTag = metatagSchema.FindByName(parent, directory.Name);
+        Metatag? dirTag = metatagSchema.FindByName(parent, standardDefinitions.StandardTag);
 
         if (dirTag == null)
         {
             // we have to create one
-            dirTag = Metatag.Create(parent?.ID, directory.Name, directory.Name, standard);
+            dirTag = Metatag.Create(parent?.ID, standardDefinitions.StandardTag, directory.Name, standard);
             if (parent == null)
                 metatagSchema.AddStandardRoot(dirTag);
             else

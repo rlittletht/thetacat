@@ -134,6 +134,27 @@ public class MetatagSchema
         AddMetatagNoValidation(metatag);
     }
 
+    Metatag CreateMetatagForStandardRoot(MetatagStandards.Standard standard)
+    {
+        if (standard == MetatagStandards.Standard.User)
+        {
+            return MetatagBuilder
+               .Create()
+               .SetName("user")
+               .SetDescription($"user root")
+               .Build();
+        }
+
+        StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
+        string name = MetatagStandards.GetMetadataRootFromStandardTag(definitions.StandardTag);
+
+        return MetatagBuilder
+           .Create()
+           .SetName(name)
+           .SetDescription($"{name} root")
+           .Build();
+
+    }
     /*----------------------------------------------------------------------------
         %%Function: AddNewStandardRoot
         %%Qualified: Thetacat.Model.MetatagSchema.AddNewStandardRoot
@@ -142,14 +163,7 @@ public class MetatagSchema
     ----------------------------------------------------------------------------*/
     public Metatag AddNewStandardRoot(MetatagStandards.Standard standard)
     {
-        StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
-        string name = MetatagStandards.GetMetadataRootFromStandardTag(definitions.StandardTag);
-
-        Metatag metatag = MetatagBuilder
-           .Create()
-           .SetName(name)
-           .SetDescription($"{name} root")
-           .Build();
+        Metatag metatag = CreateMetatagForStandardRoot(standard);
 
         AddMetatagNoValidation(metatag);
 

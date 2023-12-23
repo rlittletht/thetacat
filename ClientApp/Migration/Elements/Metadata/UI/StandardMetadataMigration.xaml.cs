@@ -270,7 +270,8 @@ public partial class StandardMetadataMigration : UserControl
             MainWindow._AppState.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
 
-            MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
         }
+
+        MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
 }

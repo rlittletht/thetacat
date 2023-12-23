@@ -30,4 +30,9 @@ public class SqlCommandSim:  ISqlCommand
 
         Assert.AreEqual(m_expectedParameters[parameterName], value);
     }
+
+    public void Close()
+    {
+        throw new NotImplementedException();
+    }
 }

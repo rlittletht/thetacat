@@ -3,9 +3,18 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using Emgu.CV.Util;
+using MetadataExtractor;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using TCore;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Versions;
+using Thetacat.ServiceClient;
+using Thetacat.TCore.TcSqlLite;
+using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -53,6 +62,18 @@ tag_to_metadata_table
     like metadata ABOUT a tag. For example, tag "2019Vacation" could have metadata like a note "Vacation to Hawaii in 2019".
     (also things like icons for a TAG, or import details if the TAG is for a particular import
 
+// these are versions of the same picture
+version_stack_to_media_table
+    maps [STACK_TAG_ID] to [MEDIA_ID], associateing one stack with one or more media items. [MEDIA_INDEX] is the
+    location in the stack, with 0 being the "top" of the stack (most recent). [PARENT_ID] is the MEDIA_ID of the
+    item below this item (the largest index has 0 for a parent)
+
+// these are just stacked together (presumably by the user)
+media_stack_to_media_table
+    maps [STACK_TAG_ID] to [MEDIA_ID], associateing one stack with one or more media items. [MEDIA_INDEX] is the
+    location in the stack, with 0 being the "top" of the stack (most recent). [PARENT_ID] is the MEDIA_ID of the
+    item below this item (the largest index has 0 for a parent)
+
 useful queries:
 
     Show all the string-type metadata values for all of the media in the library. One row per metadata / media pair.
@@ -61,22 +82,57 @@ useful queries:
     INNER JOIN media_table MT on MT.id = MMT.media_id
     INNER JOIN metadata_string_table MST on MST.id = MMT.metadata_id
     INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id    
-
  */
 public class ElementsDb
 {
-    private SQLiteConnection? m_connection;
+    private ISql? m_connection;
+
+    private ISql _Connection => m_connection ?? throw new CatExceptionInitializationFailure("ElementsDb not properly created");
+
+    private static Dictionary<string, string> s_aliases =
+        new()
+        {
+            { "version_stack_to_media_table", "VS" },
+            { "tag_to_metadata_table", "TMD" },
+            { "tag_table", "TT" },
+            { "metadata_description_table", "MDT" },
+            { "metadata_string_table", "MST" },
+//            { "", "" },
+//            { "", "" },
+        };
+
+    private static readonly string s_queryVersionStacks = @"
+        SELECT 
+            $$version_stack_to_media_table$$.media_id, $$version_stack_to_media_table$$.stack_tag_id, 
+            $$version_stack_to_media_table$$.media_index, $$version_stack_to_media_table$$.parent_id
+        FROM $$#version_stack_to_media_table$$";
+
+    static readonly string s_queryMetatagDefinitions = @"
+        SELECT $$tag_table$$.id, $$tag_table$$.name, $$tag_table$$.parent_id, $$tag_table$$.type_name, INR.name AS ParentName
+          FROM $$#tag_table$$
+            INNER JOIN tag_table as INR 
+              ON INR.id = $$tag_table$$.parent_id 
+         WHERE $$tag_table$$.type_name NOT LIKE 'history%' AND $$tag_table$$.type_name not like 'import%' AND $$tag_table$$.type_name <> 'version_stack'";
+
+    private static readonly string s_queryMetadataDefinitions = @"
+        SELECT $$metadata_description_table$$.id, $$metadata_description_table$$.identifier, $$metadata_description_table$$.data_type
+          FROM $$#metadata_description_table$$";
+
+    private readonly string s_queryTagNotes = @"
+        SELECT $$tag_table$$.ID, $$metadata_string_table$$.value
+          FROM $$#tag_table$$
+            INNER JOIN $$#tag_to_metadata_table$$ ON $$tag_to_metadata_table$$.tag_id = $$tag_table$$.ID
+            INNER JOIN $$#metadata_string_table$$ ON $$metadata_string_table$$.id = $$tag_to_metadata_table$$.metadata_id
+            INNER JOIN $$#metadata_description_table$$ ON $$metadata_description_table$$.id = $$metadata_string_table$$.description_id
+          WHERE $$metadata_description_table$$.identifier = 'pse:TagNotes' AND $$metadata_string_table$$.value <> ''";
 
     public static ElementsDb Create(string databaseFile)
     {
-        SQLiteConnection connection = new SQLiteConnection($"Data Source={databaseFile}");
-
-        connection.Open();
-
-        ElementsDb db = new()
-                        {
-                            m_connection = connection
-                        };
+        ElementsDb db =
+            new()
+            {
+                m_connection = SQLite.OpenConnection($"Data Source={databaseFile}")
+            };
 
         return db;
     }
@@ -84,118 +140,97 @@ public class ElementsDb
     public void Close()
     {
         m_connection?.Close();
-        m_connection?.Dispose();
     }
-
-    static readonly string s_queryMetatagDefinitions = @"
-        SELECT OTR.id, OTR.name, OTR.parent_id, OTR.type_name, INR.name AS ParentName
-          FROM tag_table as OTR 
-            INNER JOIN tag_table as INR 
-              ON INR.id = OTR.parent_id 
-         WHERE OTR.type_name NOT LIKE 'history%' AND OTR.type_name not like 'import%' AND OTR.type_name <> 'version_stack'";
-
-    private static readonly string s_queryMetadataDefinitions = @"
-        SELECT DESC.id, DESC.identifier, DESC.data_type
-          FROM metadata_description_table as DESC";
-
-    private string s_queryTagNotes = @"
-        SELECT TT.ID, MS.value
-          FROM tag_table as TT
-            INNER JOIN tag_to_metadata_table TMD ON TMD.tag_id=TT.ID
-            INNER JOIN metadata_string_table MS ON MS.id=TMD.metadata_id
-            INNER JOIN metadata_description_table DT ON DT.id=MS.description_id
-          WHERE DT.identifier = 'pse:TagNotes' AND value <> ''";
 
     public PseMetadataSchema ReadMetadataSchema()
     {
-        using SQLiteCommand cmd = new()
-                                  {
-                                      CommandType = CommandType.Text,
-                                      Connection = m_connection,
-                                      Transaction = null,
-                                  };
-
-        cmd.CommandText = s_queryMetadataDefinitions;
-
-        using SQLiteDataReader reader = cmd.ExecuteReader();
-
-        List<PseMetadata> tags = new();
-
-        while (reader.Read())
+        try
         {
-            tags.Add(
-                PseMetadataBuilder
-                   .Create()
-                   .SetPseId(reader.GetInt32(0))
-                   .SetPseIdentifier(reader.GetString(1))
-                   .SetPseDatatype(reader.GetString(2))
-                   .Build());
+            List<PseMetadata> tags =
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryMetadataDefinitions,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref List<PseMetadata> building) =>
+                    {
+                        building.Add(
+                            PseMetadataBuilder
+                               .Create()
+                               .SetPseId(reader.GetInt32(0))
+                               .SetPseIdentifier(reader.GetString(1))
+                               .SetPseDatatype(reader.GetString(2))
+                               .Build());
+                    });
+            return new PseMetadataSchema(tags);
         }
-
-        reader.Close();
-        return new PseMetadataSchema(tags);
+        catch (TcSqlExceptionNoResults)
+        {
+            return new PseMetadataSchema(new List<PseMetadata>());
+        }
     }
 
     Dictionary<int, PseMetatag> ReadMetatagDictionary()
     {
-        using SQLiteCommand cmd =
-            new()
-            {
-                CommandType = CommandType.Text,
-                Connection = m_connection,
-                Transaction = null,
-            };
-
-        cmd.CommandText = s_queryMetatagDefinitions;
-
-        using SQLiteDataReader reader = cmd.ExecuteReader();
-
-        Dictionary<int, PseMetatag> tags = new();
-
-        while (reader.Read())
+        try
         {
-            int pseId = reader.GetInt32(0);
+            return 
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryMetatagDefinitions,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref Dictionary<int, PseMetatag> building) =>
+                    {
+                        int pseId = reader.GetInt32(0);
 
-            tags.Add(
-                pseId,
-                PseMetatagBuilder
-                   .Create()
-                   .SetID(pseId)
-                   .SetName(reader.GetString(1))
-                   .SetParentID(reader.GetInt32(2))
-                   .SetElementsTypeName(reader.GetString(3))
-                   .SetParentName(reader.GetString(4))
-                   .Build());
+                        building.Add(
+                            pseId,
+                            PseMetatagBuilder
+                               .Create()
+                               .SetID(pseId)
+                               .SetName(reader.GetString(1))
+                               .SetParentID(reader.GetInt32(2))
+                               .SetElementsTypeName(reader.GetString(3))
+                               .SetParentName(reader.GetString(4))
+                               .Build());
+                    });
         }
-
-        reader.Close();
-        return tags;
+        catch (TcSqlExceptionNoResults)
+        {
+            return new Dictionary<int, PseMetatag>();
+        }
     }
 
     void ReadDescriptionsForMetatags(Dictionary<int, PseMetatag> tags)
     {
-        using SQLiteCommand cmd =
-            new()
-            {
-                CommandType = CommandType.Text,
-                Connection = m_connection,
-                Transaction = null,
-            };
+        SqlSelect selectTags = new SqlSelect();
 
-        cmd.CommandText = s_queryTagNotes;
+        selectTags.AddBase(s_queryTagNotes);
+        selectTags.AddAliases(s_aliases);
 
-        using SQLiteDataReader reader = cmd.ExecuteReader();
+        string sQuery = selectTags.ToString();
 
-        while (reader.Read())
+        ISqlReader? sqlr = null;
+        ISqlCommand cmd = _Connection.CreateCommand();
+        cmd.CommandText = sQuery;
+
+        try
         {
-            int pseId = reader.GetInt32(0);
-            string description = reader.GetString(1);
+            sqlr = cmd.ExecuteReader();
 
-            if (tags.TryGetValue(pseId, out PseMetatag? tag))
-                tag.Description = description;
+            while (sqlr.Read())
+            {
+                int pseId = sqlr.GetInt32(0);
+                string description = sqlr.GetString(1);
+
+                if (tags.TryGetValue(pseId, out PseMetatag? tag))
+                    tag.Description = description;
+            }
         }
-
-        reader.Close();
+        finally
+        {
+            cmd.Close();
+            sqlr?.Close();
+        }
     }
 
     /*----------------------------------------------------------------------------
@@ -213,7 +248,7 @@ public class ElementsDb
         return tags.Values;
     }
 
-    private static string[] s_ignoreMetadata =
+    private static readonly string[] s_ignoreMetadata =
     {
         "'pse::FaceDectectorBreezePath'",
         "'pse::FaceDectectorVersion'",
@@ -231,13 +266,13 @@ public class ElementsDb
         "'pse:TagIconMediaCropRect'",
         "'pse:albumStyleXmlPath'",
         "'pse:guid'",
-        "'pse:FileDate'",
-        "'pse:FileDateOriginal'",
+//        "'pse:FileDate'",
+//        "'pse:FileDateOriginal'",
         "'pse:TagDate'",
         "'xmp:CreateDate'"
     };
 
-    private static string s_queryReadMediaTagValues = $@"
+    private static readonly string s_queryReadMediaTagValues = $@"
         SELECT MMT.media_id, MST.value, MDT.identifier from media_to_metadata_table AS MMT
             INNER JOIN media_table MT on MT.id = MMT.media_id
             INNER JOIN metadata_string_table MST on MST.id = MMT.metadata_id
@@ -254,50 +289,64 @@ public class ElementsDb
             INNER JOIN media_table MT on MT.id = MMT.media_id
             INNER JOIN metadata_decimal_table MST on MST.id = MMT.metadata_id
             INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
+        UNION 
+            SELECT MMT.media_id, MST.value, MDT.identifier from media_to_metadata_table AS MMT
+            INNER JOIN media_table MT on MT.id = MMT.media_id
+            INNER JOIN metadata_date_time_table MST on MST.id = MMT.metadata_id
+            INNER JOIN metadata_description_table MDT on MDT.id = MST.description_id
         WHERE MDT.identifier not in ({string.Join(",", s_ignoreMetadata)})";
 
     void ReadMediaTagValues(Dictionary<int, PseMediaItem> items)
     {
-        using SQLiteCommand cmd = new()
-                                  {
-                                      CommandType = CommandType.Text,
-                                      Connection = m_connection,
-                                      Transaction = null,
-                                  };
+        SqlSelect selectTags = new SqlSelect();
 
+        selectTags.AddBase(s_queryReadMediaTagValues);
+        selectTags.AddAliases(s_aliases);
 
-        cmd.CommandText = s_queryReadMediaTagValues;
+        string sQuery = selectTags.ToString();
 
-        using SQLiteDataReader reader = cmd.ExecuteReader();
+        ISqlReader? sqlr = null;
+        ISqlCommand cmd = _Connection.CreateCommand();
+        cmd.CommandText = sQuery;
 
-        while (reader.Read())
+        try
         {
-            string value;
+            sqlr = cmd.ExecuteReader();
 
-            if (reader.GetFieldAffinity(1) == TypeAffinity.Text)
+            while (sqlr.Read())
             {
-                value = reader.GetString(1);
-            }
-            else if (reader.GetFieldAffinity(1) == TypeAffinity.Int64)
-            {
-                value = reader.GetInt32(1).ToString();
-            }
-            else if (reader.GetFieldAffinity(1) == TypeAffinity.Double)
-            {
-                value = reader.GetDouble(1).ToString(CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                throw new Exception($"unknown type: {reader.GetFieldAffinity(1)}");
-            }
+                string value;
 
-            int mediaId = reader.GetInt32(0);
-            string tagIdentifier = reader.GetString(2);
+                if (sqlr.GetFieldAffinity(1) == TypeAffinity.Text)
+                {
+                    value = sqlr.GetString(1);
+                }
+                else if (sqlr.GetFieldAffinity(1) == TypeAffinity.Int64)
+                {
+                    value = sqlr.GetInt32(1).ToString();
+                }
+                else if (sqlr.GetFieldAffinity(1) == TypeAffinity.Double)
+                {
+                    value = sqlr.GetDouble(1).ToString(CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    throw new Exception($"unknown type: {sqlr.GetFieldAffinity(1)}");
+                }
 
-            if (items.TryGetValue(mediaId, out PseMediaItem? item))
-                item.PseMetadataValues.Add(tagIdentifier, value);
-            else
-                m_log.Add($"could not find media {mediaId} referenced in metadata {tagIdentifier}");
+                int mediaId = sqlr.GetInt32(0);
+                string tagIdentifier = sqlr.GetString(2);
+
+                if (items.TryGetValue(mediaId, out PseMediaItem? item))
+                    item.PseMetadataValues.Add(tagIdentifier, value);
+                else
+                    m_log.Add($"could not find media {mediaId} referenced in metadata {tagIdentifier}");
+            }
+        }
+        finally
+        {
+            cmd.Close();
+            sqlr?.Close();
         }
 
         if (m_log.Count > 0)
@@ -311,33 +360,46 @@ public class ElementsDb
 
     void ReadMediaMetatags(MetatagMigrate metatagMigrate, Dictionary<int, PseMediaItem> items)
     {
-        using SQLiteCommand cmd = new()
-                                  {
-                                      CommandType = CommandType.Text,
-                                      Connection = m_connection,
-                                      Transaction = null,
-                                  };
+        SqlSelect selectTags = new SqlSelect();
 
+        selectTags.AddBase(s_queryMediaTags);
+        selectTags.AddAliases(s_aliases);
 
-        cmd.CommandText = s_queryMediaTags;
+        string sQuery = selectTags.ToString();
 
-        using SQLiteDataReader reader = cmd.ExecuteReader();
+        ISqlReader? sqlr = null;
+        ISqlCommand cmd = _Connection.CreateCommand();
+        cmd.CommandText = sQuery;
 
-        while (reader.Read())
+        try
         {
-            int mediaId = reader.GetInt32(0);
-            int tagId = reader.GetInt32(1);
+            sqlr = cmd.ExecuteReader();
 
-            PseMetatag? metatag = metatagMigrate.TryGetMetatagFromID(tagId);
+            while (sqlr.Read())
+            {
+                int mediaId = sqlr.GetInt32(0);
+                int tagId = sqlr.GetInt32(1);
 
-            // there are many metatags we don't use (history, import, etc)
-            if (metatag == null)
-                continue;
+                PseMetatag? metatag = metatagMigrate.TryGetMetatagFromID(tagId);
 
-            if (items.TryGetValue(mediaId, out PseMediaItem? item))
-                item.PseMetatags.Add(metatag);
-            else
-                m_log.Add($"could not find media {mediaId} referenced in metatag {tagId}");
+                // there are many metatags we don't use (history, import, etc)
+                if (metatag == null)
+                    continue;
+                // TODO NEED TO FIGURE OUT WHY/HOW THE pseOriginalFileDate (which is a builtin)
+                // is not getting set. It has a setter in the tag mapping -- are these hooked up?
+                if (items.TryGetValue(mediaId, out PseMediaItem? item))
+                    item.PseMetatags.Add(metatag);
+                else
+                    m_log.Add($"could not find media {mediaId} referenced in metatag {tagId}");
+            }
+
+            if (m_log.Count > 0)
+                MessageBox.Show($"warnings: {string.Join(",", m_log)}");
+        }
+        finally
+        {
+            cmd.Close();
+            sqlr?.Close();
         }
 
         if (m_log.Count > 0)
@@ -346,41 +408,44 @@ public class ElementsDb
 
     private List<string> m_log = new();
 
+    private static readonly string s_queryMediaDictionary = @"
+        SELECT 
+            MT.id, MT.full_filepath, MT.filepath_search_index, MT.filename_search_index, MT.mime_type, 
+            MT.volume_id, VT.serial 
+        FROM media_table as MT 
+        INNER JOIN volume_table as VT on MT.volume_id = VT.id";
+
     private Dictionary<int, PseMediaItem> ReadMediaDictionary()
     {
-        using SQLiteCommand cmd = new()
-                                  {
-                                      CommandType = CommandType.Text,
-                                      Connection = m_connection,
-                                      Transaction = null,
-                                  };
-
-        cmd.CommandText =
-            "select MT.id, MT.full_filepath, MT.filepath_search_index, MT.filename_search_index, MT.mime_type, MT.volume_id, VT.serial FROM media_table as MT INNER JOIN volume_table as VT on MT.volume_id = VT.id";
-
-        using SQLiteDataReader reader = cmd.ExecuteReader();
-
-        Dictionary<int, PseMediaItem> items = new();
-        while (reader.Read())
+        try
         {
-            int pseId = reader.GetInt32(0);
+            return
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryMediaDictionary,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref Dictionary<int, PseMediaItem> building) =>
+                    {
+                        int pseId = reader.GetInt32(0);
 
-            items.Add(
-                pseId,
-                PseMediaItemBuilder
-                   .Create()
-                   .SetID(pseId)
-                   .SetFilename(reader.GetString(3))
-                   .SetFilePath(reader.GetString(2))
-                   .SetFullPath(reader.GetString(1))
-                   .SetMimeType(reader.GetString(4))
-                   .SetVolumeId(reader.GetInt32(5).ToString())
-                   .SetVolumeName(reader.GetString(6))
-                   .Build());
+                        building.Add(
+                            pseId,
+                            PseMediaItemBuilder
+                               .Create()
+                               .SetID(pseId)
+                               .SetFilename(reader.GetString(3))
+                               .SetFilePath(reader.GetString(2))
+                               .SetFullPath(reader.GetString(1))
+                               .SetMimeType(reader.GetString(4))
+                               .SetVolumeId(reader.GetInt32(5).ToString())
+                               .SetVolumeName(reader.GetString(6))
+                               .Build());
+                    });
         }
-
-        reader.Close();
-        return items;
+        catch (TcSqlExceptionNoResults)
+        {
+            return new Dictionary<int, PseMediaItem>();
+        }
     }
 
     public IEnumerable<PseMediaItem> ReadMediaItems(MetatagMigrate metatagMigrate)
@@ -391,32 +456,25 @@ public class ElementsDb
         return map.Values;
     }
 
-    private static readonly string s_queryMediaStacks = @"
-        SELECT VS.stack_tag_id, VS.media_id, VS.media_index
-            FROM version_stack_to_media_table VS";
-
-    public List<PseMediaStackItem> ReadMediaStacks()
+    public List<PseVersionStackItem> ReadVersionStacks()
     {
-        using SQLiteCommand cmd = new()
-                                  {
-                                      CommandType = CommandType.Text,
-                                      Connection = m_connection,
-                                      Transaction = null,
-                                  };
-
-
-        cmd.CommandText = s_queryMediaStacks;
-
-        List<PseMediaStackItem> items = new();
-
-        using SQLiteDataReader reader = cmd.ExecuteReader();
-
-        while (reader.Read())
+        try
         {
-            items.Add(new PseMediaStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
-        }
+            return
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryVersionStacks,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref List<PseVersionStackItem> building) =>
+                    {
+                        building.Add(
+                            new PseVersionStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3)));
 
-        reader.Close();
-        return items;
+                    });
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new List<PseVersionStackItem>();
+        }
     }
 }

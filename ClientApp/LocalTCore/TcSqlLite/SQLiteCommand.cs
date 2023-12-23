@@ -29,4 +29,9 @@ public class SQLiteCommand : ISqlCommand
     public object ExecuteScalar() => m_command.ExecuteScalar();
 
     public void AddParameterWithValue(string parameterName, object? value) => m_command.Parameters.AddWithValue(parameterName, value);
+
+    public void Close()
+    {
+        m_command.Dispose();
+    }
 }

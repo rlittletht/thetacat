@@ -83,7 +83,7 @@ public partial class MediaMigration : UserControl
         m_migrate = migrate;
 
         _Migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(_Migrate.MetatagMigrate)));
-
+        _Migrate.MediaMigrate.PropagateMetadataToBuiltins(_Migrate.MetatagMigrate);
         mediaItemsListView.ItemsSource = _Migrate.MediaMigrate.MediaItems;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);

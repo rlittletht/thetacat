@@ -11,6 +11,17 @@ public class SQLite : ISql
     private readonly SQLiteConnection? m_sqlc;
     public bool InTransaction  => m_transaction != null;
 
+    public static string Iso8601DateFromPackedSqliteDate(string packedDate)
+    {
+        if (packedDate.Contains("-"))
+            return packedDate;
+
+        if (packedDate[8] != 'T' || packedDate.Length < 14)
+            throw new ArgumentException($"{packedDate} is not in format YYYYMMDDTHHMMSS[.ssssssss]");
+
+        return $"{packedDate[0..4]}-{packedDate[4..6]}-{packedDate[6..8]}T{packedDate[9..11]}:{packedDate[11..13]}:{packedDate[13..]}";
+    }
+
     public SQLite()
     {
         m_sqlc = null;
@@ -77,17 +88,24 @@ public class SQLite : ISql
     {
         ISqlCommand sqlcmd = CreateCommand();
 
-        if (aliases != null)
-            s = ExpandAliasesProperly(s, aliases);
+        try
+        {
+            if (aliases != null)
+                s = ExpandAliasesProperly(s, aliases);
 
-        sqlcmd.CommandText = s;
-        if (customizeParams != null)
-            customizeParams(sqlcmd);
+            sqlcmd.CommandText = s;
+            if (customizeParams != null)
+                customizeParams(sqlcmd);
 
-        if (Transaction != null)
-            sqlcmd.Transaction = Transaction;
+            if (Transaction != null)
+                sqlcmd.Transaction = Transaction;
 
-        sqlcmd.ExecuteNonQuery();
+            sqlcmd.ExecuteNonQuery();
+        }
+        finally
+        {
+            sqlcmd.Close();
+        }
     }
 
     public void ExecuteNonQuery(
@@ -100,16 +118,24 @@ public class SQLite : ISql
     public int NExecuteScalar(string sQuery, Dictionary<string, string>? aliases = null)
     {
         ISqlCommand sqlcmd = CreateCommand();
-        if (aliases != null)
-            sQuery = ExpandAliasesProperly(sQuery, aliases);
 
-        sqlcmd.CommandText = sQuery;
-        if (Transaction != null)
-            sqlcmd.Transaction = this.Transaction;
+        try
+        {
+            if (aliases != null)
+                sQuery = ExpandAliasesProperly(sQuery, aliases);
 
-        Int64 n = (Int64)sqlcmd.ExecuteScalar();
+            sqlcmd.CommandText = sQuery;
+            if (Transaction != null)
+                sqlcmd.Transaction = this.Transaction;
 
-        return (int)n;
+            Int64 n = (Int64)sqlcmd.ExecuteScalar();
+
+            return (int)n;
+        }
+        finally
+        {
+            sqlcmd.Close();
+        }
     }
 
     public int NExecuteScalar(SqlCommandTextInit cmdText)

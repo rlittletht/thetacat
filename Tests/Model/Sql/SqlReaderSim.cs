@@ -1,4 +1,5 @@
-﻿using TCore;
+﻿using System.Data.SQLite;
+using TCore;
 using Thetacat.TCore.TcSqlLite;
 using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
 
@@ -50,6 +51,7 @@ public class SqlReaderSim: ISqlReader
     public long? GetNullableInt64(int index) => throw new NotImplementedException();
 
     public DateTime? GetNullableDateTime(int index) => throw new NotImplementedException();
+    public TypeAffinity GetFieldAffinity(int index) => throw new NotImplementedException();
 
     public bool NextResult() => throw new NotImplementedException();
 
