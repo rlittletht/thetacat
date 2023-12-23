@@ -21,6 +21,7 @@ using Thetacat.Import;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
+using Thetacat.Model;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -324,13 +325,31 @@ public partial class MediaMigration : UserControl
     private void MigrateToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
-        MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
+        MediaImport import = new MediaImport(
+            checkedItems, 
+            MainWindow.ClientName,
+            (itemFile, catalogItem) =>
+            {
+                PseMediaItem pseItem = itemFile as PseMediaItem ?? throw new CatExceptionInternalFailure("file item isn't a PseMediaItem");
+                pseItem.CatID = catalogItem.ID;
+            });
 
         import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
         foreach (PseMediaItem item in checkedItems)
         {
             item.UpdateCatalogStatus();
+
+            // here we can pre-populate our cache.
+            MediaItem mediaItem = MainWindow._AppState.Catalog.Items[item.CatID];
+            MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
+            mediaItem.NotifyCacheStatusChanged();
+            // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
+            // metadata?  There are some things that have to get updated when the catalog item is created...
+
         }
+        // and lastly we have to add the items we just manually added to our cache
+        // (we don't have any items we are tracking. these should all be adds)
+        MainWindow._AppState.Cache.PushChangesToDatabase(null);
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)

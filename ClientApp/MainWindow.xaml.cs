@@ -181,6 +181,7 @@ namespace Thetacat
         private void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+
             AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
         }
 

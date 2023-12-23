@@ -1,4 +1,5 @@
 ﻿using MetadataExtractor;
+using NUnit.Framework.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,15 +20,24 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
-public class MediaItem
+public class MediaItem: INotifyPropertyChanged
 {
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
-    public string LocalPath { get; set; } = string.Empty;
+
+    public string LocalPath
+    {
+        get => m_localPath;
+        set => SetField(ref m_localPath, value);
+    }
 
     // this means we are waiting for this item to be cached. maybe by this client,
     // maybe by another client
-    public bool IsCachePending { get; set; } = false;
+    public bool IsCachePending
+    {
+        get => m_isCachePending;
+        set => SetField(ref m_isCachePending, value);
+    }
 
     public enum PendingOp
     {
@@ -95,10 +105,16 @@ public class MediaItem
             EnsureBase();
             PushOp(PendingOp.ChangeState);
             m_working.State = value;
+            OnPropertyChanged(nameof(State));
         }
     }
 
     public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
+
+    public void NotifyCacheStatusChanged()
+    {
+        OnPropertyChanged(nameof(CacheStatus));
+    }
 
     public ConcurrentDictionary<Guid, MediaTag> Tags
     {
@@ -291,6 +307,8 @@ public class MediaItem
     }
 
     private List<string>? log;
+    private bool m_isCachePending = false;
+    private string m_localPath = string.Empty;
 
     public static string CalculateMD5Hash(string localPath)
     {
@@ -332,5 +350,20 @@ public class MediaItem
             PushChangeTagPending();
 
         return log;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

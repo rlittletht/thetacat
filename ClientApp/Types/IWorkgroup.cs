@@ -17,4 +17,5 @@ public interface IWorkgroup
     public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries);
     public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count);
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
+    public void CreateCacheEntryForItem(MediaItem item, DateTime? cachedDate, bool pending);
 }

@@ -173,4 +173,9 @@ public class WorkgroupCacheEntry : ICacheEntry
         if (!NeedsUpdate())
             m_baseEntry = null;
     }
+
+    public void ResetBaseEntry()
+    {
+        m_baseEntry = null;
+    }
 }

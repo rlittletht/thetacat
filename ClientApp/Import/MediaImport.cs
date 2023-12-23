@@ -34,27 +34,28 @@ namespace Thetacat.Import;
 ----------------------------------------------------------------------------*/
 public class MediaImport
 {
+    public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
-    public MediaImport(IEnumerable<IMediaItemFile> files, string source)
+    public MediaImport(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
         {
             PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
         }
     }
 
-    public MediaImport(IEnumerable<string> files, string source)
+    public MediaImport(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (string file in files)
         {
             PathSegment pathRoot = PathSegment.GetPathRoot(file) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
         }
     }
 
@@ -111,6 +112,7 @@ public class MediaImport
             MediaItem mediaItem = new(item);
 
             catalog.AddNewMediaItem(mediaItem);
+            item.NotifyMediaItemCreated(mediaItem);
             mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
             mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
 
@@ -157,6 +159,7 @@ public class MediaImport
                 }
 
                 item.State = ImportItem.ImportState.Complete;
+                media.State = MediaItemState.Active;
                 item.UploadDate = DateTime.Now;
 
                 ServiceInterop.CompleteImportForItem(item.ID);

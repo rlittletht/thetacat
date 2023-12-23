@@ -340,7 +340,7 @@ public class WorkgroupDb
                     "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock) VALUES ",
                     inserts,
                     (entry) =>
-                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToString())}, {Sql.Nullable(entry.VectorClock)}) ",
+                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {Sql.Nullable(entry.VectorClock)}) ",
                     100,
                     ",",
                     null);

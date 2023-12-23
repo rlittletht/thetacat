@@ -202,6 +202,32 @@ public class Workgroup: IWorkgroup
         UpdateFromWorkgroupMediaClock(entries, mediaWithClock);
     }
 
+    // pending will be false if we are creating this during migration
+    /*----------------------------------------------------------------------------
+        %%Function: CreateCacheEntryForItem
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.CreateCacheEntryForItem
+
+        This will take make a cache entry for the media item. it will ensure
+        that 
+    ----------------------------------------------------------------------------*/
+    public void CreateCacheEntryForItem(MediaItem item, DateTime? cachedDate, bool pending)
+    {
+        PathSegment cacheItemPath = Cache.EnsureUniqueLocalCacheVirtualPath(FullPathToCacheRoot, item);
+
+        // we will create this cache entry as Pending and set the vectorClock 0
+
+        // when we go to update the cache in the workgroup database, if the 
+        MainWindow._AppState.Cache.Entries.TryAdd(
+            item.ID,
+            new WorkgroupCacheEntry(
+                item.ID,
+                cacheItemPath,
+                ClientId,
+                cachedDate,
+                pending, // pending
+                0 /*0 means we haven't uploaded yet*/));
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: GetNextItemsForQueue
         %%Qualified: Thetacat.Model.Cache.GetNextItemsForQueue
@@ -226,30 +252,21 @@ public class Workgroup: IWorkgroup
 
         foreach (KeyValuePair<Guid, MediaItem> item in MainWindow._AppState.Catalog.Items)
         {
+            if (item.Key != item.Value.ID)
+                throw new CatExceptionInternalFailure("key doesn't match id");
+
             if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.Key) && !item.Value.IsCachePending)
             {
-                PathSegment cacheItemPath = Cache.EnsureUniqueLocalCacheVirtualPath(FullPathToCacheRoot, item.Value);
-
                 if (countToSkip > 0)
                 {
                     countToSkip--;
                     continue;
                 }
+
                 itemsToQueue.Add(item.Key, item.Value);
 
-                // we will create this cache entry as Pending and set the vectorClock to the current
-                // client vector clock.
-
-                // when we go to update the cache in the workgroup database, if the 
-                MainWindow._AppState.Cache.Entries.TryAdd(
-                    item.Key,
-                    new WorkgroupCacheEntry(
-                        item.Key,
-                        cacheItemPath,
-                        ClientId,
-                        null,
-                        true, // pending
-                        0/*0 means we haven't uploaded yet*/));
+                // we will create this cache entry as Pending and set the vectorClock 0
+                CreateCacheEntryForItem(item.Value, null, true);
 
                 item.Value.IsCachePending = true;
 
@@ -343,11 +360,13 @@ public class Workgroup: IWorkgroup
                 if (!wgEntry.NeedsUpdate() && wgEntry.VectorClock != 0)
                     continue;
 
+                bool fNewItem = wgEntry.VectorClock == 0;
+
                 // update the vectorclock to what the new clock will be
                 wgEntry.VectorClock = m_baseVectorClock + 1;
 
                 // we're going to update here
-                if (wgEntry.LocalPending)
+                if (fNewItem)
                 {
                     inserts.Add(wgEntry);
                 }
@@ -365,6 +384,17 @@ public class Workgroup: IWorkgroup
             {
                 _Database.UpdateInsertCacheEntries(m_baseVectorClock, ClientId, cacheChanges, inserts);
                 m_baseVectorClock++;
+                // update the base for all the items to the new base
+
+                foreach (WorkgroupCacheEntry entry in inserts)
+                {
+                    entry.ResetBaseEntry();
+                }
+                foreach (KeyValuePair<Guid, List<KeyValuePair<string, string>>> change in cacheChanges)
+                {
+                    ((WorkgroupCacheEntry)MainWindow._AppState.Cache.Entries[change.Key]).ResetBaseEntry();
+                }
+
                 return;
             }
             catch (CatExceptionDataCoherencyFailure)

@@ -6,8 +6,10 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
+using NUnit.Framework.Internal.Execution;
 using TCore;
 using Thetacat.Azure;
+using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -129,15 +131,8 @@ public class Cache: ICache
     }
 
     // This is the list of media items that we are going to try to download to the 
-    // cache. NOTE: We might hit a coherency failure when trying to update the workgroup
-    // db (in order to tell the world which items we're going to cache). if that happens,
-    // and if another client marked the same media for caching, then we need to NOT
-    // try to cache them (effectively, we need to cancel this item).
-    // since we can't remove from the middle of the queue, we will add to a 'cancel list'
-    // when we are asked to dequeue an item
-
+    // cache.
     protected readonly ConcurrentQueue<MediaItem> m_cacheQueue = new();
-    private readonly ConcurrentDictionary<Guid, byte> m_canceledQueueItems = new();
 
     public static bool OkToUseLocalPathForItem(PathSegment fullPath, MediaItem item)
     {
@@ -233,9 +228,10 @@ public class Cache: ICache
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
     {
-        if (item.IsCachePending)
+        if (item.IsCachePending && item.State != MediaItemState.Pending)
         {
             TcBlob blob = await AzureCat._Instance.DownloadMedia(destination, item.ID.ToString(), item.MD5);
+            MainWindow.LogForAsync(EventType.Information, $"downloaded {item.ID} to {item.LocalPath}");
             return true;
         }
 
@@ -245,6 +241,30 @@ public class Cache: ICache
     public string GetFullLocalPath(PathSegment localSegment)
     {
         return PathSegment.Join(LocalPathToCacheRoot, localSegment).Local;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: PrimeCacheFromImport
+        %%Qualified: Thetacat.Model.Cache.PrimeCacheFromImport
+
+        We are importing which means we have a local copy of the media. Take
+        advantage of this to populate our cache. (we will still have to upload
+        to azure)
+    ----------------------------------------------------------------------------*/
+    public void PrimeCacheFromImport(MediaItem item, PathSegment importSource)
+    {
+        // we still have to make an entry in the cache db
+        // since we are manually caching it right now, set the time to now and pending to false)
+        _Workgroup.CreateCacheEntryForItem(item, DateTime.Now, false);
+        // now get the destination path it wants us to use
+        if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
+            throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");
+
+        // if the path already exists, then it is already done
+        if (Path.Exists(entry.Path))
+            return;
+
+        File.Copy(importSource.Local, GetFullLocalPath(entry.Path));
     }
 
     public async Task DoForegroundCache(int chunkSize)
@@ -260,6 +280,9 @@ public class Cache: ICache
 
             if (cacheEntry.LocalPending)
             {
+                // first thing, unmark it since its no longer in our queue to download
+                // (if it fails, we will want to do it again...)
+                cacheEntry.LocalPending = false;
                 string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
                 if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
                 {
@@ -268,10 +291,16 @@ public class Cache: ICache
                     item.IsCachePending = false;
                     cacheEntry.LocalPending = false;
                     cacheEntry.CachedDate = DateTime.Now;
+                    item.NotifyCacheStatusChanged();
                 }
             }
         }
 
         _Workgroup.PushChangesToDatabase(null);
+    }
+
+    public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
+    {
+        _Workgroup.PushChangesToDatabase(itemsForCache);
     }
 }
