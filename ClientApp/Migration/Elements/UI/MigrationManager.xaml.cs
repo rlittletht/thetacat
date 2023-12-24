@@ -52,7 +52,6 @@ public partial class MigrationManager : Window
         MediaMigrationTab.Initialize(db, m_migrate);
         StacksTab.Initialize(db, m_migrate);
 
-        m_migrate.StacksMigrate.UpdateStackItemsFromMediaSet(m_migrate.MediaMigrate);
         db.Close();
     }
 

@@ -11,7 +11,6 @@ public class MediaMigrate
     private List<PseMediaItem>? m_mediaItems;
     private Dictionary<int, IPseMediaItem>? m_mapPseMedia;
     private Dictionary<Guid, IPseMediaItem>? m_mapCatMedia;
-    private List<PseMediaStackItem>? m_mediaStackItems;
 
     public readonly ObservableCollection<PathSubstitution> PathSubstitutions = new();
 

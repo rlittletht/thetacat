@@ -93,6 +93,7 @@ public class ElementsDb
         new()
         {
             { "version_stack_to_media_table", "VS" },
+            { "media_stack_to_media_table", "MS" },
             { "tag_to_metadata_table", "TMD" },
             { "tag_table", "TT" },
             { "metadata_description_table", "MDT" },
@@ -101,10 +102,16 @@ public class ElementsDb
 //            { "", "" },
         };
 
+    private static readonly string s_queryMediaStacks = @"
+        SELECT 
+            $$media_stack_to_media_table$$.media_id, $$media_stack_to_media_table$$.stack_tag_id, 
+            $$media_stack_to_media_table$$.media_index
+        FROM $$#media_stack_to_media_table$$";
+
     private static readonly string s_queryVersionStacks = @"
         SELECT 
             $$version_stack_to_media_table$$.media_id, $$version_stack_to_media_table$$.stack_tag_id, 
-            $$version_stack_to_media_table$$.media_index, $$version_stack_to_media_table$$.parent_id
+            $$version_stack_to_media_table$$.media_index
         FROM $$#version_stack_to_media_table$$";
 
     static readonly string s_queryMetatagDefinitions = @"
@@ -456,7 +463,7 @@ public class ElementsDb
         return map.Values;
     }
 
-    public List<PseVersionStackItem> ReadVersionStacks()
+    public List<PseStackItem> ReadVersionStacks()
     {
         try
         {
@@ -465,16 +472,38 @@ public class ElementsDb
                     Guid.NewGuid(),
                     s_queryVersionStacks,
                     s_aliases,
-                    (ISqlReader reader, Guid crids, ref List<PseVersionStackItem> building) =>
+                    (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
                     {
                         building.Add(
-                            new PseVersionStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetInt32(3)));
+                            new PseStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
 
                     });
         }
         catch (TcSqlExceptionNoResults)
         {
-            return new List<PseVersionStackItem>();
+            return new List<PseStackItem>();
         }
     }
+
+    public List<PseStackItem> ReadMediaStacks()
+    {
+        try
+        {
+            return
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryMediaStacks,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
+                    {
+                        building.Add(
+                            new PseStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
+                    });
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new List<PseStackItem>();
+        }
+    }
+
 }

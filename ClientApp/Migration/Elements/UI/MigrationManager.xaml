@@ -30,13 +30,13 @@
         </TabItem>
         <TabItem>
             <TabItem.Header>
-                <TextBlock>Stacks</TextBlock>
+                <TextBlock>VersionStacks</TextBlock>
             </TabItem.Header>
             <versions:VersionStacks x:Name="StacksTab" />
         </TabItem>
         <TabItem Selector.Selected="OnMetatagMigrateSummaryTabSelected">
             <TabItem.Header>
-                <TextBlock>Metadata Migrate</TextBlock>
+                <TextBlock>Metatag Migrate</TextBlock>
             </TabItem.Header>
             <elements:MetadataMigrateSummary x:Name="MetadataMigrateSummaryTab" />
         </TabItem>

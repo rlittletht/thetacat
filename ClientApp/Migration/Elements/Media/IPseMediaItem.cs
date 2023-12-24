@@ -17,4 +17,5 @@ public interface IPseMediaItem
     public bool InCatalog { get; set; }
     public IEnumerable<PseMediaTagValue> Metadata { get; }
     public IEnumerable<PseMetatag> Tags { get; }
+    public Guid CatID { get; }
 }

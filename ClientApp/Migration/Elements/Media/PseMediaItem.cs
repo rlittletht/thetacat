@@ -194,6 +194,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         {
             InCatalog = true;
             MD5 = item.MD5;
+            CatID = item.ID;
         }
     }
 

@@ -79,7 +79,7 @@ public class Catalog: ICatalog
         IObservableConcurrentDictionary<Guid, MediaItem> dict = m_items;
 
         dict.Clear();
-
+        m_virtualLookupTable.Clear();
         if (catalog.MediaItems == null || catalog.MediaTags == null)
             return;
         
@@ -110,7 +110,7 @@ public class Catalog: ICatalog
         }
     }
 
-    private ConcurrentDictionary<string, MediaItem>? m_virtualLookupTable;
+    private ConcurrentDictionary<string, MediaItem> m_virtualLookupTable = new ConcurrentDictionary<string, MediaItem>();
 
     private void AddToVirtualLookup(ConcurrentDictionary<string, MediaItem> lookupTable, MediaItem item)
     {
@@ -130,21 +130,18 @@ public class Catalog: ICatalog
         lookupTable.TryAdd(lookupValue, item);
     }
 
-    private ConcurrentDictionary<string, MediaItem> BuildVirtualLookup()
+    private void BuildVirtualLookup()
     {
-        ConcurrentDictionary<string, MediaItem> lookupTable = new();
-
         foreach (KeyValuePair<Guid, MediaItem> item in m_items)
         {
-            AddToVirtualLookup(lookupTable, item.Value);
+            AddToVirtualLookup(m_virtualLookupTable, item.Value);
         }
-
-        return lookupTable;
     }
 
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath)
     {
-        m_virtualLookupTable ??= BuildVirtualLookup();
+        if (m_virtualLookupTable.Count == 0)
+            BuildVirtualLookup();
 
         string lookup = virtualPath.ToUpperInvariant();
         if (lookup.StartsWith("/"))

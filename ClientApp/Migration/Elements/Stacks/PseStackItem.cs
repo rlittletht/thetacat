@@ -5,13 +5,11 @@ using System.Runtime.CompilerServices;
 
 namespace Thetacat.Migration.Elements.Versions;
 
-public class PseVersionStackItem: INotifyPropertyChanged
+public class PseStackItem: INotifyPropertyChanged
 {
-    private DateTime? m_createDate;
     private int m_mediaId;
     private int m_stackId;
     private int m_mediaIndex;
-    private int m_parent;
     private Guid? m_catStackId;
     private Guid? m_catMediaId;
 
@@ -33,12 +31,6 @@ public class PseVersionStackItem: INotifyPropertyChanged
         set => SetField(ref m_mediaIndex, value);
     }
 
-    public int Parent
-    {
-        get => m_parent;
-        set => SetField(ref m_parent, value);
-    }
-
     public Guid? CatStackId
     {
         get => m_catStackId;
@@ -51,18 +43,11 @@ public class PseVersionStackItem: INotifyPropertyChanged
         set => SetField(ref m_catMediaId, value);
     }
 
-    public DateTime? CreateDate
-    {
-        get => m_createDate;
-        set => SetField(ref m_createDate, value);
-    }
-
-    public PseVersionStackItem(int mediaID, int stackID, int mediaIndex, int parent)
+    public PseStackItem(int mediaID, int stackID, int mediaIndex)
     {
         MediaID = mediaID;
         StackID = stackID;
         MediaIndex = mediaIndex;
-        Parent = parent;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -42,8 +42,16 @@ namespace Thetacat.Migration.Elements.Versions
         public void Initialize(ElementsDb db, ElementsMigrate migrate)
         {
             m_migrate = migrate;
-            _Migrate.StacksMigrate.SetVersionStacks(new List<PseVersionStackItem>(db.ReadVersionStacks()));
-            StackListView.ItemsSource = _Migrate.StacksMigrate.Stacks;
+            _Migrate.StacksMigrate.SetVersionStacks(new List<PseStackItem>(db.ReadVersionStacks()));
+            _Migrate.StacksMigrate.SetMediaStacks(new List<PseStackItem>(db.ReadMediaStacks()));
+            VersionStackListView.ItemsSource = _Migrate.StacksMigrate.VersionStacks;
+            MediaStackListView.ItemsSource = _Migrate.StacksMigrate.MediaStacks;
+        }
+
+        private void DoMigrate(object sender, RoutedEventArgs e)
+        {
+            // associate every version stack with its cat media item
+            _Migrate.StacksMigrate.CreateCatStacks(_Migrate.MediaMigrate);
         }
     }
 }

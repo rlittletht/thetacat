@@ -5,6 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Animation;
 using HeyRed.Mime;
 using NUnit.Framework.Internal.Execution;
 using TCore;
@@ -268,11 +269,17 @@ public class Cache: ICache
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");
 
+        string fullLocalPath = GetFullLocalPath(entry.Path);
+
         // if the path already exists, then it is already done
-        if (Path.Exists(entry.Path))
+        if (Path.Exists(fullLocalPath))
             return;
 
-        File.Copy(importSource.Local, GetFullLocalPath(entry.Path));
+        string? directory = Path.GetDirectoryName(fullLocalPath);
+        if (directory != null && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+
+        File.Copy(importSource.Local, fullLocalPath);
     }
 
     public async Task DoForegroundCache(int chunkSize)
