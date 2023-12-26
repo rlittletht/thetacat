@@ -150,4 +150,6 @@ public partial class MediaTagMigrateSummary : UserControl
 
         BuildSummary();
     }
+
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<MediaTagMigrateItem>.DoKeyDown(diffOpListView, sender, e);
 }

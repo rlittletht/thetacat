@@ -16,7 +16,7 @@
             These are the operations that will be executed against the database to migrate media tags (both metadata and version
             stacks). Use this tab to fine-tune the operations before committing them.
         </TextBlock>
-        <ListView Name="diffOpListView" Grid.Row="1">
+        <ListView Name="diffOpListView" Grid.Row="1" PreviewKeyDown="DoKeyDown">
             <ListView.View>
                 <GridView>
                     <GridView.Columns>
