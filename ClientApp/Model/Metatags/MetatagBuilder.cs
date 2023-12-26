@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using Thetacat.Standards;
 
 namespace Thetacat.Model.Metatags;
 
@@ -46,6 +47,12 @@ public class MetatagBuilder
     public MetatagBuilder SetDescription(string description)
     {
         m_building.Description = description;
+        return this;
+    }
+
+    public MetatagBuilder SetStandard(MetatagStandards.Standard standard)
+    {
+        m_building.Standard = MetatagStandards.GetStandardsTagFromStandard(standard);
         return this;
     }
 

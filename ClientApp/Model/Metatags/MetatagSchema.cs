@@ -142,6 +142,7 @@ public class MetatagSchema
                .Create()
                .SetName("user")
                .SetDescription($"user root")
+               .SetStandard(standard)
                .Build();
         }
 
@@ -152,6 +153,7 @@ public class MetatagSchema
            .Create()
            .SetName(name)
            .SetDescription($"{name} root")
+           .SetStandard(standard)
            .Build();
 
     }

@@ -259,13 +259,13 @@ public partial class StandardMetadataMigration : UserControl
             }
 
             Metatag newTag =
-                new()
-                {
-                    ID = Guid.NewGuid(),
-                    Description = item.Description,
-                    Name = item.PropertyTag,
-                    Parent = Guid.Parse(parent.ID)
-                };
+                MetatagBuilder
+                   .Create()
+                   .SetDescription(item.Description)
+                   .SetName(item.PropertyTag)
+                   .SetParentID(Guid.Parse(parent.ID))
+                   .SetStandard(standard)
+                   .Build();
 
             MainWindow._AppState.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
