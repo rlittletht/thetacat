@@ -21,7 +21,7 @@
                         <GridViewColumn Header="IsSelected">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Name="IsSelected" IsChecked="{Binding Path=IsSelected}" />
+                                    <CheckBox Name="IsSelected" IsChecked="{Binding Path=Checked}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

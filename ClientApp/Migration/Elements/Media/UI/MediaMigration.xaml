@@ -25,7 +25,7 @@
                                 <GridViewColumn Header="Migrate">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox Name="Migrate" IsChecked="{Binding Path=Include}" />
+                                            <CheckBox Name="Migrate" IsChecked="{Binding Path=Checked}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

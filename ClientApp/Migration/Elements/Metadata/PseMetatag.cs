@@ -6,10 +6,11 @@ using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
-public class PseMetatag : INotifyPropertyChanged
+public class PseMetatag : INotifyPropertyChanged, ICheckableListViewItem
 {
     private bool m_checked = false;
     private Guid? m_catId;

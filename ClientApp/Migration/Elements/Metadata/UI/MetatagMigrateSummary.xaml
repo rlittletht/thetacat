@@ -23,7 +23,7 @@
                         <GridViewColumn Header="Include">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Name="Include" IsChecked="{Binding Path=Include}" />
+                                    <CheckBox Name="Include" IsChecked="{Binding Path=Checked}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

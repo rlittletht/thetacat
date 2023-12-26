@@ -69,4 +69,6 @@ public class MediaTagMigrateItem: INotifyPropertyChanged, ICheckableListViewItem
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    public override string ToString() => $"{MediaID.ToString()}: ${VirtualPath} ${MetatagSetting.Standard}:{MetatagSetting.Name}={Value}";
 }

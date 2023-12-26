@@ -276,7 +276,7 @@ public partial class UserMetatagMigration : UserControl
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
 
-    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<MetatagMigrationItem>.DoKeyDown(metaTagsListView, sender, e);
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<PseMetatag>.DoKeyDown(metaTagsListView, sender, e);
 
     private void DoToggleSelected(object sender, RoutedEventArgs e) =>
         CheckableListViewSupport<MetatagMigrationItem>.DoToggleSelected(metaTagsListView, sender, e);

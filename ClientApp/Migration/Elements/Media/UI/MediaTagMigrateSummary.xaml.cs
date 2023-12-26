@@ -34,113 +34,120 @@ will just be dropped. Data that has a map to the catalog will be summarized here
 We have already read in all of the metadata and metatags from PSE and they are stored on each 
 of the PseMediaItems. We will build a list of MediaTagMigrateItems from those items.
  */
-namespace Thetacat.Migration.Elements.Media.UI
+namespace Thetacat.Migration.Elements.Media.UI;
+
+/// <summary>
+/// Interaction logic for MediaTagMigrateSummary.xaml
+/// </summary>
+public partial class MediaTagMigrateSummary : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MediaTagMigrateSummary.xaml
-    /// </summary>
-    public partial class MediaTagMigrateSummary : UserControl
+    private readonly SortableListViewSupport m_sortableListViewSupport;
+    private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
+
+    private ElementsMigrate? m_migrate;
+
+    private readonly ObservableCollection<MediaTagMigrateItem> m_mediatagMigrationItems = new();
+
+    private ElementsMigrate _Migrate
     {
-        private readonly SortableListViewSupport m_sortableListViewSupport;
-        private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
-
-        private ElementsMigrate? m_migrate;
-
-        private readonly ObservableCollection<MediaTagMigrateItem> m_mediatagMigrationItems = new();
-
-        private ElementsMigrate _Migrate
+        get
         {
-            get
+            if (m_migrate == null)
+                throw new Exception($"initialize never called on {this.GetType().Name}");
+            return m_migrate;
+        }
+    }
+
+    public void Initialize(ElementsMigrate migrate)
+    {
+        m_migrate = migrate;
+    }
+
+    public MediaTagMigrateSummary()
+    {
+        InitializeComponent();
+        m_sortableListViewSupport = new SortableListViewSupport(diffOpListView);
+        diffOpListView.ItemsSource = m_mediatagMigrationItems;
+    }
+
+    // we have several properties are set as BUILTIN -- where do those get migrated? if we want those to be
+    // columns in the media table, then they should get populated when we migrate the media (make sure we 
+    // actually have applied the properties to the PseMediaItem...  but that sort of breaks the "migrate media
+    // is just an import".  where does the import get this data from?
+    // for things like width/height we could get it from the jpeg or other media directory, but can we get it
+    // from the jp2? what about file data? get that from the file info?
+
+    public void BuildSummary()
+    {
+        m_mediatagMigrationItems.Clear();
+
+        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
+        {
+            if (!item.InCatalog)
             {
-                if (m_migrate == null)
-                    throw new Exception($"initialize never called on {this.GetType().Name}");
-                return m_migrate;
+                MainWindow.LogForApp(EventType.Error, $"can't build mediatags if item not in catalog. Media not migrated? {item.FullPath}");
+                continue;
             }
-        }
 
-        public void Initialize(ElementsMigrate migrate)
-        {
-            m_migrate = migrate;
-        }
+            MediaItem catItem = MainWindow._AppState.Catalog.Items[item.CatID];
 
-        public MediaTagMigrateSummary()
-        {
-            InitializeComponent();
-            m_sortableListViewSupport = new SortableListViewSupport(diffOpListView);
-            diffOpListView.ItemsSource = m_mediatagMigrationItems;
-        }
-
-        // we have several properties are set as BUILTIN -- where do those get migrated? if we want those to be
-        // columns in the media table, then they should get populated when we migrate the media (make sure we 
-        // actually have applied the properties to the PseMediaItem...  but that sort of breaks the "migrate media
-        // is just an import".  where does the import get this data from?
-        // for things like width/height we could get it from the jpeg or other media directory, but can we get it
-        // from the jp2? what about file data? get that from the file info?
-
-        public void BuildSummary()
-        {
-            m_mediatagMigrationItems.Clear();
-
-            foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
+            foreach (PseMediaTagValue mediaTagValue in item.Metadata)
             {
-                if (!item.InCatalog)
+                PseMetadata metadataItem = _Migrate.MetatagMigrate.MetadataSchema.LookupPseIdentifier(mediaTagValue.PseIdentifier);
+
+                if (metadataItem.CatID == null)
+                    continue;
+
+                Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
+                    MetatagMatcher.CreateIdMatch(metadataItem.CatID.Value));
+
+                if (metatag == null)
+                    throw new CatExceptionInternalFailure($"can't find metatag {metadataItem.CatID.Value}");
+
+                // see if this tag is already set on the media item
+                if (catItem.Tags.TryGetValue(metadataItem.CatID.Value, out MediaTag? existing))
                 {
-                    MainWindow.LogForApp(EventType.Error, $"can't build mediatags if item not in catalog. Media not migrated? {item.FullPath}");
+                    // check to see if the values are the same (we won't change them, we will just log it
+                    // and move on
+                    if (existing.Value != null && existing.Value != mediaTagValue.Value)
+                    {
+                        MainWindow.LogForApp(
+                            EventType.Warning,
+                            $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {mediaTagValue.Value}");
+                    }
+                    // since we already have the tag, just skip
                     continue;
                 }
 
-                MediaItem catItem = MainWindow._AppState.Catalog.Items[item.CatID];
-
-                foreach (PseMediaTagValue mediaTagValue in item.Metadata)
-                {
-                    PseMetadata metadataItem = _Migrate.MetatagMigrate.MetadataSchema.LookupPseIdentifier(mediaTagValue.PseIdentifier);
-
-                    if (metadataItem.CatID == null)
-                        continue;
-
-                    Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
-                        MetatagMatcher.CreateIdMatch(metadataItem.CatID.Value));
-
-                    if (metatag == null)
-                        throw new CatExceptionInternalFailure($"can't find metatag {metadataItem.CatID.Value}");
-
-                    // see if this tag is already set on the media item
-                    if (catItem.Tags.TryGetValue(metadataItem.CatID.Value, out MediaTag? existing))
-                    {
-                        // check to see if the values are the same (we won't change them, we will just log it
-                        // and move on
-                        if (existing.Value != null && existing.Value != mediaTagValue.Value)
-                        {
-                            MainWindow.LogForApp(
-                                EventType.Warning,
-                                $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {mediaTagValue.Value}");
-                        }
-                        // since we already have the tag, just skip
-                        continue;
-                    }
-
-                    m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, mediaTagValue.Value));
-                }
+                m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, mediaTagValue.Value));
             }
         }
+    }
 
-        private List<MediaTagMigrateItem> BuildCheckedItems()
+    /*----------------------------------------------------------------------------
+        %%Function: DoMigrate
+        %%Qualified: Thetacat.Migration.Elements.Media.UI.MediaTagMigrateSummary.DoMigrate
+
+        Only migrate the checked items
+    ----------------------------------------------------------------------------*/
+    private void DoMigrate(object sender, RoutedEventArgs e)
+    {
+        List<MediaTagMigrateItem> checkedItems = CheckableListViewSupport<MediaTagMigrateItem>.GetCheckedItems(diffOpListView);
+
+        foreach (MediaTagMigrateItem item in checkedItems)
         {
-            // build the list to check (only the marked items)
-            List<MediaTagMigrateItem> checkedItems = new();
-            foreach (MediaTagMigrateItem item in m_mediatagMigrationItems)
+            if (!MainWindow._AppState.Catalog.Items.TryGetValue(item.MediaID, out MediaItem catItem))
             {
-                if (item.Checked)
-                    checkedItems.Add(item);
+                MainWindow.LogForApp(EventType.Warning, $"can't find media item {item}");
             }
 
-            return checkedItems;
+            MediaTag tag = new MediaTag(item.MetatagSetting, item.Value);
+            catItem.Tags.AddOrUpdate(
+                item.MetatagSetting.ID,
+                tag,
+                (key, oldValue) => tag);
         }
 
-        private void DoMigrate(object sender, RoutedEventArgs e)
-        {
-
-        }
-
+        BuildSummary();
     }
 }

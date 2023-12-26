@@ -233,5 +233,5 @@ public partial class StandardMetadataMigration : UserControl
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
 
-    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<MetatagMigrationItem>.DoKeyDown(metadataListView, sender, e);
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<PseMetadata>.DoKeyDown(metadataListView, sender, e);
 }
