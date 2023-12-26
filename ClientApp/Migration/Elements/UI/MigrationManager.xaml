@@ -41,7 +41,7 @@
             </TabItem.Header>
             <elements:MetadataMigrateSummary x:Name="MetadataMigrateSummaryTab" />
         </TabItem>
-        <TabItem Selector.Selected="OnMetatagMigrateSummaryTabSelected">
+        <TabItem Selector.Selected="OnMediatagMigrateSummaryTabSelected">
             <TabItem.Header>
                 <TextBlock>MediaTag Migrate</TextBlock>
             </TabItem.Header>

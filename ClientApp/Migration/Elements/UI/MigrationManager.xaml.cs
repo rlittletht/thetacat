@@ -49,6 +49,7 @@ public partial class MigrationManager : Window
         MetatagMigrationTab.Initialize(db, m_migrate);
         MetadataMigrationTab.Initialize(db, m_migrate);
         MetadataMigrateSummaryTab.Initialize(m_migrate);
+        MediatagMigrateSummaryTab.Initialize(m_migrate);
         MediaMigrationTab.Initialize(db, m_migrate);
         StacksTab.Initialize(db, m_migrate);
 
@@ -71,5 +72,10 @@ public partial class MigrationManager : Window
     private void OnMetatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)
     {
         MetadataMigrateSummaryTab.RebuildSchemaDiff();
+    }
+
+    private void OnMediatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)
+    {
+        MediatagMigrateSummaryTab.BuildSummary();
     }
 }

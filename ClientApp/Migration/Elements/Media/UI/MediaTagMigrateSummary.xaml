@@ -27,8 +27,20 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=OpType}">
-                            <GridViewColumnHeader Tag="OpType" Content="OpType" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=MediaID}">
+                            <GridViewColumnHeader Tag="CatID" Content="MediaID" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
+                            <GridViewColumnHeader Tag="Path" Content="Path" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Standard}">
+                            <GridViewColumnHeader Tag="Standard" Content="Standard" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Name}">
+                            <GridViewColumnHeader Tag="Metatag" Content="Metatag" />
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Value}">
+                            <GridViewColumnHeader Tag="Value" Content="Value" />
                         </GridViewColumn>
                     </GridView.Columns>
                 </GridView>
