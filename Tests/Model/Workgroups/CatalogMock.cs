@@ -35,7 +35,7 @@ public class CatalogMock: ICatalog
         throw new NotImplementedException();
     }
 
-    public void FlushPendingCreates()
+    public void PushPendingChanges()
     {
         throw new NotImplementedException();
     }

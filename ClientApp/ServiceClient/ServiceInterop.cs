@@ -19,6 +19,10 @@ public class ServiceInterop
         LocalService.Metatags.UpdateMetatagSchema(schemaDiff);
     }
 
+    public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
+    {
+        LocalService.Media.UpdateMediaItems(diffs);
+    }
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
         return LocalService.Import.GetPendingImportsForClient(sourceClient);

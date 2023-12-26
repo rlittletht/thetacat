@@ -116,7 +116,7 @@ public class MediaImport
             mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
             mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
 
-            List<string>? log = mediaItem.ReadMetadataFromFile(metatagSchema);
+            List<string>? log = mediaItem.SetMetadataFromFile(metatagSchema);
 
             if (log != null && log.Count != 0)
                 MessageBox.Show($"Found tag differences: {string.Join(", ", log)}");
@@ -133,7 +133,7 @@ public class MediaImport
 
         // at this point, we have an ID created for the media. Go ahead and insert the
         // new media items and commit the import to the database
-        catalog.FlushPendingCreates();
+        catalog.PushPendingChanges();
         // also flush any pending schema changes now
 
         ServiceInterop.InsertImportItems(ImportItems);

@@ -25,6 +25,8 @@ public class MediaItem: INotifyPropertyChanged
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
 
+    public MediaItemData Data => m_working;
+
     public string LocalPath
     {
         get => m_localPath;
@@ -39,7 +41,17 @@ public class MediaItem: INotifyPropertyChanged
         set => SetField(ref m_isCachePending, value);
     }
 
-    public enum PendingOp
+    public enum Op
+    {
+        Create,
+        Update,
+        Delete,
+        None
+    };
+
+    public Op PendingOp { get; set; } = Op.None;
+
+    public enum PendingOpDeprecated
     {
         Create,
         Delete,
@@ -50,6 +62,8 @@ public class MediaItem: INotifyPropertyChanged
         ChangeTags
     }
 
+    public bool MaybeHasChanges => m_base != null;
+
     #region Data Accessors
 
     void EnsureBase()
@@ -57,9 +71,10 @@ public class MediaItem: INotifyPropertyChanged
         m_base ??= new(m_working);
     }
 
-    void PushOp(PendingOp op)
+    public MediaItemData Base => m_base ?? throw new CatExceptionInternalFailure("no base to fetch");
+    void PushOp(PendingOpDeprecated opDeprecated)
     {
-        m_pendingOps.Add(op);
+        m_pendingOps.Add(opDeprecated);
     }
 
     public string MimeType
@@ -68,7 +83,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangeMimeType);
+            PushOp(PendingOpDeprecated.ChangeMimeType);
             m_working.MimeType = value;
         }
     }
@@ -81,7 +96,7 @@ public class MediaItem: INotifyPropertyChanged
         private set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangePath);
+            PushOp(PendingOpDeprecated.ChangePath);
             m_working.VirtualPath = value;
         }
     }
@@ -92,7 +107,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangeMD5);
+            PushOp(PendingOpDeprecated.ChangeMD5);
             m_working.MD5 = value;
         }
     }
@@ -103,7 +118,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangeState);
+            PushOp(PendingOpDeprecated.ChangeState);
             m_working.State = value;
             OnPropertyChanged(nameof(State));
         }
@@ -122,7 +137,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOp.ChangeTags);
+            PushOp(PendingOpDeprecated.ChangeTags);
             m_working.Tags = value;
         }
     }
@@ -130,20 +145,14 @@ public class MediaItem: INotifyPropertyChanged
 
     public void PushChangeTagPending()
     {
-        PushOp(PendingOp.ChangeTags);
+        PushOp(PendingOpDeprecated.ChangeTags);
     }
 
-    public List<PendingOp> m_pendingOps = new();
+    public List<PendingOpDeprecated> m_pendingOps = new();
 
     public bool IsCreatePending()
     {
-        foreach (PendingOp op in m_pendingOps)
-        {
-            if (op == PendingOp.Create)
-                return true;
-        }
-
-        return false;
+        return PendingOp == Op.Create;
     }
 
     public void ClearPendingCreate()
@@ -154,12 +163,12 @@ public class MediaItem: INotifyPropertyChanged
 
         for (int i = m_pendingOps.Count - 1; i >= 0; i--)
         {
-            PendingOp op = m_pendingOps[i];
-            if (op != PendingOp.ChangeTags)
+            PendingOpDeprecated opDeprecated = m_pendingOps[i];
+            if (opDeprecated != PendingOpDeprecated.ChangeTags)
                 m_pendingOps.RemoveAt(i);
         }
 
-        // at this point, the only pending op that could be left is ChangeTags...
+        // at this point, the only pending opDeprecated that could be left is ChangeTags...
         // if we need one and we have it, good. otherwise, add one
         if (Tags.Count > 0 && m_pendingOps.Count == 0)
             PushChangeTagPending();
@@ -176,7 +185,7 @@ public class MediaItem: INotifyPropertyChanged
     public MediaItem(ImportItem importItem)
     {
         m_working = new MediaItemData(importItem);
-        m_pendingOps.Add(PendingOp.Create);
+        m_pendingOps.Add(PendingOpDeprecated.Create);
     }
 
     public MediaItem(ServiceMediaItem item)
@@ -327,7 +336,7 @@ public class MediaItem: INotifyPropertyChanged
         return fullContentMd5;
     }
 
-    public List<string>? ReadMetadataFromFile(MetatagSchema metatagSchema)
+    public List<string>? SetMetadataFromFile(MetatagSchema metatagSchema)
     {
         log = new List<string>();
 

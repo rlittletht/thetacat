@@ -30,9 +30,27 @@ public class Catalog: ICatalog
 
     public void AddNewMediaItem(MediaItem item)
     {
+        item.PendingOp = MediaItem.Op.Create;
         m_items.Add(item.ID, item);
-        if (m_virtualLookupTable != null)
+
+        if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: PushPendingChanges
+        %%Qualified: Thetacat.Model.Catalog.PushPendingChanges
+
+        This will push any pending changes to the database.
+
+        This currently does not deal with any kind of coherency failure. Whoever
+        is committing last wins.
+    ----------------------------------------------------------------------------*/
+    public void PushPendingChanges()
+    {
+        List<MediaItemDiff> diffs = BuildUpdates();
+
+        ServiceInterop.UpdateMediaItems(diffs);
     }
 
     public void FlushPendingCreates()
@@ -54,6 +72,35 @@ public class Catalog: ICatalog
         {
             item.ClearPendingCreate();
         }
+    }
+
+    public List<MediaItemDiff> BuildUpdates()
+    {
+        List<MediaItemDiff> diffs = new();
+
+        foreach (KeyValuePair<Guid, MediaItem> item in m_items)
+        {
+            if (item.Value.MaybeHasChanges)
+            {
+                if (item.Value.PendingOp == MediaItem.Op.None)
+                    continue;
+
+                if (item.Value.PendingOp == MediaItem.Op.Create)
+                    diffs.Add(MediaItemDiff.CreateInsert(item.Value));
+                else if (item.Value.PendingOp == MediaItem.Op.Delete)
+                    diffs.Add(MediaItemDiff.CreateDelete(item.Value.ID));
+                else
+                {
+                    MediaItemDiff diff = (MediaItemDiff.CreateUpdate(item.Value));
+
+                    // make sure something actually changed before adding it
+                    if (diff.PropertiesChanged != 0)
+                        diffs.Add(diff);
+                }
+            }
+        }
+
+        return diffs;
     }
 
     public void AddMediaTag(Guid id, MediaTag tag)

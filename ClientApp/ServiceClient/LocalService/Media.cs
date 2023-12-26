@@ -4,6 +4,7 @@ using System.Text;
 using TCore;
 using Thetacat.Import;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -26,7 +27,7 @@ public class Media
             (id, metatag, value)
         VALUES ";
 
-    private static void ExecutePartedCommands<T>(string commandBase, IEnumerable<T> items, Func<T, string> buildLine, Dictionary<string, string>? aliases)
+    private static void ExecutePartedCommands<T>(string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -36,7 +37,7 @@ public class Media
 
         foreach (T item in items)
         {
-            if (current == 1000)
+            if (current == partLimit)
             {
                 LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
                 current = 0;
@@ -45,7 +46,7 @@ public class Media
             }
 
             if (current > 0)
-                sb.Append(",");
+                sb.Append(joinString);
 
             sb.Append(buildLine(item));
 
@@ -59,6 +60,9 @@ public class Media
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems
         %%Qualified: Thetacat.ServiceClient.LocalService.Media.InsertNewMediaItems
+
+        Currently unused. This takes advantage of the multiple values insert
+        syntax
     ----------------------------------------------------------------------------*/
     public static void InsertNewMediaItems(IEnumerable<MediaItem> items)
     {
@@ -94,6 +98,8 @@ public class Media
                     return
                         $"('{Sql.Sqlify(item.ID.ToString())}', '{Sql.Sqlify(item.VirtualPath)}', '{Sql.Sqlify(item.MimeType)}', '{MediaItem.StringFromState(item.State)}', '{Sql.Sqlify(item.MD5)}') ";
                 },
+                1000,
+                ", ",
                 s_aliases);
 
             ExecutePartedCommands(
@@ -101,6 +107,8 @@ public class Media
                 tagsToInsert,
                 item =>
                     $"('{Sql.Sqlify(item.MediaId.ToString())}', '{item.Id}', '{Sql.Sqlify(item.Value)}') ",
+                1000,
+                ", ",
                 s_aliases);
 
 
@@ -158,5 +166,151 @@ public class Media
                     });
 
             });
+    }
+
+    static string BuildInsertItemSql(MediaItemDiff diffOp)
+    {
+        if (diffOp.ItemData == null)
+            throw new CatExceptionInternalFailure("itemdata not set for insert");
+
+        if (diffOp.DiffOp != MediaItemDiff.Op.Insert)
+            throw new CatExceptionInternalFailure($"insert mediaitem not Op.Insert: {diffOp.DiffOp}");
+        
+        string id = diffOp.ID.ToString();
+        string virtualPath = Sql.Sqlify(diffOp.ItemData.VirtualPath);
+        string mimeType = Sql.Sqlify(diffOp.ItemData.MimeType);
+        string state = MediaItem.StringFromState(diffOp.ItemData.State);
+        string md5 = Sql.Sqlify(diffOp.ItemData.MD5);
+
+        return "INSERT INTO tcat_media (id, virtualPath, mimeType, state, md5) "
+            + $"VALUES ('{id}', '{virtualPath}', '{mimeType}', '{state}', '{md5}') ";
+    }
+
+    static string BuildDeleteSql(MediaItemDiff diffOp)
+    {
+        return $"DELETE FROM tcat_media WHERE ID = '{diffOp.ID}'";
+    }
+
+    static string BuildUpdateItemSql(MediaItemDiff diffOp)
+    {
+        switch (diffOp.DiffOp)
+        {
+            case MediaItemDiff.Op.Insert:
+                return BuildInsertItemSql(diffOp);
+            case MediaItemDiff.Op.Update:
+                return BuildChangeItemSql(diffOp);
+            case MediaItemDiff.Op.Delete:
+                return BuildDeleteSql(diffOp);
+            default:
+                throw new CatExceptionInternalFailure($"unknown diffOp op: {diffOp.DiffOp}");
+        }
+    }
+
+    static string BuildChangeItemSql(MediaItemDiff diffOp)
+    {
+        if (diffOp.ItemData == null)
+            throw new CatExceptionInternalFailure("itemdata not set for update");
+
+        List<string> sets = new();
+
+        if (diffOp.IsMimeTypeChanged)
+            sets.Add($"MimeType='{Sql.Sqlify(diffOp.ItemData.MimeType)}'");
+        if (diffOp.IsMD5Changed)
+            sets.Add($"MD5='{Sql.Sqlify(diffOp.ItemData.MD5)}'");
+        if (diffOp.IsPathChanged)
+            sets.Add($"VirtualPath={MediaItem.StringFromState(diffOp.ItemData.State)}");
+
+        if (sets.Count == 0)
+            return "";
+
+        string setsSql = string.Join(", ", sets.ToArray());
+        return $"UPDATE tcat_media SET {setsSql} WHERE ID='{diffOp.ID.ToString()}'";
+    }
+
+    static string BuildMediaTagDelete(Guid mediaId, Guid metatagId)
+    {
+        return $"DELETE FROM tcat_mediatags WHERE id='{mediaId.ToString()}' AND metatag='{metatagId.ToString()}' ";
+    }
+
+    static string BuildMediaTagInsert(Guid mediaId, MediaTag mediaTag)
+    {
+        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {Sql.Nullable(mediaTag.Value)}) ";
+    }
+
+    static string BuildMediaTagUpdate(Guid mediaId, MediaTag mediaTag)
+    {
+        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(mediaTag.Value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ) ";
+    }
+
+    static List<string> BuildUpdateItemTagsSql(MediaItemDiff diffOp)
+    {
+        List<string> sets = new();
+
+        if (!diffOp.IsTagsChanged || diffOp.TagDiffs == null || diffOp.TagDiffs.Count == 0)
+            return sets;
+
+        foreach (MediaTagDiff tagDiff in diffOp.TagDiffs)
+        {
+            switch (tagDiff.DiffOp)
+            {
+                case MediaTagDiff.Op.Delete:
+                    sets.Add(BuildMediaTagDelete(diffOp.ID, tagDiff.ID));
+                    break;
+                case MediaTagDiff.Op.Insert:
+                    sets.Add(BuildMediaTagInsert(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                    break;
+                case MediaTagDiff.Op.Update:
+                    sets.Add(BuildMediaTagUpdate(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                    break;
+                default:
+                    throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
+            }
+        }
+
+        return sets;
+    }
+
+    public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        LocalServiceClient.Sql.BeginTransaction();
+
+        try
+        {
+            // build a list of tags to insert as well
+            List<string> updateTags = new();
+
+            // take advantage of the enumeration we are going to do across all the
+            // items. when we are asked to build the string for each line, we can
+            // also build the list of tags we have to insert for these items
+            ExecutePartedCommands(
+                string.Empty,
+                diffs,
+                diff =>
+                {
+                    updateTags.AddRange(BuildUpdateItemTagsSql(diff));
+                    return BuildUpdateItemSql(diff);
+                },
+                1000,
+                " ",
+                s_aliases);
+
+            ExecutePartedCommands(
+                string.Empty,
+                updateTags,
+                updateTag => updateTag,
+                1000,
+                " ",
+                s_aliases);
+        }
+        catch (Exception)
+        {
+            LocalServiceClient.Sql.Rollback();
+            throw;
+        }
+
+        LocalServiceClient.Sql.Commit();
     }
 }
