@@ -15,13 +15,13 @@ using System.Windows.Shapes;
 namespace Thetacat.Migration.Elements.Media.UI
 {
     /// <summary>
-    /// Interaction logic for MediaItemDetails.xaml
+    /// Interaction logic for PseMediaItemDetails.xaml
     /// </summary>
-    public partial class MediaItemDetails : Window
+    public partial class PseMediaItemDetails : Window
     {
         private readonly IPseMediaItem m_mediaItem;
 
-        public MediaItemDetails(IPseMediaItem pseMediaItem)
+        public PseMediaItemDetails(IPseMediaItem pseMediaItem)
         {
             InitializeComponent();
             m_mediaItem = pseMediaItem;

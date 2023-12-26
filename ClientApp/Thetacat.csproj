@@ -37,6 +37,9 @@
     <Compile Update="UI\AppLogMonitor.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="UI\MediaItemDetails.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

@@ -292,7 +292,7 @@ public partial class MediaMigration : UserControl
 
         if (selected != null)
         {
-            MediaItemDetails details = new MediaItemDetails(selected);
+            PseMediaItemDetails details = new PseMediaItemDetails(selected);
 
             details.ShowDialog();
         }

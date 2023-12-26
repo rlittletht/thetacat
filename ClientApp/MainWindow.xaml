@@ -26,7 +26,7 @@
                 <RowDefinition Height="10*"/>
                 <RowDefinition Height="48"/>
             </Grid.RowDefinitions>
-            <ListView Name="CatalogView" Grid.Row="0">
+            <ListView Name="CatalogView" Grid.Row="0" MouseDoubleClick="HandleDoubleClick">
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>

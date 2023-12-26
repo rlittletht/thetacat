@@ -38,6 +38,8 @@ using Thetacat.Logging;
 using Thetacat.UI;
 using MessageBox = System.Windows.Forms.MessageBox;
 using RestoreWindowPlace;
+using Thetacat.Migration.Elements.Media.UI;
+using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat
 {
@@ -272,6 +274,19 @@ namespace Thetacat
                 CloseAppLog(false);
             else
                 ShowAppLog();
+        }
+
+        private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            KeyValuePair<Guid, MediaItem>? selected = CatalogView.SelectedItem as KeyValuePair<Guid, MediaItem>?;
+            MediaItem? item = selected?.Value;
+
+            if (item != null)
+            {
+                MediaItemDetails details = new MediaItemDetails(item);
+
+                details.ShowDialog();
+            }
         }
     }
 }
