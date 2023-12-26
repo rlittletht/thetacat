@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Thetacat.Controls;
 using Thetacat.Model.Metatags;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -27,8 +28,7 @@ namespace Thetacat.Migration.Elements.Metadata.UI;
 /// </summary>
 public partial class MetadataMigrateSummary : UserControl
 {
-    private GridViewColumnHeader? sortCol = null;
-    private SortAdorner? sortAdorner;
+    private readonly SortableListViewSupport m_sortableListViewSupport;
     private ElementsMigrate? m_migrate;
 
     private ElementsMigrate _Migrate
@@ -47,6 +47,7 @@ public partial class MetadataMigrateSummary : UserControl
     public MetadataMigrateSummary()
     {
         InitializeComponent();
+        m_sortableListViewSupport = new SortableListViewSupport(diffOpListView);
         diffOpListView.ItemsSource = m_metatagMigrationItems;
     }
 
@@ -55,33 +56,7 @@ public partial class MetadataMigrateSummary : UserControl
         m_migrate = migrate;
     }
 
-    private void SortType(object sender, RoutedEventArgs e)
-    {
-        Sort(diffOpListView, sender as GridViewColumnHeader);
-    }
-
-    public void Sort(ListView listView, GridViewColumnHeader? column)
-    {
-        if (column == null)
-            return;
-
-        string sortBy = column.Tag?.ToString() ?? string.Empty;
-
-        if (sortAdorner != null && sortCol != null)
-        {
-            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
-            listView.Items.SortDescriptions.Clear();
-        }
-
-        ListSortDirection newDir = ListSortDirection.Ascending;
-        if (sortCol == column && sortAdorner?.Direction == newDir)
-            newDir = ListSortDirection.Descending;
-
-        sortCol = column;
-        sortAdorner = new SortAdorner(sortCol, newDir);
-        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
-        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
-    }
+    private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
 
     public void RebuildSchemaDiff()
     {
@@ -105,6 +80,9 @@ public partial class MetadataMigrateSummary : UserControl
 
         MainWindow._AppState.RefreshMetatagSchema();
         _Migrate.MetatagMigrate.ReloadSchemas();
+        RebuildSchemaDiff();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }
+
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<MetatagMigrationItem>.DoKeyDown(diffOpListView, sender, e);
 }

@@ -23,24 +23,24 @@
                         <GridViewColumn Header="Include">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Name="Include" IsChecked="{Binding Path=Include}" />
+                                    <CheckBox Name="Include" IsChecked="{Binding Path=Checked}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=MediaID}">
-                            <GridViewColumnHeader Tag="CatID" Content="MediaID" />
+                            <GridViewColumnHeader Tag="CatID" Content="MediaID" Click="SortType"/>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
-                            <GridViewColumnHeader Tag="Path" Content="Path" />
+                            <GridViewColumnHeader Tag="Path" Content="Path" Click="SortType" />
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Standard}">
-                            <GridViewColumnHeader Tag="Standard" Content="Standard" />
+                            <GridViewColumnHeader Tag="Standard" Content="Standard" Click="SortType" />
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Name}">
-                            <GridViewColumnHeader Tag="Metatag" Content="Metatag" />
+                            <GridViewColumnHeader Tag="Metatag" Content="Metatag" Click="SortType" />
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Value}">
-                            <GridViewColumnHeader Tag="Value" Content="Value" />
+                            <GridViewColumnHeader Tag="Value" Content="Value" Click="SortType" />
                         </GridViewColumn>
                     </GridView.Columns>
                 </GridView>

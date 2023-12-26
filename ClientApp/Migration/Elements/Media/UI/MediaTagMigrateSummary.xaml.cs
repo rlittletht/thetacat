@@ -19,6 +19,7 @@ using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Types;
+using Thetacat.Util;
 
 /*
 MediaTags in the catalog are both the painted metatags as well as metadata that have
@@ -40,6 +41,9 @@ namespace Thetacat.Migration.Elements.Media.UI
     /// </summary>
     public partial class MediaTagMigrateSummary : UserControl
     {
+        private readonly SortableListViewSupport m_sortableListViewSupport;
+        private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
+
         private ElementsMigrate? m_migrate;
 
         private readonly ObservableCollection<MediaTagMigrateItem> m_mediatagMigrationItems = new();
@@ -62,6 +66,7 @@ namespace Thetacat.Migration.Elements.Media.UI
         public MediaTagMigrateSummary()
         {
             InitializeComponent();
+            m_sortableListViewSupport = new SortableListViewSupport(diffOpListView);
             diffOpListView.ItemsSource = m_mediatagMigrationItems;
         }
 
@@ -74,6 +79,8 @@ namespace Thetacat.Migration.Elements.Media.UI
 
         public void BuildSummary()
         {
+            m_mediatagMigrationItems.Clear();
+
             foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
             {
                 if (!item.InCatalog)
@@ -117,9 +124,23 @@ namespace Thetacat.Migration.Elements.Media.UI
             }
         }
 
+        private List<MediaTagMigrateItem> BuildCheckedItems()
+        {
+            // build the list to check (only the marked items)
+            List<MediaTagMigrateItem> checkedItems = new();
+            foreach (MediaTagMigrateItem item in m_mediatagMigrationItems)
+            {
+                if (item.Checked)
+                    checkedItems.Add(item);
+            }
+
+            return checkedItems;
+        }
+
         private void DoMigrate(object sender, RoutedEventArgs e)
         {
 
         }
+
     }
 }

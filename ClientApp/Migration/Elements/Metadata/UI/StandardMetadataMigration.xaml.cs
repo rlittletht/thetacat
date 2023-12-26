@@ -23,14 +23,14 @@ using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
+using Thetacat.Util;
 using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public partial class StandardMetadataMigration : UserControl
 {
-    private GridViewColumnHeader? sortCol = null;
-    private SortAdorner? sortAdorner;
+    private readonly SortableListViewSupport m_sortableListViewSupport;
     private ElementsMigrate? m_migrate = null;
     private ElementsMigrate _Migrate
     {
@@ -48,17 +48,10 @@ public partial class StandardMetadataMigration : UserControl
     public StandardMetadataMigration()
     {
         InitializeComponent();
+        m_sortableListViewSupport = new SortableListViewSupport(metadataListView);
     }
 
-    private void DoToggleSelected(object sender, RoutedEventArgs e)
-    {
-        ToggleItems(metadataListView.SelectedItems as IEnumerable<object?>);
-    }
-
-    private void SortType(object sender, RoutedEventArgs e)
-    {
-        Sort(metadataListView, sender as GridViewColumnHeader);
-    }
+    private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
 
     IMetatagTreeItem? GetRootForMetadataItem(PseMetadata item)
     {
@@ -94,7 +87,7 @@ public partial class StandardMetadataMigration : UserControl
 
             // found a matching item in the cat database. mark it here
             item.CatID = Guid.Parse(match.ID);
-            item.Migrate = false; // no need to migrate. its already there
+            item.Checked = false; // no need to migrate. its already there
         }
     }
 
@@ -106,7 +99,7 @@ public partial class StandardMetadataMigration : UserControl
         foreach (PseMetadata item in _Migrate.MetatagMigrate.MetadataSchema.MetadataItems)
         {
             item.CatID = null;
-            item.Migrate = false;
+            item.Checked = false;
         }
         
         MarkExistingMetadata();
@@ -139,44 +132,9 @@ public partial class StandardMetadataMigration : UserControl
                 metadata.StandardTag = define.Standard.Text;
                 metadata.PropertyTag = define.TagName.Text;
                 metadata.Description = define.Description.Text;
-                metadata.Migrate = true;
+                metadata.Checked = true;
             }
         }
-    }
-
-    public void ToggleItems(IEnumerable<object?>? items)
-    {
-        if (items == null)
-            return;
-
-        foreach (PseMetatag? item in items)
-        {
-            if (item != null)
-                item.IsSelected = !item.IsSelected;
-        }
-    }
-
-    public void Sort(ListView listView, GridViewColumnHeader? column)
-    {
-        if (column == null)
-            return;
-
-        string sortBy = column.Tag?.ToString() ?? string.Empty;
-
-        if (sortAdorner != null && sortCol != null)
-        {
-            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
-            listView.Items.SortDescriptions.Clear();
-        }
-
-        ListSortDirection newDir = ListSortDirection.Ascending;
-        if (sortCol == column && sortAdorner?.Direction == newDir)
-            newDir = ListSortDirection.Descending;
-
-        sortCol = column;
-        sortAdorner = new SortAdorner(sortCol, newDir);
-        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
-        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
     }
 
     private void DoMigrate(object sender, RoutedEventArgs e)
@@ -184,9 +142,9 @@ public partial class StandardMetadataMigration : UserControl
         if (MainWindow._AppState?.MetatagSchema == null || _Migrate == null)
             throw new Exception("appstate or migrate uninitialized");
 
-        foreach (PseMetadata? item in metadataListView.Items)
+        foreach (PseMetadata? item in CheckableListViewSupport<PseMetadata>.GetCheckedItems(metadataListView))
         {
-            if (!(item?.Migrate ?? false))
+            if (!(item?.Checked ?? false))
                 continue;
 
             if (item.CatID != null)
@@ -274,4 +232,6 @@ public partial class StandardMetadataMigration : UserControl
 
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
+
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<MetatagMigrationItem>.DoKeyDown(metadataListView, sender, e);
 }

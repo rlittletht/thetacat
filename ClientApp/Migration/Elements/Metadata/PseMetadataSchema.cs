@@ -24,14 +24,14 @@ public class PseMetadataSchema
             metadata.StandardTag = "user";
             metadata.PropertyTag = pseMapping.Name;
             metadata.Description = pseMapping.Description;
-            metadata.Migrate = true;
+            metadata.Checked = true;
         }
         else if (pseMapping.StandardId == MetatagStandards.Standard.Unknown)
         {
             metadata.StandardTag = "builtin";
             metadata.PropertyTag = string.Empty;
             metadata.Description = string.Empty;
-            metadata.Migrate = false; // these are builtin so they don't need a metatag definition
+            metadata.Checked = false; // these are builtin so they don't need a metatag definition
         }
         else if (pseMapping.StandardId != MetatagStandards.Standard.Unknown)
         {
@@ -40,7 +40,7 @@ public class PseMetadataSchema
             metadata.StandardTag = definition.StandardTag;
             metadata.PropertyTag = definition.Properties[pseMapping.ItemTag].PropertyTagName;
             metadata.Description = $"{definition.StandardTag} {metadata.PropertyTag}";
-            metadata.Migrate = true;
+            metadata.Checked = true;
         }
     }
 

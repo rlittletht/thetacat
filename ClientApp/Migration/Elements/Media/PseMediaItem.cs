@@ -21,7 +21,7 @@ using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Media;
 
-public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFile
+public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFile, ICheckableListViewItem
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string>? m_metadataValues;
@@ -64,10 +64,10 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         }
     }
 
-    public bool Migrate
+    public bool Checked
     {
-        get => m_migrate;
-        set => SetField(ref m_migrate, value);
+        get => m_include;
+        set => SetField(ref m_include, value);
     }
 
     public int ID
@@ -111,7 +111,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     }
 
     private List<PseMediaTagValue>? m_mediaTagValues;
-    private bool m_migrate;
+    private bool m_include;
     private bool m_inCatalog;
     private string? m_md5;
 

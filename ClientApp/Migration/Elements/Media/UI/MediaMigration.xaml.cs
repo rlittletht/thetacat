@@ -23,6 +23,7 @@ using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Model;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -218,34 +219,15 @@ public partial class MediaMigration : UserControl
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
     }
 
-    private List<PseMediaItem> BuildCheckedItems()
-    {
-        // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
-        {
-            if (item.Migrate)
-                checkedItems.Add(item);
-        }
-
-        return checkedItems;
-    }
-
     /*----------------------------------------------------------------------------
         %%Function: BuildCheckedVerifiedItems
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.BuildCheckedVerifiedItems
     ----------------------------------------------------------------------------*/
     private List<PseMediaItem> BuildCheckedVerifiedItems()
     {
-        // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
-        {
-            if (item.Migrate && item.PathVerified == TriState.Yes && item.InCatalog == false)
-                checkedItems.Add(item);
-        }
-
-        return checkedItems;
+        return CheckableListViewSupport<PseMediaItem>.GetCheckedItems(
+            mediaItemsListView,
+            (PseMediaItem item) => item.PathVerified == TriState.Yes && item.InCatalog == false);
     }
 
     /*----------------------------------------------------------------------------
@@ -278,7 +260,8 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = BuildCheckedItems();
+        List<PseMediaItem> checkedItems = 
+            CheckableListViewSupport<PseMediaItem>.GetCheckedItems(mediaItemsListView);
 
         // split the list into 4 parts and do them in parallel
         int segCount = 10;
@@ -357,25 +340,5 @@ public partial class MediaMigration : UserControl
 
     }
 
-    /*----------------------------------------------------------------------------
-        %%Function: DoKeyDown
-        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.DoKeyDown
-
-        we might have to do something special here to prevent it from deselecting
-        our selection when space is pressed
-    ----------------------------------------------------------------------------*/
-    private void DoKeyDown(object sender, KeyEventArgs e)
-    {
-        if (!e.IsRepeat && e.Key == Key.Space)
-        {
-            bool notMixed = mediaItemsListView.SelectedItems.Cast<object>().Any(item => ((PseMediaItem)item).Migrate)
-                ^ mediaItemsListView.SelectedItems.Cast<object>().Any(item => !((PseMediaItem)item).Migrate);
-
-            foreach (object? item in mediaItemsListView.SelectedItems)
-            {
-                if (item is PseMediaItem pseItem)
-                    pseItem.Migrate = !notMixed || !pseItem.Migrate;
-            }
-        }
-    }
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<PseMediaItem>.DoKeyDown(mediaItemsListView, sender, e);
 }

@@ -14,7 +14,7 @@
             <RowDefinition Height="24" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="5 5 0 10">Migrate user-defined tags from Photoshop Elements to Thetacat by checking the tags below and click Migrate! to create tags in Thetacat</TextBlock>
-        <ListView Name="metaTagsListView" Grid.Row="1">
+        <ListView Name="metaTagsListView" Grid.Row="1" PreviewKeyDown="DoKeyDown">
             <ListView.View>
                 <GridView>
                     <GridView.Columns>

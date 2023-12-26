@@ -209,7 +209,9 @@ public class SQLite : ISql
             throw new TcSqlExceptionInTransaction();
 
         SQLiteReader.ExecuteWithDatabaseLockRetry(
+#pragma warning disable CS0618
             () => m_transaction = new SQLiteTransaction(Connection.BeginTransaction(IsolationLevel.Serializable, false)),
+#pragma warning restore CS0618
             250,
             5000);
     }

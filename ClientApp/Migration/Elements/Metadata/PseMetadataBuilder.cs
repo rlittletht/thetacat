@@ -50,7 +50,7 @@ public class PseMetadataBuilder
 
     public PseMetadataBuilder SetMigrate(bool migrate)
     {
-        m_building.Migrate= migrate;
+        m_building.Checked= migrate;
         return this;
     }
 

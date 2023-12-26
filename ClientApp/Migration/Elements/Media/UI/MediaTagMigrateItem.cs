@@ -9,12 +9,19 @@ using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Media.UI;
 
-public class MediaTagMigrateItem: INotifyPropertyChanged
+public class MediaTagMigrateItem: INotifyPropertyChanged, ICheckableListViewItem
 {
     private Guid m_mediaId;
     private PathSegment m_virtualPath;
     private Metatag m_metatagSetting;
     private string? m_value;
+    private bool m_include;
+
+    public bool Checked
+    {
+        get => m_include;
+        set => SetField(ref m_include, value);
+    }
 
     public Guid MediaID
     {
