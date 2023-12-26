@@ -248,28 +248,56 @@ public class Media
     {
         List<string> sets = new();
 
-        if (!diffOp.IsTagsChanged || diffOp.TagDiffs == null || diffOp.TagDiffs.Count == 0)
-            return sets;
-
-        foreach (MediaTagDiff tagDiff in diffOp.TagDiffs)
+        switch (diffOp.DiffOp)
         {
-            switch (tagDiff.DiffOp)
+            case MediaItemDiff.Op.Insert:
             {
-                case MediaTagDiff.Op.Delete:
-                    sets.Add(BuildMediaTagDelete(diffOp.ID, tagDiff.ID));
-                    break;
-                case MediaTagDiff.Op.Insert:
-                    sets.Add(BuildMediaTagInsert(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
-                    break;
-                case MediaTagDiff.Op.Update:
-                    sets.Add(BuildMediaTagUpdate(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
-                    break;
-                default:
-                    throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
-            }
-        }
+                if (diffOp.ItemData == null)
+                    throw new CatExceptionInternalFailure("no itemdata for insert");
+                // all the tags get inserted
+                foreach (KeyValuePair<Guid, MediaTag> tag in diffOp.ItemData.Tags)
+                {
+                    sets.Add(BuildMediaTagInsert(diffOp.ID, tag.Value));
+                }
 
-        return sets;
+                return sets;
+            }
+            case MediaItemDiff.Op.Delete:
+                // all the media tags associated with this media ID gets deleted
+                sets.Add($"DELETE FROM tcat_mediatags WHERE id='{diffOp.ID.ToString()}' ");
+                return sets;
+            case MediaItemDiff.Op.Update:
+                if (!diffOp.IsTagsChanged
+                    || diffOp.TagDiffs == null
+                    || diffOp.TagDiffs.Count == 0)
+                {
+                    return sets;
+                }
+
+                // for existing mediaitmes that are being updated, individual tags can be
+                // added, updated, or deleted...
+                foreach (MediaTagDiff tagDiff in diffOp.TagDiffs)
+                {
+                    switch (tagDiff.DiffOp)
+                    {
+                        case MediaTagDiff.Op.Delete:
+                            sets.Add(BuildMediaTagDelete(diffOp.ID, tagDiff.ID));
+                            break;
+                        case MediaTagDiff.Op.Insert:
+                            sets.Add(BuildMediaTagInsert(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            break;
+                        case MediaTagDiff.Op.Update:
+                            sets.Add(BuildMediaTagUpdate(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            break;
+                        default:
+                            throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
+                    }
+                }
+
+                return sets;
+            default:
+                throw new CatExceptionInternalFailure($"unknown MediaItemDiff.Op {diffOp.DiffOp}");
+        }
     }
 
     public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
