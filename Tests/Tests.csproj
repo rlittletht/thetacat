@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="Migration\Elements\" />
+    <Folder Include="Model\MediaItems\" />
   </ItemGroup>
 
   <ItemGroup>

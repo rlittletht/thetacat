@@ -283,7 +283,12 @@ public class WorkgroupDb
         }
 
         if (current > 0)
-            sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+        {
+            string sCmd = sb.ToString();
+
+            if (!string.IsNullOrWhiteSpace(sCmd))
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+        }
     }
 
     public void UpdateInsertCacheEntries(

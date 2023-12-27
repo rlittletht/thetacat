@@ -24,26 +24,25 @@ public class MediaItemDiff: INotifyPropertyChanged
     [Flags]
     public enum UpdatedValues
     {
-        MimeType = 1,
-        Path,
-        MD5,
-        State,
-        Tags
+        None = 0b_0000_0000,
+        MimeType = 0b_0000_0001,
+        Path = 0b_0000_0010,
+        MD5 = 0b_0000_0100,
+        State = 0b_0000_1000,
+        Tags = 0b_0001_0000,
     }
 
+    public int VectorClock { get; set; }
     public bool IsMimeTypeChanged => (PropertiesChanged & UpdatedValues.MimeType) != 0;
     public bool IsPathChanged => (PropertiesChanged & UpdatedValues.Path) != 0;
     public bool IsMD5Changed => (PropertiesChanged & UpdatedValues.MD5) != 0;
     public bool IsStateChanged => (PropertiesChanged & UpdatedValues.State) != 0;
     public bool IsTagsChanged => (PropertiesChanged & UpdatedValues.Tags) != 0;
-
-
+    
     public Op DiffOp { get; set; }
     public UpdatedValues PropertiesChanged { get; set; }
-
     public Guid ID { get; set; }
     public MediaItemData? ItemData { get; set; }
-    
     public List<MediaTagDiff>? TagDiffs { get; set; }
 
     public MediaItemDiff(Guid id)
@@ -66,7 +65,8 @@ public class MediaItemDiff: INotifyPropertyChanged
             new MediaItemDiff(item.ID)
             {
                 DiffOp = Op.Insert,
-                ItemData = item.Data
+                ItemData = item.Data,
+                VectorClock = item.VectorClock
             };
     }
 
@@ -75,8 +75,9 @@ public class MediaItemDiff: INotifyPropertyChanged
         MediaItemDiff diff =
             new MediaItemDiff(item.ID)
             {
-                DiffOp = Op.Insert,
-                ItemData = item.Data
+                DiffOp = Op.Update,
+                ItemData = item.Data,
+                VectorClock = item.VectorClock
             };
 
         if (item.Base.MD5 != item.MD5)

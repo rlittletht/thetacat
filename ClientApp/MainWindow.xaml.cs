@@ -288,5 +288,10 @@ namespace Thetacat
                 details.ShowDialog();
             }
         }
+
+        private void UpdateMediaItems(object sender, RoutedEventArgs e)
+        {
+            _AppState.Catalog.PushPendingChanges();
+        }
     }
 }

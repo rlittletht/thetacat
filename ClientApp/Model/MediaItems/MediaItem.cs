@@ -9,11 +9,13 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Security.Permissions;
 using System.Windows;
 using System.Windows.Markup;
 using Thetacat.Import;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -25,6 +27,11 @@ public class MediaItem: INotifyPropertyChanged
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
 
+    // the vector clock changes whenever a change is made to the data. we use this
+    // clock to determine if a diffitem (when committed) should clear any changes to
+    // this item
+
+    public int VectorClock = 0;
     public MediaItemData Data => m_working;
 
     public string LocalPath
@@ -44,23 +51,11 @@ public class MediaItem: INotifyPropertyChanged
     public enum Op
     {
         Create,
-        Update,
         Delete,
-        None
+        MaybeUpdate
     };
 
-    public Op PendingOp { get; set; } = Op.None;
-
-    public enum PendingOpDeprecated
-    {
-        Create,
-        Delete,
-        ChangeMimeType,
-        ChangePath,
-        ChangeMD5,
-        ChangeState,
-        ChangeTags
-    }
+    public Op PendingOp { get; set; } = Op.MaybeUpdate;
 
     public bool MaybeHasChanges => m_base != null;
 
@@ -72,10 +67,6 @@ public class MediaItem: INotifyPropertyChanged
     }
 
     public MediaItemData Base => m_base ?? throw new CatExceptionInternalFailure("no base to fetch");
-    void PushOp(PendingOpDeprecated opDeprecated)
-    {
-        m_pendingOps.Add(opDeprecated);
-    }
 
     public string MimeType
     {
@@ -83,7 +74,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOpDeprecated.ChangeMimeType);
+            VectorClock++;
             m_working.MimeType = value;
         }
     }
@@ -96,7 +87,7 @@ public class MediaItem: INotifyPropertyChanged
         private set
         {
             EnsureBase();
-            PushOp(PendingOpDeprecated.ChangePath);
+            VectorClock++;
             m_working.VirtualPath = value;
         }
     }
@@ -107,7 +98,7 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOpDeprecated.ChangeMD5);
+            VectorClock++;
             m_working.MD5 = value;
         }
     }
@@ -118,8 +109,8 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOpDeprecated.ChangeState);
             m_working.State = value;
+            VectorClock++;
             OnPropertyChanged(nameof(State));
         }
     }
@@ -137,44 +128,15 @@ public class MediaItem: INotifyPropertyChanged
         set
         {
             EnsureBase();
-            PushOp(PendingOpDeprecated.ChangeTags);
+            VectorClock++;
             m_working.Tags = value;
         }
     }
     #endregion
 
-    public void PushChangeTagPending()
-    {
-        PushOp(PendingOpDeprecated.ChangeTags);
-    }
-
-    public List<PendingOpDeprecated> m_pendingOps = new();
-
     public bool IsCreatePending()
     {
         return PendingOp == Op.Create;
-    }
-
-    public void ClearPendingCreate()
-    {
-#if TAGS_NOT_ON_CREATE // we upload tags on create now
-        // Tags aren't uploaded during create, so if there are any tags on this item,
-        // we need to mark a pending change...
-
-        for (int i = m_pendingOps.Count - 1; i >= 0; i--)
-        {
-            PendingOpDeprecated opDeprecated = m_pendingOps[i];
-            if (opDeprecated != PendingOpDeprecated.ChangeTags)
-                m_pendingOps.RemoveAt(i);
-        }
-
-        // at this point, the only pending opDeprecated that could be left is ChangeTags...
-        // if we need one and we have it, good. otherwise, add one
-        if (Tags.Count > 0 && m_pendingOps.Count == 0)
-            PushChangeTagPending();
-#else
-        m_pendingOps.Clear();
-#endif
     }
 
     public MediaItem()
@@ -185,7 +147,6 @@ public class MediaItem: INotifyPropertyChanged
     public MediaItem(ImportItem importItem)
     {
         m_working = new MediaItemData(importItem);
-        m_pendingOps.Add(PendingOpDeprecated.Create);
     }
 
     public MediaItem(ServiceMediaItem item)
@@ -288,31 +249,52 @@ public class MediaItem: INotifyPropertyChanged
                 metatagSchema.AddMetatag(metatag);
             }
 
+            MediaTag newTag = new MediaTag(metatag, value);
 
-            bool identicalExisting = false;
-
-            Tags.AddOrUpdate(
-                metatag.ID,
-                new MediaTag(metatag, value),
-                (key, oldMediaTag) =>
-                {
-                    if (oldMediaTag.Value != value)
-                    {
-                        log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {value}");
-                        oldMediaTag.Value = value;
-                    }
-                    else
-                    {
-                        identicalExisting = true;
-                    }
-
-                    return oldMediaTag;
-                });
-
-            changed |= !identicalExisting;
+            if (FAddOrUpdateTag(newTag))
+                changed = true;
         }
 
         return changed;
+    }
+
+    public bool FAddOrUpdateTag(MediaTag tag)
+    {
+        bool ensuredBase = m_base == null;
+
+        EnsureBase();
+
+        bool identicalExisting = false;
+
+        Tags.AddOrUpdate(
+            tag.Metatag.ID,
+            tag,
+            (key, oldMediaTag) =>
+            {
+                if (oldMediaTag.Value != tag.Value)
+                {
+                    log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                    oldMediaTag.Value = tag.Value;
+                }
+                else
+                {
+                    identicalExisting = true;
+                }
+
+                return oldMediaTag;
+            });
+
+        if (identicalExisting && ensuredBase)
+        {
+            // well drat, we ended up not needing to ensure the base (because the tag was
+            // identical). free the base so we don't think there's a difference
+            ResetPendingChanges();
+        }
+
+        if (!identicalExisting)
+            VectorClock++;
+
+        return !identicalExisting;
     }
 
     private List<string>? log;
@@ -347,18 +329,18 @@ public class MediaItem: INotifyPropertyChanged
             
         this.MD5 = CalculateMD5Hash(file);
         
-        bool changed = false;
-
         foreach (MetadataExtractor.Directory directory in directories)
         {
-            if (MigrateMetadataForDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown))
-                changed = true;
+            MigrateMetadataForDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown);
         }
 
-        if (changed)
-            PushChangeTagPending();
-
         return log;
+    }
+
+    public void ResetPendingChanges()
+    {
+        PendingOp = Op.MaybeUpdate;
+        m_base = null;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

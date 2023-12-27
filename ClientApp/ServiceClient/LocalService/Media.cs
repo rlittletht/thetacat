@@ -54,7 +54,12 @@ public class Media
         }
 
         if (current > 0)
-            LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+        {
+            string sCmd = sb.ToString();
+
+            if (!string.IsNullOrWhiteSpace(sCmd))
+                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+        }
     }
 
     /*----------------------------------------------------------------------------

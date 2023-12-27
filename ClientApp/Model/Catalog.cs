@@ -51,26 +51,16 @@ public class Catalog: ICatalog
         List<MediaItemDiff> diffs = BuildUpdates();
 
         ServiceInterop.UpdateMediaItems(diffs);
-    }
 
-    public void FlushPendingCreates()
-    {
-        // collect all the items pending create -- we will create them all at once
-        List<MediaItem> creating = new();
-
-        foreach (MediaItem item in m_items.Values)
+        foreach (MediaItemDiff diff in diffs)
         {
-            if (!item.IsCreatePending())
-                continue;
-
-            creating.Add(item);
-        }
-
-        ServiceInterop.InsertNewMediaItems(creating);
-
-        foreach (MediaItem item in creating)
-        {
-            item.ClearPendingCreate();
+            if (diff.DiffOp == MediaItemDiff.Op.Delete)
+                Items.Remove(diff.ID);
+            else if (Items.TryGetValue(diff.ID, out MediaItem item))
+            {
+                if (item.VectorClock == diff.VectorClock)
+                    item.ResetPendingChanges();
+            }
         }
     }
 
@@ -82,9 +72,6 @@ public class Catalog: ICatalog
         {
             if (item.Value.MaybeHasChanges)
             {
-                if (item.Value.PendingOp == MediaItem.Op.None)
-                    continue;
-
                 if (item.Value.PendingOp == MediaItem.Op.Create)
                     diffs.Add(MediaItemDiff.CreateInsert(item.Value));
                 else if (item.Value.PendingOp == MediaItem.Op.Delete)
@@ -103,7 +90,15 @@ public class Catalog: ICatalog
         return diffs;
     }
 
-    public void AddMediaTag(Guid id, MediaTag tag)
+    /*----------------------------------------------------------------------------
+        %%Function: AddMediaTagInternal
+        %%Qualified: Thetacat.Model.Catalog.AddMediaTagInternal
+
+        This circumvents the normal dirtying of the item -- DO NOT use this
+        directly unless you know what you are really doing (e.g. you are reading
+        from the database which means its by definition not a dirtying action)
+    ----------------------------------------------------------------------------*/
+    public void AddMediaTagInternal(Guid id, MediaTag tag)
     {
         if (!m_items.ContainsKey(id))
             throw new Exception("media not present");
@@ -153,7 +148,7 @@ public class Catalog: ICatalog
                     throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema, even after refreshing the schema");
             }
 
-            AddMediaTag(tag.MediaId, new MediaTag(metatag, tag.Value));
+            AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
     }
 

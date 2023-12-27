@@ -142,10 +142,8 @@ public partial class MediaTagMigrateSummary : UserControl
             }
 
             MediaTag tag = new MediaTag(item.MetatagSetting, item.Value);
-            catItem.Tags.AddOrUpdate(
-                item.MetatagSetting.ID,
-                tag,
-                (key, oldValue) => tag);
+
+            catItem.FAddOrUpdateTag(tag);
         }
 
         BuildSummary();

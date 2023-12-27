@@ -40,7 +40,7 @@ public class CatalogMock: ICatalog
         throw new NotImplementedException();
     }
 
-    public void AddMediaTag(Guid id, MediaTag tag)
+    public void AddMediaTagInternal(Guid id, MediaTag tag)
     {
         throw new NotImplementedException();
     }

@@ -50,8 +50,12 @@
                 <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Metatag" DisplayMemberBinding="{Binding Value.Metatag.StandardName}" />
-                            <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value.Value}" />
+                            <GridViewColumn DisplayMemberBinding="{Binding Value.Metatag.StandardName}" >
+                                <GridViewColumnHeader Content="Metatag" Tag="Value.Metatag.StandardName" Click="SortType" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Value.Value}">
+                                <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType"/>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
