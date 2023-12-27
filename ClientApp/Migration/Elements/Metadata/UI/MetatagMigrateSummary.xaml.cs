@@ -79,7 +79,7 @@ public partial class MetadataMigrateSummary : UserControl
         ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
 
         MainWindow._AppState.RefreshMetatagSchema();
-        _Migrate.MetatagMigrate.ReloadSchemas();
+        _Migrate.ReloadSchemas();
         RebuildSchemaDiff();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");
     }

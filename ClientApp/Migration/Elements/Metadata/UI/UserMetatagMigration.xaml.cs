@@ -105,7 +105,7 @@ public partial class UserMetatagMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        m_migrate?.MetatagMigrate.SwitchToSummaryTab();
+        m_migrate?.SwitchToSchemaSummariesTab();
     }
 
     delegate Guid UnmatchedDelegate(List<string> nameHistory, IMetatagTreeItem item, Guid? idParent);

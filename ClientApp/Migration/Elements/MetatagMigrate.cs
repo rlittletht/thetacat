@@ -19,12 +19,6 @@ public class MetatagMigrate
     private ObservableCollection<PseMetatag>? m_metatags;
     private ObservableCollection<MetatagSchemaDiff>? m_schemaDiff;
 
-    public delegate void SwitchToSummaryDelegate();
-    public delegate void ReloadSchemasDelegate();
-
-    public SwitchToSummaryDelegate SwitchToSummaryTab { get; }
-    public ReloadSchemasDelegate ReloadSchemas { get; }
-
     public PseMetadataSchema MetadataSchema
     {
         get
@@ -59,10 +53,8 @@ public class MetatagMigrate
         }
     }
 
-    public MetatagMigrate(SwitchToSummaryDelegate switchToSummaryDelegate, ReloadSchemasDelegate reloadSchemasDelegate)
+    public MetatagMigrate()
     {
-        SwitchToSummaryTab = switchToSummaryDelegate;
-        ReloadSchemas = reloadSchemasDelegate;
     }
 
     public void SetUserMetatags(IEnumerable<PseMetatag> metatags)

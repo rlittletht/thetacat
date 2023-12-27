@@ -333,6 +333,7 @@ public partial class MediaMigration : UserControl
         // and lastly we have to add the items we just manually added to our cache
         // (we don't have any items we are tracking. these should all be adds)
         MainWindow._AppState.Cache.PushChangesToDatabase(null);
+        _Migrate.ReloadSchemas();
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)

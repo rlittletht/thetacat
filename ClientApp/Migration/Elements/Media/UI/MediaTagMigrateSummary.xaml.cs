@@ -85,12 +85,13 @@ public partial class MediaTagMigrateSummary : UserControl
         {
             if (!item.InCatalog)
             {
-                MainWindow.LogForApp(EventType.Error, $"can't build mediatags if item not in catalog. Media not migrated? {item.FullPath}");
+//                MainWindow.LogForApp(EventType.Error, $"can't build mediatags if item not in catalog. Media not migrated? {item.FullPath}");
                 continue;
             }
 
             MediaItem catItem = MainWindow._AppState.Catalog.Items[item.CatID];
 
+            // build the PSE metadata values to migrate
             foreach (PseMediaTagValue mediaTagValue in item.Metadata)
             {
                 PseMetadata metadataItem = _Migrate.MetatagMigrate.MetadataSchema.LookupPseIdentifier(mediaTagValue.PseIdentifier);
@@ -121,6 +122,25 @@ public partial class MediaTagMigrateSummary : UserControl
 
                 m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, mediaTagValue.Value));
             }
+
+            // and now do the metatags painted on the item
+            foreach (PseMetatag mediaTagValue in item.Tags)
+            {
+                if (mediaTagValue.CatID == null)
+                    continue;
+
+                Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
+                    MetatagMatcher.CreateIdMatch(mediaTagValue.CatID.Value));
+
+                if (metatag == null)
+                    throw new CatExceptionInternalFailure($"can't find metatag {mediaTagValue.CatID.Value}");
+
+                // see if this tag is already set on the media item. if it is, just skip (there are no values for these tags)
+                if (catItem.Tags.TryGetValue(metatag.ID, out MediaTag? existing))
+                    continue;
+
+                m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, null));
+            }
         }
     }
 
@@ -132,6 +152,15 @@ public partial class MediaTagMigrateSummary : UserControl
     ----------------------------------------------------------------------------*/
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
+        MetatagSchemaDiff diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
+
+        if (!diff.IsEmpty)
+        {
+            MessageBox.Show("Can't migrate mediatags when there are schema changes that need to be committed");
+            _Migrate.SwitchToSchemaSummariesTab();
+            return;
+        }
+        
         List<MediaTagMigrateItem> checkedItems = CheckableListViewSupport<MediaTagMigrateItem>.GetCheckedItems(diffOpListView);
 
         foreach (MediaTagMigrateItem item in checkedItems)
