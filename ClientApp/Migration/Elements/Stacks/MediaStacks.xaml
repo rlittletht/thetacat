@@ -9,43 +9,80 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="5*" />
+            <RowDefinition Height="24" />
             <RowDefinition Height="5*" />
-            <RowDefinition Height="24"/>
+            <RowDefinition Height="24" />
         </Grid.RowDefinitions>
-        <GroupBox Grid.Row="0">
-            <GroupBox.Header>Version stacks</GroupBox.Header>
-            <ListView Name="VersionStackListView" ItemsSource="{Binding Path=PseMediaStackItem}">
+        <GroupBox Grid.Row="0" Header="PSE Stack Definitions">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <GroupBox Grid.Column="0" Header="Version Stacks">
+                    <ListView Name="VersionStackListView" ItemsSource="{Binding Path=PseMediaStackItem}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="StackID" DisplayMemberBinding="{Binding StackID}" />
+                                <GridViewColumn Header="MediaID" DisplayMemberBinding="{Binding MediaID}" />
+                                <GridViewColumn Header="Index" DisplayMemberBinding="{Binding Path=MediaIndex}" />
+                                <GridViewColumn Header="CatStackID" DisplayMemberBinding="{Binding Path=CatStackId}" />
+                                <GridViewColumn Header="CatMediaID" DisplayMemberBinding="{Binding Path=CatMediaId}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </GroupBox>
+                <GroupBox Grid.Column="1">
+                    <GroupBox.Header>Media stacks</GroupBox.Header>
+                    <ListView Name="MediaStackListView" ItemsSource="{Binding Path=PseMediaStackItem}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="StackID" DisplayMemberBinding="{Binding StackID}" />
+                                <GridViewColumn Header="MediaID" DisplayMemberBinding="{Binding MediaID}" />
+                                <GridViewColumn Header="Index" DisplayMemberBinding="{Binding Path=MediaIndex}" />
+                                <GridViewColumn Header="CatStackID" DisplayMemberBinding="{Binding Path=CatStackId}" />
+                                <GridViewColumn Header="CatMediaID" DisplayMemberBinding="{Binding Path=CatMediaId}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </GroupBox>
+            </Grid>
+        </GroupBox>
+        <Button Content="Create Catalog Stacks"
+                Click="DoMigrate" Grid.Row="1" Height="24" />
+        <GroupBox Header="Migrate to Cat" Grid.Row="2">
+            <ListView Name="diffOpListView" PreviewKeyDown="DoSummaryKeyDown">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="StackID" DisplayMemberBinding="{Binding StackID}" />
-                        <GridViewColumn Header="MediaID" DisplayMemberBinding="{Binding MediaID}" />
-                        <GridViewColumn Header="Index" DisplayMemberBinding="{Binding Path=MediaIndex}" />
-                        <GridViewColumn Header="CatStackID" DisplayMemberBinding="{Binding Path=CatStackId}" />
-                        <GridViewColumn Header="CatMediaID" DisplayMemberBinding="{Binding Path=CatMediaId}" />
+                        <GridView.Columns>
+                            <GridViewColumn Header="Include">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Name="Include" IsChecked="{Binding Path=Checked}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=MediaID}">
+                                <GridViewColumnHeader Tag="CatID" Content="MediaID" Click="SortType" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
+                                <GridViewColumnHeader Tag="Path" Content="Path" Click="SortType" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Standard}">
+                                <GridViewColumnHeader Tag="Standard" Content="Standard" Click="SortType" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Name}">
+                                <GridViewColumnHeader Tag="Metatag" Content="Metatag" Click="SortType" />
+                            </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value}">
+                                <GridViewColumnHeader Tag="Value" Content="Value" Click="SortType" />
+                            </GridViewColumn>
+                        </GridView.Columns>
                     </GridView>
                 </ListView.View>
             </ListView>
         </GroupBox>
-        <GroupBox Grid.Row="1">
-            <GroupBox.Header>Media stacks</GroupBox.Header>
-            <ListView Name="MediaStackListView" ItemsSource="{Binding Path=PseMediaStackItem}">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="StackID" DisplayMemberBinding="{Binding StackID}" />
-                        <GridViewColumn Header="MediaID" DisplayMemberBinding="{Binding MediaID}" />
-                        <GridViewColumn Header="Index" DisplayMemberBinding="{Binding Path=MediaIndex}" />
-                        <GridViewColumn Header="CatStackID" DisplayMemberBinding="{Binding Path=CatStackId}" />
-                        <GridViewColumn Header="CatMediaID" DisplayMemberBinding="{Binding Path=CatMediaId}" />
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </GroupBox>
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Button Content="Migrate!"
-                    Click="DoMigrate" Grid.Column="0" Height="24" />
-        </Grid>
+        <Button Content="Migrate!"
+                Click="DoMigrate" Grid.Row="3" Height="24" />
     </Grid>
 </UserControl>

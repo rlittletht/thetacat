@@ -15,6 +15,8 @@ namespace Thetacat.Model;
 public class Catalog: ICatalog
 {
     private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
+    private readonly MediaStacks m_mediaStacks;
+    private readonly MediaStacks m_versionStacks;
 
     public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
 
@@ -26,6 +28,8 @@ public class Catalog: ICatalog
     public Catalog()
     {
         m_items = new();
+        m_mediaStacks = new MediaStacks();
+        m_versionStacks = new MediaStacks();
     }
 
     public void AddNewMediaItem(MediaItem item)
