@@ -206,13 +206,14 @@ public partial class UserMetatagMigration : UserControl
                         ? item.Description
                         : string.Join(":", nameHistory.ToArray());
 
-                Metatag newTag = new()
-                                 {
-                                     ID = Guid.NewGuid(),
-                                     Description = description,
-                                     Name = item.Name,
-                                     Parent = idParent
-                                 };
+                Metatag newTag =
+                    MetatagBuilder
+                       .Create()
+                       .SetDescription(description)
+                       .SetName(item.Name)
+                       .SetParentID(idParent)
+                       .SetStandard(MetatagStandards.Standard.User)
+                       .Build();
 
                 tagsToInsert.Add(new MetatagPair(newTag, item.ID));
                 return newTag.ID;

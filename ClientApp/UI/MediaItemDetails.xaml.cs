@@ -25,14 +25,14 @@ public partial class MediaItemDetails : Window
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
 
-    private readonly MediaItemData m_mediaItemData;
+    private readonly MediaItem? m_mediaItem;
 
     public MediaItemDetails(MediaItem item)
     {
         InitializeComponent();
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
-        m_mediaItemData = item.Data;
-        DataContext = m_mediaItemData;
+        m_mediaItem = item;
+        DataContext = m_mediaItem;
         MainWindow._AppState.RegisterWindowPlace(this, "mediaItem-details");
     }
 }

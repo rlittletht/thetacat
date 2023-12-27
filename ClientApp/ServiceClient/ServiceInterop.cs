@@ -73,6 +73,11 @@ public class ServiceInterop
         return LocalService.Workgroup.GetWorkgroupDetails(id);
     }
 
+    public static List<ServiceStack> GetAllStacks()
+    {
+        return LocalService.Stacks.GetAllStacks();
+    }
+
 #if WG_ON_SQL
     public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
     {

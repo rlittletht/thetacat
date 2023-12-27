@@ -1,4 +1,5 @@
 ﻿using MetadataExtractor;
+using MetadataExtractor.Formats.Xmp;
 using NUnit.Framework.Internal;
 using System;
 using System.Collections.Concurrent;
@@ -13,25 +14,55 @@ using System.Security.Permissions;
 using System.Windows;
 using System.Windows.Markup;
 using Thetacat.Import;
+using Thetacat.Logging;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace Thetacat.Model;
 
-public class MediaItem: INotifyPropertyChanged
+public class MediaItem : INotifyPropertyChanged
 {
+
+    public enum Op
+    {
+        Create,
+        Delete,
+        MaybeUpdate
+    };
+
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
+    private bool m_isCachePending = false;
+    private string m_localPath = string.Empty;
+
+    public MediaItem()
+    {
+        m_working = new MediaItemData();
+    }
+
+    public MediaItem(ImportItem importItem)
+    {
+        m_working = new MediaItemData(importItem);
+    }
+
+    public MediaItem(ServiceMediaItem item)
+    {
+        m_working = new MediaItemData(item);
+    }
+
+#region Public Data / Accessors
 
     // the vector clock changes whenever a change is made to the data. we use this
     // clock to determine if a diffitem (when committed) should clear any changes to
     // this item
 
     public int VectorClock = 0;
+
     public MediaItemData Data => m_working;
 
     public string LocalPath
@@ -48,25 +79,7 @@ public class MediaItem: INotifyPropertyChanged
         set => SetField(ref m_isCachePending, value);
     }
 
-    public enum Op
-    {
-        Create,
-        Delete,
-        MaybeUpdate
-    };
-
     public Op PendingOp { get; set; } = Op.MaybeUpdate;
-
-    public bool MaybeHasChanges => m_base != null;
-
-    #region Data Accessors
-
-    void EnsureBase()
-    {
-        m_base ??= new(m_working);
-    }
-
-    public MediaItemData Base => m_base ?? throw new CatExceptionInternalFailure("no base to fetch");
 
     public string MimeType
     {
@@ -115,13 +128,6 @@ public class MediaItem: INotifyPropertyChanged
         }
     }
 
-    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
-
-    public void NotifyCacheStatusChanged()
-    {
-        OnPropertyChanged(nameof(CacheStatus));
-    }
-
     public ConcurrentDictionary<Guid, MediaTag> Tags
     {
         get => m_working.Tags;
@@ -132,26 +138,86 @@ public class MediaItem: INotifyPropertyChanged
             m_working.Tags = value;
         }
     }
+
+    public int? ImageWidth
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_Width.ID, out MediaTag? tag))
+                return int.Parse(tag.Value ?? "");
+
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_Width, value.ToString());
+            FAddOrUpdateMediaTag(tag);
+            OnPropertyChanged(nameof(ImageWidth));
+        }
+    }
+
+    public int? ImageHeight
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_Height.ID, out MediaTag? tag))
+                return int.Parse(tag.Value ?? "");
+
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_Height, value.ToString());
+            FAddOrUpdateMediaTag(tag);
+            OnPropertyChanged(nameof(ImageHeight));
+        }
+    }
+
+    public DateTime? OriginalFileDate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_OriginalFileDateID, out MediaTag? tag))
+                return tag.Value == null ? null : DateTime.Parse(tag.Value);
+
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalFileDate, value?.ToUniversalTime().ToString("u"));
+            FAddOrUpdateMediaTag(tag);
+            OnPropertyChanged(nameof(OriginalFileDate));
+        }
+    }
+
     #endregion
 
-    public bool IsCreatePending()
+    #region Changes/Versions
+
+    public bool MaybeHasChanges => m_base != null;
+
+    void EnsureBase()
     {
-        return PendingOp == Op.Create;
+        m_base ??= new(m_working);
     }
 
-    public MediaItem()
+    public MediaItemData Base => m_base ?? throw new CatExceptionInternalFailure("no base to fetch");
+
+    public void ResetPendingChanges()
     {
-        m_working = new MediaItemData();
+        PendingOp = Op.MaybeUpdate;
+        m_base = null;
     }
 
-    public MediaItem(ImportItem importItem)
-    {
-        m_working = new MediaItemData(importItem);
-    }
+#endregion
 
-    public MediaItem(ServiceMediaItem item)
+#region Cache Status/Media State
+
+    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
+
+    public void NotifyCacheStatusChanged()
     {
-        m_working = new MediaItemData(item);
+        OnPropertyChanged(nameof(CacheStatus));
     }
 
     public static string StringFromState(MediaItemState state)
@@ -180,18 +246,23 @@ public class MediaItem: INotifyPropertyChanged
         return MediaItemState.Unknown;
     }
 
+#endregion
+
+#region MediaTags
+
     /*----------------------------------------------------------------------------
-        %%Function: MigrateMetadataForDirectory
-        %%Qualified: Thetacat.Model.MediaItem.MigrateMetadataForDirectory
+        %%Function: PopulateMediaTagsFromMetadataDirectory
+        %%Qualified: Thetacat.Model.MediaItem.PopulateMediaTagsFromMetadataDirectory
 
         Returns true if there were any changes made to this items tags.
         (schema changes will be caught later)
     ----------------------------------------------------------------------------*/
-    public bool MigrateMetadataForDirectory(
+    public bool PopulateMediaTagsFromMetadataDirectory(
         MetatagSchema metatagSchema,
         Metatag? parent,
         MetadataExtractor.Directory directory,
-        MetatagStandards.Standard standard)
+        MetatagStandards.Standard standard,
+        List<string>? log = null)
     {
         bool changed = false;
 
@@ -201,6 +272,7 @@ public class MediaItem: INotifyPropertyChanged
         if (standard == MetatagStandards.Standard.Unknown)
         {
 #if verbose_standard
+            MainWindow.LogForApp(EventType.Verbose, $"unknown standard directory {directory.Name}");
             log?.Add($"unknown standard directory {directory.Name}");
 #endif
             return false;
@@ -209,23 +281,14 @@ public class MediaItem: INotifyPropertyChanged
         StandardDefinitions standardDefinitions = MetatagStandards.GetStandardMappings(standard);
 
         // match the current directory to a metatag
-        Metatag? dirTag = metatagSchema.FindByName(parent, standardDefinitions.StandardTag);
-
-        if (dirTag == null)
-        {
-            // we have to create one
-            dirTag = Metatag.Create(parent?.ID, standardDefinitions.StandardTag, directory.Name, standard);
-            if (parent == null)
-                metatagSchema.AddStandardRoot(dirTag);
-            else
-                metatagSchema.AddMetatag(dirTag);
-        }
+        Metatag dirTag = metatagSchema.GetOrBuildDirectoryTag(parent, standard, directory.Name);
 
         foreach (Tag tag in directory.Tags)
         {
             if (!standardDefinitions.Properties.TryGetValue(tag.Type, out StandardDefinition? def))
             {
 #if verbose_standard
+                MainWindow.LogForApp(EventType.Verbose, $"unknown metatag {tag.Name} in standard {standardDefinitions.StandardId}");
                 log?.Add($"unknown metatag {tag.Name} in standard {standardDefinitions.StandardId}");
 #endif
                 continue;
@@ -251,14 +314,20 @@ public class MediaItem: INotifyPropertyChanged
 
             MediaTag newTag = new MediaTag(metatag, value);
 
-            if (FAddOrUpdateTag(newTag))
+            if (FAddOrUpdateMediaTag(newTag, log))
                 changed = true;
         }
 
         return changed;
     }
 
-    public bool FAddOrUpdateTag(MediaTag tag)
+    /*----------------------------------------------------------------------------
+        %%Function: FAddOrUpdateMediaTag
+        %%Qualified: Thetacat.Model.MediaItem.FAddOrUpdateMediaTag
+
+        Add or updated a media tag
+    ----------------------------------------------------------------------------*/
+    public bool FAddOrUpdateMediaTag(MediaTag tag, List<string>? log = null)
     {
         bool ensuredBase = m_base == null;
 
@@ -273,6 +342,7 @@ public class MediaItem: INotifyPropertyChanged
             {
                 if (oldMediaTag.Value != tag.Value)
                 {
+                    MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                     log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                     oldMediaTag.Value = tag.Value;
                 }
@@ -297,10 +367,137 @@ public class MediaItem: INotifyPropertyChanged
         return !identicalExisting;
     }
 
-    private List<string>? log;
-    private bool m_isCachePending = false;
-    private string m_localPath = string.Empty;
 
+    Tuple<int, int>? TryGetWidthFromStandardAndType(MetatagSchema schema, MetatagStandards.Standard standard, int widthType, int heightType)
+    {
+        Metatag? tagWidth = schema.FindStandardItemFromStandardAndType(standard, widthType);
+        if (tagWidth == null)
+            return null;
+
+        Metatag? tagHeight = schema.FindStandardItemFromStandardAndType(standard, heightType);
+
+        if (tagHeight == null)
+            return null;
+
+        if (!Tags.TryGetValue(tagWidth.ID, out MediaTag? matchWidth))
+            return null;
+
+        if (!Tags.TryGetValue(tagHeight.ID, out MediaTag? matchHeight))
+            return null;
+
+        return new Tuple<int, int>(int.Parse(matchWidth.Value ?? ""), int.Parse(matchHeight.Value ?? ""));
+    }
+
+    string? TryGetMediaTagValueFromStandardAndType(MetatagSchema schema, MetatagStandards.Standard standard, int type)
+    {
+        Metatag? tag = schema.FindStandardItemFromStandardAndType(standard, type);
+        if (tag == null)
+            return null;
+
+        if (!Tags.TryGetValue(tag.ID, out MediaTag? match))
+            return null;
+
+        return match.Value;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: FindWidthHeightFromMediaTags
+        %%Qualified: Thetacat.Model.MediaItem.FindWidthHeightFromMediaTags
+
+        There are a lot of different mediatag items for width. Find at least one
+        of them so we can promote to our builtin width/height
+    ----------------------------------------------------------------------------*/
+    Tuple<int, int>? FindWidthHeightFromMediaTags(MetatagSchema schema)
+    {
+        Tuple<int, int>? widthHeight;
+
+        widthHeight = TryGetWidthFromStandardAndType(
+            schema,
+            MetatagStandards.Standard.Jpeg,
+            MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageWidth,
+            MetadataExtractor.Formats.Jpeg.JpegDirectory.TagImageHeight);
+
+        if (widthHeight != null)
+            return widthHeight;
+
+        widthHeight = TryGetWidthFromStandardAndType(
+            schema,
+            MetatagStandards.Standard.Exif,
+            MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagImageWidth,
+            MetadataExtractor.Formats.Exif.ExifDirectoryBase.TagImageHeight);
+
+        if (widthHeight != null)
+            return widthHeight;
+
+        return null;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: SetMediaTagsFromFileMetadata
+        %%Qualified: Thetacat.Model.MediaItem.SetMediaTagsFromFileMetadata
+
+        Parse the file for this media item and extract all the mediatags
+        (that we have mappings for)
+    ----------------------------------------------------------------------------*/
+    public List<string>? SetMediaTagsFromFileMetadata(MetatagSchema metatagSchema)
+    {
+        List<string> log = new List<string>();
+
+        string file = LocalPath;
+
+        // load exif and other data from this item.
+        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
+
+        this.MD5 = CalculateMD5Hash(file);
+
+        foreach (MetadataExtractor.Directory directory in directories)
+        {
+            PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, log);
+        }
+
+        metatagSchema.EnsureBuiltinMetatagsDefined();
+
+        // lastly, set the builtin items
+        Tuple<int, int>? widthHeight = FindWidthHeightFromMediaTags(metatagSchema);
+        if (widthHeight != null)
+        {
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()));
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()));
+        }
+
+        DateTime createTime = File.GetCreationTime(file);
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalFileDate, createTime.ToUniversalTime().ToString("u")));
+
+        return log;
+    }
+
+#endregion
+
+#region INotifyPropertyChanged
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+
+#endregion
+
+    /*----------------------------------------------------------------------------
+        %%Function: CalculateMD5Hash
+        %%Qualified: Thetacat.Model.MediaItem.CalculateMD5Hash
+
+        Calculate the MD5 hash for the given file.
+    ----------------------------------------------------------------------------*/
     public static string CalculateMD5Hash(string localPath)
     {
         using FileStream fs = File.Open(
@@ -316,45 +513,5 @@ public class MediaItem: INotifyPropertyChanged
         string fullContentMd5 = Convert.ToBase64String(hash);
 
         return fullContentMd5;
-    }
-
-    public List<string>? SetMetadataFromFile(MetatagSchema metatagSchema)
-    {
-        log = new List<string>();
-
-        string file = LocalPath;
-
-        // load exif and other data from this item.
-        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
-            
-        this.MD5 = CalculateMD5Hash(file);
-        
-        foreach (MetadataExtractor.Directory directory in directories)
-        {
-            MigrateMetadataForDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown);
-        }
-
-        return log;
-    }
-
-    public void ResetPendingChanges()
-    {
-        PendingOp = Op.MaybeUpdate;
-        m_base = null;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
     }
 }

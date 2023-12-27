@@ -668,4 +668,14 @@ public class MetatagStandards
         return KnownStandards[standard].StandardTag;
     }
 
+    public static StandardDefinition? GetDefinitionForStandardAndType(Standard standard, int type)
+    {
+        if (!KnownStandards.TryGetValue(standard, out StandardDefinitions? defs))
+            return null;
+
+        if (!defs.Properties.TryGetValue(type, out StandardDefinition? def)) 
+            return null;
+
+        return def;
+    }
 }

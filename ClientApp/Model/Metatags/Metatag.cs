@@ -19,11 +19,11 @@ public class Metatag : IMetatag
 
     public Guid? Parent { get; set; }
 
-    public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard)
+    public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard, Guid? idStatic = null)
     {
         return new Metatag()
         {
-            ID = Guid.NewGuid(),
+            ID = idStatic ?? Guid.NewGuid(),
             Parent = parent,
             Name = name,
             Description = description,

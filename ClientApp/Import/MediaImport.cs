@@ -116,7 +116,7 @@ public class MediaImport
             mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
             mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
 
-            List<string>? log = mediaItem.SetMetadataFromFile(metatagSchema);
+            List<string>? log = mediaItem.SetMediaTagsFromFileMetadata(metatagSchema);
 
             if (log != null && log.Count != 0)
                 MessageBox.Show($"Found tag differences: {string.Join(", ", log)}");
