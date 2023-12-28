@@ -6,7 +6,7 @@ using Thetacat.Types.Parallel;
 
 namespace Tests.Model.Workgroups;
 
-public class CatalogMock: ICatalog
+public class CatalogMock : ICatalog
 {
     private Media m_media;
 

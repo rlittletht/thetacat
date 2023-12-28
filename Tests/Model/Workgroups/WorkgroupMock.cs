@@ -6,7 +6,7 @@ using Thetacat.Types;
 
 namespace Tests.Model.Workgroups;
 
-public class WorkgroupMock: Workgroup, IWorkgroup
+public class WorkgroupMock : Workgroup, IWorkgroup
 {
     public delegate ServiceWorkgroupMediaClock GetWorkgroupMediaClockDelegate();
     public delegate Dictionary<Guid, MediaItem> GetNextItemsForQueueDelegate();

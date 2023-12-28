@@ -204,8 +204,77 @@ public class Catalog: ICatalog
         Add at the given index. If the index isn't already occupied, then we're
         done. otherwise, all items are pushed to make room
     ----------------------------------------------------------------------------*/
-    public void AddMediaToStackAtIndex(Guid stackId, Guid mediaId, int index)
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
     {
-        //MediaStack
+        MediaStacks stacks = m_mediaStacks[stackType];
+
+        if (!stacks.Items.TryGetValue(stackId, out MediaStack? stack))
+            throw new CatExceptionInternalFailure("can't implicitly create a stack using AddMediaToStackAtIndex");
+
+        // see if the stack already has the mediaId (and create a map of index values
+        Dictionary<int, MediaStackItem> map = new();
+
+        MediaStackItem? itemExisting = null;
+        bool renumberNeeded = false;
+        int maxIndexSeen = 0;
+
+        foreach (MediaStackItem item in stack.Items)
+        {
+            if (item.MediaId == mediaId)
+                itemExisting = item;
+
+            if (map.ContainsKey(item.StackIndex))
+            {
+                // we have duplicate indexes. need to repair
+                renumberNeeded = true;
+                item.StackIndex = -1; // needs a new number
+            }
+            else
+            {
+                map.Add(item.StackIndex, item);
+            }
+
+            maxIndexSeen = Math.Max(maxIndexSeen, item.StackIndex);
+        }
+
+        bool pushNeeded = map.ContainsKey(index);
+
+        if (!pushNeeded && !renumberNeeded)
+            // simplest. we're done
+        {
+            if (itemExisting != null)
+                itemExisting.StackIndex = index;
+            else
+                stack.PushItem(new MediaStackItem(mediaId, index));
+            return;
+        }
+
+        if (maxIndexSeen >= index)
+        {
+            // our index is going to insert before us, so we have to adjust
+            maxIndexSeen++;
+        }
+        else
+        {
+            maxIndexSeen = index;
+        }
+
+        // don't insert yet so we don't adjust our own item...
+
+        // items with index equal to or greater than us
+        // get bumped by one
+        // items with -1 get the next renumber index
+        foreach (MediaStackItem item in stack.Items)
+        {
+            if (item.StackIndex >= index)
+                item.StackIndex++;
+            else if (item.StackIndex == -1)
+                item.StackIndex = ++maxIndexSeen;
+        }
+
+        if (itemExisting != null)
+            itemExisting.StackIndex = index;
+        else
+            stack.PushItem(new MediaStackItem(mediaId, index));
     }
 }

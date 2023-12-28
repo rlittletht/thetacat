@@ -105,7 +105,6 @@ public class StacksMigrate
                 continue;
             }
 
-
             item.CatMediaId = mediaItem.ID;
             item.CatStackId = catStackID;
 

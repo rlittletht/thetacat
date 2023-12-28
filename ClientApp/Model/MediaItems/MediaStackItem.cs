@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Emgu.CV.PpfMatch3d;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Migration.Elements.Metadata.UI;
+using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 
@@ -50,4 +53,33 @@ public class MediaStackItem: INotifyPropertyChanged
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    public static bool operator ==(MediaStackItem? left, MediaStackItem? right)
+    {
+        if (object.ReferenceEquals(left, null) && object.ReferenceEquals(right, null)) return true;
+        if (object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null)) return false;
+
+        if (left.MediaId != right.MediaId) return false;
+        if (left.StackIndex != right.StackIndex) return false;
+
+        return true;
+    }
+
+    public static bool operator !=(MediaStackItem? left, MediaStackItem? right)
+    {
+        return !(left == right);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        MediaStackItem? right = obj as MediaStackItem;
+
+        if (obj == null)
+            throw new ArgumentException(nameof(obj));
+
+        return this == right;
+    }
+
+    public override int GetHashCode() => ToString().GetHashCode();
+    public override string ToString() => $"{MediaId}:{StackIndex})";
 }
