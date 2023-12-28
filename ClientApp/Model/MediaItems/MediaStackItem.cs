@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.ServiceClient;
+using Thetacat.Types;
 
 namespace Thetacat.Model;
 
@@ -26,6 +28,12 @@ public class MediaStackItem: INotifyPropertyChanged
     {
         get => m_stackIndex;
         set => SetField(ref m_stackIndex, value);
+    }
+
+    public MediaStackItem(ServiceStackItem serviceStackItem)
+    {
+        m_mediaId = serviceStackItem.MediaId ?? throw new CatExceptionServiceDataFailure("media id not read");
+        m_stackIndex = serviceStackItem.OrderHint ?? throw new CatExceptionServiceDataFailure("stack index not read");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

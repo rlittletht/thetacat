@@ -78,6 +78,11 @@ public class ServiceInterop
         return LocalService.Stacks.GetAllStacks();
     }
 
+    public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
+    {
+        LocalService.Stacks.UpdateMediaStacks(diffs);
+    }
+
 #if WG_ON_SQL
     public static List<ServiceWorkgroupItemClient> ReadWorkgroupMedia(Guid id)
     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCore;
+using Thetacat.Model;
 using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
@@ -78,5 +79,74 @@ public class Stacks
         {
             return new List<ServiceStack>();
         }
+    }
+
+    public static void AddInsertStackMediaToCommands(MediaStackDiff diff, List<string> updates)
+    {
+        foreach (MediaStackItem item in diff.Stack.Items)
+        {
+            updates.Add(
+                $"INSERT INTO tcat_stackmedia (id, media_id, orderHint) VALUES ('{diff.Stack.StackId.ToString()}', '{item.MediaId.ToString()}', {item.StackIndex})");
+        }
+    }
+
+    public static IEnumerable<string> AddUpdatesForDiff(MediaStackDiff diff, List<string> updates)
+    {
+        switch (diff.PendingOp)
+        {
+            case MediaStack.Op.Create:
+                updates.Add($"INSERT INTO tcat_stacks (id, stackType, description) VALUES ('{diff.Stack.StackId.ToString()}', '{Sql.Sqlify(diff.Stack.Type)}', '{Sql.Sqlify(diff.Stack.Description)}')");
+                AddInsertStackMediaToCommands(diff, updates);
+                return updates;
+            case MediaStack.Op.Delete:
+                updates.Add($"DELETE FROM tcat_stacks WHERE id='{diff.Stack.StackId.ToString()}");
+                updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
+                return updates;
+            case MediaStack.Op.Update:
+                updates.Add($"UPDATE tcat_stacks SET description='{Sql.Sqlify(diff.Stack.Description)}' WHERE id='{diff.Stack.StackId.ToString()}");
+                updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
+                AddInsertStackMediaToCommands(diff, updates);
+                return updates;
+            default:
+                throw new CatExceptionInternalFailure($"unknown pending up: {diff.PendingOp}");
+        }
+    }
+
+    public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
+    {
+        Guid crid = Guid.NewGuid();
+        LocalServiceClient.EnsureConnected();
+
+        List<string> commands = new();
+
+        foreach (MediaStackDiff diff in diffs)
+        {
+            AddUpdatesForDiff(diff, commands);
+        }
+        LocalServiceClient.Sql.BeginTransaction();
+
+        try
+        {
+            // build a list of tags to insert as well
+            List<string> updateTags = new();
+
+            // take advantage of the enumeration we are going to do across all the
+            // items. when we are asked to build the string for each line, we can
+            // also build the list of tags we have to insert for these items
+            Media.ExecutePartedCommands(
+                string.Empty,
+                commands,
+                (command)=>command,
+                1000,
+                " ",
+                s_aliases);
+        }
+        catch (Exception)
+        {
+            LocalServiceClient.Sql.Rollback();
+            throw;
+        }
+
+        LocalServiceClient.Sql.Commit();
     }
 }

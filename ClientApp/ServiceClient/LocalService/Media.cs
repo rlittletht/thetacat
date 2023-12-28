@@ -27,7 +27,7 @@ public class Media
             (id, metatag, value)
         VALUES ";
 
-    private static void ExecutePartedCommands<T>(string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
+    public static void ExecutePartedCommands<T>(string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;

@@ -20,6 +20,9 @@ public class Catalog: ICatalog
 
     public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
 
+    public MediaStacks VersionStacks => m_versionStacks;
+    public MediaStacks MediaStacks => m_mediaStacks;
+
 //    public void Clear()
 //    {
 //        m_items.Clear();
@@ -28,8 +31,8 @@ public class Catalog: ICatalog
     public Catalog()
     {
         m_items = new();
-        m_mediaStacks = new MediaStacks();
-        m_versionStacks = new MediaStacks();
+        m_mediaStacks = new MediaStacks("media");
+        m_versionStacks = new MediaStacks("version");
     }
 
     public void AddNewMediaItem(MediaItem item)
@@ -39,6 +42,29 @@ public class Catalog: ICatalog
 
         if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
+    }
+
+    void PushMediaStackChanges(MediaStacks stacks)
+    {
+        List<MediaStackDiff> stackDiffs = new();
+
+        foreach (MediaStack stack in stacks.GetDirtyItems())
+        {
+            stackDiffs.Add(new MediaStackDiff(stack, stack.PendingOp));
+        }
+
+        ServiceInterop.UpdateMediaStacks(stackDiffs);
+
+        foreach (MediaStackDiff diff in stackDiffs)
+        {
+            if (diff.PendingOp == MediaStack.Op.Delete)
+                stacks.Items.Remove(diff.Stack.StackId);
+            else if (stacks.Items.TryGetValue(diff.Stack.StackId, out MediaStack? stack))
+            {
+                if (stack.VectorClock == diff.VectorClock)
+                    stack.PendingOp = MediaStack.Op.None;
+            }
+        }
     }
 
     /*----------------------------------------------------------------------------
@@ -66,6 +92,9 @@ public class Catalog: ICatalog
                     item.ResetPendingChanges();
             }
         }
+
+        PushMediaStackChanges(m_versionStacks);
+        PushMediaStackChanges(m_mediaStacks);
     }
 
     public List<MediaItemDiff> BuildUpdates()
@@ -153,6 +182,27 @@ public class Catalog: ICatalog
             }
 
             AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
+        }
+
+        // read all the version stacks
+        m_mediaStacks.Clear();
+        m_versionStacks.Clear();
+
+        List<ServiceStack> stacks = ServiceInterop.GetAllStacks();
+        foreach (ServiceStack stack in stacks)
+        {
+            switch (stack.StackType)
+            {
+                case "version":
+                    m_versionStacks.AddStack(new MediaStack(stack));
+                    break;
+                case "media":
+                    m_mediaStacks.AddStack(new MediaStack(stack));
+                    break;
+                default:
+                    MessageBox.Show($"unknown stack type: {stack.StackType}. Ignoring");
+                    break;
+            }
         }
     }
 
