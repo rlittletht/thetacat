@@ -51,29 +51,6 @@ public class Catalog: ICatalog
         return m_media.Items.ContainsKey(mediaId);
     }
 
-    void PushMediaStackChanges(MediaStacks stacks)
-    {
-        List<MediaStackDiff> stackDiffs = new();
-
-        foreach (MediaStack stack in stacks.GetDirtyItems())
-        {
-            stackDiffs.Add(new MediaStackDiff(stack, stack.PendingOp));
-        }
-
-        ServiceInterop.UpdateMediaStacks(stackDiffs);
-
-        foreach (MediaStackDiff diff in stackDiffs)
-        {
-            if (diff.PendingOp == MediaStack.Op.Delete)
-                stacks.Items.Remove(diff.Stack.StackId);
-            else if (stacks.Items.TryGetValue(diff.Stack.StackId, out MediaStack? stack))
-            {
-                if (stack.VectorClock == diff.VectorClock)
-                    stack.PendingOp = MediaStack.Op.None;
-            }
-        }
-    }
-
     /*----------------------------------------------------------------------------
         %%Function: PushPendingChanges
         %%Qualified: Thetacat.Model.Catalog.PushPendingChanges
@@ -86,9 +63,8 @@ public class Catalog: ICatalog
     public void PushPendingChanges()
     {
         m_media.PushPendingChanges();
-
-        PushMediaStackChanges(m_versionStacks);
-        PushMediaStackChanges(m_mediaStacks);
+        m_versionStacks.PushPendingChanges();
+        m_mediaStacks.PushPendingChanges();
     }
 
 

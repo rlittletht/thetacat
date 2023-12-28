@@ -95,4 +95,27 @@ public class MediaStacks : INotifyPropertyChanged
     {
         return new MediaStackEnumerator(m_items, (item) => item.PendingOp != MediaStack.Op.None);
     }
+    
+    public void PushPendingChanges()
+    {
+        List<MediaStackDiff> stackDiffs = new();
+
+        foreach (MediaStack stack in GetDirtyItems())
+        {
+            stackDiffs.Add(new MediaStackDiff(stack, stack.PendingOp));
+        }
+
+        ServiceInterop.UpdateMediaStacks(stackDiffs);
+
+        foreach (MediaStackDiff diff in stackDiffs)
+        {
+            if (diff.PendingOp == MediaStack.Op.Delete)
+                Items.Remove(diff.Stack.StackId);
+            else if (Items.TryGetValue(diff.Stack.StackId, out MediaStack? stack))
+            {
+                if (stack.VectorClock == diff.VectorClock)
+                    stack.PendingOp = MediaStack.Op.None;
+            }
+        }
+    }
 }
