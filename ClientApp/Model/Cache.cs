@@ -214,7 +214,7 @@ public class Cache: ICache
             {
                 // add this to our queue
                 entry.Value.LocalPending = true;
-                MediaItem item = MainWindow._AppState.Catalog.Items[entry.Key];
+                MediaItem item = MainWindow._AppState.Catalog.Media.Items[entry.Key];
                 item.IsCachePending = true;
                 m_cacheQueue.Enqueue(item);
                 chunkSize--;    // since we just added one

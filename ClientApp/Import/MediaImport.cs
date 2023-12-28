@@ -66,7 +66,7 @@ public class MediaImport
 
         foreach (ServiceImportItem item in items)
         {
-            if (!MainWindow._AppState.Catalog.Items.ContainsKey(item.ID))
+            if (!MainWindow._AppState.Catalog.HasMediaItem(item.ID))
             {
                 MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
 
@@ -150,7 +150,7 @@ public class MediaImport
                 PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
                 
                 TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
-                MediaItem media = MainWindow._AppState.Catalog.Items[item.ID];
+                MediaItem media = MainWindow._AppState.Catalog.Media.Items[item.ID];
 
                 if (media.MD5 != blob.ContentMd5)
                 {

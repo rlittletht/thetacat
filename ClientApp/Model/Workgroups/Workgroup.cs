@@ -250,7 +250,7 @@ public class Workgroup: IWorkgroup
         if (count <= 0)
             throw new ArgumentOutOfRangeException(nameof(count));
 
-        foreach (KeyValuePair<Guid, MediaItem> item in MainWindow._AppState.Catalog.Items)
+        foreach (KeyValuePair<Guid, MediaItem> item in MainWindow._AppState.Catalog.Media.Items)
         {
             if (item.Key != item.Value.ID)
                 throw new CatExceptionInternalFailure("key doesn't match id");

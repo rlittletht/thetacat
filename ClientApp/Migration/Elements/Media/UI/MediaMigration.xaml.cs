@@ -323,7 +323,7 @@ public partial class MediaMigration : UserControl
             item.UpdateCatalogStatus();
 
             // here we can pre-populate our cache.
-            MediaItem mediaItem = MainWindow._AppState.Catalog.Items[item.CatID];
+            MediaItem mediaItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
             MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
             mediaItem.NotifyCacheStatusChanged();
             // TODO NOTE:  When are we going to handle version stacks? does that get migrated with

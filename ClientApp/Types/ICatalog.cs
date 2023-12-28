@@ -8,7 +8,7 @@ namespace Thetacat.Types;
 
 public interface ICatalog
 {
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items { get; }
+    public IMedia Media { get; }
     public void AddNewMediaItem(MediaItem item);
     //public void FlushPendingCreates();
     public void PushPendingChanges();
@@ -16,4 +16,6 @@ public interface ICatalog
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
     public MediaStacks VersionStacks { get; }
     public MediaStacks MediaStacks { get; }
+
+    public bool HasMediaItem(Guid mediaId);
 }

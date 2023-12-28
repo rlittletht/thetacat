@@ -8,27 +8,29 @@ namespace Tests.Model.Workgroups;
 
 public class CatalogMock: ICatalog
 {
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items { get; }
+    private Media m_media;
 
     public CatalogMock(IEnumerable<ServiceMediaItem> items)
     {
-        Items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_media = new Media();
 
         foreach (ServiceMediaItem item in items)
         {
-            Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
+            m_media.Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
         }
     }
 
     public CatalogMock(IEnumerable<MediaItem> items)
     {
-        Items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_media = new Media();
 
         foreach (MediaItem item in items)
         {
-            Items.Add(item.ID, item);
+            m_media.Items.Add(item.ID, item);
         }
     }
+
+    public IMedia Media => m_media;
 
     public void AddNewMediaItem(MediaItem item)
     {
@@ -53,4 +55,5 @@ public class CatalogMock: ICatalog
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath) => throw new NotImplementedException();
     public MediaStacks VersionStacks => throw new NotImplementedException();
     public MediaStacks MediaStacks => throw new NotImplementedException();
+    public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
 }

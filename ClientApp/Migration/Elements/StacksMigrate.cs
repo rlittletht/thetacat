@@ -54,7 +54,7 @@ public class StacksMigrate
             if (pseItem == null)
                 continue;
 
-            if (!MainWindow._AppState.Catalog.Items.TryGetValue(pseItem.CatID, out MediaItem? catItem))
+            if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(pseItem.CatID, out MediaItem? catItem))
                 continue;
 
             stackItem.CatMediaId = catItem.ID;
@@ -94,7 +94,7 @@ public class StacksMigrate
                 continue;
             }
 
-            if (!MainWindow._AppState.Catalog.Items.TryGetValue(pseItem.CatID, out MediaItem mediaItem))
+            if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(pseItem.CatID, out MediaItem mediaItem))
             {
                 MainWindow.LogForApp(EventType.Error, $"pseItem {pseItem.ID} ({pseItem.FullPath}) has not catalog item. migrate not done?");
                 continue;

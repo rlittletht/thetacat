@@ -12,13 +12,15 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
+// The catalog manages the following data (from the database):
+//  - Media Items (MediaItem)
 public class Catalog: ICatalog
 {
-    private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
     private readonly MediaStacks m_mediaStacks;
     private readonly MediaStacks m_versionStacks;
+    private readonly Media m_media;
 
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
+    public IMedia Media => (IMedia)m_media;
 
     public MediaStacks VersionStacks => m_versionStacks;
     public MediaStacks MediaStacks => m_mediaStacks;
@@ -30,7 +32,7 @@ public class Catalog: ICatalog
 
     public Catalog()
     {
-        m_items = new();
+        m_media = new Media();
         m_mediaStacks = new MediaStacks("media");
         m_versionStacks = new MediaStacks("version");
     }
@@ -38,10 +40,15 @@ public class Catalog: ICatalog
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;
-        m_items.Add(item.ID, item);
+        m_media.AddNewMediaItem(item);
 
         if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
+    }
+
+    public bool HasMediaItem(Guid mediaId)
+    {
+        return m_media.Items.ContainsKey(mediaId);
     }
 
     void PushMediaStackChanges(MediaStacks stacks)
@@ -78,80 +85,18 @@ public class Catalog: ICatalog
     ----------------------------------------------------------------------------*/
     public void PushPendingChanges()
     {
-        List<MediaItemDiff> diffs = BuildUpdates();
-
-        ServiceInterop.UpdateMediaItems(diffs);
-
-        foreach (MediaItemDiff diff in diffs)
-        {
-            if (diff.DiffOp == MediaItemDiff.Op.Delete)
-                Items.Remove(diff.ID);
-            else if (Items.TryGetValue(diff.ID, out MediaItem item))
-            {
-                if (item.VectorClock == diff.VectorClock)
-                    item.ResetPendingChanges();
-            }
-        }
+        m_media.PushPendingChanges();
 
         PushMediaStackChanges(m_versionStacks);
         PushMediaStackChanges(m_mediaStacks);
     }
 
-    public List<MediaItemDiff> BuildUpdates()
-    {
-        List<MediaItemDiff> diffs = new();
-
-        foreach (KeyValuePair<Guid, MediaItem> item in m_items)
-        {
-            if (item.Value.MaybeHasChanges)
-            {
-                if (item.Value.PendingOp == MediaItem.Op.Create)
-                    diffs.Add(MediaItemDiff.CreateInsert(item.Value));
-                else if (item.Value.PendingOp == MediaItem.Op.Delete)
-                    diffs.Add(MediaItemDiff.CreateDelete(item.Value.ID));
-                else
-                {
-                    MediaItemDiff diff = (MediaItemDiff.CreateUpdate(item.Value));
-
-                    // make sure something actually changed before adding it
-                    if (diff.PropertiesChanged != 0)
-                        diffs.Add(diff);
-                }
-            }
-        }
-
-        return diffs;
-    }
-
-    /*----------------------------------------------------------------------------
-        %%Function: AddMediaTagInternal
-        %%Qualified: Thetacat.Model.Catalog.AddMediaTagInternal
-
-        This circumvents the normal dirtying of the item -- DO NOT use this
-        directly unless you know what you are really doing (e.g. you are reading
-        from the database which means its by definition not a dirtying action)
-    ----------------------------------------------------------------------------*/
-    public void AddMediaTagInternal(Guid id, MediaTag tag)
-    {
-        if (!m_items.ContainsKey(id))
-            throw new Exception("media not present");
-
-        m_items[id]
-           .Tags.AddOrUpdate(
-                tag.Metatag.ID,
-                tag,
-                (key, oldTag) =>
-                {
-                    oldTag.Value = tag.Value;
-                    return oldTag;
-                });
-    }
 
     public void ReadFullCatalogFromServer(MetatagSchema schema)
     {
         ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
 
-        IObservableConcurrentDictionary<Guid, MediaItem> dict = m_items;
+        IObservableConcurrentDictionary<Guid, MediaItem> dict = m_media.Items;
 
         dict.Clear();
         m_virtualLookupTable.Clear();
@@ -161,7 +106,7 @@ public class Catalog: ICatalog
         foreach (ServiceMediaItem item in catalog.MediaItems)
         {
             MediaItem mediaItem = new MediaItem(item);
-            m_items.Add(mediaItem.ID, mediaItem);
+            dict.Add(mediaItem.ID, mediaItem);
         }
 
         bool refreshedSchema = false;
@@ -181,7 +126,7 @@ public class Catalog: ICatalog
                     throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema, even after refreshing the schema");
             }
 
-            AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
+            m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
 
         // read all the version stacks
@@ -213,7 +158,7 @@ public class Catalog: ICatalog
     {
         foreach (MediaStackItem item in stack.Items)
         {
-            if (Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+            if (Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
             {
                 if (!versionStack)
                     mediaItem.MediaStack = stack.StackId;
@@ -245,7 +190,7 @@ public class Catalog: ICatalog
 
     private void BuildVirtualLookup()
     {
-        foreach (KeyValuePair<Guid, MediaItem> item in m_items)
+        foreach (KeyValuePair<Guid, MediaItem> item in Media.Items)
         {
             AddToVirtualLookup(m_virtualLookupTable, item.Value);
         }

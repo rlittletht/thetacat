@@ -127,7 +127,7 @@ namespace Thetacat
             // list
 
             _AppState.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = _AppState.Catalog.Items;
+            CatalogView.ItemsSource = _AppState.Catalog.Media.Items;
             if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
                 ShowAsyncLog();
             if (_AppState.Settings.ShowAppLogOnStart ?? false)

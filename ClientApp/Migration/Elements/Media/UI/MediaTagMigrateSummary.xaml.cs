@@ -162,7 +162,7 @@ public partial class MediaTagMigrateSummary : UserControl
                 continue;
             }
 
-            MediaItem catItem = MainWindow._AppState.Catalog.Items[item.CatID];
+            MediaItem catItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
 
             AddMetadataValuesToMigrationItems(item, catItem);
             AddMetatagsToMirationItems(item, catItem);
@@ -191,7 +191,7 @@ public partial class MediaTagMigrateSummary : UserControl
 
         foreach (MediaTagMigrateItem item in checkedItems)
         {
-            if (!MainWindow._AppState.Catalog.Items.TryGetValue(item.MediaID, out MediaItem catItem))
+            if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(item.MediaID, out MediaItem catItem))
             {
                 MainWindow.LogForApp(EventType.Warning, $"can't find media item {item}");
             }
