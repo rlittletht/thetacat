@@ -191,17 +191,34 @@ public class Catalog: ICatalog
         List<ServiceStack> stacks = ServiceInterop.GetAllStacks();
         foreach (ServiceStack stack in stacks)
         {
+            MediaStack mediaStack = new MediaStack(stack);
             switch (stack.StackType)
             {
                 case "version":
-                    m_versionStacks.AddStack(new MediaStack(stack));
+                    m_versionStacks.AddStack(mediaStack);
+                    AssociateStackWithMedia(mediaStack, true);
                     break;
                 case "media":
-                    m_mediaStacks.AddStack(new MediaStack(stack));
+                    m_mediaStacks.AddStack(mediaStack);
+                    AssociateStackWithMedia(mediaStack, false);
                     break;
                 default:
                     MessageBox.Show($"unknown stack type: {stack.StackType}. Ignoring");
                     break;
+            }
+        }
+    }
+
+    private void AssociateStackWithMedia(MediaStack stack, bool versionStack)
+    {
+        foreach (MediaStackItem item in stack.Items)
+        {
+            if (Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+            {
+                if (!versionStack)
+                    mediaItem.MediaStack = stack.StackId;
+                else
+                    mediaItem.VersionStack = stack.StackId;
             }
         }
     }

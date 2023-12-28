@@ -27,7 +27,6 @@ namespace Thetacat.Model;
 
 public class MediaItem : INotifyPropertyChanged
 {
-
     public enum Op
     {
         Create,
@@ -39,6 +38,8 @@ public class MediaItem : INotifyPropertyChanged
     private readonly MediaItemData m_working;
     private bool m_isCachePending = false;
     private string m_localPath = string.Empty;
+    private Guid? m_versionStack;
+    private Guid? m_mediaStack;
 
     public MediaItem()
     {
@@ -69,6 +70,42 @@ public class MediaItem : INotifyPropertyChanged
     {
         get => m_localPath;
         set => SetField(ref m_localPath, value);
+    }
+
+    private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
+    {
+        if (!stacks.Items.TryGetValue(stackId, out MediaStack? stack))
+            throw new CatExceptionInternalFailure("can't set the version stack of an item without first adding it to the stack");
+
+        foreach (MediaStackItem item in stack.Items)
+        {
+            if (item.MediaId == ID)
+                return;
+        }
+
+        throw new CatExceptionInternalFailure("can't set the version stack of an item without first adding it to the stack");
+    }
+
+    public Guid? VersionStack
+    {
+        get => m_versionStack;
+        set
+        {
+            SetField(ref m_versionStack, value);
+            if (value != null)
+                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);
+        }
+    }
+
+    public Guid? MediaStack
+    {
+        get => m_mediaStack;
+        set
+        {
+            SetField(ref m_mediaStack, value);
+            if (value != null)
+                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.MediaStacks, value.Value);
+        }
     }
 
     // this means we are waiting for this item to be cached. maybe by this client,
@@ -190,9 +227,9 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
-    #endregion
+#endregion
 
-    #region Changes/Versions
+#region Changes/Versions
 
     public bool MaybeHasChanges => m_base != null;
 
@@ -470,6 +507,10 @@ public class MediaItem : INotifyPropertyChanged
 
         return log;
     }
+
+#endregion
+
+#region Stacks
 
 #endregion
 

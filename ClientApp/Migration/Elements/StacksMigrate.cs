@@ -36,18 +36,50 @@ public class StacksMigrate
         }
     }
 
-    public void CreateCatStacks(MediaMigrate mediaMigrate)
+    public List<StackMigrateSummaryItem> CreateCatStacks(MediaMigrate mediaMigrate)
     {
-        AssociateMediaWithStacks(mediaMigrate, m_mediaStacks);
-        AssociateMediaWithStacks(mediaMigrate, m_versionStacks);
+        List<StackMigrateSummaryItem> summary = new();
+
+        CreateCatStacksForMissingStacks(mediaMigrate, m_mediaStacks, summary, false);
+        CreateCatStacksForMissingStacks(mediaMigrate, m_versionStacks, summary, true);
+
+        return summary;
     }
 
-    private void AssociateMediaWithStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stacks)
+    public void UpdateStackWithCatStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stack, bool versionStack)
+    {
+        foreach (PseStackItem stackItem in stack)
+        {
+            IPseMediaItem? pseItem = mediaMigrate.GetMediaFromPseId(stackItem.MediaID);
+            if (pseItem == null)
+                continue;
+
+            if (!MainWindow._AppState.Catalog.Items.TryGetValue(pseItem.CatID, out MediaItem? catItem))
+                continue;
+
+            stackItem.CatMediaId = catItem.ID;
+            if (versionStack)
+                stackItem.CatStackId = catItem.VersionStack;
+            else
+                stackItem.CatStackId = catItem.MediaStack;
+        }
+    }
+
+    public void UpdateStacksWithCatStacks(MediaMigrate mediaMigrate)
+    {
+        UpdateStackWithCatStacks(mediaMigrate, m_versionStacks, true);
+        UpdateStackWithCatStacks(mediaMigrate, m_mediaStacks, false);
+    }
+
+    private void CreateCatStacksForMissingStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stacks, List<StackMigrateSummaryItem> summary, bool versionStack)
     {
         Dictionary<int, Guid> mapPseStackIdToCatStackId = new();
 
         foreach (PseStackItem item in stacks)
         {
+            if (item.CatStackId != null)
+                continue;
+
             IPseMediaItem? pseItem = mediaMigrate.GetMediaFromPseId(item.MediaID);
 
             if (!mapPseStackIdToCatStackId.TryGetValue(item.StackID, out Guid catStackID))
@@ -68,8 +100,11 @@ public class StacksMigrate
                 continue;
             }
 
+
             item.CatMediaId = mediaItem.ID;
             item.CatStackId = catStackID;
+
+            summary.Add(new StackMigrateSummaryItem(mediaItem.ID, catStackID, item.MediaIndex, versionStack ? "version" : "media", mediaItem.VirtualPath));
         }
     }
 }

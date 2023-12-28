@@ -18,7 +18,7 @@ public class Stacks
     private static readonly string s_queryAllStacks = @"
         SELECT $$tcat_stackmedia$$.id, $$tcat_stackmedia$$.media_id, $$tcat_stackmedia$$.orderHint,
                 $$tcat_stacks$$.stackType, $$tcat_stacks$$.description
-        FROM $$#tcat_stacksmedia$$
+        FROM $$#tcat_stackmedia$$
         INNER JOIN $$#tcat_stacks$$
             ON $$tcat_stacks$$.id = $$tcat_stacks$$.id";
 

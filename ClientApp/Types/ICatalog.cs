@@ -1,4 +1,5 @@
 ﻿using System;
+using Thetacat.Migration.Elements.Versions;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Types.Parallel;
@@ -13,4 +14,6 @@ public interface ICatalog
     public void PushPendingChanges();
     public void ReadFullCatalogFromServer(MetatagSchema schema);
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
+    public MediaStacks VersionStacks { get; }
+    public MediaStacks MediaStacks { get; }
 }

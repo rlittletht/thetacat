@@ -50,18 +50,32 @@ namespace Thetacat.Migration.Elements.Versions
             m_migrate = migrate;
             _Migrate.StacksMigrate.SetVersionStacks(new List<PseStackItem>(db.ReadVersionStacks()));
             _Migrate.StacksMigrate.SetMediaStacks(new List<PseStackItem>(db.ReadMediaStacks()));
+            _Migrate.StacksMigrate.UpdateStacksWithCatStacks(_Migrate.MediaMigrate);
+
             VersionStackListView.ItemsSource = _Migrate.StacksMigrate.VersionStacks;
             MediaStackListView.ItemsSource = _Migrate.StacksMigrate.MediaStacks;
         }
 
-        private void DoMigrate(object sender, RoutedEventArgs e)
+        private void DoCreateCatStacks(object sender, RoutedEventArgs e)
         {
+            m_migrateSummaryItems.Clear();
+
             // associate every version stack with its cat media item
-            _Migrate.StacksMigrate.CreateCatStacks(_Migrate.MediaMigrate);
+            List<StackMigrateSummaryItem> summaryItems = _Migrate.StacksMigrate.CreateCatStacks(_Migrate.MediaMigrate);
+
+            foreach (StackMigrateSummaryItem summaryItem in summaryItems)
+            {
+                m_migrateSummaryItems.Add(summaryItem);
+            }
         }
 
         private ObservableCollection<StackMigrateSummaryItem> m_migrateSummaryItems = new();
 
         private void DoSummaryKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<StackMigrateSummaryItem>.DoKeyDown(diffOpListView, sender, e);
+
+        private void DoMigrate(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

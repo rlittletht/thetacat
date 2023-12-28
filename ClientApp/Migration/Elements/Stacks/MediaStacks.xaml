@@ -49,7 +49,7 @@
             </Grid>
         </GroupBox>
         <Button Content="Create Catalog Stacks"
-                Click="DoMigrate" Grid.Row="1" Height="24" />
+                Click="DoCreateCatStacks" Grid.Row="1" Height="24" />
         <GroupBox Header="Migrate to Cat" Grid.Row="2">
             <ListView Name="diffOpListView" PreviewKeyDown="DoSummaryKeyDown">
                 <ListView.View>
@@ -62,20 +62,20 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=StackID}">
+                                <GridViewColumnHeader Tag="StackID" Content="StackID" Click="SortType" />
+                            </GridViewColumn>
                             <GridViewColumn DisplayMemberBinding="{Binding Path=MediaID}">
-                                <GridViewColumnHeader Tag="CatID" Content="MediaID" Click="SortType" />
+                                <GridViewColumnHeader Tag="MediaID" Content="MediaID" Click="SortType" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
-                                <GridViewColumnHeader Tag="Path" Content="Path" Click="SortType" />
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=MediaDescription}">
+                                <GridViewColumnHeader Tag="MediaDescription" Content="MediaDescription" Click="SortType" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Standard}">
-                                <GridViewColumnHeader Tag="Standard" Content="Standard" Click="SortType" />
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=StackIndex}">
+                                <GridViewColumnHeader Tag="StackIndex" Content="StackIndex" Click="SortType" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=MetatagSetting.Name}">
-                                <GridViewColumnHeader Tag="Metatag" Content="Metatag" Click="SortType" />
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value}">
-                                <GridViewColumnHeader Tag="Value" Content="Value" Click="SortType" />
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=StackType}">
+                                <GridViewColumnHeader Tag="StackType" Content="StackType" Click="SortType" />
                             </GridViewColumn>
                         </GridView.Columns>
                     </GridView>
