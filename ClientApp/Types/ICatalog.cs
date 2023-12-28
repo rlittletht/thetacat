@@ -10,6 +10,8 @@ public interface ICatalog
 {
     public IMedia Media { get; }
     public void AddNewMediaItem(MediaItem item);
+
+    public MediaStacks GetStacksFromType(MediaStackType stackType);
     //public void FlushPendingCreates();
     public void PushPendingChanges();
     public void ReadFullCatalogFromServer(MetatagSchema schema);

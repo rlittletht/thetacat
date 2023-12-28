@@ -7,13 +7,14 @@ using Thetacat.ServiceClient;
 
 namespace Thetacat.Model;
 
+// Each individual item tracks whether it is dirty or not
 public class MediaStacks : INotifyPropertyChanged
 {
     private Guid m_stackId;
     private Dictionary<Guid, MediaStack> m_items = new();
-    private string m_type;
+    private readonly MediaStackType m_type;
 
-    public MediaStacks(string type)
+    public MediaStacks(MediaStackType type)
     {
         m_type = type;
     }

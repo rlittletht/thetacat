@@ -16,26 +16,31 @@ namespace Thetacat.Model;
 //  - Media Items (MediaItem)
 public class Catalog: ICatalog
 {
-    private readonly MediaStacks m_mediaStacks;
-    private readonly MediaStacks m_versionStacks;
+    private readonly Dictionary<MediaStackType, MediaStacks> m_mediaStacks;
     private readonly Media m_media;
 
     public IMedia Media => (IMedia)m_media;
 
-    public MediaStacks VersionStacks => m_versionStacks;
-    public MediaStacks MediaStacks => m_mediaStacks;
+    public MediaStacks VersionStacks => m_mediaStacks[MediaStackType.Version];
+    public MediaStacks MediaStacks => m_mediaStacks[MediaStackType.Media];
 
-//    public void Clear()
-//    {
-//        m_items.Clear();
-//    }
+    //    public void Clear()
+    //    {
+    //        m_items.Clear();
+    //    }
 
     public Catalog()
     {
         m_media = new Media();
-        m_mediaStacks = new MediaStacks("media");
-        m_versionStacks = new MediaStacks("version");
+        m_mediaStacks =
+            new Dictionary<MediaStackType, MediaStacks>()
+            {
+                { MediaStackType.Media, new MediaStacks(MediaStackType.Media) },
+                { MediaStackType.Version, new MediaStacks(MediaStackType.Version) }
+            };
     }
+
+    public MediaStacks GetStacksFromType(MediaStackType stackType) => m_mediaStacks[stackType];
 
     public void AddNewMediaItem(MediaItem item)
     {
@@ -63,8 +68,10 @@ public class Catalog: ICatalog
     public void PushPendingChanges()
     {
         m_media.PushPendingChanges();
-        m_versionStacks.PushPendingChanges();
-        m_mediaStacks.PushPendingChanges();
+        foreach (MediaStacks stacks in m_mediaStacks.Values)
+        {
+            stacks.PushPendingChanges();
+        }
     }
 
 
@@ -106,40 +113,38 @@ public class Catalog: ICatalog
         }
 
         // read all the version stacks
-        m_mediaStacks.Clear();
-        m_versionStacks.Clear();
+        MediaStacks.Clear();
+        VersionStacks.Clear();
 
-        List<ServiceStack> stacks = ServiceInterop.GetAllStacks();
-        foreach (ServiceStack stack in stacks)
+        List<ServiceStack> serviceStacks = ServiceInterop.GetAllStacks();
+        foreach (ServiceStack stack in serviceStacks)
         {
             MediaStack mediaStack = new MediaStack(stack);
-            switch (stack.StackType)
-            {
-                case "version":
-                    m_versionStacks.AddStack(mediaStack);
-                    AssociateStackWithMedia(mediaStack, true);
-                    break;
-                case "media":
-                    m_mediaStacks.AddStack(mediaStack);
-                    AssociateStackWithMedia(mediaStack, false);
-                    break;
-                default:
-                    MessageBox.Show($"unknown stack type: {stack.StackType}. Ignoring");
-                    break;
-            }
+            MediaStackType stackType = new MediaStackType(stack.StackType ?? throw new CatExceptionServiceDataFailure());
+            MediaStacks stacks = m_mediaStacks[stackType];
+
+            stacks.AddStack(mediaStack);
+            AssociateStackWithMedia(mediaStack, stackType);
         }
     }
 
-    private void AssociateStackWithMedia(MediaStack stack, bool versionStack)
+    private void AssociateStackWithMedia(MediaStack stack, MediaStackType stackType)
     {
         foreach (MediaStackItem item in stack.Items)
         {
             if (Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
             {
-                if (!versionStack)
-                    mediaItem.MediaStack = stack.StackId;
-                else
-                    mediaItem.VersionStack = stack.StackId;
+                switch ((int)stackType)
+                {
+                    case MediaStackType.s_MediaType:
+                        mediaItem.MediaStack = stack.StackId;
+                        break;
+                    case MediaStackType.s_VersionType:
+                        mediaItem.VersionStack = stack.StackId;
+                        break;
+                    default:
+                        throw new CatExceptionInternalFailure($"unknown stack type {stackType}");
+                }
             }
         }
     }
@@ -190,5 +195,17 @@ public class Catalog: ICatalog
         }
 
         return null;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddMediaToStackAtIndex
+        %%Qualified: Thetacat.Model.Catalog.AddMediaToStackAtIndex
+
+        Add at the given index. If the index isn't already occupied, then we're
+        done. otherwise, all items are pushed to make room
+    ----------------------------------------------------------------------------*/
+    public void AddMediaToStackAtIndex(Guid stackId, Guid mediaId, int index)
+    {
+        //MediaStack
     }
 }

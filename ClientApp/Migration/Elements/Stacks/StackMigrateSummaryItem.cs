@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Model;
 using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Versions;
@@ -12,7 +13,7 @@ public class StackMigrateSummaryItem: INotifyPropertyChanged, ICheckableListView
     private Guid m_mediaId;
     private Guid m_stackId;
     private int m_stackIndex;
-    private string m_stackType;
+    private MediaStackType m_stackType;
     private string m_mediaDescription;
 
     public bool Checked
@@ -39,7 +40,7 @@ public class StackMigrateSummaryItem: INotifyPropertyChanged, ICheckableListView
         set => SetField(ref m_stackIndex, value);
     }
 
-    public string StackType
+    public MediaStackType StackType
     {
         get => m_stackType;
         set => SetField(ref m_stackType, value);
@@ -51,7 +52,7 @@ public class StackMigrateSummaryItem: INotifyPropertyChanged, ICheckableListView
         set => SetField(ref m_mediaDescription, value);
     }
 
-    public StackMigrateSummaryItem(Guid mediaID, Guid stackID, int stackIndex, string stackType, string mediaDescription)
+    public StackMigrateSummaryItem(Guid mediaID, Guid stackID, int stackIndex, MediaStackType stackType, string mediaDescription)
     {
         m_mediaId = mediaID;
         m_stackId = stackID;
@@ -74,4 +75,7 @@ public class StackMigrateSummaryItem: INotifyPropertyChanged, ICheckableListView
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    public override string ToString() => $"{MediaID}: {MediaDescription}";
+
 }

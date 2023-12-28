@@ -37,6 +37,8 @@ public class CatalogMock: ICatalog
         throw new NotImplementedException();
     }
 
+    public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
+
     public void PushPendingChanges()
     {
         throw new NotImplementedException();

@@ -15,6 +15,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
+using Thetacat.Model;
+using Thetacat.Types;
 using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Versions
@@ -75,7 +77,29 @@ namespace Thetacat.Migration.Elements.Versions
 
         private void DoMigrate(object sender, RoutedEventArgs e)
         {
+            List<StackMigrateSummaryItem> checkedItems = CheckableListViewSupport<StackMigrateSummaryItem>.GetCheckedItems(diffOpListView);
 
+            foreach (StackMigrateSummaryItem checkedItem in checkedItems)
+            {
+                if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(checkedItem.MediaID, out MediaItem? catItem))
+                    throw new CatExceptionDataCoherencyFailure($"media not found for summary item: {checkedItem}");
+
+                MediaStacks stacks = MainWindow._AppState.Catalog.GetStacksFromType(checkedItem.StackType);
+
+                if (!stacks.Items.TryGetValue(checkedItem.StackID, out MediaStack? stack))
+                {
+                    stack = new MediaStack(checkedItem.StackType, "");
+                    stack.StackId = checkedItem.StackID;
+                    stack.PendingOp = MediaStack.Op.Create;
+                    stacks.AddStack(stack);
+                }
+
+                MediaStackItem item = new MediaStackItem(checkedItem.MediaID, checkedItem.StackIndex);
+                stack.PushItem(item);
+            }
+
+            m_migrateSummaryItems.Clear();
+            _Migrate.StacksMigrate.UpdateStacksWithCatStacks(_Migrate.MediaMigrate);
         }
     }
 }

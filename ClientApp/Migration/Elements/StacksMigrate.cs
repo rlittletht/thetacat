@@ -22,6 +22,7 @@ public class StacksMigrate
 
     public void SetVersionStacks(List<PseStackItem> stacks)
     {
+        m_versionStacks.Clear();
         foreach (PseStackItem stack in stacks)
         {
             m_versionStacks.Add(stack);
@@ -30,6 +31,7 @@ public class StacksMigrate
 
     public void SetMediaStacks(List<PseStackItem> stacks)
     {
+        m_mediaStacks.Clear();
         foreach (PseStackItem stack in stacks)
         {
             m_mediaStacks.Add(stack);
@@ -40,8 +42,8 @@ public class StacksMigrate
     {
         List<StackMigrateSummaryItem> summary = new();
 
-        CreateCatStacksForMissingStacks(mediaMigrate, m_mediaStacks, summary, false);
-        CreateCatStacksForMissingStacks(mediaMigrate, m_versionStacks, summary, true);
+        CreateCatStacksForMissingStacks(mediaMigrate, m_mediaStacks, summary, MediaStackType.Media);
+        CreateCatStacksForMissingStacks(mediaMigrate, m_versionStacks, summary, MediaStackType.Version);
 
         return summary;
     }
@@ -50,6 +52,9 @@ public class StacksMigrate
     {
         foreach (PseStackItem stackItem in stack)
         {
+            stackItem.CatMediaId = null;
+            stackItem.CatStackId = null;
+
             IPseMediaItem? pseItem = mediaMigrate.GetMediaFromPseId(stackItem.MediaID);
             if (pseItem == null)
                 continue;
@@ -71,7 +76,7 @@ public class StacksMigrate
         UpdateStackWithCatStacks(mediaMigrate, m_mediaStacks, false);
     }
 
-    private void CreateCatStacksForMissingStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stacks, List<StackMigrateSummaryItem> summary, bool versionStack)
+    private void CreateCatStacksForMissingStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stacks, List<StackMigrateSummaryItem> summary, MediaStackType stackType)
     {
         Dictionary<int, Guid> mapPseStackIdToCatStackId = new();
 
@@ -104,7 +109,7 @@ public class StacksMigrate
             item.CatMediaId = mediaItem.ID;
             item.CatStackId = catStackID;
 
-            summary.Add(new StackMigrateSummaryItem(mediaItem.ID, catStackID, item.MediaIndex, versionStack ? "version" : "media", mediaItem.VirtualPath));
+            summary.Add(new StackMigrateSummaryItem(mediaItem.ID, catStackID, item.MediaIndex, stackType, mediaItem.VirtualPath));
         }
     }
 }

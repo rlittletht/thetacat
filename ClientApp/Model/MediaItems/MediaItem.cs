@@ -38,8 +38,6 @@ public class MediaItem : INotifyPropertyChanged
     private readonly MediaItemData m_working;
     private bool m_isCachePending = false;
     private string m_localPath = string.Empty;
-    private Guid? m_versionStack;
-    private Guid? m_mediaStack;
 
     public MediaItem()
     {
@@ -86,23 +84,30 @@ public class MediaItem : INotifyPropertyChanged
         throw new CatExceptionInternalFailure("can't set the version stack of an item without first adding it to the stack");
     }
 
+    // This has to be kept up to date with the types defined in MediaStackType.cs
+    public readonly Guid?[] m_stacks =
+    {
+        null,
+        null
+    };
+
     public Guid? VersionStack
     {
-        get => m_versionStack;
+        get => m_stacks[MediaStackType.Version];
         set
         {
-            SetField(ref m_versionStack, value);
+            SetField(ref m_stacks[MediaStackType.Version], value);
             if (value != null)
                 VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);
         }
     }
 
-    public Guid? MediaStack
+    public Guid? MediaStack 
     {
-        get => m_mediaStack;
+        get => m_stacks[MediaStackType.Media];
         set
         {
-            SetField(ref m_mediaStack, value);
+            SetField(ref m_stacks[MediaStackType.Media], value);
             if (value != null)
                 VerifyMediaInMediaStack(MainWindow._AppState.Catalog.MediaStacks, value.Value);
         }

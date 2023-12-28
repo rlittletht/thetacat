@@ -22,7 +22,7 @@ public class MediaStack: INotifyPropertyChanged
     private Guid m_stackId;
 
     private List<MediaStackItem> m_items = new List<MediaStackItem>();
-    private string m_type;
+    private MediaStackType m_type;
     private string m_description;
     private Op m_pendingOp = Op.None;
     public int VectorClock = 0;
@@ -33,7 +33,7 @@ public class MediaStack: INotifyPropertyChanged
         set => SetField(ref m_pendingOp, value);
     }
 
-    public MediaStack(string type, string description)
+    public MediaStack(MediaStackType type, string description)
     {
         m_stackId = Guid.NewGuid();
         m_type = type;
@@ -43,7 +43,7 @@ public class MediaStack: INotifyPropertyChanged
     public MediaStack(ServiceStack serviceStack)
     {
         m_description = serviceStack.Description ?? throw new CatExceptionServiceDataFailure("description not read");
-        m_type = serviceStack.StackType ?? throw new CatExceptionServiceDataFailure("type not read");
+        m_type = new MediaStackType(serviceStack.StackType ?? throw new CatExceptionServiceDataFailure("type not read"));
 
         foreach (ServiceStackItem item in serviceStack.StackItems ?? throw new CatExceptionServiceDataFailure("items not set"))
         {
@@ -74,7 +74,7 @@ public class MediaStack: INotifyPropertyChanged
         set => SetField(ref m_description, value);
     }
 
-    public string Type
+    public MediaStackType Type
     {
         get => m_type;
         set => SetField(ref m_type, value);
