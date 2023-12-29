@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -34,20 +35,23 @@ public partial class CacheConfig : UserControl
     {
         InitializeComponent();
         DataContext = _Model;
+        Workgroup.ItemsSource = _Model.Workgroups;
+        _Model.PropertyChanged += ModelPropertyChanged;
     }
 
     public void LoadFromSettings()
     {
         _Model.CacheLocation = MainWindow._AppState.Settings.CacheLocation ?? string.Empty;
-        _Model.CacheType = MainWindow._AppState.Settings.CacheType ?? string.Empty;
+        _Model.SetCacheTypeFromString(MainWindow._AppState.Settings.CacheType ?? string.Empty);
         if (MainWindow._AppState.Settings.WorkgroupId != null)
         {
             _Model.WorkgroupID = MainWindow._AppState.Settings.WorkgroupId;
-
+            _Model.PopulateWorkgroups();
+            _Model.SetWorkgroup(Guid.Parse(_Model.WorkgroupID));
             try
             {
                 ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(Guid.Parse(_Model.WorkgroupID));
-
+                
                 _Model.WorkgroupName = workgroup.Name ?? string.Empty;
                 _Model.WorkgroupCacheRoot = workgroup.CacheRoot ?? string.Empty;
                 _Model.WorkgroupServerPath = workgroup.ServerPath ?? string.Empty;
@@ -61,14 +65,12 @@ public partial class CacheConfig : UserControl
         }
     }
 
-    private void ChangeCacheType(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.AddedItems.Count > 0 && e.AddedItems[0] is ComboBoxItem)
-        {
-            ComboBoxItem? item = (ComboBoxItem?)e.AddedItems[0];
-            string? selected = (string?)item?.Content;
 
-            Cache.CacheType cacheType = Cache.CacheTypeFromString(selected ?? "private");
+    private void ModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "CurrentCacheType")
+        {
+            Cache.CacheType cacheType = _Model.CurrentCacheType.Type;
 
             if (WorkgroupOptions != null)
                 WorkgroupOptions.IsEnabled = cacheType == Cache.CacheType.Workgroup;
@@ -76,7 +78,12 @@ public partial class CacheConfig : UserControl
                 LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
             if (cacheType != Cache.CacheType.Private)
                 _Model.PopulateWorkgroups();
+
+            return;
         }
+
+        if (e.PropertyName == "CurrentWorkgroup")
+            _Model.SetWorkgroup(_Model.CurrentWorkgroup?.Workgroup?.ID);
     }
 
     bool IsValidWorkgroupSettings()
@@ -173,5 +180,31 @@ public partial class CacheConfig : UserControl
             MainWindow._AppState.Settings.WorkgroupId = workgroup.ID.ToString();
         }
         return true;
+    }
+
+    private void ChangeWorkgroup(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.AddedItems.Count > 0 && e.AddedItems[0] is string)
+        {
+            string? selected = (string?)e.AddedItems[0];
+
+            if (selected != null)
+            {
+                Guid? id = _Model.GetWorkgroupIdFromName(selected);
+
+                if (id != null)
+                {
+                    _Model.SetWorkgroup(id.Value);
+                }
+            }
+            Cache.CacheType cacheType = Cache.CacheTypeFromString(selected ?? "private");
+
+            if (WorkgroupOptions != null)
+                WorkgroupOptions.IsEnabled = cacheType == Cache.CacheType.Workgroup;
+            if (LocalOptions != null)
+                LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
+            if (cacheType != Cache.CacheType.Private)
+                _Model.PopulateWorkgroups();
+        }
     }
 }

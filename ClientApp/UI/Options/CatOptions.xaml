@@ -15,7 +15,13 @@
         <TabControl x:Name="OptionsTabs" DataContext="{Binding Path=_Model}" Grid.Row="0">
             <TabItem>
                 <TabItem.Header>
-                    <TextBlock>Standards Metadata</TextBlock>
+                    <TextBlock>Account</TextBlock>
+                </TabItem.Header>
+                <options:Account x:Name="AccountTab" />
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock>Cache</TextBlock>
                 </TabItem.Header>
                 <options:CacheConfig x:Name="CacheConfigTab" />
             </TabItem>

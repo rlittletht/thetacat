@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
 using Thetacat.Azure;
+using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
@@ -33,43 +34,73 @@ namespace Thetacat.Import;
 ----------------------------------------------------------------------------*/
 public class MediaImport
 {
+    public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
-    public MediaImport(IEnumerable<IMediaItemFile> files, string source)
+    public MediaImport(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
         {
             PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
         }
     }
 
-    public MediaImport(IEnumerable<string> files, string source)
+    public MediaImport(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (string file in files)
         {
             PathSegment pathRoot = PathSegment.GetPathRoot(file) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate));
+            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
         }
     }
 
     public MediaImport(string source)
     {
         List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(source);
+        bool skippedItems = false;
 
         foreach (ServiceImportItem item in items)
         {
-            ImportItems.Add(
-                new ImportItem(
-                    item.ID,
-                    source,
-                    PathSegment.CreateFromString(item.SourceServer),
-                    PathSegment.CreateFromString(item.SourcePath),
-                    ImportItem.StateFromString(item.State ?? string.Empty)));
+            if (!MainWindow._AppState.Catalog.HasMediaItem(item.ID))
+            {
+                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
+
+                skippedItems = true;
+                ImportItems.Add(
+                    new ImportItem(
+                        item.ID,
+                        source,
+                        PathSegment.CreateFromString(item.SourceServer),
+                        PathSegment.CreateFromString(item.SourcePath),
+                        ImportItem.ImportState.MissingFromCatalog));
+            }
+            else
+            {
+                ImportItems.Add(
+                    new ImportItem(
+                        item.ID,
+                        source,
+                        PathSegment.CreateFromString(item.SourceServer),
+                        PathSegment.CreateFromString(item.SourcePath),
+                        ImportItem.StateFromString(item.State ?? string.Empty)));
+            }
+        }
+
+        if (skippedItems)
+        {
+            if (MessageBox.Show(
+                    "One or more pending items was missing in the catalog. Do you want to continue and automatically remove these items?",
+                    "Thetacat",
+                    MessageBoxButton.OKCancel)
+                == MessageBoxResult.Cancel)
+            {
+                throw new CatExceptionCanceled();
+            }
         }
     }
 
@@ -81,10 +112,11 @@ public class MediaImport
             MediaItem mediaItem = new(item);
 
             catalog.AddNewMediaItem(mediaItem);
+            item.NotifyMediaItemCreated(mediaItem);
             mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
             mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
 
-            List<string>? log = mediaItem.ReadMetadataFromFile(metatagSchema);
+            List<string>? log = mediaItem.SetMediaTagsFromFileMetadata(metatagSchema);
 
             if (log != null && log.Count != 0)
                 MessageBox.Show($"Found tag differences: {string.Join(", ", log)}");
@@ -101,7 +133,7 @@ public class MediaImport
 
         // at this point, we have an ID created for the media. Go ahead and insert the
         // new media items and commit the import to the database
-        catalog.FlushPendingCreates();
+        catalog.PushPendingChanges();
         // also flush any pending schema changes now
 
         ServiceInterop.InsertImportItems(ImportItems);
@@ -109,7 +141,7 @@ public class MediaImport
 
     public async Task UploadMedia()
     {
-        AzureCat.EnsureCreated("thetacattest");
+        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
 
         foreach (ImportItem item in ImportItems)
         {
@@ -118,7 +150,7 @@ public class MediaImport
                 PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
                 
                 TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
-                MediaItem media = MainWindow._AppState.Catalog.Items[item.ID];
+                MediaItem media = MainWindow._AppState.Catalog.Media.Items[item.ID];
 
                 if (media.MD5 != blob.ContentMd5)
                 {
@@ -127,9 +159,17 @@ public class MediaImport
                 }
 
                 item.State = ImportItem.ImportState.Complete;
+                media.State = MediaItemState.Active;
                 item.UploadDate = DateTime.Now;
-                
+
                 ServiceInterop.CompleteImportForItem(item.ID);
+                MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+            }
+
+            if (item.State == ImportItem.ImportState.MissingFromCatalog)
+            {
+                ServiceInterop.DeleteImportItem(item.ID);
+                MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
             }
         }
     }

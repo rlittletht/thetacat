@@ -146,24 +146,30 @@ public class WorkgroupDb
 
     public ServiceWorkgroupClient? GetClientDetails(string clientName)
     {
-        ServiceWorkgroupClient client =
-            _Connection.DoGenericQueryDelegateRead(
-                Guid.NewGuid(),
-                s_queryWorkgroupClientDetailsByName,
-                s_aliases,
-                (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
-                {
-                    _client.ClientId = reader.GetGuid(0);
-                    _client.ClientName = reader.GetString(1);
-                    _client.VectorClock = reader.GetInt32(2);
-                },
-                cmd => { cmd.AddParameterWithValue("@Name", clientName); });
+        try
+        {
+            ServiceWorkgroupClient client =
+                _Connection.DoGenericQueryDelegateRead(
+                    Guid.NewGuid(),
+                    s_queryWorkgroupClientDetailsByName,
+                    s_aliases,
+                    (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
+                    {
+                        _client.ClientId = reader.GetGuid(0);
+                        _client.ClientName = reader.GetString(1);
+                        _client.VectorClock = reader.GetInt32(2);
+                    },
+                    cmd => { cmd.AddParameterWithValue("@Name", clientName); });
 
-        // if we didn't read a client id, then we didn't read anything...
-        if (client.ClientId == null)
+            if (client.ClientId == null)
+                return null;
+
+            return client;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
             return null;
-
-        return client;
+        }
     }
 
     public ServiceWorkgroupMediaClock GetLatestWorkgroupMediaWithClock()
@@ -277,7 +283,12 @@ public class WorkgroupDb
         }
 
         if (current > 0)
-            sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+        {
+            string sCmd = sb.ToString();
+
+            if (!string.IsNullOrWhiteSpace(sCmd))
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+        }
     }
 
     public void UpdateInsertCacheEntries(
@@ -340,7 +351,7 @@ public class WorkgroupDb
                     "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock) VALUES ",
                     inserts,
                     (entry) =>
-                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToString())}, {Sql.Nullable(entry.VectorClock)}) ",
+                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {Sql.Nullable(entry.VectorClock)}) ",
                     100,
                     ",",
                     null);

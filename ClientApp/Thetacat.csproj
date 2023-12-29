@@ -13,6 +13,7 @@
     <PackageReference Include="Emgu.CV" Version="4.8.0.5324" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.0.5324" />
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
+    <PackageReference Include="Meziantou.Framework.WPF" Version="1.5.5" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.0" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
@@ -31,6 +32,12 @@
 
   <ItemGroup>
     <Compile Update="Migration\Elements\Metadata\UI\StandardMetadataMigration.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\AppLogMonitor.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\MediaItemDetails.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

@@ -15,14 +15,15 @@ public class Metatag : IMetatag
     public string Description { get; set; } = string.Empty;
     public string Standard { get; set; } = string.Empty;
     public bool LocalOnly { get; set; } = false;
+    public string StandardName => $"{Standard}:{Name}";
 
     public Guid? Parent { get; set; }
 
-    public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard)
+    public static Metatag Create(Guid? parent, string name, string description, MetatagStandards.Standard standard, Guid? idStatic = null)
     {
         return new Metatag()
         {
-            ID = Guid.NewGuid(),
+            ID = idStatic ?? Guid.NewGuid(),
             Parent = parent,
             Name = name,
             Description = description,

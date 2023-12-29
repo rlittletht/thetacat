@@ -34,7 +34,12 @@ using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.UI.Options;
 using Thetacat.Azure;
+using Thetacat.Logging;
+using Thetacat.UI;
 using MessageBox = System.Windows.Forms.MessageBox;
+using RestoreWindowPlace;
+using Thetacat.Migration.Elements.Media.UI;
+using Thetacat.Migration.Elements.Media;
 
 namespace Thetacat
 {
@@ -77,7 +82,25 @@ namespace Thetacat
         }
 
 #endregion
-        private static AppState? s_appState;
+        private static IAppState? s_appState;
+        private static CatLog? s_asyncLog;
+        private static CatLog? s_appLog;
+
+        public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
+        public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
+
+        public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            _AsyncLog.Log(entry);
+            _AppLog.Log(entry);
+        }
+
+        public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            _AppLog.Log(entry);
+        }
 
         public static IAppState _AppState
         {
@@ -96,18 +119,45 @@ namespace Thetacat
             InitializeComponent();
             InitializeThetacat();
 
+            // we have to load the catalog AND the pending upload list
+            // we also have to confirm that all the items int he pending
+            // upload list still exist in the catalog, and if they don't
+            // (or if they are marked as active in the catalog, which means
+            // they are already uploaded), then remove them from the import
+            // list
+
             _AppState.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = _AppState.Catalog.Items;
+            CatalogView.ItemsSource = _AppState.Catalog.Media.Items;
+            if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
+                ShowAsyncLog();
+            if (_AppState.Settings.ShowAppLogOnStart ?? false)
+                ShowAppLog();
         }
 
-        public static void SetStateForTests(AppState appState)
+        void OnClosing(object sender, EventArgs e)
+        {
+            _AppState.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
+            _AppState.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
+
+            if (m_asyncLogMonitor != null)
+                CloseAsyncLog(false);
+
+            if (m_appLogMonitor != null)
+                CloseAppLog(false);
+
+            _AppState.Settings.WriteSettings();
+        }
+
+        public static void SetStateForTests(IAppState? appState)
         {
             s_appState = appState;
         }
 
         void InitializeThetacat()
         {
-            s_appState = new AppState();
+            s_appState = new AppState(CloseAsyncLog, CloseAppLog);
+            s_asyncLog = new CatLog(EventType.Information);
+            s_appLog = new CatLog(EventType.Warning);
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -121,18 +171,20 @@ namespace Thetacat
         {
             Migration.Migration migration = new();
 
-            migration.ShowDialog();
+            migration.Show();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
             Metatags.ManageMetadata manage = new();
-            manage.ShowDialog();
+            manage.Show();
         }
 
-        private void LoadCatalog(object sender, RoutedEventArgs e)
+        private void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+
+            AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
         }
 
         private void LaunchOptions(object sender, RoutedEventArgs e)
@@ -159,9 +211,87 @@ namespace Thetacat
 
         private async void UploadItems(object sender, RoutedEventArgs e)
         {
-            MediaImport import = new MediaImport(MainWindow.ClientName);
-            
+            MediaImport? import = null;
+
+            try
+            {
+                import = new MediaImport(MainWindow.ClientName);
+            }
+            catch (CatExceptionCanceled)
+            {
+                return;
+            }
+
             await import.UploadMedia();
+        }
+
+        private AsyncLogMonitor? m_asyncLogMonitor;
+        private AppLogMonitor? m_appLogMonitor;
+
+        void ShowAsyncLog()
+        {
+            if (m_asyncLogMonitor != null)
+                return;
+
+            m_asyncLogMonitor = new AsyncLogMonitor();
+            m_asyncLogMonitor.Show();
+        }
+
+        void CloseAsyncLog(bool skipClose)
+        {
+            if (!skipClose)
+                m_asyncLogMonitor?.Close();
+            m_asyncLogMonitor = null;
+        }
+
+        private void ToggleAsyncLog(object sender, RoutedEventArgs e)
+        {
+            if (m_asyncLogMonitor != null)
+                CloseAsyncLog(false);
+            else
+                ShowAsyncLog();
+        }
+
+        void ShowAppLog()
+        {
+            if (m_appLogMonitor != null)
+                return;
+
+            m_appLogMonitor = new AppLogMonitor();
+            m_appLogMonitor.Show();
+        }
+
+        void CloseAppLog(bool skipClose)
+        {
+            if (!skipClose)
+                m_appLogMonitor?.Close();
+            m_appLogMonitor = null;
+        }
+
+        private void ToggleAppLog(object sender, RoutedEventArgs e)
+        {
+            if (m_appLogMonitor != null)
+                CloseAppLog(false);
+            else
+                ShowAppLog();
+        }
+
+        private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            KeyValuePair<Guid, MediaItem>? selected = CatalogView.SelectedItem as KeyValuePair<Guid, MediaItem>?;
+            MediaItem? item = selected?.Value;
+
+            if (item != null)
+            {
+                MediaItemDetails details = new MediaItemDetails(item);
+
+                details.ShowDialog();
+            }
+        }
+
+        private void UpdateMediaItems(object sender, RoutedEventArgs e)
+        {
+            _AppState.Catalog.PushPendingChanges();
         }
     }
 }

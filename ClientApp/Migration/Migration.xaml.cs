@@ -52,7 +52,8 @@ public partial class Migration : Window, INotifyPropertyChanged
     {
         SaveSettingsIfNeeded();
         MigrationManager elements = new MigrationManager(ElementsDb);
-        elements.ShowDialog();
+        elements.Show();
+        this.Close();
     }
 
     private void SaveSettingsIfNeeded()

@@ -20,14 +20,14 @@
             on the items below and edit them to create Thetacat metatags. Click "Migrate!" to create the tags in the Thetacat
             database.
         </TextBlock>
-        <ListView Name="metadataListView" Grid.Row="1">
+        <ListView Name="metadataListView" Grid.Row="1" PreviewKeyDown="DoKeyDown">
             <ListView.View>
                 <GridView>
                     <GridView.Columns>
                         <GridViewColumn Header="Migrate">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Name="Migrate" IsChecked="{Binding Path=Migrate}" />
+                                    <CheckBox Name="Migrate" IsChecked="{Binding Path=Checked}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

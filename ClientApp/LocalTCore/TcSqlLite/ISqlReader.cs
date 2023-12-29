@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using TCore;
 using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
 
@@ -37,6 +38,7 @@ public interface ISqlReader
     public Int64? GetNullableInt64(int index);
     public DateTime? GetNullableDateTime(int index);
 
+    public TypeAffinity GetFieldAffinity(int index);
     public bool NextResult();
     public bool Read();
     public void Close();

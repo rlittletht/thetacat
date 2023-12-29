@@ -21,7 +21,9 @@ using Thetacat.Import;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
+using Thetacat.Model;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -60,6 +62,10 @@ public partial class MediaMigration : UserControl
         VerifyPaths();
     }
 
+    private void ShowCount(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show($"Total count: {_Migrate.MediaMigrate.MediaItems.Count}");
+    }
     /*----------------------------------------------------------------------------
         %%Function: DoFilterItemChanged
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.DoFilterItemChanged
@@ -78,7 +84,7 @@ public partial class MediaMigration : UserControl
         m_migrate = migrate;
 
         _Migrate.MediaMigrate.SetMediaItems(new List<PseMediaItem>(db.ReadMediaItems(_Migrate.MetatagMigrate)));
-
+        _Migrate.MediaMigrate.PropagateMetadataToBuiltins(_Migrate.MetatagMigrate);
         mediaItemsListView.ItemsSource = _Migrate.MediaMigrate.MediaItems;
 
         CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(mediaItemsListView.ItemsSource);
@@ -197,7 +203,7 @@ public partial class MediaMigration : UserControl
         %%Function: VerifyPathSet
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPathSet
     ----------------------------------------------------------------------------*/
-    void VerifyPathSet(int start, int end, Dictionary<string, string> subs)
+    void VerifyPathSet(List<PseMediaItem> items, int start, int end, Dictionary<string, string> subs)
     {
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
@@ -207,36 +213,21 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        _Migrate.MediaMigrate.MediaItems[i].CheckPath(subs);
+                        items[i].CheckPath(subs);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
     }
 
-    private List<PseMediaItem> BuildCheckedItems()
-    {
-        // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
-        {
-            if (item.Migrate)
-                checkedItems.Add(item);
-        }
-
-        return checkedItems;
-    }
-
+    /*----------------------------------------------------------------------------
+        %%Function: BuildCheckedVerifiedItems
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.BuildCheckedVerifiedItems
+    ----------------------------------------------------------------------------*/
     private List<PseMediaItem> BuildCheckedVerifiedItems()
     {
-        // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = new List<PseMediaItem>();
-        foreach (PseMediaItem item in _Migrate.MediaMigrate.MediaItems)
-        {
-            if (item.Migrate && item.PathVerified == TriState.Yes)
-                checkedItems.Add(item);
-        }
-
-        return checkedItems;
+        return CheckableListViewSupport<PseMediaItem>.GetCheckedItems(
+            mediaItemsListView,
+            (PseMediaItem item) => item.PathVerified == TriState.Yes && item.InCatalog == false);
     }
 
     /*----------------------------------------------------------------------------
@@ -269,16 +260,18 @@ public partial class MediaMigration : UserControl
         VerifyStatus.Visibility = Visibility.Visible;
 
         // build the list to check (only the marked items)
-        List<PseMediaItem> checkedItems = BuildCheckedItems();
+        List<PseMediaItem> checkedItems = 
+            CheckableListViewSupport<PseMediaItem>.GetCheckedItems(mediaItemsListView);
 
         // split the list into 4 parts and do them in parallel
-        int segLength = checkedItems.Count; //  / 10;
+        int segCount = 10;
+        int segLength = checkedItems.Count / segCount;
         int segStart = 0;
-        for (int iSeg = 0; iSeg < 10; iSeg++)
+        for (int iSeg = 0; iSeg < segCount; iSeg++)
         {
             int segEnd = Math.Min(segStart + segLength, checkedItems.Count);
 
-            VerifyPathSet(segStart, segEnd, pathSubst);
+            VerifyPathSet(checkedItems, segStart, segEnd, pathSubst);
             segStart += segLength;
 
             if (segEnd == checkedItems.Count)
@@ -286,7 +279,7 @@ public partial class MediaMigration : UserControl
         }
 
         if (segStart < checkedItems.Count)
-            VerifyPathSet(segStart, checkedItems.Count, pathSubst);
+            VerifyPathSet(checkedItems, segStart, checkedItems.Count, pathSubst);
     }
 
     /*----------------------------------------------------------------------------
@@ -299,29 +292,54 @@ public partial class MediaMigration : UserControl
 
         if (selected != null)
         {
-            MediaItemDetails details = new MediaItemDetails(selected);
+            PseMediaItemDetails details = new PseMediaItemDetails(selected);
 
             details.ShowDialog();
         }
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: AddToCatalog
-        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.AddToCatalog
+        %%Function: MigrateToCatalog
+        %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.MigrateToCatalog
 
         Take the checked items and add them to the catalog (and mark them pending
         for upload). This can only happen on items with verified paths
     ----------------------------------------------------------------------------*/
-    private void AddToCatalog(object sender, RoutedEventArgs e)
+    private void MigrateToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
-        MediaImport import = new MediaImport(checkedItems, MainWindow.ClientName);
+        MediaImport import = new MediaImport(
+            checkedItems, 
+            MainWindow.ClientName,
+            (itemFile, catalogItem) =>
+            {
+                PseMediaItem pseItem = itemFile as PseMediaItem ?? throw new CatExceptionInternalFailure("file item isn't a PseMediaItem");
+                pseItem.CatID = catalogItem.ID;
+            });
 
         import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
+        foreach (PseMediaItem item in checkedItems)
+        {
+            item.UpdateCatalogStatus();
+
+            // here we can pre-populate our cache.
+            MediaItem mediaItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
+            MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
+            mediaItem.NotifyCacheStatusChanged();
+            // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
+            // metadata?  There are some things that have to get updated when the catalog item is created...
+
+        }
+        // and lastly we have to add the items we just manually added to our cache
+        // (we don't have any items we are tracking. these should all be adds)
+        MainWindow._AppState.Cache.PushChangesToDatabase(null);
+        _Migrate.ReloadSchemas();
     }
 
     private void MigrateMetadata(object sender, RoutedEventArgs e)
     {
 
     }
+
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<PseMediaItem>.DoKeyDown(mediaItemsListView, sender, e);
 }

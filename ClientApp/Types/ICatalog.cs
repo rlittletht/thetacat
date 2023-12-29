@@ -1,15 +1,24 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using Thetacat.Migration.Elements.Versions;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.Types.Parallel;
 
 namespace Thetacat.Types;
 
 public interface ICatalog
 {
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items { get; }
+    public IMedia Media { get; }
     public void AddNewMediaItem(MediaItem item);
-    public void FlushPendingCreates();
-    public void AddMediaTag(Guid id, MediaTag tag);
+
+    public MediaStacks GetStacksFromType(MediaStackType stackType);
+    //public void FlushPendingCreates();
+    public void PushPendingChanges();
     public void ReadFullCatalogFromServer(MetatagSchema schema);
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
+    public MediaStacks VersionStacks { get; }
+    public MediaStacks MediaStacks { get; }
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index);
+
+    public bool HasMediaItem(Guid mediaId);
 }

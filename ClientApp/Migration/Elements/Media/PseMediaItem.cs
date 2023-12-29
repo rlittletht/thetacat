@@ -8,9 +8,12 @@ using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms.VisualStyles;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Xmp;
+using Thetacat.Logging;
 using Thetacat.Migration.Elements.Metadata.UI;
+using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
@@ -18,7 +21,7 @@ using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Media;
 
-public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFile
+public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFile, ICheckableListViewItem
 {
     private TriState m_pathVerified;
     private Dictionary<Guid, string>? m_metadataValues;
@@ -39,10 +42,32 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public DateTime FileDateOriginal { get; set; }
     public PathSegment? VerifiedPath { get; set; }
 
-    public bool Migrate
+    public bool InCatalog
     {
-        get => m_migrate;
-        set => SetField(ref m_migrate, value);
+        get => m_inCatalog;
+        set
+        {
+            if (value == m_inCatalog) return;
+            m_inCatalog = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string? MD5
+    {
+        get => m_md5;
+        set
+        {
+            if (value == m_md5) return;
+            m_md5 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool Checked
+    {
+        get => m_include;
+        set => SetField(ref m_include, value);
     }
 
     public int ID
@@ -60,6 +85,8 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public IEnumerable<PseMetatag> Tags => m_pseMetatagValues ??= new();
     public List<PseMetatag> PseMetatags => m_pseMetatagValues ??= new();
 
+    // this maps PseIdentifier to the value. The PseIdentifier is the identifier
+    // from the metadata_description_table (not the integer id)
     public Dictionary<string, string> PseMetadataValues
     {
         get => m_pseMetadataValues ??= new();
@@ -84,7 +111,9 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     }
 
     private List<PseMediaTagValue>? m_mediaTagValues;
-    private bool m_migrate;
+    private bool m_include;
+    private bool m_inCatalog;
+    private string? m_md5;
 
     public IEnumerable<PseMediaTagValue> Metadata => m_mediaTagValues ??= BuildTagValues();
 
@@ -151,6 +180,24 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;
 
+    public void UpdateCatalogStatus()
+    {
+        if (PathVerified != TriState.Yes)
+            return;
+
+        if (InCatalog)
+            return;
+
+        MediaItem? item = MainWindow._AppState.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!);
+
+        if (item != null)
+        {
+            InCatalog = true;
+            MD5 = item.MD5;
+            CatID = item.ID;
+        }
+    }
+
     public void CheckPath(Dictionary<string, string> subst)
     {
         if (PathVerified == TriState.Yes)
@@ -170,16 +217,13 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (PathVerified == TriState.Yes)
             VerifiedPath = new PathSegment(newPath);
 
-//        if (PathVerified == TriState.Yes)
-//        {
-//            // load exif and other data from this item.
-//            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(newPath);
-//
-//            foreach (MetadataExtractor.Directory directory in directories)
-//            {
-//                MigrateMetadataForDirectory(appState, null, directory, MetatagStandards.Standard.Unknown);
-//            }
-//        }
+        if (PathVerified == TriState.Yes)
+        {
+            // see if we think we already have this item in our catalog
+            UpdateCatalogStatus();
+        }
+
+        MainWindow.LogForAsync(EventType.Information, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

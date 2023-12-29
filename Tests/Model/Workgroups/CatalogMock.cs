@@ -1,46 +1,50 @@
-﻿using System.Collections.Concurrent;
-using Thetacat.Model;
+﻿using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.Types.Parallel;
 
 namespace Tests.Model.Workgroups;
 
-public class CatalogMock: ICatalog
+public class CatalogMock : ICatalog
 {
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items { get; }
+    private Media m_media;
 
     public CatalogMock(IEnumerable<ServiceMediaItem> items)
     {
-        Items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_media = new Media();
 
         foreach (ServiceMediaItem item in items)
         {
-            Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
+            m_media.Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
         }
     }
 
     public CatalogMock(IEnumerable<MediaItem> items)
     {
-        Items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_media = new Media();
 
         foreach (MediaItem item in items)
         {
-            Items.Add(item.ID, item);
+            m_media.Items.Add(item.ID, item);
         }
     }
+
+    public IMedia Media => m_media;
 
     public void AddNewMediaItem(MediaItem item)
     {
         throw new NotImplementedException();
     }
 
-    public void FlushPendingCreates()
+    public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
+
+    public void PushPendingChanges()
     {
         throw new NotImplementedException();
     }
 
-    public void AddMediaTag(Guid id, MediaTag tag)
+    public void AddMediaTagInternal(Guid id, MediaTag tag)
     {
         throw new NotImplementedException();
     }
@@ -49,4 +53,14 @@ public class CatalogMock: ICatalog
     {
         throw new NotImplementedException();
     }
+
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath) => throw new NotImplementedException();
+    public MediaStacks VersionStacks => throw new NotImplementedException();
+    public MediaStacks MediaStacks => throw new NotImplementedException();
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
 }

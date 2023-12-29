@@ -18,4 +18,6 @@ public interface ICache
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
     public bool IsItemCached(Guid id);
     public Task DoForegroundCache(int chunkSize);
+    public void PrimeCacheFromImport(MediaItem item, PathSegment importSource);
+    public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
 }

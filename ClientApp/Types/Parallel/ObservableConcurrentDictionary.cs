@@ -1,11 +1,12 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 
-namespace System.Collections.Concurrent;
+namespace Thetacat.Types.Parallel;
 
 public interface IObservableConcurrentDictionary<TKey, TValue> :
     ICollection<KeyValuePair<TKey, TValue>>, IDictionary<TKey, TValue>,
@@ -105,7 +106,7 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
         NotifyObserversOfChange();
     }
 
-#region ICollection<KeyValuePair<TKey,TValue>> Members
+    #region ICollection<KeyValuePair<TKey,TValue>> Members
 
     void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
     {
@@ -144,9 +145,9 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
         return TryRemoveWithNotification(item.Key, out temp);
     }
 
-#endregion
+    #endregion
 
-#region IEnumerable<KeyValuePair<TKey,TValue>> Members
+    #region IEnumerable<KeyValuePair<TKey,TValue>> Members
 
     IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
     {
@@ -158,9 +159,9 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
         return ((ICollection<KeyValuePair<TKey, TValue>>)_dictionary).GetEnumerator();
     }
 
-#endregion
+    #endregion
 
-#region IDictionary<TKey,TValue> Members
+    #region IDictionary<TKey,TValue> Members
 
     public void Add(TKey key, TValue value)
     {
@@ -201,5 +202,5 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
         set { UpdateWithNotification(key, value); }
     }
 
-#endregion
+    #endregion
 }

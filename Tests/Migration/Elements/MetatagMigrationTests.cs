@@ -103,6 +103,7 @@ public class MetatagMigrationTests
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "1"),
                 new MetatagPair(
@@ -110,6 +111,7 @@ public class MetatagMigrationTests
                        .SetName("Root2")
                        .SetDescription("Root2")
                        .SetParentID(userRoot.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "2")
             };
@@ -159,6 +161,7 @@ public class MetatagMigrationTests
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "1")
             };
@@ -264,6 +267,7 @@ public class MetatagMigrationTests
                        .SetName("Root")
                        .SetDescription("Root")
                        .SetParentID(userRoot.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "1"),
                 new MetatagPair(
@@ -271,6 +275,7 @@ public class MetatagMigrationTests
                        .SetName("Root-Child1")
                        .SetDescription("Root:Root-Child1")
                        .SetParentID(tagsToInsert[0].Metatag.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "11"),
                 new MetatagPair(
@@ -278,6 +283,7 @@ public class MetatagMigrationTests
                        .SetName("Root2")
                        .SetDescription("Root2")
                        .SetParentID(userRoot.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "2"),
                 new MetatagPair(
@@ -285,6 +291,7 @@ public class MetatagMigrationTests
                        .SetName("Root2-Child1")
                        .SetDescription("Root2:Root2-Child1")
                        .SetParentID(tagsToInsert[2].Metatag.ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "21")
             };
@@ -352,6 +359,7 @@ public class MetatagMigrationTests
                        .SetName("Root-Child1")
                        .SetDescription("Root:Root-Child1")
                        .SetParentID(liveTags[2].ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "11"),
                 new MetatagPair(
@@ -359,6 +367,7 @@ public class MetatagMigrationTests
                        .SetName("Root2-Child1")
                        .SetDescription("Root2:Root2-Child1")
                        .SetParentID(liveTags[1].ID)
+                       .SetStandard(MetatagStandards.Standard.User)
                        .Build(),
                     "21")
             };

@@ -112,6 +112,18 @@ public class CatExceptionInternalFailure : CatException
 #pragma warning restore format // @formatter:on
 }
 
+public class CatExceptionCanceled: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionCanceled() : base(Guid.Empty) { }
+        public CatExceptionCanceled(Guid crids) : base(crids) { }
+        public CatExceptionCanceled(string errorMessage) : base(errorMessage) { }
+        public CatExceptionCanceled(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionCanceled(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionCanceled(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
 public class CatExceptionDatabaseLockTimeout : CatException
 {
 #pragma warning disable format // @formatter:off

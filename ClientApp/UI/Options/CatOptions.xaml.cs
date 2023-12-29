@@ -24,13 +24,13 @@ public partial class CatOptions : Window
     {
         InitializeComponent();
         CacheConfigTab.LoadFromSettings();
-
+        AccountTab.LoadFromSettings();
         MainWindow._AppState.RegisterWindowPlace(this, "CatOptions");
     }
 
     public void SaveToSettings()
     {
-        if (CacheConfigTab.FSaveSettings())
+        if (CacheConfigTab.FSaveSettings() && AccountTab.FSaveSettings())
             MainWindow._AppState.Settings.WriteSettings();
     }
 

@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
-public class PseMetadata: INotifyPropertyChanged
+public class PseMetadata: INotifyPropertyChanged, ICheckableListViewItem
 {
     private int m_pseID;
     private string m_pseIdentifier = string.Empty;
     private string m_standardTag = string.Empty;
     private string m_propertyTag = string.Empty;
-    private bool m_migrate = false;
+    private bool m_include = false;
     private string m_pseDatatype = string.Empty;
     private string m_description = string.Empty;
     private Guid? m_catId;
@@ -23,10 +24,10 @@ public class PseMetadata: INotifyPropertyChanged
         set => SetField(ref m_pseID, value);
     }
 
-    public bool Migrate
+    public bool Checked
     {
-        get => m_migrate;
-        set => SetField(ref m_migrate, value);
+        get => m_include;
+        set => SetField(ref m_include, value);
     }
 
     public string PseDatatype

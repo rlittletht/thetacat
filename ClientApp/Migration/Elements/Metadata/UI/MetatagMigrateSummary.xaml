@@ -16,14 +16,14 @@
             These are the operations that will be executed against the database to migrate metatag definitions. Use this tab to fine-tune the
             operations before committing them.
         </TextBlock>
-        <ListView Name="diffOpListView" Grid.Row="1">
+        <ListView Name="diffOpListView" Grid.Row="1" PreviewKeyDown="DoKeyDown">
             <ListView.View>
                 <GridView>
                     <GridView.Columns>
                         <GridViewColumn Header="Include">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Name="Include" IsChecked="{Binding Path=Include}" />
+                                    <CheckBox Name="Include" IsChecked="{Binding Path=Checked}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

@@ -2,10 +2,11 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Model.Metatags;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
-public class MetatagMigrationItem: INotifyPropertyChanged
+public class MetatagMigrationItem: INotifyPropertyChanged, ICheckableListViewItem
 {
     private string m_opType;
     private bool m_include;
@@ -13,7 +14,7 @@ public class MetatagMigrationItem: INotifyPropertyChanged
     public MetatagSchemaDiffOp DiffOp { get; init; }
     public string Details => DiffOp.ToString();
 
-    public bool Include
+    public bool Checked
     {
         get => m_include;
         set => SetField(ref m_include, value);

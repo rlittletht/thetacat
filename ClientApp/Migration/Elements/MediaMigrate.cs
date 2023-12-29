@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 
 namespace Thetacat.Migration.Elements.Media;
@@ -10,21 +11,32 @@ public class MediaMigrate
     private List<PseMediaItem>? m_mediaItems;
     private Dictionary<int, IPseMediaItem>? m_mapPseMedia;
     private Dictionary<Guid, IPseMediaItem>? m_mapCatMedia;
-    private List<PseMediaStackItem>? m_mediaStackItems;
 
     public readonly ObservableCollection<PathSubstitution> PathSubstitutions = new();
 
     public List<PseMediaItem> MediaItems => m_mediaItems ??= new List<PseMediaItem>();
-    public List<PseMediaStackItem> MediaStacks => m_mediaStackItems ??= new List<PseMediaStackItem>();
     
     public void SetMediaItems(List<PseMediaItem> media)
     {
         m_mediaItems = media;
     }
 
-    public void SetMediaStacks(List<PseMediaStackItem> stacks)
+    /*----------------------------------------------------------------------------
+        %%Function: PropagateMetadataToBuiltins
+        %%Qualified: Thetacat.Migration.Elements.Media.MediaMigrate.PropagateMetadataToBuiltins
+
+        Some metadata items map directly to builtin properties. Propagate those
+        here
+    ----------------------------------------------------------------------------*/
+    public void PropagateMetadataToBuiltins(MetatagMigrate metatagMigrate)
     {
-        m_mediaStackItems = stacks;
+        if (m_mediaItems == null) 
+            return;
+
+        foreach (PseMediaItem item in m_mediaItems)
+        {
+            metatagMigrate.MetadataSchema.PropagateMetadataToBuiltins(item);
+        }
     }
 
     Dictionary<int, IPseMediaItem> BuildPseMap()

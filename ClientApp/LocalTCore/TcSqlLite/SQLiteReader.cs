@@ -286,6 +286,8 @@ public class SQLiteReader: ISqlReader
     public Int64? GetNullableInt64(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetInt64(index);
     public DateTime? GetNullableDateTime(int index) => _Reader.IsDBNull(index) ? null : _Reader.GetDateTime(index);
 
+    public TypeAffinity GetFieldAffinity(int index) => _Reader.GetFieldAffinity(index);
+
     public bool NextResult() => m_sqlr?.NextResult() ?? false;
     public bool Read() => m_sqlr?.Read() ?? false;
 

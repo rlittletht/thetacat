@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Windows.Markup;
 using Emgu.CV.Features2D;
+using MetadataExtractor;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Thetacat.Metatags;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 
@@ -12,6 +14,7 @@ namespace Thetacat.Model.Metatags;
 
 public class MetatagSchema
 {
+
     private MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
 
@@ -134,6 +137,29 @@ public class MetatagSchema
         AddMetatagNoValidation(metatag);
     }
 
+    Metatag CreateMetatagForStandardRoot(MetatagStandards.Standard standard)
+    {
+        if (standard == MetatagStandards.Standard.User)
+        {
+            return MetatagBuilder
+               .Create()
+               .SetName("user")
+               .SetDescription($"user root")
+               .SetStandard(standard)
+               .Build();
+        }
+
+        StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
+        string name = MetatagStandards.GetMetadataRootFromStandardTag(definitions.StandardTag);
+
+        return MetatagBuilder
+           .Create()
+           .SetName(name)
+           .SetDescription($"{name} root")
+           .SetStandard(standard)
+           .Build();
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: AddNewStandardRoot
         %%Qualified: Thetacat.Model.MetatagSchema.AddNewStandardRoot
@@ -142,18 +168,90 @@ public class MetatagSchema
     ----------------------------------------------------------------------------*/
     public Metatag AddNewStandardRoot(MetatagStandards.Standard standard)
     {
-        StandardDefinitions definitions = MetatagStandards.GetStandardMappings(standard);
-        string name = MetatagStandards.GetMetadataRootFromStandardTag(definitions.StandardTag);
-
-        Metatag metatag = MetatagBuilder
-           .Create()
-           .SetName(name)
-           .SetDescription($"{name} root")
-           .Build();
+        Metatag metatag = CreateMetatagForStandardRoot(standard);
 
         AddMetatagNoValidation(metatag);
 
         return metatag;
+    }
+
+    public Metatag? FindStandardItem(MetatagStandards.Standard standard, StandardDefinition item)
+    {
+        // get the root from the standard
+        IMetatagTreeItem? root =
+            WorkingTree.FindMatchingChild(
+                MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandard(standard)),
+                1);
+
+        if (root == null)
+            return null;
+
+        IMetatagTreeItem? match =
+            root.FindMatchingChild(
+                MetatagTreeItemMatcher.CreateNameMatch(item.PropertyTagName),
+                -1);
+
+        if (match == null)
+            return null;
+
+        return FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(match.ID));
+    }
+
+    public Metatag? FindStandardItemFromStandardAndType(MetatagStandards.Standard standard, int type)
+    {
+        StandardDefinition? def = MetatagStandards.GetDefinitionForStandardAndType(standard, type);
+
+        if (def == null) 
+            return null;
+
+        return FindStandardItem(standard, def);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetOrBuildDirectoryTag
+        %%Qualified: Thetacat.Model.Metatags.MetatagSchema.GetOrBuildDirectoryTag
+
+        Get a directory tag (a tag that is needed as a parent for a tag), or 
+        create it if it doesn't exist.
+
+        If this tag must use a predefined static id, pass that in (this is only 
+        true for builtin tags like width/height/originalFileDate)
+    ----------------------------------------------------------------------------*/
+    public Metatag GetOrBuildDirectoryTag(
+        Metatag? parent,
+        MetatagStandards.Standard standard,
+        string description,
+        Guid? idStatic = null)
+    {
+        StandardDefinitions standardDefinitions = MetatagStandards.GetStandardMappings(standard);
+
+        // match the current directory to a metatag
+        Metatag? dirTag = FindByName(parent, standardDefinitions.StandardTag);
+
+        if (dirTag == null)
+        {
+            // we have to create one
+            dirTag = Metatag.Create(parent?.ID, standardDefinitions.StandardTag, description, standard, idStatic);
+            
+            if (parent == null)
+                AddStandardRoot(dirTag);
+            else
+                AddMetatag(dirTag);
+        }
+
+        return dirTag;
+    }
+
+    public void EnsureBuiltinMetatagsDefined()
+    {
+        GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+
+        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_WidthID)) == null)
+            AddMetatag(BuiltinTags.s_Width);
+        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_HeightID)) == null)
+            AddMetatag(BuiltinTags.s_Height);
+        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_OriginalFileDateID)) == null)
+            AddMetatag(BuiltinTags.s_OriginalFileDate);
     }
 
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)

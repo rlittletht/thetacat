@@ -7,7 +7,7 @@ using Thetacat.Util;
 
 namespace Tests.Model.Workgroups;
 
-public class CacheMock: Cache, ICache
+public class CacheMock : Cache, ICache
 {
     private IWorkgroup? m_workgroupOverride;
 
@@ -20,7 +20,7 @@ public class CacheMock: Cache, ICache
         m_workgroupOverride = workgroup;
     }
 
-    public ConcurrentQueue<MediaItem> Queue => base.m_cacheQueue;
+    public ConcurrentQueue<MediaItem> Queue => m_cacheQueue;
 
     // we can't guarantee what order they will be in, but we can verify
     // that they are there

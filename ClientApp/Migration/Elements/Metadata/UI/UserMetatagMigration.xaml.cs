@@ -24,14 +24,17 @@ using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
+using Thetacat.Util;
 using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
 public partial class UserMetatagMigration : UserControl
 {
-    private GridViewColumnHeader? sortCol = null;
-    private SortAdorner? sortAdorner;
+    private readonly SortableListViewSupport m_sortableListViewSupport;
+
+    private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
+
     private ElementsMigrate? m_migrate = null;
 
     private ElementsMigrate _Migrate
@@ -50,16 +53,7 @@ public partial class UserMetatagMigration : UserControl
     public UserMetatagMigration()
     {
         InitializeComponent();
-    }
-
-    private void DoToggleSelected(object sender, RoutedEventArgs e)
-    {
-        ToggleItems(metaTagsListView.SelectedItems as IEnumerable<object?>);
-    }
-
-    private void SortType(object sender, RoutedEventArgs e)
-    {
-        Sort(metaTagsListView, sender as GridViewColumnHeader);
+        m_sortableListViewSupport = new SortableListViewSupport(metaTagsListView);
     }
 
     public void RefreshForSchemaChange()
@@ -67,7 +61,7 @@ public partial class UserMetatagMigration : UserControl
         foreach (PseMetatag metatag in _Migrate.MetatagMigrate.UserMetatags)
         {
             metatag.CatID = null;
-            metatag.IsSelected = false;
+            metatag.Checked = false;
         }
 
         MarkExistingMetatags();
@@ -91,41 +85,6 @@ public partial class UserMetatagMigration : UserControl
         RemoveItems(metaTagsListView.SelectedItems as IEnumerable<object?>);
     }
 
-    public void ToggleItems(IEnumerable<object?>? items)
-    {
-        if (items == null)
-            return;
-
-        foreach (PseMetatag? item in items)
-        {
-            if (item != null)
-                item.IsSelected = !item.IsSelected;
-        }
-    }
-
-    public void Sort(ListView listView, GridViewColumnHeader? column)
-    {
-        if (column == null)
-            return;
-
-        string sortBy = column.Tag?.ToString() ?? string.Empty;
-
-        if (sortAdorner != null && sortCol != null)
-        {
-            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
-            listView.Items.SortDescriptions.Clear();
-        }
-
-        ListSortDirection newDir = ListSortDirection.Ascending;
-        if (sortCol == column && sortAdorner?.Direction == newDir)
-            newDir = ListSortDirection.Descending;
-
-        sortCol = column;
-        sortAdorner = new SortAdorner(sortCol, newDir);
-        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
-        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
-    }
-
     public void RemoveItems(IEnumerable<object?>? items)
     {
         if (items == null || m_migrate == null)
@@ -146,7 +105,7 @@ public partial class UserMetatagMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        m_migrate?.MetatagMigrate.SwitchToSummaryTab();
+        m_migrate?.SwitchToSchemaSummariesTab();
     }
 
     delegate Guid UnmatchedDelegate(List<string> nameHistory, IMetatagTreeItem item, Guid? idParent);
@@ -247,13 +206,14 @@ public partial class UserMetatagMigration : UserControl
                         ? item.Description
                         : string.Join(":", nameHistory.ToArray());
 
-                Metatag newTag = new()
-                                       {
-                                           ID = Guid.NewGuid(),
-                                           Description = description,
-                                           Name = item.Name,
-                                           Parent = idParent
-                                       };
+                Metatag newTag =
+                    MetatagBuilder
+                       .Create()
+                       .SetDescription(description)
+                       .SetName(item.Name)
+                       .SetParentID(idParent)
+                       .SetStandard(MetatagStandards.Standard.User)
+                       .Build();
 
                 tagsToInsert.Add(new MetatagPair(newTag, item.ID));
                 return newTag.ID;
@@ -277,7 +237,7 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (PseMetatag? item in metaTagsListView.Items)
         {
-            if (item?.IsSelected ?? false)
+            if (item?.Checked ?? false)
                 metatags.Add(item);
         }
 
@@ -316,4 +276,9 @@ public partial class UserMetatagMigration : UserControl
 
         MessageBox.Show("All checked items have been added to the working schema. Go to the summary tab to upload to the database.");
     }
+
+    private void DoKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<PseMetatag>.DoKeyDown(metaTagsListView, sender, e);
+
+    private void DoToggleSelected(object sender, RoutedEventArgs e) =>
+        CheckableListViewSupport<MetatagMigrationItem>.DoToggleSelected(metaTagsListView, sender, e);
 }

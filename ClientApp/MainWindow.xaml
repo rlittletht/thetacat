@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" Closing="OnClosing">
     <Window.Resources>
         <local:MathConverter x:Key="MathConverter" />
     </Window.Resources>
@@ -16,9 +16,17 @@
                 <MenuItem Header="Meta_tags" Click="ManageMetatags" />
                 <MenuItem Header="Options" Click="LaunchOptions"/>
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="App log monitor" Click="ToggleAppLog" />
+                <MenuItem Header="Async log monitor" Click="ToggleAsyncLog"/>
+            </MenuItem>
         </Menu>
-        <StackPanel Margin="5 5 5 0">
-            <ListView Name="CatalogView">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="10*"/>
+                <RowDefinition Height="48"/>
+            </Grid.RowDefinitions>
+            <ListView Name="CatalogView" Grid.Row="0" MouseDoubleClick="HandleDoubleClick">
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>
@@ -38,19 +46,22 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Grid HorizontalAlignment="Right" Margin="0 10 0 5">
+            <Grid HorizontalAlignment="Right" Margin="0 10 0 5" Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="96" />
-                    <ColumnDefinition Width="96" />
-                    <ColumnDefinition Width="96" />
+                    <ColumnDefinition Width="108" />
+                    <ColumnDefinition Width="108" />
+                    <ColumnDefinition Width="108" />
+                    <ColumnDefinition Width="108" />
                 </Grid.ColumnDefinitions>
-                <Button Content="Cache Items" Click="DoCacheItems" IsDefault="True" Grid.Column="0" Height="24"
+                <Button Content="Download Cache" Click="DoCacheItems" IsDefault="True" Grid.Column="0" Height="24"
                         Margin="5 0 0 0" />
-                <Button Content="Upload Items" Click="UploadItems" IsDefault="True" Grid.Column="1" Height="24"
+                <Button Content="Upload Pending" Click="UploadItems" IsDefault="True" Grid.Column="1" Height="24"
                         Margin="5 0 5 0" />
-                <Button Content="Load Catalog" Click="LoadCatalog" IsDefault="True" Grid.Column="2" Height="24"
+                <Button Content="Update Catalog" Click="UpdateMediaItems" IsDefault="True" Grid.Column="2" Height="24"
+                        Margin="0 0 5 0" />
+                <Button Content="Connect" Click="ConnectToDatabase" IsDefault="True" Grid.Column="3" Height="24"
                         Margin="0 0 5 0" />
             </Grid>
-        </StackPanel>
+        </Grid>
     </DockPanel>
 </Window>

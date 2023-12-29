@@ -182,7 +182,7 @@ public class MetatagStandards
     public static StandardDefinitions ExifMakernotes_Nikon1 =
         new(
             Standard.ExifMakernotes_Nikon1,
-            "EXIF-MakerNotes-Nikon1",
+            "EXIF-MakerNotes-Nikon",
             new[]
             {
                 "NikonType1MakernoteDirectory",
@@ -205,7 +205,7 @@ public class MetatagStandards
     public static StandardDefinitions ExifMakernotes_Nikon2 =
         new(
             Standard.ExifMakernotes_Nikon2,
-            "EXIF-MakerNotes-Nikon2",
+            "EXIF-MakerNotes-Nikon",
             new[]
             {
                 "NikonType2MakernoteDirectory",
@@ -668,4 +668,14 @@ public class MetatagStandards
         return KnownStandards[standard].StandardTag;
     }
 
+    public static StandardDefinition? GetDefinitionForStandardAndType(Standard standard, int type)
+    {
+        if (!KnownStandards.TryGetValue(standard, out StandardDefinitions? defs))
+            return null;
+
+        if (!defs.Properties.TryGetValue(type, out StandardDefinition? def)) 
+            return null;
+
+        return def;
+    }
 }

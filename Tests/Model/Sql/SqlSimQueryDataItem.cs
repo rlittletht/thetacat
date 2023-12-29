@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Data.SQLite;
+using System.Text.RegularExpressions;
 using TCore;
 using Thetacat.TCore.TcSqlLite;
 using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
@@ -45,6 +46,7 @@ public class SqlSimQueryDataItem: ISqlReader
     public double? GetNullableDouble(int index) => (double?)(m_data[record][index]);
     public long? GetNullableInt64(int index) => (Int64?)(m_data[record][index]);
     public DateTime? GetNullableDateTime(int index) => m_data[record][index] == null ? null : DateTime.Parse((string)m_data[record][index]!);
+    public TypeAffinity GetFieldAffinity(int index) => throw new NotImplementedException();
 
     public bool NextResult() => throw new NotImplementedException();
 
