@@ -20,4 +20,5 @@ public interface ICache
     public Task DoForegroundCache(int chunkSize);
     public void PrimeCacheFromImport(MediaItem item, PathSegment importSource);
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
+    public string? TryGetCachedFullPath(Guid id);
 }

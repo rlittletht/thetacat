@@ -40,6 +40,8 @@ using MessageBox = System.Windows.Forms.MessageBox;
 using RestoreWindowPlace;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Util;
+using Image = System.Drawing.Image;
 
 namespace Thetacat
 {
@@ -157,7 +159,7 @@ namespace Thetacat
         {
             s_appState = new AppState(CloseAsyncLog, CloseAppLog);
             s_asyncLog = new CatLog(EventType.Information);
-            s_appLog = new CatLog(EventType.Warning);
+            s_appLog = new CatLog(EventType.Information);
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -182,9 +184,37 @@ namespace Thetacat
 
         private void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
+            LogForApp(EventType.Information, "Beginning read catalog");
+            MicroTimer timer = new MicroTimer();
+
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
 
+            List<MediaExplorerItem> explorerItems = new();
+
+            foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
+            {
+                string? path = _AppState.Cache.TryGetCachedFullPath(item.Key);
+
+                explorerItems.Add(new MediaExplorerItem(path ?? string.Empty, item.Value.VirtualPath));
+            }
+
+            LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
+
+            timer.Reset();
+            timer.Start();
+            LogForApp(EventType.Information, "Beginning reset content");
+            Explorer.ResetContent(explorerItems);
+
             AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
+            LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+
+//            BitmapImage image = new BitmapImage();
+//            image.BeginInit();
+//            image.UriSource = new Uri(@"\\pix\pix\cat-cache\Minnesota Pictures\DSC_0088.JPG");
+//            image.DecodePixelWidth = 192;
+//            image.EndInit();
+//
+//            TestImage.Source = image;
         }
 
         private void LaunchOptions(object sender, RoutedEventArgs e)

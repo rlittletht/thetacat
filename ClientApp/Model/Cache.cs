@@ -103,6 +103,14 @@ public class Cache: ICache
         return Entries.ContainsKey(id);
     }
 
+    public string? TryGetCachedFullPath(Guid id)
+    {
+        if (!Entries.TryGetValue(id, out ICacheEntry? value))
+            return null;
+
+        return GetFullLocalPath(value.Path);
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: Cache
         %%Qualified: Thetacat.Model.Cache.Cache
