@@ -5,6 +5,7 @@ using Thetacat.Logging;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Versions;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements;
 
@@ -48,7 +49,7 @@ public class StacksMigrate
         return summary;
     }
 
-    public void UpdateStackWithCatStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stack, bool versionStack)
+    public void UpdateStackWithCatStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stack, MediaStackType stackType)
     {
         foreach (PseStackItem stackItem in stack)
         {
@@ -63,23 +64,29 @@ public class StacksMigrate
                 continue;
 
             stackItem.CatMediaId = catItem.ID;
-            if (versionStack)
+            if (stackType.Equals(MediaStackType.Version))
                 stackItem.CatStackId = catItem.VersionStack;
-            else
+            else if (stackType.Equals(MediaStackType.Media))
                 stackItem.CatStackId = catItem.MediaStack;
+            else 
+                throw new CatExceptionInternalFailure("unknown stack type");
+
+            if (stackItem.CatStackId != null)
+                mapPseStackIdToCatStackId.TryAdd(stackItem.StackID, stackItem.CatStackId.Value);
         }
     }
 
     public void UpdateStacksWithCatStacks(MediaMigrate mediaMigrate)
     {
-        UpdateStackWithCatStacks(mediaMigrate, m_versionStacks, true);
-        UpdateStackWithCatStacks(mediaMigrate, m_mediaStacks, false);
+        mapPseStackIdToCatStackId.Clear();
+        UpdateStackWithCatStacks(mediaMigrate, m_versionStacks, MediaStackType.Version);
+        UpdateStackWithCatStacks(mediaMigrate, m_mediaStacks, MediaStackType.Media);
     }
+
+    readonly Dictionary<int, Guid> mapPseStackIdToCatStackId = new();
 
     private void CreateCatStacksForMissingStacks(MediaMigrate mediaMigrate, IEnumerable<PseStackItem> stacks, List<StackMigrateSummaryItem> summary, MediaStackType stackType)
     {
-        Dictionary<int, Guid> mapPseStackIdToCatStackId = new();
-
         foreach (PseStackItem item in stacks)
         {
             if (item.CatStackId != null)

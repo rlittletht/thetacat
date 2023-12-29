@@ -76,7 +76,7 @@ namespace Thetacat.Migration.Elements.Versions
             }
         }
 
-        private ObservableCollection<StackMigrateSummaryItem> m_migrateSummaryItems = new();
+        private readonly ObservableCollection<StackMigrateSummaryItem> m_migrateSummaryItems = new();
 
         private void DoSummaryKeyDown(object sender, KeyEventArgs e) => CheckableListViewSupport<StackMigrateSummaryItem>.DoKeyDown(diffOpListView, sender, e);
 

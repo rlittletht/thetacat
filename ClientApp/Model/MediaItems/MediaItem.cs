@@ -123,7 +123,6 @@ public class MediaItem : INotifyPropertyChanged
         get => Stacks[MediaStackType.Version];
         set
         {
-            throw new Exception("don't call this in tests");
             SetField(ref Stacks[MediaStackType.Version], value);
             if (value != null)
                 VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);

@@ -44,6 +44,7 @@ public class MediaStack: INotifyPropertyChanged
     {
         m_description = serviceStack.Description ?? throw new CatExceptionServiceDataFailure("description not read");
         m_type = new MediaStackType(serviceStack.StackType ?? throw new CatExceptionServiceDataFailure("type not read"));
+        m_stackId = serviceStack.Id ?? throw new CatExceptionServiceDataFailure("id not read");
 
         foreach (ServiceStackItem item in serviceStack.StackItems ?? throw new CatExceptionServiceDataFailure("items not set"))
         {
