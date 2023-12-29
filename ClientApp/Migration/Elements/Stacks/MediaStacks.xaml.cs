@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Identity.Client;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
@@ -52,10 +53,14 @@ namespace Thetacat.Migration.Elements.Versions
             m_migrate = migrate;
             _Migrate.StacksMigrate.SetVersionStacks(new List<PseStackItem>(db.ReadVersionStacks()));
             _Migrate.StacksMigrate.SetMediaStacks(new List<PseStackItem>(db.ReadMediaStacks()));
-            _Migrate.StacksMigrate.UpdateStacksWithCatStacks(_Migrate.MediaMigrate);
 
             VersionStackListView.ItemsSource = _Migrate.StacksMigrate.VersionStacks;
             MediaStackListView.ItemsSource = _Migrate.StacksMigrate.MediaStacks;
+        }
+
+        public void RebuildStacks()
+        {
+            _Migrate.StacksMigrate.UpdateStacksWithCatStacks(_Migrate.MediaMigrate);
         }
 
         private void DoCreateCatStacks(object sender, RoutedEventArgs e)
@@ -86,6 +91,7 @@ namespace Thetacat.Migration.Elements.Versions
 
                 MediaStacks stacks = MainWindow._AppState.Catalog.GetStacksFromType(checkedItem.StackType);
 
+                // create the stack if necessary
                 if (!stacks.Items.TryGetValue(checkedItem.StackID, out MediaStack? stack))
                 {
                     stack = new MediaStack(checkedItem.StackType, "");
@@ -94,12 +100,11 @@ namespace Thetacat.Migration.Elements.Versions
                     stacks.AddStack(stack);
                 }
 
-                MediaStackItem item = new MediaStackItem(checkedItem.MediaID, checkedItem.StackIndex);
-                stack.PushItem(item);
+                MainWindow._AppState.Catalog.AddMediaToStackAtIndex(checkedItem.StackType, stack.StackId, checkedItem.MediaID, checkedItem.StackIndex);
             }
 
             m_migrateSummaryItems.Clear();
-            _Migrate.StacksMigrate.UpdateStacksWithCatStacks(_Migrate.MediaMigrate);
+            RebuildStacks();
         }
     }
 }

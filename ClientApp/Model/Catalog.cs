@@ -239,6 +239,8 @@ public class Catalog: ICatalog
 
         bool pushNeeded = map.ContainsKey(index);
 
+        MediaItem mediaItem = Media.Items[mediaId];
+
         if (!pushNeeded && !renumberNeeded)
             // simplest. we're done
         {
@@ -246,6 +248,14 @@ public class Catalog: ICatalog
                 itemExisting.StackIndex = index;
             else
                 stack.PushItem(new MediaStackItem(mediaId, index));
+
+            if (stackType.Equals(MediaStackType.Media))
+                mediaItem.SetMediaStackSafe(this, stackId);
+            else if (stackType.Equals(MediaStackType.Version))
+                mediaItem.SetVersionStackSafe(this, stackId);
+            else
+                throw new CatExceptionInternalFailure("unknown stack type");
+
             return;
         }
 
@@ -276,5 +286,12 @@ public class Catalog: ICatalog
             itemExisting.StackIndex = index;
         else
             stack.PushItem(new MediaStackItem(mediaId, index));
+
+        if (stackType.Equals(MediaStackType.Media))
+            mediaItem.SetMediaStackSafe(this, stackId);
+        else if (stackType.Equals(MediaStackType.Version))
+            mediaItem.SetVersionStackSafe(this, stackId);
+        else
+            throw new CatExceptionInternalFailure("unknown stack type");
     }
 }

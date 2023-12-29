@@ -18,6 +18,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Versions;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
@@ -80,6 +81,11 @@ public partial class MigrationManager : Window
     private void OnMetatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)
     {
         MetadataMigrateSummaryTab.RebuildSchemaDiff();
+    }
+
+    private void OnVersionStacksTabSelected(object sender, RoutedEventArgs e)
+    {
+        StacksTab.RebuildStacks();
     }
 
     private void OnMediatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)

@@ -29,7 +29,7 @@
             </TabItem.Header>
             <elements:UserMetatagMigration x:Name="MetatagMigrationTab" />
         </TabItem>
-        <TabItem>
+        <TabItem Selector.Selected="OnVersionStacksTabSelected">
             <TabItem.Header>
                 <TextBlock>VersionStacks</TextBlock>
             </TabItem.Header>

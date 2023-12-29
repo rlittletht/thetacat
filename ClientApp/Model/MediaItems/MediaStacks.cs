@@ -10,7 +10,6 @@ namespace Thetacat.Model;
 // Each individual item tracks whether it is dirty or not
 public class MediaStacks : INotifyPropertyChanged
 {
-    private Guid m_stackId;
     private Dictionary<Guid, MediaStack> m_items = new();
     private readonly MediaStackType m_type;
 
@@ -20,12 +19,6 @@ public class MediaStacks : INotifyPropertyChanged
     }
 
 #region Public Data/Accessors
-
-    public Guid StackId
-    {
-        get => m_stackId;
-        set => SetField(ref m_stackId, value);
-    }
 
     public Dictionary<Guid, MediaStack> Items
     {

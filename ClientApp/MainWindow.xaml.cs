@@ -82,7 +82,7 @@ namespace Thetacat
         }
 
 #endregion
-        private static AppState? s_appState;
+        private static IAppState? s_appState;
         private static CatLog? s_asyncLog;
         private static CatLog? s_appLog;
 
@@ -148,7 +148,7 @@ namespace Thetacat
             _AppState.Settings.WriteSettings();
         }
 
-        public static void SetStateForTests(AppState appState)
+        public static void SetStateForTests(IAppState? appState)
         {
             s_appState = appState;
         }

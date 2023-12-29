@@ -18,6 +18,7 @@ public interface ICatalog
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
     public MediaStacks VersionStacks { get; }
     public MediaStacks MediaStacks { get; }
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index);
 
     public bool HasMediaItem(Guid mediaId);
 }

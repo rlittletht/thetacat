@@ -2,12 +2,14 @@
 using MetadataExtractor.Formats.Xmp;
 using NUnit.Framework.Internal;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Permissions;
@@ -49,6 +51,13 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(importItem);
     }
 
+    public MediaItem(MediaItem clone)
+    {
+        m_working = new MediaItemData(clone.m_working);
+        Stacks[MediaStackType.Version] = clone.VersionStack;
+        Stacks[MediaStackType.Media]= clone.MediaStack;
+    }
+
     public MediaItem(ServiceMediaItem item)
     {
         m_working = new MediaItemData(item);
@@ -73,7 +82,7 @@ public class MediaItem : INotifyPropertyChanged
     private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
     {
         if (!stacks.Items.TryGetValue(stackId, out MediaStack? stack))
-            throw new CatExceptionInternalFailure("can't set the version stack of an item without first adding it to the stack");
+            throw new CatExceptionInternalFailure($"can't set the version stack of an item without first adding it to the stack: {stackId}. {stacks.Items.Count}: {stacks.Items.Keys.First()}");
 
         foreach (MediaStackItem item in stack.Items)
         {
@@ -81,22 +90,41 @@ public class MediaItem : INotifyPropertyChanged
                 return;
         }
 
-        throw new CatExceptionInternalFailure("can't set the version stack of an item without first adding it to the stack");
+        throw new CatExceptionInternalFailure($"can't set the version stack of an item without first adding it to the stack: {ID}");
     }
 
     // This has to be kept up to date with the types defined in MediaStackType.cs
-    public readonly Guid?[] m_stacks =
+    public readonly Guid?[] Stacks =
     {
         null,
         null
     };
 
+    public void SetVersionStackSafe(ICatalog catalog, Guid? stackId)
+    {
+        if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Version], stackId)) return;
+        Stacks[MediaStackType.Version] = stackId;
+        OnPropertyChanged("VersionStack");
+        if (stackId != null)
+            VerifyMediaInMediaStack(catalog.VersionStacks, stackId.Value);
+    }
+
+    public void SetMediaStackSafe(ICatalog catalog, Guid? stackId)
+    {
+        if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Media], stackId)) return;
+        Stacks[MediaStackType.Media] = stackId;
+        OnPropertyChanged("MediaStack");
+        if (stackId != null)
+            VerifyMediaInMediaStack(catalog.MediaStacks, stackId.Value);
+    }
+
     public Guid? VersionStack
     {
-        get => m_stacks[MediaStackType.Version];
+        get => Stacks[MediaStackType.Version];
         set
         {
-            SetField(ref m_stacks[MediaStackType.Version], value);
+            throw new Exception("don't call this in tests");
+            SetField(ref Stacks[MediaStackType.Version], value);
             if (value != null)
                 VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);
         }
@@ -104,10 +132,10 @@ public class MediaItem : INotifyPropertyChanged
 
     public Guid? MediaStack 
     {
-        get => m_stacks[MediaStackType.Media];
+        get => Stacks[MediaStackType.Media];
         set
         {
-            SetField(ref m_stacks[MediaStackType.Media], value);
+            SetField(ref Stacks[MediaStackType.Media], value);
             if (value != null)
                 VerifyMediaInMediaStack(MainWindow._AppState.Catalog.MediaStacks, value.Value);
         }
