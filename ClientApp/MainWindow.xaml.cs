@@ -194,7 +194,7 @@ namespace Thetacat
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
 
             List<MediaExplorerItem> explorerItems = new();
-            m_collection.SetExplorerWidth((int)Explorer.ExplorerBox.ActualWidth);
+            m_collection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
 
             foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
             {

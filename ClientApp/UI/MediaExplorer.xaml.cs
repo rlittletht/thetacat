@@ -28,6 +28,8 @@ namespace Thetacat.UI
         public ObservableCollection<MediaExplorerItem> ExplorerItems = new();
         public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new ();
 
+        private MediaExplorerCollection? m_collection;
+
         public MediaExplorer()
         {
             InitializeComponent();
@@ -37,7 +39,21 @@ namespace Thetacat.UI
 
         public void ResetContent(MediaExplorerCollection collection)
         {
+            m_collection = collection;
+            m_collection.AdjustExplorerWidth(ActualWidth);
             ExplorerBox.ItemsSource = collection.ExplorerLines;
+        }
+
+        private void OnExplorerSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // notify the collection of the change
+            if (e.WidthChanged)
+                m_collection?.AdjustExplorerWidth(e.NewSize.Width);
+        }
+
+        private void OnExplorerLoaded(object sender, RoutedEventArgs e)
+        {
+            m_collection?.AdjustExplorerWidth(ActualWidth);
         }
 
 #if old

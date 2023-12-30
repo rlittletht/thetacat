@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using Meziantou.Framework.WPF.Collections;
 using TCore.Pipeline;
 using Thetacat.UI;
+using Thetacat.Util;
 
 namespace Thetacat.Model;
 
@@ -29,11 +30,26 @@ public class MediaExplorerCollection
 {
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
-    private Dictionary<Guid, MediaExplorerItem> m_explorerItems = new Dictionary<Guid, MediaExplorerItem>();
-    private ProducerConsumer<ImageLoaderWork> m_imageLoaderPipeline;
+    private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
+    private readonly ProducerConsumer<ImageLoaderWork> m_imageLoaderPipeline;
+    private DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
+    private readonly ConcurrentQueue<MediaExplorerItem> m_imageLoadQueue = new();
 
+    public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
+    
     public MediaExplorerCollection()
     {
+        m_collection =
+            new(
+                reference =>
+                {
+                    return new MediaExplorerLineModel();
+                },
+                (from, to) =>
+                {
+
+                });
+                    
         // this will start the thread which will just wait for work to do...
         m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
         m_imageLoaderPipeline.Start();
@@ -45,24 +61,65 @@ public class MediaExplorerCollection
     }
 
     private object m_lock = new object();
-    private int m_explorerWidth;
+    private double m_explorerWidth;
     private int m_panelWidth = 212;
 
 //    private int PictureWidth => m_panelWidth - m_picturePadding;
-    private int PanelsPerLine => m_explorerWidth / m_panelWidth;
+
+    private static int CalculatePanelsPerLine(int panelWidth, double explorerWidth)
+    {
+        return (int)(explorerWidth / panelWidth);
+    }
+
+    private int PanelsPerLine => CalculatePanelsPerLine(m_panelWidth, m_explorerWidth);
 
     private const int s_picturePreviewWidth = 512;
 
-    public void SetExplorerWidth(int width)
+    public void AdjustExplorerWidth(double width)
     {
+        int panelsPerLineOriginal = PanelsPerLine;
+
         m_explorerWidth = width;
+        m_collection.UpdateItemsPerLine(PanelsPerLine);
+
+        if (PanelsPerLine != panelsPerLineOriginal)
+        {
+            // need to recalculate the collection
+            AdjustCollectionForPanelChange(panelsPerLineOriginal);
+        }
+
     }
 
-    ObservableCollection<MediaExplorerLineModel> m_explorerLines = new ObservableCollection<MediaExplorerLineModel>();
+    void AdjustCollectionForPanelChange(int panelsPerLineOriginal)
+    {
+//        if (m_explorerLines.Count == 0)
+//            return;
+//
+//        int deltaPerLine = PanelsPerLine - panelsPerLineOriginal;
+//        int currentLineDelta = deltaPerLine;
+//
+//        if (deltaPerLine < 0)
+//        {
+//            // we have to shrink each line, which means pushing items to subsequent
+//            // lines
+//            
+////            int itemCount = panelsPer
+//
+//
+//        }
+//        // we just need to shuffle things around in the lines
+//        for (int i = 0; i < m_explorerLines.Count; i++)
+//        {
+//            if (currentLineDelta < 0)
+//            {
+//                // need to move an item from this line to the next line
+//            }
+//            MediaExplorerLineModel line = m_explorerLines[i];
+//
+//        }
+    }
 
-    public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_explorerLines;
 
-    ConcurrentQueue<MediaExplorerItem> m_imageLoadQueue = new ConcurrentQueue<MediaExplorerItem>();
 
     public void AddToExplorerCollection(MediaItem item)
     {
@@ -73,17 +130,7 @@ public class MediaExplorerCollection
         m_explorerItems.Add(item.ID, explorerItem);
         m_imageLoadQueue.Enqueue(explorerItem);
 
-        // figure out where to add this item
-        if (m_explorerLines.Count == 0
-            || m_explorerLines[m_explorerLines.Count - 1].Items.Count == PanelsPerLine)
-        {
-            MediaExplorerLineModel line = new MediaExplorerLineModel();
-            line.TestName = $"line {m_explorerLines.Count}";
-
-            m_explorerLines.Add(line);
-        }
-
-        m_explorerLines[m_explorerLines.Count - 1].Items.Add(explorerItem);
+        m_collection.AddToDistributedCollection(explorerItem);
         m_imageLoaderPipeline.Producer.QueueRecord(new ImageLoaderWork(item, explorerItem));
 
     }
