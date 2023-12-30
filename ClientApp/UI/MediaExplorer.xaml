@@ -39,8 +39,8 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Vertical" Height="212">
-                        <TextBlock Text="{Binding Path=TestName}"/>
-                        <local:MediaExplorerLine TestItems="{Binding Path=testItems}"/>
+                        <!-- Binding alone means we bind to the entire item -->
+                        <local:MediaExplorerLine LineItems="{Binding}"/> 
                     </StackPanel>
                     <!--                    
                     <StackPanel Orientation="Vertical" Width="192" Height="212">

@@ -1,24 +1,27 @@
 ﻿<UserControl x:Class="Thetacat.UI.MediaExplorerLine"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Thetacat.UI"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <ItemsControl Name="ExplorerLine" ItemsSource="{Binding Path=this}">
-        <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal"/>
-            </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-            <DataTemplate>
-                <StackPanel Orientation="Vertical" Width="192" Height="212">
-                    <Image Source="{Binding Path=TileImage}" MaxWidth="172" MaxHeight="172" />
-                    <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" />
-                </StackPanel>
-            </DataTemplate>
-        </ItemsControl.ItemTemplate>
-    </ItemsControl>
+    <StackPanel Orientation="Vertical">
+        <TextBlock Text="{Binding Path=TestName}" />
+        <ItemsControl Name="ExplorerLine" ItemsSource="{Binding Path=Items}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Vertical" Width="192" Height="212">
+                        <Image Source="{Binding Path=TileImage}" MaxWidth="172" MaxHeight="172" />
+                        <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
 </UserControl>

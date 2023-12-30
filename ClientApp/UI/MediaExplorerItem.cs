@@ -11,7 +11,7 @@ public class MediaExplorerItem: INotifyPropertyChanged
 {
     private string m_tileSrc;
     public string m_tileLabel;
-    private BitmapImage m_tileImage;
+    private BitmapImage? m_tileImage;
 
     public string TileSrc
     {
@@ -19,7 +19,7 @@ public class MediaExplorerItem: INotifyPropertyChanged
         set => SetField(ref m_tileSrc, value);
     }
 
-    public BitmapImage TileImage
+    public BitmapImage? TileImage
     {
         get
         {

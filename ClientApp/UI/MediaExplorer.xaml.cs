@@ -68,7 +68,7 @@ namespace Thetacat.UI
                 item.TileLabel = $"{rawCount++}: {item.m_tileLabel}";
                 ExplorerItems.Add(item);
                 Debug.Assert(currentLine != null, nameof(currentLine) + " != null");
-                currentLine.testItems.Add(item);
+                currentLine.Items.Add(item);
                 c = (c + 1) % 4;
 //                ExplorerItems.Add(item);
             }

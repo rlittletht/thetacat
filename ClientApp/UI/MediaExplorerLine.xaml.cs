@@ -21,30 +21,22 @@ namespace Thetacat.UI
     /// </summary>
     public partial class MediaExplorerLine : UserControl
     {
-        public static readonly DependencyProperty TestItemsProperty =
+        public static readonly DependencyProperty LineItemsProperty =
             DependencyProperty.Register(
-                name: "TestItems",
-                propertyType: typeof(ObservableCollection<MediaExplorerItem>),
+                name: "LineItems",
+                propertyType: typeof(MediaExplorerLineModel),
                 ownerType: typeof(MediaExplorerLine),
-                new PropertyMetadata(default(ObservableCollection<MediaExplorerItem>)));
+                new PropertyMetadata(default(MediaExplorerLineModel)));
 
         public MediaExplorerLine()
         {
             InitializeComponent();
         }
 
-        public ObservableCollection<MediaExplorerItem> TestItems
+        public MediaExplorerLineModel LineItems
         {
-            get => (ObservableCollection<MediaExplorerItem>) GetValue(TestItemsProperty);
-            set => SetValue(TestItemsProperty, value);
+            get => (MediaExplorerLineModel) GetValue(LineItemsProperty);
+            set => SetValue(LineItemsProperty, value);
         }
-
-//        public void SetItems(IEnumerable<MediaExplorerItem> items)
-//        {
-//            foreach (MediaExplorerItem item in items)
-//            {
-//                m_items.Add(item);
-//            }
-//        }
     }
 }

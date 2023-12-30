@@ -6,6 +6,6 @@ namespace Thetacat.UI;
 
 public class MediaExplorerLineModel
 {
-    public ObservableCollection<MediaExplorerItem> testItems { get; set; } = new ObservableCollection<MediaExplorerItem>();
-    public string TestName { get; set; }
+    public ObservableCollection<MediaExplorerItem> Items { get; set; } = new ObservableCollection<MediaExplorerItem>();
+    public string TestName { get; set; } = "";
 }
