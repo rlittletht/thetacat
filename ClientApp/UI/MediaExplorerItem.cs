@@ -3,13 +3,14 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
+using Thetacat.Logging;
 
 namespace Thetacat.UI;
 
 public class MediaExplorerItem: INotifyPropertyChanged
 {
     private string m_tileSrc;
-    private string m_tileLabel;
+    public string m_tileLabel;
     private BitmapImage m_tileImage;
 
     public string TileSrc
@@ -20,13 +21,20 @@ public class MediaExplorerItem: INotifyPropertyChanged
 
     public BitmapImage TileImage
     {
-        get => m_tileImage;
+        get
+        {
+            return m_tileImage;
+        }
         set => SetField(ref m_tileImage, value);
     }
 
     public string TileLabel
     {
-        get => m_tileLabel;
+        get
+        {
+            MainWindow.LogForApp(EventType.Information, $"getting tile image for {m_tileLabel}");
+            return m_tileLabel;
+        }
         set => SetField(ref m_tileLabel, value);
     }
 

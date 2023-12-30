@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Thetacat.Logging;
 using Image = System.Drawing.Image;
 
 namespace Thetacat.UI
@@ -23,20 +25,36 @@ namespace Thetacat.UI
     public partial class MediaExplorer : UserControl
     {
         public ObservableCollection<MediaExplorerItem> ExplorerItems = new();
+        public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new ();
 
         public MediaExplorer()
         {
             InitializeComponent();
-            ExplorerBox.ItemsSource = ExplorerItems;
+//            ExplorerBox.ItemsSource = ExplorerItems;
+            ExplorerBox.ItemsSource = ExplorerLines;
         }
 
         public void ResetContent(IEnumerable<MediaExplorerItem> newItems)
         {
             int c = 0;
+            int line = 0;
+            int rawCount = 0;
 
-            ExplorerItems.Clear();
+            ExplorerLines.Clear();
+
+            MediaExplorerLineModel? currentLine = null;
+
             foreach (MediaExplorerItem item in newItems)
             {
+                MainWindow.LogForApp(EventType.Information, $"populating item: {item.TileLabel}");
+                if (c == 0)
+                {
+                    line++;
+                    currentLine = new MediaExplorerLineModel();
+                    currentLine.TestName = $"line {line}";
+                    ExplorerLines.Add(currentLine);
+                }
+
 //                if (c++ < 10)
                 {
                     BitmapImage image = new BitmapImage();
@@ -47,8 +65,12 @@ namespace Thetacat.UI
                     image.EndInit();
                     item.TileImage = image;
                 }
-
+                item.TileLabel = $"{rawCount++}: {item.m_tileLabel}";
                 ExplorerItems.Add(item);
+                Debug.Assert(currentLine != null, nameof(currentLine) + " != null");
+                currentLine.testItems.Add(item);
+                c = (c + 1) % 4;
+//                ExplorerItems.Add(item);
             }
         }
     }

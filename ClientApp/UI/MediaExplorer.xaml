@@ -23,15 +23,31 @@
         <ItemsControl Name="ExplorerBox" ItemsSource="{Binding Path=ExplorerItems}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel />
+                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"
+                                            VirtualizingPanel.ScrollUnit="Pixel" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="ItemsControl">
+                    <ScrollViewer CanContentScroll="True"
+                                  Padding="{TemplateBinding Padding}" VirtualizingPanel.ScrollUnit="Pixel"
+                                  Focusable="False">
+                        <ItemsPresenter />
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
+                    <StackPanel Orientation="Vertical" Height="212">
+                        <TextBlock Text="{Binding Path=TestName}"/>
+                        <local:MediaExplorerLine TestItems="{Binding Path=testItems}"/>
+                    </StackPanel>
+                    <!--                    
                     <StackPanel Orientation="Vertical" Width="192" Height="212">
                         <Image Source="{Binding Path=TileImage}" MaxWidth="172" MaxHeight="172" />
                         <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" />
                     </StackPanel>
+                    -->
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
