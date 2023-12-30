@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Logging;
+using Thetacat.Model;
 using Image = System.Drawing.Image;
 
 namespace Thetacat.UI
@@ -34,6 +35,12 @@ namespace Thetacat.UI
             ExplorerBox.ItemsSource = ExplorerLines;
         }
 
+        public void ResetContent(MediaExplorerCollection collection)
+        {
+            ExplorerBox.ItemsSource = collection.ExplorerLines;
+        }
+
+#if old
         public void ResetContent(IEnumerable<MediaExplorerItem> newItems)
         {
             int c = 0;
@@ -73,5 +80,6 @@ namespace Thetacat.UI
 //                ExplorerItems.Add(item);
             }
         }
+#endif // old
     }
 }

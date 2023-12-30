@@ -116,10 +116,14 @@ namespace Thetacat
 
         public static string ClientName = Environment.MachineName;
 
+        private MediaExplorerCollection m_collection;
+
         public MainWindow()
         {
             InitializeComponent();
             InitializeThetacat();
+
+            m_collection = new MediaExplorerCollection();
 
             // we have to load the catalog AND the pending upload list
             // we also have to confirm that all the items int he pending
@@ -140,7 +144,7 @@ namespace Thetacat
         {
             _AppState.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
             _AppState.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
-
+            m_collection.Close();
             if (m_asyncLogMonitor != null)
                 CloseAsyncLog(false);
 
@@ -190,12 +194,14 @@ namespace Thetacat
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
 
             List<MediaExplorerItem> explorerItems = new();
+            m_collection.SetExplorerWidth((int)Explorer.ExplorerBox.ActualWidth);
 
             foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
             {
-                string? path = _AppState.Cache.TryGetCachedFullPath(item.Key);
-
-                explorerItems.Add(new MediaExplorerItem(path ?? string.Empty, item.Value.VirtualPath));
+                m_collection.AddToExplorerCollection(item.Value);
+//                string? path = _AppState.Cache.TryGetCachedFullPath(item.Key);
+//
+//                explorerItems.Add(new MediaExplorerItem(path ?? string.Empty, item.Value.VirtualPath));
             }
 
             LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
@@ -203,7 +209,7 @@ namespace Thetacat
             timer.Reset();
             timer.Start();
             LogForApp(EventType.Information, "Beginning reset content");
-            Explorer.ResetContent(explorerItems);
+            Explorer.ResetContent(m_collection); // explorerItems);
 
             AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
             LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
