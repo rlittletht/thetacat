@@ -31,7 +31,8 @@ public class TestDistributedObservableCollection
         public int LineData { get; set; }
 
         public TestItemLine()
-        {}
+        {
+        }
 
         public TestItemLine(IEnumerable<TestItem> items, bool endAfter, int lineData)
         {
@@ -39,6 +40,7 @@ public class TestDistributedObservableCollection
             {
                 Items.Add(item);
             }
+
             EndSegmentAfter = endAfter;
             LineData = lineData;
         }
@@ -86,6 +88,8 @@ public class TestDistributedObservableCollection
         Assert.AreEqual(expectedLine, expected.Length);
         Assert.AreEqual(expected.Length, actual.TopCollection.Count);
     }
+
+#region Lines Shrinking Tests
 
     [Test]
     public static void TestOneSegment_ShrinkingLine_NoShift()
@@ -409,4 +413,248 @@ public class TestDistributedObservableCollection
 
         AreEqual(expectedLines, collection);
     }
+
+    #endregion
+
+    #region Lines Growing Tests
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_NoShift()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(3);
+
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), }, true, 0)
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_OneShift()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(3);
+
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, true, 0)
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_TwoLessLines()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(3);
+
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+                new TestItem(4),
+                new TestItem(5),
+                new TestItem(6),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(4), new TestItem(5), new TestItem(6), }, true, 0)
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_ThreeLessLines()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(2);
+
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+                new TestItem(4),
+                new TestItem(5),
+                new TestItem(6),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(4), new TestItem(5), new TestItem(6), }, true, 0)
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_FirstSegmentNoChange_SecondSegment_ThreeLessLines()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(2);
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(10),
+                new TestItem(11),
+            });
+
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+                new TestItem(4),
+                new TestItem(5),
+                new TestItem(6),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(10), new TestItem(11), }, true, 0),
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(4), new TestItem(5), new TestItem(6), }, true, 0)
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_FirstSegment_ThreeLessLines_SecondSegmentNoChange()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(2);
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+                new TestItem(4),
+                new TestItem(5),
+                new TestItem(6),
+            });
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(10),
+                new TestItem(11),
+            });
+
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(4), new TestItem(5), new TestItem(6), }, true, 0),
+                new TestItemLine(new TestItem[] { new TestItem(10), new TestItem(11), }, true, 0),
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+    [Test]
+    public static void TestOneSegment_GrowingLine_BothSegments_ThreeLessLines()
+    {
+        DistributedObservableCollection<TestItemLine, TestItem> collection = new(LineFactory, MoveLineProps);
+
+        collection.UpdateItemsPerLine(2);
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(0),
+                new TestItem(1),
+                new TestItem(2),
+                new TestItem(3),
+                new TestItem(4),
+                new TestItem(5),
+                new TestItem(6),
+            });
+        collection.AddSegment(
+            new TestItem[]
+            {
+                new TestItem(10),
+                new TestItem(11),
+                new TestItem(12),
+                new TestItem(13),
+                new TestItem(14),
+                new TestItem(15),
+                new TestItem(16),
+            });
+
+        collection.UpdateItemsPerLine(4);
+
+        TestItemLine[] expectedLines =
+            new TestItemLine[]
+            {
+                new TestItemLine(new TestItem[] { new TestItem(0), new TestItem(1), new TestItem(2), new TestItem(3), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(4), new TestItem(5), new TestItem(6), }, true, 0),
+                new TestItemLine(new TestItem[] { new TestItem(10), new TestItem(11), new TestItem(12), new TestItem(13), }, false, 0),
+                new TestItemLine(new TestItem[] { new TestItem(14), new TestItem(15), new TestItem(16), }, true, 0),
+            };
+
+        AreEqual(expectedLines, collection);
+    }
+
+    #endregion
+
+
 }

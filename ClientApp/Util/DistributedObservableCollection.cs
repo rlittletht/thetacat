@@ -110,6 +110,147 @@ public class DistributedObservableCollection<T, T1>
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: ShiftlinesForGrow
+        %%Qualified: Thetacat.Util.DistributedObservableCollection<T, T1>.ShiftlinesForGrow
+
+        Unline shrink, we will now be pulling items from later lines because
+        we are longer. This is easier and we can do it in one pass
+    ----------------------------------------------------------------------------*/
+    void ShiftLinesForGrow()
+    {
+        Debug.Assert(m_segments != null, nameof(m_segments) + " != null");
+
+        List<T1> adding = new();
+
+        int segmentItemCurrent = 0;
+        int lineCurrent = 0;
+        int segmentCurrent = 0;
+        SegmentInfo segment = m_segments[segmentCurrent];
+
+        while (true)
+        {
+            T line = m_collection[lineCurrent];
+
+            adding.Clear();
+            int pullFirst = segmentItemCurrent;
+            int pullLast = Math.Min(segment.Count, segmentItemCurrent + m_itemsPerLine) - 1;
+
+            for (int i = pullFirst; i <= pullLast; i++)
+            {
+                adding.Add(GetSegmentItemFromCollection(segmentCurrent, i));
+            }
+
+            // now clear the current line and add our items
+            line.Items.Clear();
+            foreach (T1 item in adding)
+            {
+                line.Items.Add(item);
+            }
+
+            lineCurrent++;
+            segmentItemCurrent = pullLast + 1;
+
+            // this should also take care of moving the BreakSegmentAfter property
+            m_moveLineProperties(GetSegmentLineFromCollection(segmentCurrent, pullLast), line);
+            if (segmentItemCurrent == segment.Count)
+            {
+                // we're done with this segment. move to the next
+                if (++segmentCurrent == m_segments.Count)
+                    break;
+
+                segmentItemCurrent = 0;
+                segment = m_segments[segmentCurrent];
+            }
+        }
+
+        // at this point we have some number of lines have moved from
+        int linesToDelete = m_collection.Count - lineCurrent;
+        while (linesToDelete-- > 0)
+        {
+            m_collection.RemoveAt(m_collection.Count - 1);
+        }
+
+        // lastly, rebuild the segments
+        BuildSegments(m_itemsPerLine);
+    }
+
+    void ShiftLinesForShrink()
+    {
+        // we have to shrink lines, which means we (may) need to create new
+        // lines
+
+        // prescan the segments to determine the new line count
+        int linesNeeded = 0;
+        Debug.Assert(m_segments != null, nameof(m_segments) + " != null");
+        foreach (SegmentInfo segment in m_segments)
+        {
+            linesNeeded += (segment.Count / m_itemsPerLine) + ((segment.Count % m_itemsPerLine) != 0 ? 1 : 0);
+        }
+
+        linesNeeded -= m_collection.Count;
+
+        if (linesNeeded < 0)
+            throw new Exception($"can't shrink the collection when shrinking lines");
+
+        while (linesNeeded-- > 0)
+        {
+            m_collection.Add(m_lineFactory(null));
+        }
+
+        int lineReflowCurrent = m_collection.Count - 1;
+        int iSegmentCurrent = m_segments.Count - 1;
+        // at this point we have all the lines we need. now reflow starting at the end
+        int segmentRemaining = m_segments[iSegmentCurrent].Count;
+        List<T1> replacementItems = new();
+
+        while (lineReflowCurrent >= 0)
+        {
+            int firstItem =
+                (segmentRemaining % m_itemsPerLine) != 0
+                    ? segmentRemaining - (segmentRemaining % m_itemsPerLine)
+                    : segmentRemaining - m_itemsPerLine;
+
+            int lastItem = segmentRemaining - 1;
+
+            if (firstItem > lastItem)
+                throw new Exception($"{firstItem}>{lastItem}?!?");
+
+            T line = GetSegmentLineFromCollection(iSegmentCurrent, lastItem);
+            m_moveLineProperties(line, m_collection[lineReflowCurrent]);
+            // we have to collect these items in a separate list because we might be modifying the same
+            // line we are coming from...
+            replacementItems.Clear();
+            int i = 0;
+            while (firstItem + i <= lastItem)
+            {
+                replacementItems.Add(GetSegmentItemFromCollection(iSegmentCurrent, firstItem + i));
+                i++;
+            }
+
+            m_collection[lineReflowCurrent].Items.Clear();
+            foreach (T1 item in replacementItems)
+            {
+                m_collection[lineReflowCurrent].Items.Add(item);
+            }
+
+            lineReflowCurrent--;
+            segmentRemaining = firstItem;
+            if (segmentRemaining == 0)
+            {
+                if (iSegmentCurrent == 0)
+                {
+                    if (lineReflowCurrent != -1)
+                        throw new Exception($"{lineReflowCurrent} should be -1 when iSegmentCurrent is 0");
+                    break;
+                }
+
+                iSegmentCurrent--;
+                segmentRemaining = m_segments[iSegmentCurrent].Count;
+            }
+        }
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: AdjustItemsPerLine
         %%Qualified: Thetacat.Util.DistributedObservableCollection<T, T1>.AdjustItemsPerLine
 
@@ -136,104 +277,12 @@ public class DistributedObservableCollection<T, T1>
 
         if (panelsPerLineOriginal > m_itemsPerLine)
         {
-            // we have to shrink lines, which means we (may) need to create new
-            // lines
-
-            // prescan the segments to determine the new line count
-            int linesNeeded = 0;
-            foreach (SegmentInfo segment in m_segments)
-            {
-                linesNeeded += (segment.Count / m_itemsPerLine) + ((segment.Count % m_itemsPerLine) != 0 ? 1 : 0);
-            }
-
-            linesNeeded -= m_collection.Count;
-
-            if (linesNeeded < 0)
-                throw new Exception($"can't shrink the collection when shrinking lines");
-
-            while (linesNeeded-- > 0)
-            {
-                m_collection.Add(m_lineFactory(null));
-            }
-
-            int lineReflowCurrent = m_collection.Count - 1;
-            int iSegmentCurrent = m_segments.Count - 1;
-            // at this point we have all the lines we need. now reflow starting at the end
-            int segmentRemaining = m_segments[iSegmentCurrent].Count;
-            List<T1> replacementItems = new();
-
-            while (lineReflowCurrent >= 0)
-            {
-                int firstItem =
-                    (segmentRemaining % m_itemsPerLine) != 0
-                        ? segmentRemaining - (segmentRemaining % m_itemsPerLine)
-                        : segmentRemaining - m_itemsPerLine;
-
-                int lastItem = segmentRemaining - 1;
-
-                if (firstItem > lastItem)
-                    throw new Exception($"{firstItem}>{lastItem}?!?");
-
-                T line = GetSegmentLineFromCollection(iSegmentCurrent, lastItem);
-                m_moveLineProperties(line, m_collection[lineReflowCurrent]);
-                // we have to collect these items in a separate list because we might be modifying the same
-                // line we are coming from...
-                replacementItems.Clear();
-                int i = 0;
-                while (firstItem + i <= lastItem)
-                {
-                    replacementItems.Add(GetSegmentItemFromCollection(iSegmentCurrent, firstItem + i));
-                    i++;
-                }
-
-                m_collection[lineReflowCurrent].Items.Clear();
-                foreach (T1 item in replacementItems)
-                {
-                    m_collection[lineReflowCurrent].Items.Add(item);
-                }
-
-                lineReflowCurrent--;
-                segmentRemaining = firstItem;
-                if (segmentRemaining == 0)
-                {
-                    if (iSegmentCurrent == 0)
-                    {
-                        if (lineReflowCurrent != -1)
-                            throw new Exception($"{lineReflowCurrent} should be -1 when iSegmentCurrent is 0");
-                        break;
-                    }
-
-                    iSegmentCurrent--;
-                    segmentRemaining = m_segments[iSegmentCurrent].Count;
-                }
-            }
-
+            ShiftLinesForShrink();
         }
-        //        if (m_explorerLines.Count == 0)
-        //            return;
-        //
-        //        int deltaPerLine = PanelsPerLine - panelsPerLineOriginal;
-        //        int currentLineDelta = deltaPerLine;
-        //
-        //        if (deltaPerLine < 0)
-        //        {
-        //            // we have to shrink each line, which means pushing items to subsequent
-        //            // lines
-        //            
-        ////            int itemCount = panelsPer
-        //
-        //
-        //        }
-        //        // we just need to shuffle things around in the lines
-        //        for (int i = 0; i < m_explorerLines.Count; i++)
-        //        {
-        //            if (currentLineDelta < 0)
-        //            {
-        //                // need to move an item from this line to the next line
-        //            }
-        //            MediaExplorerLineModel line = m_explorerLines[i];
-        //
-        //        }
+        else
+        {
+            ShiftLinesForGrow();
+        }
     }
 
     public void AddSegment(IEnumerable<T1>? items = null)
