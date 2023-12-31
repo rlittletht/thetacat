@@ -10,6 +10,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Meziantou.Framework.WPF.Collections;
 using TCore.Pipeline;
+using Thetacat.Model.ImageCaching;
+using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
 
@@ -31,12 +33,12 @@ public class MediaExplorerCollection
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
-    private readonly ProducerConsumer<ImageLoaderWork> m_imageLoaderPipeline;
     private DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
     private readonly ConcurrentQueue<MediaExplorerItem> m_imageLoadQueue = new();
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
-    
+    private ImageCache m_imageCache;
+
     public MediaExplorerCollection()
     {
         m_collection =
@@ -49,22 +51,34 @@ public class MediaExplorerCollection
                 {
 
                 });
-                    
-        // this will start the thread which will just wait for work to do...
-        m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
-        m_imageLoaderPipeline.Start();
-    }
-
-    public void Close()
-    {
-        m_imageLoaderPipeline.Stop();
+        m_imageCache = new ImageCache();
+        m_imageCache.ImageCacheUpdated += OnImageCacheUpdated;
     }
 
     private object m_lock = new object();
     private double m_explorerWidth;
     private int m_panelWidth = 212;
 
-//    private int PictureWidth => m_panelWidth - m_picturePadding;
+    public void Close()
+    {
+        m_imageCache.Close();
+    }
+
+    private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
+    {
+        ImageCache? cache = sender as ImageCache;
+
+        if (cache == null)
+            throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
+
+        if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
+        {
+            if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))
+            {
+                explorerItem.TileImage = cacheItem.Image;
+            }
+        }
+    }
 
     private static int CalculatePanelsPerLine(int panelWidth, double explorerWidth)
     {
@@ -73,53 +87,11 @@ public class MediaExplorerCollection
 
     private int PanelsPerLine => CalculatePanelsPerLine(m_panelWidth, m_explorerWidth);
 
-    private const int s_picturePreviewWidth = 512;
-
     public void AdjustExplorerWidth(double width)
     {
-        int panelsPerLineOriginal = PanelsPerLine;
-
         m_explorerWidth = width;
         m_collection.UpdateItemsPerLine(PanelsPerLine);
-
-        if (PanelsPerLine != panelsPerLineOriginal)
-        {
-            // need to recalculate the collection
-            AdjustCollectionForPanelChange(panelsPerLineOriginal);
-        }
-
     }
-
-    void AdjustCollectionForPanelChange(int panelsPerLineOriginal)
-    {
-//        if (m_explorerLines.Count == 0)
-//            return;
-//
-//        int deltaPerLine = PanelsPerLine - panelsPerLineOriginal;
-//        int currentLineDelta = deltaPerLine;
-//
-//        if (deltaPerLine < 0)
-//        {
-//            // we have to shrink each line, which means pushing items to subsequent
-//            // lines
-//            
-////            int itemCount = panelsPer
-//
-//
-//        }
-//        // we just need to shuffle things around in the lines
-//        for (int i = 0; i < m_explorerLines.Count; i++)
-//        {
-//            if (currentLineDelta < 0)
-//            {
-//                // need to move an item from this line to the next line
-//            }
-//            MediaExplorerLineModel line = m_explorerLines[i];
-//
-//        }
-    }
-
-
 
     public void AddToExplorerCollection(MediaItem item)
     {
@@ -130,66 +102,12 @@ public class MediaExplorerCollection
         m_explorerItems.Add(item.ID, explorerItem);
         m_imageLoadQueue.Enqueue(explorerItem);
 
+        if (path != null)
+        {
+            ImageCacheItem cacheItem = m_imageCache.TryAddItem(item, path);
+            explorerItem.TileImage = cacheItem.Image;
+        }
+
         m_collection.AddItem(explorerItem);
-        m_imageLoaderPipeline.Producer.QueueRecord(new ImageLoaderWork(item, explorerItem));
-
     }
-
-    #region Image Loading/Threading
-
-    class ImageLoaderWork : IPipelineBase<ImageLoaderWork>
-    {
-        public Guid MediaKey { get; set; }
-        public string? PathToImage { get; set; }
-        public double AspectRatio { get; set; }
-
-        public ImageLoaderWork()
-        {
-        }
-
-        public ImageLoaderWork(MediaItem mediaItem, MediaExplorerItem explorerItem)
-        {
-            MediaKey = mediaItem.ID;
-            PathToImage = explorerItem.TileSrc;
-            AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
-        }
-
-        public void InitFrom(ImageLoaderWork t)
-        {
-            MediaKey = t.MediaKey;
-            PathToImage = t.PathToImage;
-            AspectRatio = t.AspectRatio;
-        }
-    }
-
-    /*----------------------------------------------------------------------------
-        %%Function: DoImageLoaderWork
-        %%Qualified: Thetacat.Model.MediaExplorerCollection.DoImageLoaderWork
-
-        This will create a bitmapimage for the path and assign it to the
-        MediaExplorerItem
-    ----------------------------------------------------------------------------*/
-    void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems)
-    {
-        foreach (ImageLoaderWork item in workItems)
-        {
-            if (item.PathToImage == null)
-                continue;
-
-            BitmapImage image = new BitmapImage();
-            image.BeginInit();
-            image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
-            image.UriSource = new Uri(item.PathToImage);
-            image.EndInit();
-            image.Freeze();
-            if (m_explorerItems.TryGetValue(item.MediaKey, out MediaExplorerItem? explorerItem))
-//                Application.Current.Dispatcher.Invoke(
-//                    new Action(() =>
-//                    {
-                        explorerItem.TileImage = image;
-//                    }));
-        }
-    }
-
-#endregion
 }

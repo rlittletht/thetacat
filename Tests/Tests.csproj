@@ -19,6 +19,7 @@
   <ItemGroup>
     <Folder Include="Migration\Elements\" />
     <Folder Include="Model\MediaItems\" />
+    <Folder Include="Model\ImageCaching\" />
   </ItemGroup>
 
   <ItemGroup>

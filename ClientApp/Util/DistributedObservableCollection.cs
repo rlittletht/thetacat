@@ -248,6 +248,9 @@ public class DistributedObservableCollection<T, T1>
                 segmentRemaining = m_segments[iSegmentCurrent].Count;
             }
         }
+
+        BuildSegments(m_itemsPerLine);
+
     }
 
     /*----------------------------------------------------------------------------

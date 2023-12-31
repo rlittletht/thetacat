@@ -84,6 +84,8 @@ namespace Thetacat
         }
 
 #endregion
+
+        public static bool InUnitTest { get; set; } = false;
         private static IAppState? s_appState;
         private static CatLog? s_asyncLog;
         private static CatLog? s_appLog;
