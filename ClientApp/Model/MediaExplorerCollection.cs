@@ -130,7 +130,7 @@ public class MediaExplorerCollection
         m_explorerItems.Add(item.ID, explorerItem);
         m_imageLoadQueue.Enqueue(explorerItem);
 
-        m_collection.AddToDistributedCollection(explorerItem);
+        m_collection.AddItem(explorerItem);
         m_imageLoaderPipeline.Producer.QueueRecord(new ImageLoaderWork(item, explorerItem));
 
     }
