@@ -32,7 +32,7 @@ public class MediaExplorerItem: INotifyPropertyChanged
     {
         get
         {
-            MainWindow.LogForApp(EventType.Information, $"getting tile image for {m_tileLabel}");
+//            MainWindow.LogForApp(EventType.Information, $"getting tile image for {m_tileLabel}");
             return m_tileLabel;
         }
         set => SetField(ref m_tileLabel, value);

@@ -13,8 +13,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Permissions;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Markup;
+using MetadataExtractor.Formats.Exif;
+using MetadataExtractor.Formats.Jpeg;
 using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Model.Metatags;
@@ -55,13 +58,35 @@ public class MediaItem : INotifyPropertyChanged
     {
         m_working = new MediaItemData(clone.m_working);
         Stacks[MediaStackType.Version] = clone.VersionStack;
-        Stacks[MediaStackType.Media]= clone.MediaStack;
+        Stacks[MediaStackType.Media] = clone.MediaStack;
     }
 
     public MediaItem(ServiceMediaItem item)
     {
         m_working = new MediaItemData(item);
     }
+
+#region Synthesized Metadata (fetch only)
+
+    /*----------------------------------------------------------------------------
+        %%Function: MediaItem.ImageDate
+
+        This is the date the photo was taken (from metadata), or the original
+        file date if no metadata available
+    ----------------------------------------------------------------------------*/
+//    public DateTime ImageDate
+//    {
+//        get
+//        {
+//            if (TryGetMediaTagValueFromStandardAndType(
+//                    MainWindow._AppState.MetatagSchema,
+//                    MetatagStandards.Standard.Jpeg,
+//                    JpegDirectory.Tag
+//                    ))
+//        }
+//    }
+
+#endregion
 
 #region Public Data / Accessors
 
@@ -82,7 +107,8 @@ public class MediaItem : INotifyPropertyChanged
     private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
     {
         if (!stacks.Items.TryGetValue(stackId, out MediaStack? stack))
-            throw new CatExceptionInternalFailure($"can't set the version stack of an item without first adding it to the stack: {stackId}. {stacks.Items.Count}: {stacks.Items.Keys.First()}");
+            throw new CatExceptionInternalFailure(
+                $"can't set the version stack of an item without first adding it to the stack: {stackId}. {stacks.Items.Count}: {stacks.Items.Keys.First()}");
 
         foreach (MediaStackItem item in stack.Items)
         {
@@ -129,7 +155,7 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
-    public Guid? MediaStack 
+    public Guid? MediaStack
     {
         get => Stacks[MediaStackType.Media];
         set
@@ -246,14 +272,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_OriginalFileDateID, out MediaTag? tag))
+            if (Tags.TryGetValue(BuiltinTags.s_OriginalMediaDateID, out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalFileDate, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag);
             OnPropertyChanged(nameof(OriginalFileDate));
         }
@@ -534,8 +560,26 @@ public class MediaItem : INotifyPropertyChanged
             FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()));
         }
 
-        DateTime createTime = File.GetCreationTime(file);
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalFileDate, createTime.ToUniversalTime().ToString("u")));
+        string? dateTimeString =
+            TryGetMediaTagValueFromStandardAndType(
+                metatagSchema,
+                MetatagStandards.Standard.Exif,
+                ExifDirectoryBase.TagDateTimeOriginal);
+
+        if (dateTimeString != null)
+        {
+            // try to get it into a canonical format
+            if (dateTimeString.Length >= 19 && dateTimeString[4] == ':' && dateTimeString[7] == ':')
+            {
+                // replace the : in the data with -
+                dateTimeString = $"{dateTimeString[..4]}-{dateTimeString[5..7]}-{dateTimeString[8..10]}{dateTimeString[10..]}";
+                dateTimeString = DateTime.Parse(dateTimeString).ToUniversalTime().ToString("u");
+            }
+        }
+
+        dateTimeString ??= File.GetCreationTime(file).ToUniversalTime().ToString("u");
+
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalMediaDate, dateTimeString));
 
         return log;
     }

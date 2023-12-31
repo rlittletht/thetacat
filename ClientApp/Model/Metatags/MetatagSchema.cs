@@ -250,8 +250,8 @@ public class MetatagSchema
             AddMetatag(BuiltinTags.s_Width);
         if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_HeightID)) == null)
             AddMetatag(BuiltinTags.s_Height);
-        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_OriginalFileDateID)) == null)
-            AddMetatag(BuiltinTags.s_OriginalFileDate);
+        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_OriginalMediaDateID)) == null)
+            AddMetatag(BuiltinTags.s_OriginalMediaDate);
     }
 
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)

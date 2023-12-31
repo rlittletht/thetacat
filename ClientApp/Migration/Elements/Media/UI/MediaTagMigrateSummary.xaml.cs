@@ -143,7 +143,7 @@ public partial class MediaTagMigrateSummary : UserControl
     {
         m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_Width, item.ImageWidth.ToString()));
         m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_Height, item.ImageHeight.ToString()));
-        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_OriginalFileDate, item.FileDateOriginal.ToUniversalTime().ToString("u")));
+        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_OriginalMediaDate, item.FileDateOriginal.ToUniversalTime().ToString("u")));
     }
 
     void AddVersionStacksToMigrationItems(PseMediaItem item, MediaItem catItem)
