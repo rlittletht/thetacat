@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
@@ -42,6 +43,7 @@ using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Util;
 using Image = System.Drawing.Image;
+using List = NUnit.Framework.List;
 
 namespace Thetacat
 {
@@ -188,6 +190,60 @@ namespace Thetacat
             manage.Show();
         }
 
+        DateTime GetLocalDateFromMedia(MediaItem item)
+        {
+            DateTime? mediaDate = item.OriginalMediaDate;
+
+            if (mediaDate != null)
+                return mediaDate.Value.ToLocalTime().Date;
+
+            string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
+
+            if (path != null)
+                return File.GetCreationTime(path);
+
+            return DateTime.Now;
+        }
+
+        void BuildTimelineCollectionFromMedia()
+        {
+            MicroTimer timer = new MicroTimer();
+            LogForApp(EventType.Information, "Beginning building timeline collection");
+
+            // build a group by date
+            Dictionary<DateTime, List<Guid>> dateGrouping = new();
+
+            foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
+            {
+                DateTime date = GetLocalDateFromMedia(item.Value);
+
+                if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
+                {
+                    items = new List<Guid>();
+                    dateGrouping.Add(date, items);
+                }
+
+                items.Add(item.Value.ID);
+            }
+
+            ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
+
+            foreach (DateTime date in sortedDates)
+            {
+                bool newSegment = true;
+
+                List<Guid> items = dateGrouping[date];
+                foreach (Guid id in items)
+                {
+                    MediaItem item = _AppState.Catalog.Media.Items[id];
+                    m_collection.AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
+                    newSegment = false;
+                }
+            }
+
+            LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
+        }
+
         private void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
             LogForApp(EventType.Information, "Beginning read catalog");
@@ -197,16 +253,9 @@ namespace Thetacat
 
             List<MediaExplorerItem> explorerItems = new();
             m_collection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
-
-            foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
-            {
-                m_collection.AddToExplorerCollection(item.Value);
-//                string? path = _AppState.Cache.TryGetCachedFullPath(item.Key);
-//
-//                explorerItems.Add(new MediaExplorerItem(path ?? string.Empty, item.Value.VirtualPath));
-            }
-
             LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
+
+            BuildTimelineCollectionFromMedia();
 
             timer.Reset();
             timer.Start();

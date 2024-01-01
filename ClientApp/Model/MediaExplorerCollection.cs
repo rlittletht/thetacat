@@ -49,7 +49,9 @@ public class MediaExplorerCollection
                 },
                 (from, to) =>
                 {
-
+                    string fromString = from.LineLabel;
+                    from.LineLabel = "";
+                    to.LineLabel = fromString;
                 });
         m_imageCache = new ImageCache();
         m_imageCache.ImageCacheUpdated += OnImageCacheUpdated;
@@ -93,7 +95,7 @@ public class MediaExplorerCollection
         m_collection.UpdateItemsPerLine(PanelsPerLine);
     }
 
-    public void AddToExplorerCollection(MediaItem item)
+    public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
         string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
 
@@ -108,6 +110,15 @@ public class MediaExplorerCollection
             explorerItem.TileImage = cacheItem.Image;
         }
 
+        if (startNewSegment)
+        {
+            m_collection.AddSegment(null);
+        }
+
         m_collection.AddItem(explorerItem);
+        if (startNewSegment)
+        {
+            m_collection.GetCurrentLine().LineLabel = segmentTitle;
+        }
     }
 }

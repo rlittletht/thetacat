@@ -66,28 +66,6 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(item);
     }
 
-#region Synthesized Metadata (fetch only)
-
-    /*----------------------------------------------------------------------------
-        %%Function: MediaItem.ImageDate
-
-        This is the date the photo was taken (from metadata), or the original
-        file date if no metadata available
-    ----------------------------------------------------------------------------*/
-//    public DateTime ImageDate
-//    {
-//        get
-//        {
-//            if (TryGetMediaTagValueFromStandardAndType(
-//                    MainWindow._AppState.MetatagSchema,
-//                    MetatagStandards.Standard.Jpeg,
-//                    JpegDirectory.Tag
-//                    ))
-//        }
-//    }
-
-#endregion
-
 #region Public Data / Accessors
 
     // the vector clock changes whenever a change is made to the data. we use this
@@ -268,7 +246,7 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
-    public DateTime? OriginalFileDate
+    public DateTime? OriginalMediaDate
     {
         get
         {
@@ -281,7 +259,7 @@ public class MediaItem : INotifyPropertyChanged
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag);
-            OnPropertyChanged(nameof(OriginalFileDate));
+            OnPropertyChanged(nameof(OriginalMediaDate));
         }
     }
 

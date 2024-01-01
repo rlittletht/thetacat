@@ -9,19 +9,6 @@
              SizeChanged="OnExplorerSizeChanged"
              Loaded="OnExplorerLoaded">
     <Grid>
-        <!--
-        <ListBox Name="ExplorerBox" ItemsSource="{Binding Path=ExplorerItems}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Width="92" Height="112">
-                        <TextBlock Text="Testing" />
-                        <Image Source="{Binding Path=TileSrc}" MaxWidth="92" MaxHeight="92" />
-                        <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>-->
-        
         <ItemsControl Name="ExplorerBox" ItemsSource="{Binding Path=ExplorerItems}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -40,19 +27,12 @@
             </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical" Height="212" HorizontalAlignment="Center">
+                    <StackPanel Orientation="Vertical" Height="124" HorizontalAlignment="Left">
                         <!-- Binding alone means we bind to the entire item -->
-                        <local:MediaExplorerLine LineItems="{Binding}"/> 
+                        <local:MediaExplorerLine LineItems="{Binding}" />
                     </StackPanel>
-                    <!--                    
-                    <StackPanel Orientation="Vertical" Width="192" Height="212">
-                        <Image Source="{Binding Path=TileImage}" MaxWidth="172" MaxHeight="172" />
-                        <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" />
-                    </StackPanel>
-                    -->
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        
     </Grid>
 </UserControl>

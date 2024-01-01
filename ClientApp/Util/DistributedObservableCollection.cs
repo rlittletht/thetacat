@@ -109,6 +109,11 @@ public class DistributedObservableCollection<T, T1>
         return m_collection[lineForItem];
     }
 
+    void MoveIObservableCollectionHolderItems(T from, T to)
+    {
+        // We only have EndSegmentAfter right now, and that is always specifically set, so nothing to move here.
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: ShiftlinesForGrow
         %%Qualified: Thetacat.Util.DistributedObservableCollection<T, T1>.ShiftlinesForGrow
@@ -147,13 +152,21 @@ public class DistributedObservableCollection<T, T1>
                 line.Items.Add(item);
             }
 
+            T lineFrom = GetSegmentLineFromCollection(segmentCurrent, pullFirst);
+            if (segmentItemCurrent == 0)
+            {
+                MoveIObservableCollectionHolderItems(lineFrom, line);
+                m_moveLineProperties(lineFrom, line);
+            }
+
+            line.EndSegmentAfter = false;
+
             lineCurrent++;
             segmentItemCurrent = pullLast + 1;
 
-            // this should also take care of moving the BreakSegmentAfter property
-            m_moveLineProperties(GetSegmentLineFromCollection(segmentCurrent, pullLast), line);
             if (segmentItemCurrent == segment.Count)
             {
+                line.EndSegmentAfter = true;
                 // we're done with this segment. move to the next
                 if (++segmentCurrent == m_segments.Count)
                     break;
@@ -205,6 +218,7 @@ public class DistributedObservableCollection<T, T1>
 
         while (lineReflowCurrent >= 0)
         {
+            bool firstItemInSegment = (segmentRemaining - m_itemsPerLine <= 0);
             int firstItem =
                 (segmentRemaining % m_itemsPerLine) != 0
                     ? segmentRemaining - (segmentRemaining % m_itemsPerLine)
@@ -215,11 +229,21 @@ public class DistributedObservableCollection<T, T1>
             if (firstItem > lastItem)
                 throw new Exception($"{firstItem}>{lastItem}?!?");
 
-            T line = GetSegmentLineFromCollection(iSegmentCurrent, lastItem);
-            m_moveLineProperties(line, m_collection[lineReflowCurrent]);
-            // we have to collect these items in a separate list because we might be modifying the same
-            // line we are coming from...
-            replacementItems.Clear();
+            // only move line properties when the first item of the segment is moving
+            T lineFrom = GetSegmentLineFromCollection(iSegmentCurrent, lastItem);
+            T lineTo = m_collection[lineReflowCurrent];
+
+            if (firstItemInSegment)
+            {
+                MoveIObservableCollectionHolderItems(lineFrom, lineTo);
+                m_moveLineProperties(lineFrom, lineTo);
+            }
+
+            lineTo.EndSegmentAfter = m_segments[iSegmentCurrent].Count == segmentRemaining;
+
+                // we have to collect these items in a separate list because we might be modifying the same
+                // line we are coming from...
+                replacementItems.Clear();
             int i = 0;
             while (firstItem + i <= lastItem)
             {
@@ -305,21 +329,37 @@ public class DistributedObservableCollection<T, T1>
         m_collection[m_collection.Count - 1].EndSegmentAfter = true;
     }
 
+    public T GetCurrentLine()
+    {
+        return m_collection[m_collection.Count - 1];
+    }
+
     public void AddItem(T1 itemToAdd)
     {
         if (m_itemsPerLine == 0)
             throw new Exception("can't add an item before setting item count per line");
 
+        bool startNewSegment =
+            m_collection.Count > 0 && m_collection[m_collection.Count - 1].EndSegmentAfter;
+
         // figure out where to add this item
         if (m_collection.Count == 0
             || m_collection[m_collection.Count - 1].Items.Count == m_itemsPerLine
-            || m_collection[m_collection.Count - 1].EndSegmentAfter)
+            || startNewSegment)
         {
             T newLine = m_lineFactory(null);
             
             m_collection.Add(newLine);
         }
-        
+
+        m_segments ??= new List<SegmentInfo>();
+
+        if (m_segments.Count == 0 || startNewSegment)
+        {
+            m_segments.Add(new SegmentInfo(0, m_collection.Count - 1, m_itemsPerLine));
+        }
+
+        m_segments[m_segments.Count - 1].Count++;
         m_collection[m_collection.Count - 1].Items.Add(itemToAdd);
     }
 }
