@@ -7,7 +7,9 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              SizeChanged="OnExplorerSizeChanged"
-             Loaded="OnExplorerLoaded">
+             Loaded="OnExplorerLoaded"
+             DataContext="{Binding Path=Model}"
+             x:Name="MediaExplorerControl">
     <Grid>
         <ItemsControl Name="ExplorerBox" ItemsSource="{Binding Path=ExplorerItems}">
             <ItemsControl.ItemsPanel>
@@ -20,16 +22,19 @@
                 <ControlTemplate TargetType="ItemsControl">
                     <ScrollViewer CanContentScroll="True"
                                   Padding="{TemplateBinding Padding}" VirtualizingPanel.ScrollUnit="Pixel"
-                                  Focusable="False">
+                                  Focusable="False" ScrollChanged="OnScrollChanged">
                         <ItemsPresenter />
                     </ScrollViewer>
                 </ControlTemplate>
             </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical" Height="112" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Vertical" Height="{Binding ElementName=MediaExplorerControl, Path=DataContext.PanelItemHeight}" HorizontalAlignment="Left">
                         <!-- Binding alone means we bind to the entire item -->
-                        <local:MediaExplorerLine LineItems="{Binding}" />
+                        <local:MediaExplorerLine LineItems="{Binding}" 
+                                                 ImageWidth="{Binding ElementName=MediaExplorerControl, Path=DataContext.ImageWidth}"
+                                                 ImageHeight="{Binding ElementName=MediaExplorerControl, Path=DataContext.ImageHeight}"
+                                                 ImageContainerWidth="{Binding ElementName=MediaExplorerControl, Path=DataContext.PanelItemWidth}" />
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

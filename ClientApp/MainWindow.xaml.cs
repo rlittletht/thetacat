@@ -127,7 +127,7 @@ namespace Thetacat
             InitializeComponent();
             InitializeThetacat();
 
-            m_collection = new MediaExplorerCollection();
+            m_collection = new MediaExplorerCollection(14.0);
 
             // we have to load the catalog AND the pending upload list
             // we also have to confirm that all the items int he pending
@@ -252,7 +252,13 @@ namespace Thetacat
             _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
 
             List<MediaExplorerItem> explorerItems = new();
+
+            m_collection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
+            m_collection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
             m_collection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
+            m_collection.AdjustExplorerHeight(Explorer.ExplorerBox.ActualHeight);
+            m_collection.UpdateItemsPerLine();
+
             LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
 
             BuildTimelineCollectionFromMedia();
@@ -380,5 +386,30 @@ namespace Thetacat
         {
             _AppState.Catalog.PushPendingChanges();
         }
+
+        private static readonly double baseItemWidth = 148.0;
+        private static readonly double baseItemHeight = 96.0;
+        
+        private void SelectLargePreview(object sender, RoutedEventArgs e)
+        {
+            m_collection.AdjustPanelItemWidth(baseItemWidth * 0.75);
+            m_collection.AdjustPanelItemHeight(baseItemHeight * 0.75);
+            m_collection.UpdateItemsPerLine();
+        }
+
+        private void SelectMediumPreview(object sender, RoutedEventArgs e)
+        {
+            m_collection.AdjustPanelItemWidth(baseItemWidth);
+            m_collection.AdjustPanelItemHeight(baseItemHeight);
+            m_collection.UpdateItemsPerLine();
+        }
+
+        private void SelectSmallPreview(object sender, RoutedEventArgs e)
+        {
+            m_collection.AdjustPanelItemWidth(baseItemWidth * 0.66);
+            m_collection.AdjustPanelItemHeight(baseItemHeight * 0.66);
+            m_collection.UpdateItemsPerLine();
+        }
+
     }
 }

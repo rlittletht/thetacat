@@ -39,8 +39,14 @@ public class MediaExplorerCollection
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private ImageCache m_imageCache;
 
-    public MediaExplorerCollection()
+    public MediaExplorerCollection(double leadingLabelWidth, double explorerHeight = 0.0, double explorerWidth = 0.0, double itemHeight = 0.0, double itemWidth = 0.0)
     {
+        m_leadingLabelWidth = leadingLabelWidth;
+        m_explorerWidth = explorerWidth;
+        m_explorerHeight = itemHeight;
+        m_panelItemWidth = itemWidth;
+        m_panelItemHeight = itemHeight;
+
         m_collection =
             new(
                 reference =>
@@ -58,8 +64,12 @@ public class MediaExplorerCollection
     }
 
     private object m_lock = new object();
+    private double m_leadingLabelWidth;
     private double m_explorerWidth;
-    private int m_panelWidth = 164;
+    private double m_explorerHeight;
+    private double m_panelItemHeight;
+    private double m_panelItemWidth;
+    // private int m_panelWidth = 164;
 
     public void Close()
     {
@@ -82,16 +92,37 @@ public class MediaExplorerCollection
         }
     }
 
-    private static int CalculatePanelsPerLine(int panelWidth, double explorerWidth)
+    private double PanelHeight { get; set; } = 112;
+
+    private static int CalculatePanelsPerLine(double leadingWidth, double panelWidth, double explorerWidth)
     {
-        return (int)(explorerWidth / panelWidth);
+        return (int)((explorerWidth - leadingWidth) / panelWidth);
     }
 
-    private int PanelsPerLine => CalculatePanelsPerLine(m_panelWidth, m_explorerWidth);
+    private int PanelsPerLine => CalculatePanelsPerLine(m_leadingLabelWidth, m_panelItemWidth, m_explorerWidth);
+
+    public void AdjustExplorerHeight(double height)
+    {
+        m_explorerHeight = height;
+    }
+
+    public void AdjustPanelItemWidth(double width)
+    {
+        m_panelItemWidth = width;
+    }
+
+    public void AdjustPanelItemHeight(double height)
+    {
+        m_panelItemHeight = height; 
+    }
 
     public void AdjustExplorerWidth(double width)
     {
         m_explorerWidth = width;
+    }
+
+    public void UpdateItemsPerLine()
+    {
         m_collection.UpdateItemsPerLine(PanelsPerLine);
     }
 

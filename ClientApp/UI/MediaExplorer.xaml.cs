@@ -25,22 +25,29 @@ namespace Thetacat.UI
     /// </summary>
     public partial class MediaExplorer : UserControl
     {
-        public ObservableCollection<MediaExplorerItem> ExplorerItems = new();
-        public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new ();
-
         private MediaExplorerCollection? m_collection;
+
+        public MediaExplorerModel Model = new();
 
         public MediaExplorer()
         {
             InitializeComponent();
-//            ExplorerBox.ItemsSource = ExplorerItems;
-            ExplorerBox.ItemsSource = ExplorerLines;
+            ExplorerBox.ItemsSource = Model.ExplorerLines;
+        }
+
+        public void UpdateCollectionDimensions()
+        {
+            m_collection?.AdjustPanelItemWidth(Model.PanelItemWidth);
+            m_collection?.AdjustPanelItemHeight(Model.PanelItemHeight);
+            m_collection?.AdjustExplorerWidth(ExplorerBox.ActualWidth);
+            m_collection?.AdjustExplorerHeight(ExplorerBox.ActualHeight);
+            m_collection?.UpdateItemsPerLine();
         }
 
         public void ResetContent(MediaExplorerCollection collection)
         {
             m_collection = collection;
-            m_collection.AdjustExplorerWidth(ActualWidth);
+            UpdateCollectionDimensions();
             ExplorerBox.ItemsSource = collection.ExplorerLines;
         }
 
@@ -48,54 +55,21 @@ namespace Thetacat.UI
         {
             // notify the collection of the change
             if (e.WidthChanged)
+            {
+                m_collection?.AdjustExplorerHeight(e.NewSize.Height);
                 m_collection?.AdjustExplorerWidth(e.NewSize.Width);
+                m_collection?.UpdateItemsPerLine();
+            }
         }
 
         private void OnExplorerLoaded(object sender, RoutedEventArgs e)
         {
-            m_collection?.AdjustExplorerWidth(ActualWidth);
+            UpdateCollectionDimensions();
         }
 
-#if old
-        public void ResetContent(IEnumerable<MediaExplorerItem> newItems)
+        private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            int c = 0;
-            int line = 0;
-            int rawCount = 0;
-
-            ExplorerLines.Clear();
-
-            MediaExplorerLineModel? currentLine = null;
-
-            foreach (MediaExplorerItem item in newItems)
-            {
-                MainWindow.LogForApp(EventType.Information, $"populating item: {item.TileLabel}");
-                if (c == 0)
-                {
-                    line++;
-                    currentLine = new MediaExplorerLineModel();
-                    currentLine.TestName = $"line {line}";
-                    ExplorerLines.Add(currentLine);
-                }
-
-//                if (c++ < 10)
-                {
-                    BitmapImage image = new BitmapImage();
-                    image.BeginInit();
-                    image.DecodePixelWidth = 92;
-                    image.DecodePixelHeight = 92;
-                    image.UriSource = new Uri(item.TileSrc);
-                    image.EndInit();
-                    item.TileImage = image;
-                }
-                item.TileLabel = $"{rawCount++}: {item.m_tileLabel}";
-                ExplorerItems.Add(item);
-                Debug.Assert(currentLine != null, nameof(currentLine) + " != null");
-                currentLine.Items.Add(item);
-                c = (c + 1) % 4;
-//                ExplorerItems.Add(item);
-            }
+            MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
         }
-#endif // old
     }
 }

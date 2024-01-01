@@ -23,10 +23,31 @@ namespace Thetacat.UI
     {
         public static readonly DependencyProperty LineItemsProperty =
             DependencyProperty.Register(
-                name: "LineItems",
+                name: nameof(LineItems),
                 propertyType: typeof(MediaExplorerLineModel),
                 ownerType: typeof(MediaExplorerLine),
                 new PropertyMetadata(default(MediaExplorerLineModel)));
+
+        public static readonly DependencyProperty ImageContainerWidthProperty =
+            DependencyProperty.Register(
+                name: nameof(ImageContainerWidth),
+                propertyType: typeof(double),
+                ownerType: typeof(MediaExplorerLine),
+                new PropertyMetadata(default(double)));
+
+        public static readonly DependencyProperty ImageWidthProperty =
+            DependencyProperty.Register(
+                name: nameof(ImageWidth),
+                propertyType: typeof(double),
+                ownerType: typeof(MediaExplorerLine),
+                new PropertyMetadata(default(double)));
+
+        public static readonly DependencyProperty ImageHeightProperty =
+            DependencyProperty.Register(
+                name: nameof(ImageHeight),
+                propertyType: typeof(double),
+                ownerType: typeof(MediaExplorerLine),
+                new PropertyMetadata(default(double)));
 
         public MediaExplorerLine()
         {
@@ -37,6 +58,24 @@ namespace Thetacat.UI
         {
             get => (MediaExplorerLineModel) GetValue(LineItemsProperty);
             set => SetValue(LineItemsProperty, value);
+        }
+
+        public double ImageContainerWidth
+        {
+            get => (double)GetValue(ImageContainerWidthProperty);
+            set => SetValue(ImageContainerWidthProperty, value);
+        }
+
+        public double ImageWidth
+        {
+            get => (double)GetValue(ImageWidthProperty);
+            set => SetValue(ImageWidthProperty, value);
+        }
+
+        public double ImageHeight
+        {
+            get => (double)GetValue(ImageHeightProperty);
+            set => SetValue(ImageHeightProperty, value);
         }
     }
 }
