@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Windows;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
@@ -138,7 +139,7 @@ public class CacheConfigModel: INotifyPropertyChanged
         }
     }
 
-    WorkgroupItem GetWorkgroupInfoFromId(Guid id)
+    WorkgroupItem? GetWorkgroupInfoFromId(Guid id)
     {
         foreach (WorkgroupItem workgroup in m_workgroups)
         {
@@ -146,7 +147,8 @@ public class CacheConfigModel: INotifyPropertyChanged
                 return workgroup;
         }
 
-        throw new CatExceptionServiceDataFailure($"workgroup {id} not found but we knew about it?");
+        MessageBox.Show($"workgroup {id} not found but we knew about it?");
+        return null;
     }
 
     public Guid? GetWorkgroupIdFromName(string name)
@@ -172,16 +174,30 @@ public class CacheConfigModel: INotifyPropertyChanged
             WorkgroupServerPath = string.Empty;
             return;
         }
-        WorkgroupItem workgroup = GetWorkgroupInfoFromId(id.Value);
 
-        if (CurrentWorkgroup != workgroup)
-            CurrentWorkgroup = workgroup;
+        if (string.IsNullOrWhiteSpace(MainWindow._AppState.Settings.SqlConnection))
+            return;
 
-        WorkgroupItemName = workgroup.Workgroup?.Name ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupID = workgroup.Workgroup.ID?.ToString() ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupCacheRoot = workgroup.Workgroup.CacheRoot ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupName = workgroup.Workgroup.Name ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupServerPath = workgroup.Workgroup.ServerPath ?? throw new CatExceptionServiceDataFailure();
+        try
+        {
+            WorkgroupItem? workgroup = GetWorkgroupInfoFromId(id.Value);
+
+            if (workgroup == null)
+                return;
+
+            if (CurrentWorkgroup != workgroup)
+                CurrentWorkgroup = workgroup;
+
+            WorkgroupItemName = workgroup.Workgroup?.Name ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupID = workgroup.Workgroup.ID?.ToString() ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupCacheRoot = workgroup.Workgroup.CacheRoot ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupName = workgroup.Workgroup.Name ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupServerPath = workgroup.Workgroup.ServerPath ?? throw new CatExceptionServiceDataFailure();
+        }
+        catch (CatExceptionNoSqlConnection)
+        {
+            return;
+        }
     }
 
     public void SetCacheTypeFromString(string type)

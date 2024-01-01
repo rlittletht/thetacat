@@ -32,6 +32,7 @@ public class TcSettings
 
     public string? AzureStorageAccount;
     public string? StorageContainer;
+    public string? SqlConnection;
 
     public bool? ShowAsyncLogOnStart;
     public bool? ShowAppLogOnStart;
@@ -53,6 +54,7 @@ public class TcSettings
                .AddChildElement("Account")
                .AddChildElement("AzureStorageAccount", GetStorageAccountNameValue, SetStorageAccountNameValue)
                .AddElement("StorageContainer", GetStorageContainerValue, SetStorageContainerValue)
+               .AddElement("SqlConnection", GetSqlConnection, SetSqlConnection)
                .Pop()
                .Pop()
                .AddChildElement("Migration")
@@ -122,6 +124,9 @@ public class TcSettings
 
     private static void SetStorageContainerValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.StorageContainer = value;
     private static string? GetStorageContainerValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.StorageContainer;
+
+    private static void SetSqlConnection(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.SqlConnection = value;
+    private static string? GetSqlConnection(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.SqlConnection;
 
     private static void SetShowAppLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart = bool.Parse(value ?? bool.FalseString);
     private static string? GetShowAppLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart.ToString();

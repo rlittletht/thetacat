@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
 using TCore;
 using Thetacat.Secrets;
+using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -26,7 +27,18 @@ public class LocalServiceClient
         if (m_sql != null)
             return;
 
-        m_sql = Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
+        if (String.IsNullOrWhiteSpace(AppSecrets.MasterSqlConnectionString))
+            throw new CatExceptionNoSqlConnection();
+
+        try
+        {
+            m_sql = Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
+        }
+        catch (Exception e)
+        {
+            throw new CatExceptionNoSqlConnection(Guid.NewGuid(), e, "failed to open SQL connection");
+            throw;
+        }
     }
 
     public delegate void DelegateReader<T>(SqlReader sqlr, Guid crid, ref T t);
@@ -92,7 +104,6 @@ public class LocalServiceClient
         CustomizeCommandDelegate? custDelegate = null) where T : new()
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -103,6 +114,8 @@ public class LocalServiceClient
 
         try
         {
+            LocalServiceClient.EnsureConnected();
+
             T t =
                 SqlReader.DoGenericQueryDelegateRead(
                     LocalServiceClient.Sql,
@@ -114,6 +127,10 @@ public class LocalServiceClient
             return t;
         }
         catch (TcSqlExceptionNoResults)
+        {
+            return new T();
+        }
+        catch (CatExceptionNoSqlConnection)
         {
             return new T();
         }

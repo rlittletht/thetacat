@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.Secrets;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Types;
@@ -38,6 +40,8 @@ public class AppState : IAppState
     public AppState(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
         Settings = new TcSettings.TcSettings();
+        AppSecrets.MasterSqlConnectionString = Settings.SqlConnection ?? String.Empty;
+
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
         Cache = new Cache(Settings);

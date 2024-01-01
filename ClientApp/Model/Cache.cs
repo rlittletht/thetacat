@@ -140,6 +140,11 @@ public class Cache: ICache
                 MessageBox.Show("Workgroup id not found. Reconnect to workgroup");
                 LocalPathToCacheRoot = new PathSegment();
             }
+            catch (CatExceptionNoSqlConnection)
+            {
+                MessageBox.Show("Trying to connect to a workgroup, but no SQL connection string set");
+                LocalPathToCacheRoot = new PathSegment();
+            }
         }
         else
         {

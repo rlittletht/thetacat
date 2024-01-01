@@ -137,10 +137,11 @@ public partial class CacheConfig : UserControl
 
         MainWindow._AppState.Settings.CacheLocation = _Model.CacheLocation;
 
+        MainWindow._AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
+
         if (cacheType == Cache.CacheType.Private)
         {
             MainWindow._AppState.Settings.WorkgroupId = null;
-            MainWindow._AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
         }
         else
         {

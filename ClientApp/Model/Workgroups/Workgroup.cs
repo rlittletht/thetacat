@@ -134,6 +134,10 @@ public class Workgroup: IWorkgroup
         // FUTURE: consider using cached workgroup details from settings if the
         // connection fails to the server?
         ServiceWorkgroup serviceWorkgroup = ServiceInterop.GetWorkgroupDetails(id);
+        if (serviceWorkgroup.ID == null)
+            // couldn't get workgroup from server
+            throw new CatExceptionNoSqlConnection();
+
         Name = serviceWorkgroup.Name ?? throw new InvalidOperationException("no name from server");
         Server = PathSegment.CreateFromString(serviceWorkgroup.ServerPath) ?? throw new InvalidOperationException("no servername from server");
         CacheRoot = PathSegment.CreateFromString(serviceWorkgroup.CacheRoot) ?? throw new InvalidOperationException("no name from server");

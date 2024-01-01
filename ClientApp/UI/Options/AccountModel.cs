@@ -8,6 +8,13 @@ public class AccountModel : INotifyPropertyChanged
 {
     private string m_storageAccount = string.Empty;
     private string m_container = string.Empty;
+    private string m_sqlConnection = string.Empty;
+
+    public string SqlConnection
+    {
+        get => m_sqlConnection;
+        set => SetField(ref m_sqlConnection, value);
+    }
 
     public string StorageAccount
     {

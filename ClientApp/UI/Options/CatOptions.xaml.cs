@@ -30,8 +30,12 @@ public partial class CatOptions : Window
 
     public void SaveToSettings()
     {
-        if (CacheConfigTab.FSaveSettings() && AccountTab.FSaveSettings())
-            MainWindow._AppState.Settings.WriteSettings();
+        if (!CacheConfigTab.FSaveSettings())
+            MessageBox.Show("Failed to save Cache options");
+        if (!AccountTab.FSaveSettings())
+            MessageBox.Show("Failed to save account options");
+
+        MainWindow._AppState.Settings.WriteSettings();
     }
 
     private void DoSave(object sender, RoutedEventArgs e)

@@ -18,6 +18,8 @@
             <TextBox Name="StorageAccount" Text="{Binding Path=StorageAccount}" />
             <TextBlock>Storage container</TextBlock>
             <TextBox Name="Container" Text="{Binding Path=Container}" />
+            <TextBlock>SQL Connection</TextBlock>
+            <TextBox Name="SQLConnection" Text="{Binding Path=SqlConnection}" />
         </StackPanel>
     </Grid>
 </UserControl>

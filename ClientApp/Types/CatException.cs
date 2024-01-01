@@ -135,3 +135,15 @@ public class CatExceptionDatabaseLockTimeout : CatException
         public CatExceptionDatabaseLockTimeout(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
 #pragma warning restore format // @formatter:on
 }
+
+public class CatExceptionNoSqlConnection: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionNoSqlConnection() : base(Guid.Empty) { }
+        public CatExceptionNoSqlConnection(Guid crids) : base(crids) { }
+        public CatExceptionNoSqlConnection(string errorMessage) : base(errorMessage) { }
+        public CatExceptionNoSqlConnection(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionNoSqlConnection(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionNoSqlConnection(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
