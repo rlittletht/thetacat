@@ -25,9 +25,8 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical" Width="192" Height="212">
-                        <Image Source="{Binding Path=TileImage}" MaxWidth="172" MaxHeight="96" />
-                        <Label VerticalAlignment="Bottom" Content="{Binding Path=TileLabel}" Height="24" />
+                    <StackPanel Orientation="Vertical" Width="148" Margin="5,5,5,0" >
+                        <Image Source="{Binding Path=TileImage}" MaxWidth="148" MaxHeight="96" />
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

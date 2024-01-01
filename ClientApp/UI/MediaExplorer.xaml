@@ -27,7 +27,7 @@
             </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical" Height="124" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Vertical" Height="112" HorizontalAlignment="Left">
                         <!-- Binding alone means we bind to the entire item -->
                         <local:MediaExplorerLine LineItems="{Binding}" />
                     </StackPanel>

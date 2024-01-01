@@ -241,12 +241,16 @@ public class Media
 
     static string BuildMediaTagInsert(Guid mediaId, MediaTag mediaTag)
     {
-        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {Sql.Nullable(mediaTag.Value)}) ";
+        string? value = mediaTag.Value == null ? null : Sql.Sqlify(mediaTag.Value);
+
+        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {Sql.Nullable(value)}) ";
     }
 
     static string BuildMediaTagUpdate(Guid mediaId, MediaTag mediaTag)
     {
-        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(mediaTag.Value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ) ";
+        string? value = mediaTag.Value == null ? null : Sql.Sqlify(mediaTag.Value);
+
+        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ) ";
     }
 
     static List<string> BuildUpdateItemTagsSql(MediaItemDiff diffOp)

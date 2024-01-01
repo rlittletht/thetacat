@@ -11,6 +11,7 @@ using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.Util;
 
 namespace Thetacat.Import;
@@ -106,8 +107,15 @@ public class MediaImport
 
     public void CreateCatalogItemsAndUpdateImportTable(ICatalog catalog, MetatagSchema metatagSchema)
     {
+        ProgressDialog progress = new ProgressDialog();
+        progress.Show();
+
+        int total = ImportItems.Count;
+        int current = 0;
+
         foreach (ImportItem item in ImportItems)
         {
+            progress.UpdateProgress((current * 1000) / total);
             // create a new MediaItem for this item
             MediaItem mediaItem = new(item);
 
@@ -123,10 +131,10 @@ public class MediaImport
 
             item.ID = mediaItem.ID;
 
-
             // go ahead and mark pending upload -- we're going to create the item in the
             // catalog before we insert the import items...
             item.State = ImportItem.ImportState.PendingUpload;
+            current++;
         }
 
         metatagSchema.UpdateServer();
@@ -137,6 +145,7 @@ public class MediaImport
         // also flush any pending schema changes now
 
         ServiceInterop.InsertImportItems(ImportItems);
+        progress.Close();
     }
 
     public async Task UploadMedia()

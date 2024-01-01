@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Markup;
 using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.Jpeg;
+using NUnit.Framework;
 using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Model.Metatags;
@@ -546,12 +547,20 @@ public class MediaItem : INotifyPropertyChanged
 
         if (dateTimeString != null)
         {
-            // try to get it into a canonical format
-            if (dateTimeString.Length >= 19 && dateTimeString[4] == ':' && dateTimeString[7] == ':')
+            try
             {
-                // replace the : in the data with -
-                dateTimeString = $"{dateTimeString[..4]}-{dateTimeString[5..7]}-{dateTimeString[8..10]}{dateTimeString[10..]}";
-                dateTimeString = DateTime.Parse(dateTimeString).ToUniversalTime().ToString("u");
+                // try to get it into a canonical format
+                if (dateTimeString.Length >= 19 && dateTimeString[4] == ':' && dateTimeString[7] == ':')
+                {
+                    // replace the : in the data with -
+                    dateTimeString = $"{dateTimeString[..4]}-{dateTimeString[5..7]}-{dateTimeString[8..10]}{dateTimeString[10..]}";
+                    dateTimeString = DateTime.Parse(dateTimeString).ToUniversalTime().ToString("u");
+                }
+            }
+            catch
+            {
+                MainWindow.LogForApp(EventType.Warning, $"Could not get date from metadata for {file}");
+                dateTimeString = null;
             }
         }
 

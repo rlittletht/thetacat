@@ -59,7 +59,7 @@ public class MediaExplorerCollection
 
     private object m_lock = new object();
     private double m_explorerWidth;
-    private int m_panelWidth = 212;
+    private int m_panelWidth = 164;
 
     public void Close()
     {
