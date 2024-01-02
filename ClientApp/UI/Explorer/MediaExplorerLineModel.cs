@@ -4,9 +4,9 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Util;
 
-namespace Thetacat.UI;
+namespace Thetacat.UI.Explorer;
 
-public class MediaExplorerLineModel: IObservableSegmentableCollectionHolder<MediaExplorerItem>, INotifyPropertyChanged
+public class MediaExplorerLineModel : IObservableSegmentableCollectionHolder<MediaExplorerItem>, INotifyPropertyChanged
 {
     private string m_lineLabel = "";
     public ObservableCollection<MediaExplorerItem> Items { get; set; } = new ObservableCollection<MediaExplorerItem>();

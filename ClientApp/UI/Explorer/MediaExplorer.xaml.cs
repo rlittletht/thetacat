@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Logging;
 using Thetacat.Model;
+using Thetacat.UI.Explorer;
 using Image = System.Drawing.Image;
 
 namespace Thetacat.UI
@@ -28,11 +29,13 @@ namespace Thetacat.UI
         private MediaExplorerCollection? m_collection;
 
         public MediaExplorerModel Model = new();
+        private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 
         public MediaExplorer()
         {
             InitializeComponent();
             ExplorerBox.ItemsSource = Model.ExplorerLines;
+            DataContext = Model;
         }
 
         public void UpdateCollectionDimensions()
@@ -70,6 +73,35 @@ namespace Thetacat.UI
         private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
+        }
+
+        private static readonly double baseItemWidth = 148.0;
+        private static readonly double baseItemHeight = 96.0;
+
+        private static readonly Dictionary<ExplorerItemSize, double> s_itemSizeAdjusts =
+            new()
+            {
+                { ExplorerItemSize.Medium, 1.0 },
+                { ExplorerItemSize.Large, 1.75 },
+                { ExplorerItemSize.Small, 0.66 }
+            };
+
+        void SetModelFromExplorerItemSize(ExplorerItemSize itemSize)
+        {
+            double adjust = s_itemSizeAdjusts[itemSize];
+
+            Model.ImageWidth = baseItemWidth * adjust;
+            Model.ImageHeight = baseItemHeight * adjust;
+            Model.PanelItemHeight = Model.ImageHeight + 16.0;
+            Model.PanelItemWidth = Model.ImageWidth;
+            UpdateCollectionDimensions();
+        }
+
+        public void SetExplorerItemSize(ExplorerItemSize itemSize)
+        {
+            m_itemSize = itemSize;
+            SetModelFromExplorerItemSize(m_itemSize);
+            MainWindow._AppState.Settings.ExplorerItemSize = itemSize;
         }
     }
 }

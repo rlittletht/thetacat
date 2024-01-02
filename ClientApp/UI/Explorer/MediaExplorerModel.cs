@@ -3,9 +3,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Thetacat.UI;
+namespace Thetacat.UI.Explorer;
 
-public class MediaExplorerModel: INotifyPropertyChanged
+public class MediaExplorerModel : INotifyPropertyChanged
 {
     private double m_panelItemHeight = 112.0;
     private double m_panelItemWidth = 148.8;

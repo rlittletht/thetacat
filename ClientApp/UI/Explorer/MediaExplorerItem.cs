@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 using Thetacat.Logging;
 
-namespace Thetacat.UI;
+namespace Thetacat.UI.Explorer;
 
-public class MediaExplorerItem: INotifyPropertyChanged
+public class MediaExplorerItem : INotifyPropertyChanged
 {
     private string m_tileSrc;
     public string m_tileLabel;
@@ -23,6 +23,7 @@ public class MediaExplorerItem: INotifyPropertyChanged
     {
         get
         {
+            MainWindow.LogForApp(EventType.Information, $"fetching tile {m_tileSrc}");
             return m_tileImage;
         }
         set => SetField(ref m_tileImage, value);
@@ -32,7 +33,7 @@ public class MediaExplorerItem: INotifyPropertyChanged
     {
         get
         {
-//            MainWindow.LogForApp(EventType.Information, $"getting tile image for {m_tileLabel}");
+            //            MainWindow.LogForApp(EventType.Information, $"getting tile image for {m_tileLabel}");
             return m_tileLabel;
         }
         set => SetField(ref m_tileLabel, value);

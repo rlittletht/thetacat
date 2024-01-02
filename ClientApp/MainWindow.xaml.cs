@@ -44,6 +44,7 @@ using Thetacat.Migration.Elements.Media;
 using Thetacat.Util;
 using Image = System.Drawing.Image;
 using List = NUnit.Framework.List;
+using Thetacat.UI.Explorer;
 
 namespace Thetacat
 {
@@ -128,7 +129,7 @@ namespace Thetacat
             InitializeThetacat();
 
             m_collection = new MediaExplorerCollection(14.0);
-
+            Explorer.SetExplorerItemSize(_AppState.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
             // we have to load the catalog AND the pending upload list
             // we also have to confirm that all the items int he pending
             // upload list still exist in the catalog, and if they don't
@@ -270,14 +271,6 @@ namespace Thetacat
 
             AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
             LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
-
-//            BitmapImage image = new BitmapImage();
-//            image.BeginInit();
-//            image.UriSource = new Uri(@"\\pix\pix\cat-cache\Minnesota Pictures\DSC_0088.JPG");
-//            image.DecodePixelWidth = 192;
-//            image.EndInit();
-//
-//            TestImage.Source = image;
         }
 
         private void LaunchOptions(object sender, RoutedEventArgs e)
@@ -387,28 +380,19 @@ namespace Thetacat
             _AppState.Catalog.PushPendingChanges();
         }
 
-        private static readonly double baseItemWidth = 148.0;
-        private static readonly double baseItemHeight = 96.0;
-        
         private void SelectLargePreview(object sender, RoutedEventArgs e)
         {
-            m_collection.AdjustPanelItemWidth(baseItemWidth * 0.75);
-            m_collection.AdjustPanelItemHeight(baseItemHeight * 0.75);
-            m_collection.UpdateItemsPerLine();
+            Explorer.SetExplorerItemSize(ExplorerItemSize.Large);
         }
 
         private void SelectMediumPreview(object sender, RoutedEventArgs e)
         {
-            m_collection.AdjustPanelItemWidth(baseItemWidth);
-            m_collection.AdjustPanelItemHeight(baseItemHeight);
-            m_collection.UpdateItemsPerLine();
+            Explorer.SetExplorerItemSize(ExplorerItemSize.Medium);
         }
 
         private void SelectSmallPreview(object sender, RoutedEventArgs e)
         {
-            m_collection.AdjustPanelItemWidth(baseItemWidth * 0.66);
-            m_collection.AdjustPanelItemHeight(baseItemHeight * 0.66);
-            m_collection.UpdateItemsPerLine();
+            Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
         }
 
     }

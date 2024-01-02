@@ -12,7 +12,7 @@ using Meziantou.Framework.WPF.Collections;
 using TCore.Pipeline;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
-using Thetacat.UI;
+using Thetacat.UI.Explorer;
 using Thetacat.Util;
 
 namespace Thetacat.Model;

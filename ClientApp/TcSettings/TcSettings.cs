@@ -36,6 +36,7 @@ public class TcSettings
 
     public bool? ShowAsyncLogOnStart;
     public bool? ShowAppLogOnStart;
+    public string? ExplorerItemSize;
 
     public List<MapPair> ElementsSubstitutions = new();
 
@@ -49,6 +50,8 @@ public class TcSettings
                .AddAttribute("value", GetShowAsyncLogOnStart, SetShowAsyncLogOnStart)
                .AddElement("ShowAppLogOnStart")
                .AddAttribute("value", GetShowAppLogOnStart, SetShowAppLogOnStart)
+               .AddElement("MediaExplorer")
+               .AddAttribute("ItemSize", GetExplorerItemSize, SetExplorerItemSize)
                .Pop()
                .Pop()
                .AddChildElement("Account")
@@ -130,6 +133,9 @@ public class TcSettings
 
     private static void SetShowAppLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart = bool.Parse(value ?? bool.FalseString);
     private static string? GetShowAppLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart.ToString();
+
+    private static void SetExplorerItemSize(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ExplorerItemSize = value;
+    private static string? GetExplorerItemSize(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ExplorerItemSize;
 
     private static void SetElementsDatabaseValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase = value;
     private static string? GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase;
