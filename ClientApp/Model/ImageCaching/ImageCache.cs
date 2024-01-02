@@ -14,6 +14,15 @@ namespace Thetacat.Model.ImageCaching;
     %%Qualified: Thetacat.Model.ImageCache
 
     This caches images for the explorer windows. 
+
+    If an item exists in this cache, then it either has a cache image already
+    (because of a previous cache item create), or it is queued in the
+    background to create the image.
+
+    conversely, if there is no entry in the cache, then there is no queued
+    create (or at least, don't worry about any orphaned queued creates...its
+    rare -- only when you queue the create and (currently NYI) the cache item
+    is expired.
 ----------------------------------------------------------------------------*/
 public class ImageCache
 {
@@ -55,6 +64,12 @@ public class ImageCache
         }
 
         m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, item));
+        return item;
+    }
+
+    public ImageCacheItem? GetAnyExistingItem(Guid key)
+    {
+        Items.TryGetValue(key, out ImageCacheItem? item);
         return item;
     }
 

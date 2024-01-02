@@ -5,11 +5,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Meziantou.Framework.WPF.Collections;
 using TCore.Pipeline;
+using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
 using Thetacat.UI.Explorer;
@@ -69,7 +72,8 @@ public class MediaExplorerCollection
     private double m_explorerHeight;
     private double m_panelItemHeight;
     private double m_panelItemWidth;
-    // private int m_panelWidth = 164;
+
+    private int RowsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemHeight);
 
     public void Close()
     {
@@ -91,8 +95,6 @@ public class MediaExplorerCollection
             }
         }
     }
-
-    private double PanelHeight { get; set; } = 112;
 
     private static int CalculatePanelsPerLine(double leadingWidth, double panelWidth, double explorerWidth)
     {
@@ -126,19 +128,62 @@ public class MediaExplorerCollection
         m_collection.UpdateItemsPerLine(PanelsPerLine);
     }
 
+    public void EnsureImagesForSurroundingRows(int row)
+    {
+        if (m_collection.TopCollection.Count == 0)
+            return;
+
+        MicroTimer timer = new MicroTimer();
+        timer.Start();
+        int minRow = Math.Max(row - RowsPerExplorer, 0);
+        int maxRow = Math.Min(row + (2 * RowsPerExplorer), m_collection.TopCollection.Count - 1);
+        ICatalog catalog = MainWindow._AppState.Catalog;
+        ICache cache = MainWindow._AppState.Cache;
+
+        MainWindow.LogForApp(EventType.Information, $"starting ensure images: {minRow}-{maxRow}");
+
+        List<MediaExplorerLineModel> linesToCache = new List<MediaExplorerLineModel>();
+        while (minRow <= maxRow)
+        {
+            linesToCache.Add(m_collection.TopCollection[minRow]);
+            minRow++;
+        }
+
+        MainWindow.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
+        ThreadPool.QueueUserWorkItem(
+            stateInfo =>
+            {
+                foreach (MediaExplorerLineModel line in linesToCache)
+                {
+                    foreach (MediaExplorerItem item in line.Items)
+                    {
+                        if (catalog.Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+                        {
+                            string? path = cache.TryGetCachedFullPath(item.MediaId);
+
+                            if (path != null)
+                                m_imageCache.TryAddItem(mediaItem, path);
+                        }
+                    }
+                }
+            });
+
+        MainWindow.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
+    }
+
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
         string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
 
-        MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath);
+        MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath, item.ID);
 
         m_explorerItems.Add(item.ID, explorerItem);
         m_imageLoadQueue.Enqueue(explorerItem);
 
         if (path != null)
         {
-            ImageCacheItem cacheItem = m_imageCache.TryAddItem(item, path);
-            explorerItem.TileImage = cacheItem.Image;
+            ImageCacheItem? cacheItem = m_imageCache.GetAnyExistingItem(item.ID);
+            explorerItem.TileImage = cacheItem?.Image;
         }
 
         if (startNewSegment)

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.CompilerServices;
@@ -9,9 +10,16 @@ namespace Thetacat.UI.Explorer;
 
 public class MediaExplorerItem : INotifyPropertyChanged
 {
+    private Guid m_mediaId;
     private string m_tileSrc;
     public string m_tileLabel;
     private BitmapImage? m_tileImage;
+
+    public Guid MediaId
+    {
+        get => m_mediaId;
+        set => SetField(ref m_mediaId, value);
+    }
 
     public string TileSrc
     {
@@ -23,7 +31,7 @@ public class MediaExplorerItem : INotifyPropertyChanged
     {
         get
         {
-            MainWindow.LogForApp(EventType.Information, $"fetching tile {m_tileSrc}");
+            //MainWindow.LogForApp(EventType.Information, $"fetching tile {m_tileSrc}");
             return m_tileImage;
         }
         set => SetField(ref m_tileImage, value);
@@ -39,8 +47,9 @@ public class MediaExplorerItem : INotifyPropertyChanged
         set => SetField(ref m_tileLabel, value);
     }
 
-    public MediaExplorerItem(string tileSrc, string tileLabel)
+    public MediaExplorerItem(string tileSrc, string tileLabel, Guid mediaId)
     {
+        m_mediaId = mediaId;
         m_tileLabel = tileLabel;
         m_tileSrc = tileSrc;
     }

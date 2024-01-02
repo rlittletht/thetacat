@@ -73,6 +73,7 @@ namespace Thetacat.UI
         private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
+            m_collection?.EnsureImagesForSurroundingRows((int)e.VerticalOffset);
         }
 
         private static readonly double baseItemWidth = 148.0;
