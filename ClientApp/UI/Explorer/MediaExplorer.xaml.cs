@@ -28,14 +28,14 @@ namespace Thetacat.UI
     {
         private MediaExplorerCollection? m_collection;
 
-        public MediaExplorerModel Model = new();
+        public MediaExplorerModel Model { get; set; } = new();
         private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 
         public MediaExplorer()
         {
             InitializeComponent();
-            ExplorerBox.ItemsSource = Model.ExplorerLines;
-            DataContext = Model;
+//            ExplorerBox.ItemsSource = Model.ExplorerLines;
+             DataContext = Model;
         }
 
         public void UpdateCollectionDimensions()

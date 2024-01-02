@@ -10,7 +10,19 @@
              Loaded="OnExplorerLoaded"
              x:Name="MediaExplorerControl">
     <Grid>
-        <ItemsControl Name="ExplorerBox" ItemsSource="{Binding Path=ExplorerItems}">
+        <ItemsControl Name="ExplorerBox">
+            <ItemsControl.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Applied Tags" ItemsSource="{Binding ContextMenu.AppliedTags}">
+                        <MenuItem.ItemTemplate>
+                            <DataTemplate>
+                                <MenuItem Header="{Binding TagName}"/>
+                            </DataTemplate>
+                        </MenuItem.ItemTemplate>
+                    </MenuItem>
+                    <MenuItem Header="Testing 2" />
+                </ContextMenu>
+            </ItemsControl.ContextMenu>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"

@@ -12,6 +12,8 @@ public class MediaExplorerModel : INotifyPropertyChanged
     private double m_imageHeight = 96.0;
     private double m_imageWidth = 148.0;
 
+    public ContextMenuModel ContextMenu { get; set; } = new ContextMenuModel();
+
     public double PanelItemHeight
     {
         get => m_panelItemHeight;
