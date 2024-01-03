@@ -13,7 +13,7 @@
                 <RowDefinition Height="100*"/>
                 <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
-            <controls:MetatagTreeView Checkable="False" Grid.Row="0" x:Name="MetatagsTree"/>
+            <controls:MetatagTreeView Checkable="False" ShowSchemaVersion="True" Grid.Row="0" x:Name="MetatagsTree"/>
             <Button Content="Load Metatags" IsDefault="True" Click="LoadMetatags" Grid.Row="1" />
         </Grid>
     </DockPanel>

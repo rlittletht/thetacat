@@ -91,6 +91,9 @@ public class PseMetatagTree : IMetatagTreeItem
     public string Name => "___Root";
     public string ID => "";
 
+    public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
+    public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
+
     /*----------------------------------------------------------------------------
         %%Function: FindMatchingChild
         %%Qualified: Thetacat.Metatags.PseMetatagTree.FindMatchingChild

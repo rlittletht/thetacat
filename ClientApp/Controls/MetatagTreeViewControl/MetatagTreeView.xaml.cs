@@ -18,69 +18,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Identity.Client;
+using Thetacat.Controls.MetatagTreeViewControl;
 using Thetacat.Metatags;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 
 namespace Thetacat.Controls;
-
-public class MetatagTreeViewTemplateSelector : DataTemplateSelector
-{
-    public DataTemplate CheckableTemplate { get; set; }
-    public DataTemplate NonCheckableTemplate { get; set; }
-
-    public T ParentOfType<T>(DependencyObject element) where T : DependencyObject
-    {
-        if (element == null)
-            return default(T);
-        else
-            return Enumerable.FirstOrDefault<T>(Enumerable.OfType<T>((IEnumerable)GetParents(element)));
-    }
-
-    public IEnumerable<DependencyObject> GetParents(DependencyObject element)
-    {
-        if (element == null)
-            throw new ArgumentNullException("element");
-        while ((element = GetParent(element)) != null)
-            yield return element;
-    }
-
-    private DependencyObject GetParent(DependencyObject element)
-    {
-        DependencyObject parent = VisualTreeHelper.GetParent(element);
-        if (parent == null)
-        {
-            FrameworkElement frameworkElement = element as FrameworkElement;
-            if (frameworkElement != null)
-                parent = frameworkElement.Parent;
-        }
-
-        return parent;
-    }
-
-    public override DataTemplate SelectTemplate(object item, DependencyObject container)
-    {
-        MetatagTreeView treeView = ParentOfType<MetatagTreeView>(container);
-        
-        // ItemsControl.ItemsControlFromItemContainer(container);
-        if (treeView != null)
-        {
-//            MetatagTreeView? view = viewItem.ParentTreeView;
-//
-            if (treeView != null)
-            {
-                if (treeView.Checkable)
-                    return CheckableTemplate;
-            }
-        }
-
-        //MetatagTreeView parentTree = (container as TreeViewItem)
-        // need to get the parent since item is a CheckableMetatagTreeItem...
-
-        return NonCheckableTemplate;
-    }
-}
 
 /// <summary>
 /// Interaction logic for MetatagTreeView.xaml
@@ -100,43 +44,38 @@ public partial class MetatagTreeView : UserControl
         set => SetValue(CheckableProperty, value);
     }
 
-    public ObservableCollection<CheckableMetatagTreeItem> Items = new();
+    public static readonly DependencyProperty ShowSchemaVersionProperty =
+        DependencyProperty.Register(
+            name: nameof(ShowSchemaVersion),
+            propertyType: typeof(bool),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(default(bool)));
+
+    public bool ShowSchemaVersion
+    {
+        get => (bool)GetValue(ShowSchemaVersionProperty);
+        set => SetValue(ShowSchemaVersionProperty, value);
+    }
+
+
+    public MetatagTreeViewModel Model = new MetatagTreeViewModel();
 
     public MetatagTreeView()
     {
         InitializeComponent();
-        DataContext = this;
+        DataContext = Model;
     }
 
     public void SetItems(ObservableCollection<IMetatagTreeItem> items, int schemaVersion)
     {
-        Items.Clear();
+        Model.Items.Clear();
         foreach (IMetatagTreeItem item in items)
         {
-            Items.Add(new CheckableMetatagTreeItem(item));
+            Model.Items.Add(new CheckableMetatagTreeItem(item));
         }
 
-        Tree.ItemsSource = Items;
-        SchemaVersion = schemaVersion;
-    }
-
-    private MetatagTree? m_metatagTree;
-    private int m_schemaVersion;
-
-    public MetatagTree Model
-    {
-        get
-        {
-            if (m_metatagTree == null) 
-                throw new Exception("not initialized");
-            return m_metatagTree;
-        }
-    }
-
-    public int SchemaVersion
-    {
-        get => m_schemaVersion;
-        set => SetField(ref m_schemaVersion, value);
+        Tree.ItemsSource = Model.Items;
+        Model.SchemaVersion = schemaVersion;
     }
 
 #if NOTUSED
@@ -173,13 +112,13 @@ public partial class MetatagTreeView : UserControl
     ----------------------------------------------------------------------------*/
     public void Initialize(MetatagSchema schema, MetatagStandards.Standard? standardRoot = null)
     {
-        m_metatagTree = schema.WorkingTree;
+        Model.MetatagTree = schema.WorkingTree;
 
-        SchemaVersion = schema.SchemaVersionWorking;
+        Model.SchemaVersion = schema.SchemaVersionWorking;
 
         if (standardRoot != null)
         {
-            IMetatagTreeItem? itemMatch = m_metatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
+            IMetatagTreeItem? itemMatch = Model.MetatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
 
             if (itemMatch != null)
             {
@@ -195,22 +134,7 @@ public partial class MetatagTreeView : UserControl
         }
         else
         {
-            SetItems(m_metatagTree.Children, schema.SchemaVersionWorking);
+            SetItems(Model.MetatagTree.Children, schema.SchemaVersionWorking);
         }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
     }
 }

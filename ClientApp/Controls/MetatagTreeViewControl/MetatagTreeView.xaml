@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Thetacat.Controls"
              xmlns:metatags="clr-namespace:Thetacat.Metatags"
+             xmlns:metatagTreeViewControl="clr-namespace:Thetacat.Controls.MetatagTreeViewControl"
              x:Name="TreeControl"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -24,19 +25,36 @@
                 <TextBlock Text="{Binding ID}" Margin="15,0,0,0" />
             </StackPanel>
         </HierarchicalDataTemplate>
-        <local:MetatagTreeViewTemplateSelector x:Key="MetatagTreeViewTemplateSelector"
+       <DockPanel x:Key="ShowSchemaVersionContent" LastChildFill="False" VerticalAlignment="Center">
+            <TextBlock DockPanel.Dock="Right" Text="{Binding Path=SchemaVersion}" />
+            <TextBlock DockPanel.Dock="Right" Margin="0,0,2,0">Metatag Schema Version:</TextBlock>
+        </DockPanel>
+        <metatagTreeViewControl:MetatagTreeViewTemplateSelector x:Key="MetatagTreeViewTemplateSelector"
                                                NonCheckableTemplate="{StaticResource NonCheckableTemplate}"
                                                CheckableTemplate="{StaticResource CheckableTemplate}" />
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="100*" />
-            <RowDefinition Height="24" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}"/>
+        <ContentControl Grid.Row="1">
+            <ContentControl.Style>
+                <Style TargetType="{x:Type ContentControl}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ElementName=TreeControl, Path=ShowSchemaVersion}" Value="True">
+                            <Setter Property="Content" Value="{StaticResource ShowSchemaVersionContent}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
+        <!-- 
         <DockPanel Grid.Row="1" LastChildFill="False" VerticalAlignment="Center">
             <TextBlock DockPanel.Dock="Right" Text="{Binding SchemaVersion}"/>
             <TextBlock DockPanel.Dock="Right" Margin="0,0,2,0">Metatag Schema Version:</TextBlock>
         </DockPanel>
+        -->
     </Grid>
 </UserControl>

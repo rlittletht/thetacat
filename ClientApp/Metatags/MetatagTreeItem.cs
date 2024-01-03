@@ -54,6 +54,44 @@ public class MetatagTreeItem: IMetatagTreeItem
         Children.Add(treeItem);
     }
 
+    public static void SeekAndDelete(IMetatagTreeItem tree, HashSet<string> delete)
+    {
+        for (int i = tree.Children.Count - 1; i >= 0; i--)
+        {
+            if (delete.Contains(tree.Children[i].ID))
+            {
+                tree.Children.RemoveAt(i);
+                continue;
+            }
+
+            tree.Children[i].SeekAndDelete(delete);
+        }
+    }
+
+    public static bool FilterTreeToMatches(IMetatagTreeItem tree, MetatagTreeItemMatcher matcher)
+    {
+        bool fMatched = matcher.IsMatch(tree);
+
+        // even if we matched, we might have other matches in other children
+        for (int i = tree.Children.Count - 1; i >= 0; i--)
+        {
+            if (!tree.Children[i].FilterTreeToMatches(matcher))
+            {
+                // this item didn't have a match. delete it
+                tree.Children.RemoveAt(i);
+            }
+            else
+            {
+                fMatched = true;
+            }
+        }
+
+        return fMatched; // if we matched this item, or any of our descendents
+    }
+
+    public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
+    public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
+
     /*----------------------------------------------------------------------------
         %%Function: FindMatchingChild
         %%Qualified: Thetacat.Metatags.MetatagTree.FindMatchingChild

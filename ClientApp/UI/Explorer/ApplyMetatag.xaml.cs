@@ -30,9 +30,15 @@ namespace Thetacat.UI.Explorer
             DataContext = model;
         }
 
-        private void DoSave(object sender, RoutedEventArgs e)
+        private void DoApply(object sender, RoutedEventArgs e)
         {
 
         }
+
+        private void DoRemove(object sender, RoutedEventArgs e)
+        {
+
+        }
+
     }
 }

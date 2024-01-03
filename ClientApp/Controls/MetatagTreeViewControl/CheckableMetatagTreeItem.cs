@@ -17,6 +17,9 @@ public class CheckableMetatagTreeItem : IMetatagTreeItem, INotifyPropertyChanged
     public IMetatagTreeItem? FindMatchingChild(IMetatagMatcher<IMetatagTreeItem> matcher, int levelsToRecurse) =>
         m_itemInner.FindMatchingChild(matcher, levelsToRecurse);
 
+    public void SeekAndDelete(HashSet<string> delete) => m_itemInner.SeekAndDelete(delete);
+    public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => m_itemInner.FilterTreeToMatches(matcher);
+
     public bool Checked
     {
         get => m_checked;
