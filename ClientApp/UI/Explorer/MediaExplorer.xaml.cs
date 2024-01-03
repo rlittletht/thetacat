@@ -16,6 +16,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Logging;
 using Thetacat.Model;
+using Thetacat.Model.Metatags;
+using Thetacat.Standards;
 using Thetacat.UI.Explorer;
 using Image = System.Drawing.Image;
 
@@ -31,11 +33,13 @@ namespace Thetacat.UI
         public MediaExplorerModel Model { get; set; } = new();
         private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 
+        MetatagMRU m_metatagMRU = new MetatagMRU();
+
         public MediaExplorer()
         {
             InitializeComponent();
 //            ExplorerBox.ItemsSource = Model.ExplorerLines;
-             DataContext = Model;
+            DataContext = Model;
         }
 
         public void UpdateCollectionDimensions()
@@ -103,6 +107,67 @@ namespace Thetacat.UI
             m_itemSize = itemSize;
             SetModelFromExplorerItemSize(m_itemSize);
             MainWindow._AppState.Settings.ExplorerItemSize = itemSize;
+        }
+
+        public SelectPanelCommand SelectPanel { get; } = new SelectPanelCommand();
+
+        public class SelectPanelCommand : ICommand
+        {
+            public bool CanExecute(object? parameter) => true;
+
+            public void Execute(object? parameter)
+            {
+                if (parameter is MediaExplorerItem item)
+                {
+                    item.Selected = !item.Selected;
+                }
+
+                MainWindow.LogForApp(EventType.Information, $"Invoke SelectPanel");
+            }
+
+            public event EventHandler? CanExecuteChanged;
+        }
+
+        private void ItemMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            // figure out either the current item, or the selected items
+
+            if (e.OriginalSource is System.Windows.Controls.Image { Parent: StackPanel { DataContext: MediaExplorerItem item } })
+            {
+                Model.ExplorerContextMenu.AppliedTags.Clear();
+
+                if (MainWindow._AppState.Catalog.Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+                {
+                    foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
+                    {
+                        if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User)
+                            continue;
+
+                        Model.ExplorerContextMenu.AppliedTags.Add(
+                            new ExplorerMenuTag()
+                            {
+                                MediaTagId = tag.Value.Metatag.ID,
+                                TagName = tag.Value.Metatag.Description
+                            });
+                    }
+                }
+
+                MainWindow.LogForApp(EventType.Information, $"hit test result: {item.TileSrc}, {item.TileLabel}");
+            }
+
+            if (Model.ExplorerContextMenu.RecentTagVectorClock != m_metatagMRU.VectorClock)
+            {
+                Model.ExplorerContextMenu.AdvertisedTags.Clear();
+                foreach (Metatag tag in m_metatagMRU.RecentTags)
+                {
+                    Model.ExplorerContextMenu.AdvertisedTags.Add(
+                        new ExplorerMenuTag()
+                        {
+                            MediaTagId = tag.ID,
+                            TagName = tag.Description
+                        });
+                }
+            }
         }
     }
 }

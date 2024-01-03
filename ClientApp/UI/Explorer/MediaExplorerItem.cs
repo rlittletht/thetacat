@@ -14,6 +14,14 @@ public class MediaExplorerItem : INotifyPropertyChanged
     private string m_tileSrc;
     public string m_tileLabel;
     private BitmapImage? m_tileImage;
+    private bool m_selected;
+
+    public bool Selected
+    {
+        get => m_selected;
+        set => SetField(ref m_selected, value);
+    }
+
 
     public Guid MediaId
     {

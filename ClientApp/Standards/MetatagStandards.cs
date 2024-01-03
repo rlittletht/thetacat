@@ -643,6 +643,9 @@ public class MetatagStandards
                 return standard;
         }
 
+        if (standardTag == "user")
+            return Standard.User;
+
         return Standard.Unknown;
     }
 

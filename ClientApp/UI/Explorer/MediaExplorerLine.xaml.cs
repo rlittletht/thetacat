@@ -13,10 +13,30 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Thetacat.Logging;
 using Thetacat.UI.Explorer;
 
 namespace Thetacat.UI
 {
+
+    public class MediaExplorerItemTemplateSelector : DataTemplateSelector
+    {
+        public override DataTemplate? SelectTemplate(object? item, DependencyObject container)
+        {
+            FrameworkElement? element = container as FrameworkElement;
+
+            if (element != null && item != null && item is MediaExplorerItem myItem)
+            {
+                if (myItem.Selected)
+                    return element.FindResource("SelectedTemplate") as DataTemplate;
+                else
+                    return element.FindResource("NonSelectedTemplate") as DataTemplate;
+            }
+
+            return null; // or provide a default template
+        }
+    }
+
     /// <summary>
     /// Interaction logic for MediaExplorerLine.xaml
     /// </summary>

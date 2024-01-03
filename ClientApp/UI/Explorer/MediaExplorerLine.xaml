@@ -7,33 +7,47 @@
              mc:Ignorable="d"
              x:Name="ExplorerLineControl"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <DataTemplate x:Key="MediaItemTemplate">
+            <StackPanel Orientation="Vertical"
+                        Width="{Binding ElementName=ExplorerLineControl, Path=ImageContainerWidth}" Margin="0" Name="ThePanel">
+                <StackPanel.InputBindings>
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=SelectPanel}"
+                                  CommandParameter="{Binding}" MouseAction="LeftClick" />
+                </StackPanel.InputBindings>
+                <Image Source="{Binding Path=TileImage}"
+                       Margin="5,5,5,5"
+                       MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
+                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Selected}" Value="True">
+                    <DataTrigger.Setters>
+                        <Setter Property="Background" Value="Black" TargetName="ThePanel" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
     <StackPanel Orientation="Horizontal">
-        <TextBlock VerticalAlignment="Top" Text="{Binding Path=LineLabel}" Margin="0,10,0,0" RenderTransformOrigin="0.5,0.5" Height="14">
+        <TextBlock VerticalAlignment="Top" Text="{Binding Path=LineLabel}" Margin="0,0,0,0"
+                   RenderTransformOrigin="0.5,0.5" Height="14">
             <TextBlock.LayoutTransform>
                 <TransformGroup>
-                <ScaleTransform/>
-                <SkewTransform/>
-                <RotateTransform Angle="-90"/>
-                <TranslateTransform/>
+                    <ScaleTransform />
+                    <SkewTransform />
+                    <RotateTransform Angle="-90" />
+                    <TranslateTransform />
                 </TransformGroup>
             </TextBlock.LayoutTransform>
         </TextBlock>
-        <ItemsControl Name="ExplorerLine" ItemsSource="{Binding Path=Items}">
+        <ItemsControl Name="ExplorerLine" ItemsSource="{Binding Path=Items}"
+                      ItemTemplate="{StaticResource MediaItemTemplate}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Vertical" Width="{Binding ElementName=ExplorerLineControl, Path=ImageContainerWidth}" Margin="0" >
-                        <Image Source="{Binding Path=TileImage}"
-                               Margin="5,5,5,0"
-                               MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                               MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                    </StackPanel>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
         </ItemsControl>
     </StackPanel>
 </UserControl>

@@ -5,6 +5,8 @@ namespace Thetacat.UI.Explorer;
 
 public class ExplorerContextMenuModel
 {
+    public int RecentTagVectorClock { get; set; } = -1;
+
     public ObservableCollection<ExplorerMenuTag> AppliedTags { get; set; } = 
         new()
         {
@@ -12,5 +14,11 @@ public class ExplorerContextMenuModel
             new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Tag2" },
             new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Tag3" },
         };
-    public ObservableCollection<ExplorerMenuTag> AdvertisedTags { get; set; } = new();
+    public ObservableCollection<ExplorerMenuTag> AdvertisedTags { get; set; } =
+        new()
+        {
+            new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Recent Tag1" },
+            new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Recent Tag2" },
+            new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Recent Tag3" },
+        };
 }

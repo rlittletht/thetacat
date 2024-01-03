@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Identity.Client;
 using Thetacat.Metatags;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
@@ -23,11 +25,83 @@ using Thetacat.Types;
 
 namespace Thetacat.Controls;
 
+public class MetatagTreeViewTemplateSelector : DataTemplateSelector
+{
+    public DataTemplate CheckableTemplate { get; set; }
+    public DataTemplate NonCheckableTemplate { get; set; }
+
+    public T ParentOfType<T>(DependencyObject element) where T : DependencyObject
+    {
+        if (element == null)
+            return default(T);
+        else
+            return Enumerable.FirstOrDefault<T>(Enumerable.OfType<T>((IEnumerable)GetParents(element)));
+    }
+
+    public IEnumerable<DependencyObject> GetParents(DependencyObject element)
+    {
+        if (element == null)
+            throw new ArgumentNullException("element");
+        while ((element = GetParent(element)) != null)
+            yield return element;
+    }
+
+    private DependencyObject GetParent(DependencyObject element)
+    {
+        DependencyObject parent = VisualTreeHelper.GetParent(element);
+        if (parent == null)
+        {
+            FrameworkElement frameworkElement = element as FrameworkElement;
+            if (frameworkElement != null)
+                parent = frameworkElement.Parent;
+        }
+
+        return parent;
+    }
+
+    public override DataTemplate SelectTemplate(object item, DependencyObject container)
+    {
+        MetatagTreeView treeView = ParentOfType<MetatagTreeView>(container);
+        
+        // ItemsControl.ItemsControlFromItemContainer(container);
+        if (treeView != null)
+        {
+//            MetatagTreeView? view = viewItem.ParentTreeView;
+//
+            if (treeView != null)
+            {
+                if (treeView.Checkable)
+                    return CheckableTemplate;
+            }
+        }
+
+        //MetatagTreeView parentTree = (container as TreeViewItem)
+        // need to get the parent since item is a CheckableMetatagTreeItem...
+
+        return NonCheckableTemplate;
+    }
+}
+
 /// <summary>
 /// Interaction logic for MetatagTreeView.xaml
 /// </summary>
-public partial class MetatagTreeView : UserControl, INotifyPropertyChanged
+public partial class MetatagTreeView : UserControl
 {
+    public static readonly DependencyProperty CheckableProperty =
+        DependencyProperty.Register(
+            name: nameof(Checkable),
+            propertyType: typeof(bool),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(default(bool)));
+
+    public bool Checkable
+    {
+        get => (bool)GetValue(CheckableProperty);
+        set => SetValue(CheckableProperty, value);
+    }
+
+    public ObservableCollection<CheckableMetatagTreeItem> Items = new();
+
     public MetatagTreeView()
     {
         InitializeComponent();
@@ -36,7 +110,13 @@ public partial class MetatagTreeView : UserControl, INotifyPropertyChanged
 
     public void SetItems(ObservableCollection<IMetatagTreeItem> items, int schemaVersion)
     {
-        Tree.ItemsSource = items;
+        Items.Clear();
+        foreach (IMetatagTreeItem item in items)
+        {
+            Items.Add(new CheckableMetatagTreeItem(item));
+        }
+
+        Tree.ItemsSource = Items;
         SchemaVersion = schemaVersion;
     }
 

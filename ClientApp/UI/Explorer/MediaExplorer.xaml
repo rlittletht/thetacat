@@ -10,17 +10,23 @@
              Loaded="OnExplorerLoaded"
              x:Name="MediaExplorerControl">
     <Grid>
-        <ItemsControl Name="ExplorerBox">
+        <ItemsControl Name="ExplorerBox" ContextMenuOpening="ItemMenuOpening">
             <ItemsControl.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Applied Tags" ItemsSource="{Binding ContextMenu.AppliedTags}">
+                    <MenuItem Header="Remove Tags" ItemsSource="{Binding ExplorerContextMenu.AppliedTags}">
                         <MenuItem.ItemTemplate>
                             <DataTemplate>
                                 <MenuItem Header="{Binding TagName}"/>
                             </DataTemplate>
                         </MenuItem.ItemTemplate>
                     </MenuItem>
-                    <MenuItem Header="Testing 2" />
+                    <MenuItem Header="Apply Tags" ItemsSource="{Binding ExplorerContextMenu.AdvertisedTags}">
+                        <MenuItem.ItemTemplate>
+                            <DataTemplate>
+                                <MenuItem Header="{Binding TagName}" />
+                            </DataTemplate>
+                        </MenuItem.ItemTemplate>
+                    </MenuItem>
                 </ContextMenu>
             </ItemsControl.ContextMenu>
             <ItemsControl.ItemsPanel>
@@ -40,7 +46,10 @@
             </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical" Height="{Binding ElementName=MediaExplorerControl, Path=DataContext.PanelItemHeight}" HorizontalAlignment="Left">
+                    <StackPanel 
+                        Orientation="Vertical" 
+                        Height="{Binding ElementName=MediaExplorerControl, Path=DataContext.PanelItemHeight}" 
+                        HorizontalAlignment="Left" >
                         <!-- Binding alone means we bind to the entire item -->
                         <local:MediaExplorerLine LineItems="{Binding}" 
                                                  ImageWidth="{Binding ElementName=MediaExplorerControl, Path=DataContext.ImageWidth}"

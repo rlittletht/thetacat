@@ -394,6 +394,5 @@ namespace Thetacat
         {
             Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
         }
-
     }
 }
