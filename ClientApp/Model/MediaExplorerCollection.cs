@@ -38,13 +38,13 @@ public class MediaExplorerCollection
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
-    private readonly ConcurrentQueue<MediaExplorerItem> m_imageLoadQueue = new();
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly ImageCache m_imageCache;
-    private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new ();
+    private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
 
-    public MediaExplorerCollection(double leadingLabelWidth, double explorerHeight = 0.0, double explorerWidth = 0.0, double itemHeight = 0.0, double itemWidth = 0.0)
+    public MediaExplorerCollection(
+        double leadingLabelWidth, double explorerHeight = 0.0, double explorerWidth = 0.0, double itemHeight = 0.0, double itemWidth = 0.0)
     {
         m_leadingLabelWidth = leadingLabelWidth;
         m_explorerWidth = explorerWidth;
@@ -54,10 +54,7 @@ public class MediaExplorerCollection
 
         m_collection =
             new(
-                reference =>
-                {
-                    return new MediaExplorerLineModel();
-                },
+                reference => { return new MediaExplorerLineModel(); },
                 (from, to) =>
                 {
                     string fromString = from.LineLabel;
@@ -117,7 +114,7 @@ public class MediaExplorerCollection
 
     public void AdjustPanelItemHeight(double height)
     {
-        m_panelItemHeight = height; 
+        m_panelItemHeight = height;
     }
 
     public void AdjustExplorerWidth(double width)
@@ -128,6 +125,7 @@ public class MediaExplorerCollection
     public void UpdateItemsPerLine()
     {
         m_collection.UpdateItemsPerLine(PanelsPerLine);
+        RebuildLineOffsetsMap();
     }
 
     public void EnsureImagesForSurroundingRows(int row)
@@ -180,8 +178,7 @@ public class MediaExplorerCollection
         MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath, item.ID);
 
         m_explorerItems.Add(item.ID, explorerItem);
-        m_imageLoadQueue.Enqueue(explorerItem);
-
+        
         if (path != null)
         {
             ImageCacheItem? cacheItem = m_imageCache.GetAnyExistingItem(item.ID);
@@ -198,6 +195,12 @@ public class MediaExplorerCollection
         {
             m_collection.GetCurrentLine().LineLabel = segmentTitle;
         }
+
+        m_mapLineItemOffsets.Add(
+            explorerItem.MediaId,
+            new LineItemOffset(
+                m_collection.TopCollection.Count - 1,
+                m_collection.TopCollection[m_collection.TopCollection.Count - 1].Items.Count - 1));
     }
 
     /*----------------------------------------------------------------------------
@@ -223,6 +226,7 @@ public class MediaExplorerCollection
             }
 
             line++;
+            offset = 0;
         }
     }
 
@@ -232,6 +236,20 @@ public class MediaExplorerCollection
             throw new ArgumentException($"first Line {first.Line} > {m_collection.TopCollection.Count}");
 
         List<MediaExplorerItem> result = new();
+
+        // make clones (with proper ordering) to avoid trashing the callers data
+        if (first.Line > last.Line
+            || (first.Line == last.Line && first.Offset > last.Offset))
+        {
+            LineItemOffset temp = new LineItemOffset(last);
+            first = new LineItemOffset(last);
+            last = temp;
+        }
+        else
+        {
+            first = new LineItemOffset(first);
+            last = new LineItemOffset(last);
+        }
 
         while (first.Line <= last.Line)
         {
@@ -260,5 +278,28 @@ public class MediaExplorerCollection
             return lineItemOffset;
 
         return null;
+    }
+
+    public void DebugVerifySelectedItems(HashSet<MediaExplorerItem> selected)
+    {
+#if DEBUG
+        foreach (MediaExplorerLineModel explorerLine in m_collection.TopCollection)
+        {
+            foreach (MediaExplorerItem item in explorerLine.Items)
+            {
+                if (item.Selected)
+                {
+                    if (!selected.Contains(item))
+                        throw new CatExceptionDebugFailure($"item {item.MediaId} selected but not in selection list");
+                }
+            }
+        }
+
+        foreach (MediaExplorerItem item in selected)
+        {
+            if (!item.Selected)
+                throw new CatExceptionDebugFailure($"item {item.MediaId} is in selection list, but not selected");
+        }
+#endif
     }
 }

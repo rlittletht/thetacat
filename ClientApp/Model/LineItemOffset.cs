@@ -10,4 +10,10 @@ public class LineItemOffset
         Line = line;
         Offset = offset;
     }
+
+    public LineItemOffset(LineItemOffset offset)
+    {
+        Line = offset.Line;
+        Offset = offset.Offset;
+    }
 }
