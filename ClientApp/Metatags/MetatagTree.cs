@@ -16,27 +16,8 @@ public class MetatagTree : IMetatagTreeItem
     private readonly Dictionary<Guid, MetatagTreeItem> IdMap = new();
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
-    public MetatagTree(List<Metatag> metatags, List<Metatag>? metatagsExclude, List<Metatag>? metatagsInclude)
+    public MetatagTree(List<Metatag> metatags, IEnumerable<Metatag>? metatagsExclude, IEnumerable<Metatag>? metatagsInclude)
     {
-        HashSet<string> exclude = new HashSet<string>();
-        HashSet<string> include = new HashSet<string>();
-
-        if (metatagsExclude != null)
-        {
-            foreach (Metatag metatag in metatagsExclude)
-            {
-                exclude.Add(metatag.ID.ToString());
-            }
-        }
-
-        if (metatagsInclude != null)
-        {
-            foreach (Metatag metatag in metatagsInclude)
-            {
-                include.Add(metatag.ID.ToString());
-            }
-        }
-
         foreach (Metatag metatag in metatags)
         {
             MetatagTreeItem treeItem;
@@ -76,10 +57,21 @@ public class MetatagTree : IMetatagTreeItem
             }
         }
 
-        if (exclude.Count > 0)
+        if (metatagsExclude != null)
         {
+            HashSet<string> exclude = new HashSet<string>();
+            foreach (Metatag metatag in metatagsExclude)
+            {
+                exclude.Add(metatag.ID.ToString());
+            }
+
             // walk through the tree and delete any exclusions
             SeekAndDelete(exclude);
+        }
+
+        if (metatagsInclude != null)
+        {
+            FilterTreeToMatches(MetatagTreeItemMatcher.CreateIdSetMatch(metatagsInclude));
         }
     }
 

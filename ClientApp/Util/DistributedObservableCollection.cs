@@ -274,7 +274,6 @@ public class DistributedObservableCollection<T, T1>
         }
 
         BuildSegments(m_itemsPerLine);
-
     }
 
     /*----------------------------------------------------------------------------

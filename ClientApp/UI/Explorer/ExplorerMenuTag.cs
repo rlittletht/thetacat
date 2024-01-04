@@ -8,7 +8,7 @@ namespace Thetacat.UI.Explorer;
 public class ExplorerMenuTag: INotifyPropertyChanged
 {
     private Guid m_mediaTagId;
-    private string m_tagName;
+    private string m_tagName = "";
 
     public Guid MediaTagId
     {

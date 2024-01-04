@@ -11,24 +11,6 @@
              x:Name="MediaExplorerControl">
     <Grid>
         <ItemsControl Name="ExplorerBox" ContextMenuOpening="ItemMenuOpening">
-            <ItemsControl.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Remove Tags" ItemsSource="{Binding ExplorerContextMenu.AppliedTags}">
-                        <MenuItem.ItemTemplate>
-                            <DataTemplate>
-                                <MenuItem Header="{Binding TagName}"/>
-                            </DataTemplate>
-                        </MenuItem.ItemTemplate>
-                    </MenuItem>
-                    <MenuItem Header="Apply Tags" ItemsSource="{Binding ExplorerContextMenu.AdvertisedTags}">
-                        <MenuItem.ItemTemplate>
-                            <DataTemplate>
-                                <MenuItem Header="{Binding TagName}" />
-                            </DataTemplate>
-                        </MenuItem.ItemTemplate>
-                    </MenuItem>
-                </ContextMenu>
-            </ItemsControl.ContextMenu>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"

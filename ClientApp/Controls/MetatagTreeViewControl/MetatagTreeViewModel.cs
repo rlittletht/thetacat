@@ -9,19 +9,12 @@ namespace Thetacat.Controls.MetatagTreeViewControl;
 public class MetatagTreeViewModel: INotifyPropertyChanged
 {
     public ObservableCollection<CheckableMetatagTreeItem> Items = new();
-    private MetatagTree? m_metatagTree;
     private int m_schemaVersion;
 
     public int SchemaVersion
     {
         get => m_schemaVersion;
         set => SetField(ref m_schemaVersion, value);
-    }
-
-    public MetatagTree? MetatagTree
-    {
-        get => m_metatagTree;
-        set => SetField(ref m_metatagTree, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -15,6 +15,7 @@ using TCore.Pipeline;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.UI.Explorer;
 using Thetacat.Util;
 
@@ -36,11 +37,12 @@ public class MediaExplorerCollection
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
-    private DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
+    private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
     private readonly ConcurrentQueue<MediaExplorerItem> m_imageLoadQueue = new();
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
-    private ImageCache m_imageCache;
+    private readonly ImageCache m_imageCache;
+    private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new ();
 
     public MediaExplorerCollection(double leadingLabelWidth, double explorerHeight = 0.0, double explorerWidth = 0.0, double itemHeight = 0.0, double itemWidth = 0.0)
     {
@@ -196,5 +198,67 @@ public class MediaExplorerCollection
         {
             m_collection.GetCurrentLine().LineLabel = segmentTitle;
         }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: RebuildLineOffsetsMap
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.RebuildLineOffsetsMap
+
+        Build a map of media IDs to their Line/Offset in the explorer view.
+        This will help with selection
+    ----------------------------------------------------------------------------*/
+    public void RebuildLineOffsetsMap()
+    {
+        m_mapLineItemOffsets.Clear();
+
+        int line = 0;
+        int offset = 0;
+
+        foreach (MediaExplorerLineModel explorerLine in m_collection.TopCollection)
+        {
+            foreach (MediaExplorerItem item in explorerLine.Items)
+            {
+                m_mapLineItemOffsets.Add(item.MediaId, new LineItemOffset(line, offset));
+                offset++;
+            }
+
+            line++;
+        }
+    }
+
+    public List<MediaExplorerItem> GetMediaItemsBetween(LineItemOffset first, LineItemOffset last)
+    {
+        if (m_collection.TopCollection.Count < first.Line)
+            throw new ArgumentException($"first Line {first.Line} > {m_collection.TopCollection.Count}");
+
+        List<MediaExplorerItem> result = new();
+
+        while (first.Line <= last.Line)
+        {
+            MediaExplorerLineModel explorerLine = m_collection.TopCollection[first.Line];
+
+            int lastOffset = (first.Line == last.Line) ? last.Offset : explorerLine.Items.Count - 1;
+
+            while (first.Offset <= lastOffset)
+            {
+                MediaExplorerItem item = explorerLine.Items[first.Offset];
+
+                result.Add(item);
+                first.Offset++;
+            }
+
+            first.Offset = 0;
+            first.Line++;
+        }
+
+        return result;
+    }
+
+    public LineItemOffset GetLineItemOffsetForMediaItem(MediaExplorerItem item)
+    {
+        if (m_mapLineItemOffsets.TryGetValue(item.MediaId, out LineItemOffset? lineItemOffset))
+            return lineItemOffset;
+
+        return null;
     }
 }

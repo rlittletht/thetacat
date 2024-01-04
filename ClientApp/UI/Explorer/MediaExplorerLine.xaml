@@ -8,13 +8,42 @@
              x:Name="ExplorerLineControl"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
+        <local:BindingProxy x:Key="MediaExplorerModelProxy" Data="{Binding ElementName=MediaExplorerControl, Path=Model}"/>
         <DataTemplate x:Key="MediaItemTemplate">
             <StackPanel Orientation="Vertical"
                         Width="{Binding ElementName=ExplorerLineControl, Path=ImageContainerWidth}" Margin="0" Name="ThePanel">
                 <StackPanel.InputBindings>
-                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=SelectPanel}"
-                                  CommandParameter="{Binding}" MouseAction="LeftClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.SelectPanel}"
+                                  CommandParameter="{Binding}" Gesture="LeftClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.ExtendSelectPanel}"
+                                  CommandParameter="{Binding}" Gesture="Shift+LeftClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.AddSelectPanel}"
+                                  CommandParameter="{Binding}" Gesture="Control+LeftClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.AddExtendSelectPanel}"
+                                  CommandParameter="{Binding}" Gesture="Control+Shift+LeftClick" />
                 </StackPanel.InputBindings>
+                <StackPanel.ContextMenu>
+                    <ContextMenu >
+                        <MenuItem Header="Remove Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AppliedTags}">
+                            <MenuItem.ItemTemplate>
+                                <DataTemplate>
+                                    <MenuItem Header="{Binding TagName}" />
+                                </DataTemplate>
+                            </MenuItem.ItemTemplate>
+                        </MenuItem>
+                        <MenuItem Header="Apply Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AdvertisedTags}">
+                            <MenuItem.ItemTemplate>
+                                <DataTemplate>
+                                    <MenuItem Header="{Binding TagName}" />
+                                </DataTemplate>
+                            </MenuItem.ItemTemplate>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Show/Hide Metatag Panel" PresentationTraceSources.TraceLevel="High"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
+                                  CommandParameter="{Binding}" />
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Source="{Binding Path=TileImage}"
                        Margin="5,5,5,5"
                        MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"

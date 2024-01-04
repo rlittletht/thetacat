@@ -19,7 +19,7 @@
         </HierarchicalDataTemplate>
         <HierarchicalDataTemplate x:Key="CheckableTemplate" DataType="local:CheckableMetatagTreeItem" ItemsSource="{Binding Children}" >
             <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding Checked}" />
+                <CheckBox IsChecked="{Binding Checked}" IsThreeState="True" />
                 <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
                 <TextBlock Text="{Binding Description}" Margin="15,0,0,0" />
                 <TextBlock Text="{Binding ID}" Margin="15,0,0,0" />

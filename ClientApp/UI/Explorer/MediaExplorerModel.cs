@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.UI.Explorer.Commands;
 
 namespace Thetacat.UI.Explorer;
 
@@ -13,6 +14,11 @@ public class MediaExplorerModel : INotifyPropertyChanged
     private double m_imageWidth = 148.0;
 
     public ExplorerContextMenuModel ExplorerContextMenu { get; set; } = new ExplorerContextMenuModel();
+    public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
+    public SelectPanelCommand? SelectPanel { get; set; }
+    public SelectPanelCommand? ExtendSelectPanel { get; set; }
+    public SelectPanelCommand? AddSelectPanel { get; set; }
+    public SelectPanelCommand? AddExtendSelectPanel { get; set; }
 
     public double PanelItemHeight
     {

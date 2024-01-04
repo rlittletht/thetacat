@@ -66,12 +66,22 @@ public partial class MetatagTreeView : UserControl
         DataContext = Model;
     }
 
-    public void SetItems(ObservableCollection<IMetatagTreeItem> items, int schemaVersion)
+    public void SetItems(
+        ObservableCollection<IMetatagTreeItem> items, 
+        int schemaVersion,
+        Dictionary<string, bool?>? initialCheckboxState = null)
     {
         Model.Items.Clear();
         foreach (IMetatagTreeItem item in items)
         {
-            Model.Items.Add(new CheckableMetatagTreeItem(item));
+            CheckableMetatagTreeItem checkableItem = new CheckableMetatagTreeItem(item);
+            
+            if (initialCheckboxState != null)
+            {
+                if (initialCheckboxState.TryGetValue(item.ID, out bool? value))
+                    checkableItem.Checked = value;
+            }
+            Model.Items.Add(checkableItem);
         }
 
         Tree.ItemsSource = Model.Items;
@@ -99,6 +109,16 @@ public partial class MetatagTreeView : UserControl
         }
     }
 #endif
+
+    public void InitializeFromExistingTree(
+        IMetatagTreeItem treeRoot,
+        Dictionary<string, bool?>? initialCheckboxState = null)
+    {
+        Model.SchemaVersion = 0;
+
+        SetItems(treeRoot.Children, 0, initialCheckboxState);
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: Initialize
         %%Qualified: Thetacat.Controls.MetatagTreeView.Initialize
@@ -110,15 +130,18 @@ public partial class MetatagTreeView : UserControl
         update (which is intuitively obvious since you will only have the one
         matched root to start with...)
     ----------------------------------------------------------------------------*/
-    public void Initialize(MetatagSchema schema, MetatagStandards.Standard? standardRoot = null)
+    public void Initialize(
+        MetatagSchema schema, 
+        MetatagStandards.Standard? standardRoot = null, 
+        Dictionary<string, bool?>? initialCheckboxState = null)
     {
-        Model.MetatagTree = schema.WorkingTree;
+//        Model.MetatagTree = schema.WorkingTree;
 
         Model.SchemaVersion = schema.SchemaVersionWorking;
 
         if (standardRoot != null)
         {
-            IMetatagTreeItem? itemMatch = Model.MetatagTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
+            IMetatagTreeItem? itemMatch = schema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
 
             if (itemMatch != null)
             {
@@ -129,12 +152,12 @@ public partial class MetatagTreeView : UserControl
                     m_virtualRootMetatags.Add(item);
                 }
 #endif
-                SetItems(itemMatch.Children, schema.SchemaVersionWorking);
+                SetItems(itemMatch.Children, schema.SchemaVersionWorking, initialCheckboxState);
             }
         }
         else
         {
-            SetItems(Model.MetatagTree.Children, schema.SchemaVersionWorking);
+            SetItems(schema.WorkingTree.Children, schema.SchemaVersionWorking, initialCheckboxState);
         }
     }
 }

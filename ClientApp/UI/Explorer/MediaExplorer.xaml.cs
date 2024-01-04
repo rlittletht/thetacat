@@ -19,6 +19,7 @@ using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.UI.Explorer;
+using Thetacat.UI.Explorer.Commands;
 using Image = System.Drawing.Image;
 
 namespace Thetacat.UI
@@ -40,6 +41,11 @@ namespace Thetacat.UI
             InitializeComponent();
 //            ExplorerBox.ItemsSource = Model.ExplorerLines;
             DataContext = Model;
+            Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
+            Model.SelectPanel = new SelectPanelCommand(_SelectPanel);
+            Model.ExtendSelectPanel = new SelectPanelCommand(_ExtendSelectPanel);
+            Model.AddSelectPanel = new SelectPanelCommand(_AddSelectPanel);
+            Model.AddExtendSelectPanel = new SelectPanelCommand(_AddExtendSelectPanel);
         }
 
         public void UpdateCollectionDimensions()
@@ -109,23 +115,94 @@ namespace Thetacat.UI
             MainWindow._AppState.Settings.ExplorerItemSize = itemSize;
         }
 
-        public SelectPanelCommand SelectPanel { get; } = new SelectPanelCommand();
+        private ApplyMetatag? m_applyMetatagPanel = null;
 
-        public class SelectPanelCommand : ICommand
+        private LineItemOffset? m_pinnedSelectionClick;
+
+        private readonly HashSet<MediaExplorerItem> m_itemsSelected = new();
+
+        private void ClearSelectedItems()
         {
-            public bool CanExecute(object? parameter) => true;
-
-            public void Execute(object? parameter)
+            foreach (MediaExplorerItem item in m_itemsSelected)
             {
-                if (parameter is MediaExplorerItem item)
-                {
-                    item.Selected = !item.Selected;
-                }
+                item.Selected = false;
+            }
+            m_itemsSelected.Clear();
+        }
 
-                MainWindow.LogForApp(EventType.Information, $"Invoke SelectPanel");
+        private void SelectExplorerItem(MediaExplorerItem item)
+        {
+            m_itemsSelected.Add(item);
+            item.Selected = true;
+        }
+
+        /*----------------------------------------------------------------------------
+            %%Function: _SelectPanel
+            %%Qualified: Thetacat.UI.MediaExplorer._SelectPanel
+
+            This is just a regular mouse click. Deselect everything else and select
+            the current item
+        ----------------------------------------------------------------------------*/
+        private void _SelectPanel(MediaExplorerItem? context)
+        {
+            ClearSelectedItems();
+            m_pinnedSelectionClick = null;
+            if (context != null)
+            {
+                SelectExplorerItem(context);
+                m_pinnedSelectionClick = m_collection?.GetLineItemOffsetForMediaItem(context);
+            }
+        }
+
+        /*----------------------------------------------------------------------------
+            %%Function: _ExtendSelectPanel
+            %%Qualified: Thetacat.UI.MediaExplorer._ExtendSelectPanel
+
+            This is a shift+click. It extends from the pinned selection click to the
+            current offset
+        ----------------------------------------------------------------------------*/
+        private void _ExtendSelectPanel(MediaExplorerItem? context)
+        {
+            if (context != null)
+                context.Selected = !context.Selected;
+        }
+
+        private void _AddSelectPanel(MediaExplorerItem? context)
+        {
+            if (context != null)
+                context.Selected = !context.Selected;
+        }
+
+        private void _AddExtendSelectPanel(MediaExplorerItem? context)
+        {
+            if (context != null)
+                context.Selected = !context.Selected;
+        }
+
+        private void _ShowHideMetatagPanel(MediaExplorerItem? context)
+        {
+            if (m_applyMetatagPanel == null)
+            {
+                m_applyMetatagPanel = new ApplyMetatag();
             }
 
-            public event EventHandler? CanExecuteChanged;
+            if (m_applyMetatagPanel.IsVisible)
+            {
+                m_applyMetatagPanel.Hide();
+            }
+            else
+            {
+                List<MediaItem> selected = new();
+
+                if (context != null)
+                {
+                    selected.Add(MainWindow._AppState.Catalog.Media.Items[context.MediaId]);
+                }
+
+                m_applyMetatagPanel.UpdateForMedia(selected, MainWindow._AppState.MetatagSchema);
+
+                m_applyMetatagPanel.Show();
+            }
         }
 
         private void ItemMenuOpening(object sender, ContextMenuEventArgs e)

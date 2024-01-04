@@ -20,14 +20,14 @@ public class CheckableMetatagTreeItem : IMetatagTreeItem, INotifyPropertyChanged
     public void SeekAndDelete(HashSet<string> delete) => m_itemInner.SeekAndDelete(delete);
     public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => m_itemInner.FilterTreeToMatches(matcher);
 
-    public bool Checked
+    public bool? Checked
     {
         get => m_checked;
         set => SetField(ref m_checked, value);
     }
 
     private readonly IMetatagTreeItem m_itemInner;
-    private bool m_checked;
+    private bool? m_checked = false;
 
     public CheckableMetatagTreeItem(IMetatagTreeItem item)
     {

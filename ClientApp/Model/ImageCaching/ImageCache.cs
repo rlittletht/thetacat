@@ -57,7 +57,7 @@ public class ImageCache
             if (!Items.TryGetValue(mediaItem.ID, out ImageCacheItem? existingItem))
             {
                 throw new CatExceptionInternalFailure("Couldn't add the cache image item but then couldn't retrieve it. wicked race conditions?");
-                return item;
+                //return item;
             }
 
             return existingItem;
