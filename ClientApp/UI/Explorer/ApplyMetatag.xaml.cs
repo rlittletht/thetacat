@@ -41,7 +41,8 @@ namespace Thetacat.UI.Explorer
                 initialState.Add(tag.ID.ToString(), null);
             }
 
-            Metatags.Initialize(schema, null, initialState);
+            Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
+            MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
         }
 
         public void UpdateForMedia(List<MediaItem> mediaItems, MetatagSchema schema)
@@ -82,6 +83,7 @@ namespace Thetacat.UI.Explorer
         {
             InitializeComponent();
             DataContext = model;
+            MainWindow._AppState.RegisterWindowPlace(this, "ApplyMetatagWindow");
         }
 
         private void DoApply(object sender, RoutedEventArgs e)

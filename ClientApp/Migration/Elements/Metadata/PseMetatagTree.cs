@@ -18,6 +18,11 @@ public class PseMetatagTree : IMetatagTreeItem
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
     public string Description => string.Empty;
+    public bool? Checked { get; set; }
+
+    public PseMetatagTree()
+    {
+    }
 
     public PseMetatagTree(IEnumerable<PseMetatag> metatags)
     {
@@ -120,5 +125,23 @@ public class PseMetatagTree : IMetatagTreeItem
         }
 
         return null;
+    }
+
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    {
+        PseMetatagTree newItem = new PseMetatagTree();
+
+        cloneDelegate(newItem);
+        foreach (IMetatagTreeItem item in Children)
+        {
+            newItem.Children.Add(item.Clone(cloneDelegate));
+        }
+
+        return newItem;
+    }
+
+    public void Preorder(VisitTreeItemDelegate visit, int depth)
+    {
+        MetatagTreeItem.Preorder(this, visit, depth);
     }
 }

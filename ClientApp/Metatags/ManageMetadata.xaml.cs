@@ -92,7 +92,7 @@ namespace Thetacat.Metatags
         private void LoadMetatags(object sender, RoutedEventArgs e)
         {
             MainWindow._AppState.RefreshMetatagSchema();
-            MetatagsTree.Initialize(MainWindow._AppState.MetatagSchema);
+            MetatagsTree.Initialize(MainWindow._AppState.MetatagSchema.WorkingTree.Children, MainWindow._AppState.MetatagSchema.SchemaVersionWorking);
         }
     }
 }

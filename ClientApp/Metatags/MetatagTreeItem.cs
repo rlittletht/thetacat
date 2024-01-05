@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Security.Cryptography;
 using Thetacat.Model.Metatags;
 using Thetacat.Types;
 
@@ -10,6 +11,7 @@ public class MetatagTreeItem: IMetatagTreeItem
 {
     private Metatag? m_metatag;
 
+    public bool? Checked { get; set; }
     public bool IsLocalOnly { get; set; }
     public Guid ItemId => m_metatag?.ID ?? Guid.Empty;
     public Guid? ParentId => m_metatag?.Parent;
@@ -118,5 +120,36 @@ public class MetatagTreeItem: IMetatagTreeItem
         }
 
         return null;
+    }
+
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    {
+        MetatagTreeItem newItem =
+            new MetatagTreeItem()
+            {
+                m_metatag = m_metatag
+            };
+
+        cloneDelegate(newItem);
+        foreach (IMetatagTreeItem item in Children)
+        {
+            newItem.Children.Add(item.Clone(cloneDelegate));
+        }
+
+        return newItem;
+    }
+
+    public static void Preorder(IMetatagTreeItem item, VisitTreeItemDelegate visit, int depth)
+    {
+        visit(item, depth);
+        foreach (IMetatagTreeItem child in item.Children)
+        {
+            child.Preorder(visit, depth + 1);
+        }
+    }
+
+    public void Preorder(VisitTreeItemDelegate visit, int depth)
+    {
+        Preorder(this, visit, depth);
     }
 }

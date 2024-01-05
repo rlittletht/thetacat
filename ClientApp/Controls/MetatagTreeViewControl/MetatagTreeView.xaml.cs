@@ -67,22 +67,11 @@ public partial class MetatagTreeView : UserControl
     }
 
     public void SetItems(
-        ObservableCollection<IMetatagTreeItem> items, 
+        IEnumerable<IMetatagTreeItem>? items, 
         int schemaVersion,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
-        Model.Items.Clear();
-        foreach (IMetatagTreeItem item in items)
-        {
-            CheckableMetatagTreeItem checkableItem = new CheckableMetatagTreeItem(item);
-            
-            if (initialCheckboxState != null)
-            {
-                if (initialCheckboxState.TryGetValue(item.ID, out bool? value))
-                    checkableItem.Checked = value;
-            }
-            Model.Items.Add(checkableItem);
-        }
+        MetatagTree.CloneAndSetCheckedItems(items, Model.Items, initialCheckboxState);
 
         Tree.ItemsSource = Model.Items;
         Model.SchemaVersion = schemaVersion;
@@ -131,20 +120,22 @@ public partial class MetatagTreeView : UserControl
         matched root to start with...)
     ----------------------------------------------------------------------------*/
     public void Initialize(
-        MetatagSchema schema, 
+        IEnumerable<IMetatagTreeItem> roots,
+        int schemaVersion,
         MetatagStandards.Standard? standardRoot = null, 
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
 //        Model.MetatagTree = schema.WorkingTree;
 
-        Model.SchemaVersion = schema.SchemaVersionWorking;
+        Model.SchemaVersion = schemaVersion;
 
         if (standardRoot != null)
         {
-            IMetatagTreeItem? itemMatch = schema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)), 1);
+            IMetatagTreeItem? itemMatch = MetatagTree.FindMatchingChild(
+                roots,
+                MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetStandardsTagFromStandard(standardRoot.Value)),
+                1);
 
-            if (itemMatch != null)
-            {
 #if NOTUSED
                 m_virtualRootMetatags = new ObservableCollection<IMetatagTreeItem>();
                 foreach (IMetatagTreeItem item in itemMatch.Children)
@@ -152,12 +143,11 @@ public partial class MetatagTreeView : UserControl
                     m_virtualRootMetatags.Add(item);
                 }
 #endif
-                SetItems(itemMatch.Children, schema.SchemaVersionWorking, initialCheckboxState);
-            }
+            SetItems(itemMatch?.Children, schemaVersion, initialCheckboxState);
         }
         else
         {
-            SetItems(schema.WorkingTree.Children, schema.SchemaVersionWorking, initialCheckboxState);
+            SetItems(roots, schemaVersion, initialCheckboxState);
         }
     }
 }

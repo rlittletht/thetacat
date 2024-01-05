@@ -13,8 +13,8 @@ public class MetatagTreeItemMatcher : IMetatagMatcher<IMetatagTreeItem>
 
     public bool IsMatch(IMetatagTreeItem item)
     {
-        if (m_idSet != null && m_idSet.Contains(item.ID))
-            return true;
+        if (m_idSet != null && !m_idSet.Contains(item.ID))
+            return false;
 
         if (m_name != null && string.Compare(m_name, item.Name, StringComparison.CurrentCultureIgnoreCase) != 0)
             return false;

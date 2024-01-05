@@ -150,6 +150,8 @@ namespace Thetacat
             _AppState.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
             _AppState.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
             m_collection.Close();
+            Explorer.Close();
+
             if (m_asyncLogMonitor != null)
                 CloseAsyncLog(false);
 

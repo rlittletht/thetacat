@@ -18,6 +18,7 @@ using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
+using Thetacat.Types;
 using Thetacat.UI.Explorer;
 using Thetacat.UI.Explorer.Commands;
 using Image = System.Drawing.Image;
@@ -78,6 +79,15 @@ namespace Thetacat.UI
         private void OnExplorerLoaded(object sender, RoutedEventArgs e)
         {
             UpdateCollectionDimensions();
+        }
+
+        public void Close()
+        {
+            if (m_collection != null)
+            {
+                m_collection.Close();
+                m_collection = null;
+            }
         }
 
         private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -192,6 +202,7 @@ namespace Thetacat.UI
             }
 
             m_collection.DebugVerifySelectedItems(m_itemsSelected);
+            UpdateMetatagPanelIfNecessary();
         }
 
         /*----------------------------------------------------------------------------
@@ -213,20 +224,25 @@ namespace Thetacat.UI
                 m_pinnedSelectionClick = null;
                 m_pinnedSelectionClickSelect = false;
                 m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                UpdateMetatagPanelIfNecessary();
                 return;
             }
 
             m_pinnedSelectionClick ??= new LineItemOffset(0, 0);
-            LineItemOffset thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
+            LineItemOffset? thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
 
-            List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
-
-            foreach (MediaExplorerItem extendByItem in extendBy)
+            if (thisItem != null)
             {
-                SelectExplorerItem(extendByItem);
-            }
+                List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
 
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                foreach (MediaExplorerItem extendByItem in extendBy)
+                {
+                    SelectExplorerItem(extendByItem);
+                }
+
+                m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                UpdateMetatagPanelIfNecessary();
+            }
         }
 
         /*----------------------------------------------------------------------------
@@ -248,6 +264,7 @@ namespace Thetacat.UI
                 m_pinnedSelectionClick = null;
                 m_pinnedSelectionClickSelect = false;
                 m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                UpdateMetatagPanelIfNecessary();
                 return;
             }
 
@@ -255,6 +272,7 @@ namespace Thetacat.UI
             m_pinnedSelectionClickSelect = ToggleSelectExplorerItem(context);
             m_pinnedSelectionClick = m_collection.GetLineItemOffsetForMediaItem(context);
             m_collection.DebugVerifySelectedItems(m_itemsSelected);
+            UpdateMetatagPanelIfNecessary();
         }
 
         private void _StickyExtendSelectPanel(MediaExplorerItem? context)
@@ -269,6 +287,7 @@ namespace Thetacat.UI
                 m_pinnedSelectionClick = null;
                 m_pinnedSelectionClickSelect = false;
                 m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                UpdateMetatagPanelIfNecessary();
                 return;
             }
 
@@ -279,21 +298,40 @@ namespace Thetacat.UI
                 m_pinnedSelectionClickSelect = true;
             }
 
-            LineItemOffset thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
-
-            List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
-
-            foreach (MediaExplorerItem extendByItem in extendBy)
+            LineItemOffset? thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
+            if (thisItem != null)
             {
-                if (m_pinnedSelectionClickSelect)
-                    SelectExplorerItem(extendByItem);
-                else
-                    UnselectExplorerItem(extendByItem);
-            }
+                List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
 
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
+                foreach (MediaExplorerItem extendByItem in extendBy)
+                {
+                    if (m_pinnedSelectionClickSelect)
+                        SelectExplorerItem(extendByItem);
+                    else
+                        UnselectExplorerItem(extendByItem);
+                }
+
+                UpdateMetatagPanelIfNecessary();
+                m_collection.DebugVerifySelectedItems(m_itemsSelected);
+            }
         }
 
+        private void UpdateMetatagPanelIfNecessary()
+        {
+            if (m_applyMetatagPanel != null)
+            {
+                List<MediaItem> mediaItems = new();
+                ICatalog catalog = MainWindow._AppState.Catalog;
+
+                foreach (MediaExplorerItem item in m_itemsSelected)
+                {
+                    mediaItems.Add(catalog.Media.Items[item.MediaId]);
+                }
+
+                m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema);
+            }
+
+        }
         private void _ShowHideMetatagPanel(MediaExplorerItem? context)
         {
             if (m_applyMetatagPanel == null)
@@ -307,15 +345,7 @@ namespace Thetacat.UI
             }
             else
             {
-                List<MediaItem> selected = new();
-
-                if (context != null)
-                {
-                    selected.Add(MainWindow._AppState.Catalog.Media.Items[context.MediaId]);
-                }
-
-                m_applyMetatagPanel.UpdateForMedia(selected, MainWindow._AppState.MetatagSchema);
-
+                UpdateMetatagPanelIfNecessary();
                 m_applyMetatagPanel.Show();
             }
         }

@@ -8,7 +8,7 @@ namespace Thetacat.Controls.MetatagTreeViewControl;
 
 public class MetatagTreeViewModel: INotifyPropertyChanged
 {
-    public ObservableCollection<CheckableMetatagTreeItem> Items = new();
+    public ObservableCollection<IMetatagTreeItem> Items = new();
     private int m_schemaVersion;
 
     public int SchemaVersion

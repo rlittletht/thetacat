@@ -272,7 +272,7 @@ public class MediaExplorerCollection
         return result;
     }
 
-    public LineItemOffset GetLineItemOffsetForMediaItem(MediaExplorerItem item)
+    public LineItemOffset? GetLineItemOffsetForMediaItem(MediaExplorerItem item)
     {
         if (m_mapLineItemOffsets.TryGetValue(item.MediaId, out LineItemOffset? lineItemOffset))
             return lineItemOffset;

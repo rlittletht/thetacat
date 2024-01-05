@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Thetacat.Metatags;
+using Thetacat.Model.Metatags;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -21,6 +22,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
 
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID.ToString() ?? string.Empty;
+    public bool? Checked { get; set; }
 
     public PseMetatag Item => m_metatag ?? new PseMetatag();
 
@@ -95,5 +97,28 @@ public class PseMetatagTreeItem : IMetatagTreeItem
         }
 
         return null;
+    }
+
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    {
+        PseMetatagTreeItem newItem =
+            new PseMetatagTreeItem()
+            {
+                m_metatag = m_metatag,
+                IsPlaceholder = IsPlaceholder
+            };
+
+        cloneDelegate(newItem);
+        foreach (IMetatagTreeItem item in Children)
+        {
+            newItem.Children.Add(item.Clone(cloneDelegate));
+        }
+
+        return newItem;
+    }
+
+    public void Preorder(VisitTreeItemDelegate visit, int depth)
+    {
+        MetatagTreeItem.Preorder(this, visit, depth);
     }
 }
