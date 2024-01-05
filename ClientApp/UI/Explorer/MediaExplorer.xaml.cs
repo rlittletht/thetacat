@@ -36,17 +36,20 @@ namespace Thetacat.UI
         private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 
         MetatagMRU m_metatagMRU = new MetatagMRU();
+        private readonly ItemSelector m_selector;
 
         public MediaExplorer()
         {
             InitializeComponent();
-//            ExplorerBox.ItemsSource = Model.ExplorerLines;
+           
             DataContext = Model;
+            m_selector = new ItemSelector(null, UpdateMetatagPanelIfNecessary);
+
             Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
-            Model.SelectPanel = new SelectPanelCommand(_SelectPanel);
-            Model.ExtendSelectPanel = new SelectPanelCommand(_ExtendSelectPanel);
-            Model.AddSelectPanel = new SelectPanelCommand(_AddSelectPanel);
-            Model.AddExtendSelectPanel = new SelectPanelCommand(_StickyExtendSelectPanel);
+            Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
+            Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
+            Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
+            Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
         }
 
         public void UpdateCollectionDimensions()
@@ -127,208 +130,20 @@ namespace Thetacat.UI
 
         private ApplyMetatag? m_applyMetatagPanel = null;
 
-        private LineItemOffset? m_pinnedSelectionClick;
-        private bool m_pinnedSelectionClickSelect = false;
 
-        private readonly HashSet<MediaExplorerItem> m_itemsSelected = new();
-
-        private void ClearSelectedItems()
-        {
-            foreach (MediaExplorerItem item in m_itemsSelected)
-            {
-                item.Selected = false;
-            }
-            m_itemsSelected.Clear();
-        }
-
-        private void SelectExplorerItem(MediaExplorerItem item)
-        {
-            m_itemsSelected.Add(item);
-            item.Selected = true;
-        }
-
-        private void UnselectExplorerItem(MediaExplorerItem item)
-        {
-            if (m_itemsSelected.Contains(item))
-            {
-                m_itemsSelected.Remove(item);
-                item.Selected = false;
-            }
-        }
-
-        /*----------------------------------------------------------------------------
-            %%Function: ToggleSelectExplorerItem
-            %%Qualified: Thetacat.UI.MediaExplorer.ToggleSelectExplorerItem
-
-            Toggles the selection state of the given item.  Returns whether we
-            selected or unselected the item.
-        ----------------------------------------------------------------------------*/
-        private bool ToggleSelectExplorerItem(MediaExplorerItem item)
-        {
-            if (m_itemsSelected.Contains(item))
-            {
-                m_itemsSelected.Remove(item);
-                item.Selected = false;
-                return false;
-            }
-            else
-            {
-                m_itemsSelected.Add(item);
-                item.Selected = true;
-                return true;
-            }
-        }
-
-        /*----------------------------------------------------------------------------
-            %%Function: _SelectPanel
-            %%Qualified: Thetacat.UI.MediaExplorer._SelectPanel
-
-            This is just a regular mouse click. Deselect everything else and set the
-            pinned click
-        ----------------------------------------------------------------------------*/
-        private void _SelectPanel(MediaExplorerItem? context)
-        {
-            if (m_collection == null)
-                return;
-
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            ClearSelectedItems();
-            m_pinnedSelectionClick = null;
-            if (context != null)
-            {
-                SelectExplorerItem(context);
-                m_pinnedSelectionClick = m_collection.GetLineItemOffsetForMediaItem(context);
-                m_pinnedSelectionClickSelect = true;
-            }
-
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            UpdateMetatagPanelIfNecessary();
-        }
-
-        /*----------------------------------------------------------------------------
-            %%Function: _ExtendSelectPanel
-            %%Qualified: Thetacat.UI.MediaExplorer._ExtendSelectPanel
-
-            This is a shift+click. It extends from the pinned selection click to the
-            current offset
-        ----------------------------------------------------------------------------*/
-        private void _ExtendSelectPanel(MediaExplorerItem? context)
-        {
-            if (m_collection == null)
-                return;
-
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            if (context == null)
-            {
-                ClearSelectedItems();
-                m_pinnedSelectionClick = null;
-                m_pinnedSelectionClickSelect = false;
-                m_collection.DebugVerifySelectedItems(m_itemsSelected);
-                UpdateMetatagPanelIfNecessary();
-                return;
-            }
-
-            m_pinnedSelectionClick ??= new LineItemOffset(0, 0);
-            LineItemOffset? thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
-
-            if (thisItem != null)
-            {
-                List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
-
-                foreach (MediaExplorerItem extendByItem in extendBy)
-                {
-                    SelectExplorerItem(extendByItem);
-                }
-
-                m_collection.DebugVerifySelectedItems(m_itemsSelected);
-                UpdateMetatagPanelIfNecessary();
-            }
-        }
-
-        /*----------------------------------------------------------------------------
-            %%Function: _AddSelectPanel
-            %%Qualified: Thetacat.UI.MediaExplorer._AddSelectPanel
-
-            This is a control click. It toggles the item in the current collection
-        ----------------------------------------------------------------------------*/
-        private void _AddSelectPanel(MediaExplorerItem? context)
-        {
-            if (m_collection == null)
-                return;
-
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-
-            if (context == null)
-            {
-                ClearSelectedItems();
-                m_pinnedSelectionClick = null;
-                m_pinnedSelectionClickSelect = false;
-                m_collection.DebugVerifySelectedItems(m_itemsSelected);
-                UpdateMetatagPanelIfNecessary();
-                return;
-            }
-
-            // remember whether the last control+click selected or deselected the item
-            m_pinnedSelectionClickSelect = ToggleSelectExplorerItem(context);
-            m_pinnedSelectionClick = m_collection.GetLineItemOffsetForMediaItem(context);
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            UpdateMetatagPanelIfNecessary();
-        }
-
-        private void _StickyExtendSelectPanel(MediaExplorerItem? context)
-        {
-            if (m_collection == null)
-                return;
-
-            m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            if (context == null)
-            {
-                ClearSelectedItems();
-                m_pinnedSelectionClick = null;
-                m_pinnedSelectionClickSelect = false;
-                m_collection.DebugVerifySelectedItems(m_itemsSelected);
-                UpdateMetatagPanelIfNecessary();
-                return;
-            }
-
-            // if there's no pinned selection, then assume from start, selecting
-            if (m_pinnedSelectionClick == null)
-            {
-                m_pinnedSelectionClick = new LineItemOffset(0, 0);
-                m_pinnedSelectionClickSelect = true;
-            }
-
-            LineItemOffset? thisItem = m_collection.GetLineItemOffsetForMediaItem(context);
-            if (thisItem != null)
-            {
-                List<MediaExplorerItem> extendBy = m_collection.GetMediaItemsBetween(m_pinnedSelectionClick, thisItem);
-
-                foreach (MediaExplorerItem extendByItem in extendBy)
-                {
-                    if (m_pinnedSelectionClickSelect)
-                        SelectExplorerItem(extendByItem);
-                    else
-                        UnselectExplorerItem(extendByItem);
-                }
-
-                UpdateMetatagPanelIfNecessary();
-                m_collection.DebugVerifySelectedItems(m_itemsSelected);
-            }
-        }
-
-        private void UpdateMetatagPanelIfNecessary()
+        private void UpdateMetatagPanelIfNecessary(IEnumerable<MediaExplorerItem> selectedItems)
         {
             if (m_applyMetatagPanel != null)
             {
                 List<MediaItem> mediaItems = new();
                 ICatalog catalog = MainWindow._AppState.Catalog;
 
-                foreach (MediaExplorerItem item in m_itemsSelected)
+                foreach (MediaExplorerItem item in selectedItems)
                 {
                     mediaItems.Add(catalog.Media.Items[item.MediaId]);
                 }
 
-                m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema);
+                m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema, m_selector.VectorClock);
             }
 
         }
@@ -345,7 +160,7 @@ namespace Thetacat.UI
             }
             else
             {
-                UpdateMetatagPanelIfNecessary();
+                UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
                 m_applyMetatagPanel.Show();
             }
         }

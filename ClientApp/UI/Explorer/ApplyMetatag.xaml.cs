@@ -45,14 +45,12 @@ namespace Thetacat.UI.Explorer
             MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
         }
 
-        public void UpdateForMedia(List<MediaItem> mediaItems, MetatagSchema schema)
+        public void FillSetAndIndeterminate(List<MediaItem> mediaItems, List<Metatag> tagsIndeterminate, List<Metatag> tagsSet)
         {
             // keep a running count of the number of times a tag was seen. we either see it
             // never, or the same as the number of media items. anything different and its
             // not consistently applied (hence indeterminate)
             Dictionary<Metatag, int> tagsCounts = new Dictionary<Metatag, int>();
-            List<Metatag> tagsIndeterminate = new();
-            List<Metatag> tagsSet = new();
 
             foreach (MediaItem mediaItem in mediaItems)
             {
@@ -75,8 +73,17 @@ namespace Thetacat.UI.Explorer
                 else if (tagCount.Value != 0)
                     tagsIndeterminate.Add(tagCount.Key);
             }
+        }
+
+        public void UpdateForMedia(List<MediaItem> mediaItems, MetatagSchema schema, int vectorClock)
+        {
+            List<Metatag> tagsIndeterminate = new();
+            List<Metatag> tagsSet = new();
+
+            FillSetAndIndeterminate(mediaItems, tagsSet, tagsIndeterminate);
 
             Set(schema, tagsSet, tagsIndeterminate);
+            model.SelectedItemsVectorClock = vectorClock;
         }
 
         public ApplyMetatag()
@@ -88,6 +95,7 @@ namespace Thetacat.UI.Explorer
 
         private void DoApply(object sender, RoutedEventArgs e)
         {
+            // sync the checked state between the tree control and the media items
 
         }
 

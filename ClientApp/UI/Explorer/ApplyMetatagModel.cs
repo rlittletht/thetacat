@@ -23,4 +23,5 @@ public class ApplyMetatagModel
     private IMetatagTreeItem? m_rootAvailable;
     private IMetatagTreeItem? m_rootApplied;
 
+    public int SelectedItemsVectorClock { get; set; } = 0;
 }
