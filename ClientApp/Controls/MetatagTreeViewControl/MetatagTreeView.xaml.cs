@@ -125,8 +125,6 @@ public partial class MetatagTreeView : UserControl
         MetatagStandards.Standard? standardRoot = null, 
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
-//        Model.MetatagTree = schema.WorkingTree;
-
         Model.SchemaVersion = schemaVersion;
 
         if (standardRoot != null)
@@ -151,21 +149,42 @@ public partial class MetatagTreeView : UserControl
         }
     }
 
-    public Dictionary<string, bool?> GetCheckedAndIndeterminateItems()
+    /*----------------------------------------------------------------------------
+        %%Function: GetCheckedUncheckedAndIndeterminateItems
+        %%Qualified: Thetacat.Controls.MetatagTreeView.GetCheckedUncheckedAndIndeterminateItems
+
+        This will have an entry for everything in the tree. If its not in this
+        dictionary, then assume its indeterminate (and shouldn't be changed)
+    ----------------------------------------------------------------------------*/
+    public Dictionary<string, bool?> GetCheckedUncheckedAndIndeterminateItems()
     {
-        Dictionary<string, bool?> checkedAndIndeterminedItems = new();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminedItems = new();
+        List<string> containersMarked = new();
 
         foreach (IMetatagTreeItem item in Model.Items)
         {
             item.Preorder(
                 (visiting, depth) =>
                 {
-                    if (visiting.Checked == null || visiting.Checked.Value)
-                        checkedAndIndeterminedItems.Add(visiting.ID, visiting.Checked);
+                    if (visiting.Children.Count > 0)
+                    {
+                        if (visiting.Checked is true)
+                            containersMarked.Add(visiting.Name);
+                        return;
+                    }
+
+                    checkedUncheckedAndIndeterminedItems.Add(visiting.ID, visiting.Checked);
                 },
                 0);
         }
 
-        return checkedAndIndeterminedItems;
+        if (containersMarked.Count > 0)
+        {
+            MessageBox.Show(
+                $"At least one container metatag was checked. This isn't supported. No tags applied or removed. Please uncheck: {string.Join(",", containersMarked)} and try again.");
+            return new Dictionary<string, bool?>();
+        }
+
+        return checkedUncheckedAndIndeterminedItems;
     }
 }

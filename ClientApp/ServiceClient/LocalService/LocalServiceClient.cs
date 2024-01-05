@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
 using TCore;
+using Thetacat.Logging;
 using Thetacat.Secrets;
 using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
 
+public delegate void LogDelegate(EventType eventType, string log, string? details = null, Guid? correlationId = null);
+
 public class LocalServiceClient
 {
     private static Sql? m_sql;
+    public static LogDelegate? LogService { get; set; }
 
     public static Sql Sql
     {

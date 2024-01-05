@@ -41,6 +41,7 @@ using MessageBox = System.Windows.Forms.MessageBox;
 using RestoreWindowPlace;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Util;
 using Image = System.Drawing.Image;
 using List = NUnit.Framework.List;
@@ -98,15 +99,22 @@ namespace Thetacat
 
         public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
         {
-            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
-            _AsyncLog.Log(entry);
-            _AppLog.Log(entry);
+            if (_AsyncLog.ShouldLog(eventType))
+            {
+                ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+
+                _AsyncLog.Log(entry);
+                _AppLog.Log(entry);
+            }
         }
 
         public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
         {
-            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
-            _AppLog.Log(entry);
+            if (_AppLog.ShouldLog(eventType))
+            {
+                ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+                _AppLog.Log(entry);
+            }
         }
 
         public static IAppState _AppState
@@ -139,6 +147,8 @@ namespace Thetacat
 
             _AppState.RegisterWindowPlace(this, "MainWindow");
             CatalogView.ItemsSource = _AppState.Catalog.Media.Items;
+            LocalServiceClient.LogService = LogForApp;
+
             if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
                 ShowAsyncLog();
             if (_AppState.Settings.ShowAppLogOnStart ?? false)
@@ -170,7 +180,7 @@ namespace Thetacat
         {
             s_appState = new AppState(CloseAsyncLog, CloseAppLog);
             s_asyncLog = new CatLog(EventType.Information);
-            s_appLog = new CatLog(EventType.Information);
+            s_appLog = new CatLog(EventType.Verbose);
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)
@@ -230,6 +240,8 @@ namespace Thetacat
             }
 
             ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
+
+            m_collection.Clear();
 
             foreach (DateTime date in sortedDates)
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using TCore;
 using Thetacat.Import;
+using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Types;
 
@@ -39,8 +40,15 @@ public class Media
         {
             if (current == partLimit)
             {
-                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
-                current = 0;
+                string command = sb.ToString();
+
+                if (!string.IsNullOrWhiteSpace(command))
+                {
+                    LocalServiceClient.LogService?.Invoke(EventType.Verbose, command);
+                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+                    current = 0;
+                }
+
                 sb.Clear();
                 sb.Append(commandBase);
             }
@@ -58,7 +66,10 @@ public class Media
             string sCmd = sb.ToString();
 
             if (!string.IsNullOrWhiteSpace(sCmd))
+            {
+                LocalServiceClient.LogService?.Invoke(EventType.Verbose, sCmd);
                 LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+            }
         }
     }
 

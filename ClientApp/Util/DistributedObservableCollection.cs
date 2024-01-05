@@ -333,6 +333,12 @@ public class DistributedObservableCollection<T, T1>
         return m_collection[m_collection.Count - 1];
     }
 
+    public void Clear()
+    {
+        m_collection.Clear();
+        m_segments = null;
+    }
+
     public void AddItem(T1 itemToAdd)
     {
         if (m_itemsPerLine == 0)

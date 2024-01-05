@@ -171,6 +171,13 @@ public class MediaExplorerCollection
         MainWindow.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
     }
 
+    public void Clear()
+    {
+        m_collection.Clear();
+        m_explorerItems.Clear();
+        m_mapLineItemOffsets.Clear();
+    }
+    
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
         string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
@@ -241,7 +248,7 @@ public class MediaExplorerCollection
         if (first.Line > last.Line
             || (first.Line == last.Line && first.Offset > last.Offset))
         {
-            LineItemOffset temp = new LineItemOffset(last);
+            LineItemOffset temp = new LineItemOffset(first);
             first = new LineItemOffset(last);
             last = temp;
         }

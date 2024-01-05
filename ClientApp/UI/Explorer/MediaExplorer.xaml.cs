@@ -173,7 +173,7 @@ namespace Thetacat.UI
             }
         }
 
-        void ApplySyncMetatags(Dictionary<string, bool?> checkedAndIndeterminate, int vectorClock)
+        void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
         {
             MetatagSchema schema = MainWindow._AppState.MetatagSchema;
 
@@ -187,19 +187,18 @@ namespace Thetacat.UI
             Dictionary<string, bool?> originalState = ApplyMetatag.GetCheckedAndIndetermineFromMediaSet(mediaItems);
 
             // find all the tags to remove
-            // TODO: Original state is going to include all the items outside the user root as well -- we don't want to 
-            // suddenly unset all of these because they aren't part of checkedAndIndeterminate (because those only
-            // consider the user rooted items).
             foreach (KeyValuePair<string, bool?> item in originalState)
             {
-                bool fNowSet = checkedAndIndeterminate.TryGetValue(item.Key, out bool? checkedState);
-
-                if (checkedState == null)
-                    continue;
-
-                if (item.Value == true && (checkedState is false || !fNowSet))
+                // if its indeterminate, then there is no chang
+                if (!checkedUncheckedAndIndeterminate.TryGetValue(item.Key, out bool? checkedState)
+                    || checkedState == null)
                 {
-                    // its explicitly unset now (either because its set to false, or it was set in checkedAndIndeterminate)
+                    continue;
+                }
+
+                // if it was true and now its false, remove it
+                if (item.Value == true && checkedState == false)
+                {
                     RemoveMediatagFromMedia(Guid.Parse(item.Key), mediaItems);
                 }
 
@@ -208,12 +207,9 @@ namespace Thetacat.UI
             }
 
             // find all the tags to add
-            foreach (KeyValuePair<string, bool?> item in checkedAndIndeterminate)
+            foreach (KeyValuePair<string, bool?> item in checkedUncheckedAndIndeterminate)
             {
-                if (item.Value == null)
-                    continue;
-
-                if (item.Value == true)
+                if (item.Value is true)
                 {
                     if (!originalState.TryGetValue(item.Key, out bool? checkedState) 
                         || checkedState == null
@@ -227,6 +223,8 @@ namespace Thetacat.UI
                     }
                 }
             }
+
+            UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
         }
 
         private void _ShowHideMetatagPanel(MediaExplorerItem? context)

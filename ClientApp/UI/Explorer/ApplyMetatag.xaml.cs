@@ -18,7 +18,7 @@ using Thetacat.Standards;
 
 namespace Thetacat.UI.Explorer;
 
-public delegate void ApplyMetatagsDelegate(Dictionary<string, bool?> checkedAndIndeterminate, int vectorClock);
+public delegate void ApplyMetatagsDelegate(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock);
 
 /// <summary>
 /// Interaction logic for ApplyMetatag.xaml
@@ -116,15 +116,16 @@ public partial class ApplyMetatag : Window
     private void DoApply(object sender, RoutedEventArgs e)
     {
         // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedAndIndeterminate = Metatags.GetCheckedAndIndeterminateItems();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
 
-        m_applyDelegate(checkedAndIndeterminate, model.SelectedItemsVectorClock);
+        m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
     }
 
     private void DoRemove(object sender, RoutedEventArgs e)
     {
+        // sync the checked state between the tree control and the media items
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
 
+        m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
     }
-
-
 }

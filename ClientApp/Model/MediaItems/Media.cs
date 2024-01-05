@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Thetacat.Logging;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Types.Parallel;
