@@ -150,4 +150,22 @@ public partial class MetatagTreeView : UserControl
             SetItems(roots, schemaVersion, initialCheckboxState);
         }
     }
+
+    public Dictionary<string, bool?> GetCheckedAndIndeterminateItems()
+    {
+        Dictionary<string, bool?> checkedAndIndeterminedItems = new();
+
+        foreach (IMetatagTreeItem item in Model.Items)
+        {
+            item.Preorder(
+                (visiting, depth) =>
+                {
+                    if (visiting.Checked == null || visiting.Checked.Value)
+                        checkedAndIndeterminedItems.Add(visiting.ID, visiting.Checked);
+                },
+                0);
+        }
+
+        return checkedAndIndeterminedItems;
+    }
 }

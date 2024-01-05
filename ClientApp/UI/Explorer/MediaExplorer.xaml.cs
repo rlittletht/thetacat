@@ -17,6 +17,7 @@ using System.Windows.Shapes;
 using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.UI.Explorer;
@@ -64,6 +65,7 @@ namespace Thetacat.UI
         public void ResetContent(MediaExplorerCollection collection)
         {
             m_collection = collection;
+            m_selector.ResetCollection(collection);
             UpdateCollectionDimensions();
             ExplorerBox.ItemsSource = collection.ExplorerLines;
         }
@@ -130,28 +132,108 @@ namespace Thetacat.UI
 
         private ApplyMetatag? m_applyMetatagPanel = null;
 
+        private List<MediaItem> GetSelectedMediaItems(IEnumerable<MediaExplorerItem> selectedItems)
+        {
+            List<MediaItem> mediaItems = new();
+            ICatalog catalog = MainWindow._AppState.Catalog;
+
+            foreach (MediaExplorerItem item in selectedItems)
+            {
+                mediaItems.Add(catalog.Media.Items[item.MediaId]);
+            }
+
+            return mediaItems;
+        }
 
         private void UpdateMetatagPanelIfNecessary(IEnumerable<MediaExplorerItem> selectedItems)
         {
             if (m_applyMetatagPanel != null)
             {
-                List<MediaItem> mediaItems = new();
-                ICatalog catalog = MainWindow._AppState.Catalog;
-
-                foreach (MediaExplorerItem item in selectedItems)
-                {
-                    mediaItems.Add(catalog.Media.Items[item.MediaId]);
-                }
+                List<MediaItem> mediaItems = GetSelectedMediaItems(selectedItems);
 
                 m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema, m_selector.VectorClock);
             }
 
         }
+
+        void RemoveMediatagFromMedia(Guid mediaTagID, IEnumerable<MediaItem> selectedItems)
+        {
+            foreach (MediaItem item in selectedItems)
+            {
+                item.FRemoveMediaTag(mediaTagID);
+            }
+        }
+
+        void SetMediatagForMedia(MediaTag mediaTag, IEnumerable<MediaItem> selectedItems)
+        {
+
+            foreach (MediaItem item in selectedItems)
+            {
+                item.FAddOrUpdateMediaTag(mediaTag);
+            }
+        }
+
+        void ApplySyncMetatags(Dictionary<string, bool?> checkedAndIndeterminate, int vectorClock)
+        {
+            MetatagSchema schema = MainWindow._AppState.MetatagSchema;
+
+            if (m_selector.VectorClock != vectorClock)
+            {
+                MessageBox.Show("Can't apply tags. Vector clock mismatch. Sorry.");
+                return;
+            }
+
+            List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+            Dictionary<string, bool?> originalState = ApplyMetatag.GetCheckedAndIndetermineFromMediaSet(mediaItems);
+
+            // find all the tags to remove
+            // TODO: Original state is going to include all the items outside the user root as well -- we don't want to 
+            // suddenly unset all of these because they aren't part of checkedAndIndeterminate (because those only
+            // consider the user rooted items).
+            foreach (KeyValuePair<string, bool?> item in originalState)
+            {
+                bool fNowSet = checkedAndIndeterminate.TryGetValue(item.Key, out bool? checkedState);
+
+                if (checkedState == null)
+                    continue;
+
+                if (item.Value == true && (checkedState is false || !fNowSet))
+                {
+                    // its explicitly unset now (either because its set to false, or it was set in checkedAndIndeterminate)
+                    RemoveMediatagFromMedia(Guid.Parse(item.Key), mediaItems);
+                }
+
+                if (item.Value == false)
+                    MessageBox.Show("Strange. We have a false in the checked/indeterminate");
+            }
+
+            // find all the tags to add
+            foreach (KeyValuePair<string, bool?> item in checkedAndIndeterminate)
+            {
+                if (item.Value == null)
+                    continue;
+
+                if (item.Value == true)
+                {
+                    if (!originalState.TryGetValue(item.Key, out bool? checkedState) 
+                        || checkedState == null
+                        || checkedState == false)
+                    {
+                        // it was originally unset(false), was indeterminate, or was false
+                        MediaTag mediaTag = MediaTag.CreateMediaTag(schema, Guid.Parse(item.Key), null);
+                        SetMediatagForMedia(mediaTag, mediaItems);
+
+                        m_metatagMRU.TouchMetatag(mediaTag.Metatag);
+                    }
+                }
+            }
+        }
+
         private void _ShowHideMetatagPanel(MediaExplorerItem? context)
         {
             if (m_applyMetatagPanel == null)
             {
-                m_applyMetatagPanel = new ApplyMetatag();
+                m_applyMetatagPanel = new ApplyMetatag(ApplySyncMetatags);
             }
 
             if (m_applyMetatagPanel.IsVisible)

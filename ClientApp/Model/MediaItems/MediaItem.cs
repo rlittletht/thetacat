@@ -395,6 +395,24 @@ public class MediaItem : INotifyPropertyChanged
         return changed;
     }
 
+    public bool FRemoveMediaTag(Guid mediaTagID)
+    {
+        bool ensuredBase = m_base == null;
+
+        EnsureBase();
+
+        if (!Tags.TryRemove(mediaTagID, out MediaTag? value))
+        {
+            if (ensuredBase)
+                ResetPendingChanges();
+
+            return false;
+        }
+
+        VectorClock++;
+        return true;
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: FAddOrUpdateMediaTag
         %%Qualified: Thetacat.Model.MediaItem.FAddOrUpdateMediaTag
