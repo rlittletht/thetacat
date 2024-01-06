@@ -153,101 +153,38 @@ public class MediaImport
             (report) => CreateCatalogAndUpdateImportTableWork(report, catalog, metatagSchema));
     }
 
-    private readonly List<ProducerConsumer<UploaderWork>> m_uploaderPipelines = new List<ProducerConsumer<UploaderWork>>();
+    /*----------------------------------------------------------------------------
+        %%Function: UploadMedia
+        %%Qualified: Thetacat.Import.MediaImport.UploadMedia
 
-    // remember, the work item is a copy and not the actual item
-    class UploaderWork : IPipelineBase<UploaderWork>
-    {
-        public PathSegment PathSource { get; set; }
-        public Guid ID { get; set; }
-        public ImportItem Item { get; set; }
-
-        public UploaderWork()
-        {
-        }
-
-        public UploaderWork(ImportItem item)
-        {
-            PathSource = PathSegment.Join(item.SourceServer, item.SourcePath);
-            ID = item.ID;
-            Item = item;
-        }
-
-        public void InitFrom(UploaderWork t)
-        {
-            PathSource = t.PathSource;
-            ID = t.ID;
-            Item = t.Item;
-        }
-    }
-
-    void DoUploaderWork(IEnumerable<UploaderWork> workItems)
-    {
-        foreach (UploaderWork item in workItems)
-        {
-            Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), item.PathSource.Local);
-            task.Wait();
-
-            TcBlob blob = task.Result;
-
-            MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
-
-            if (media.MD5 != blob.ContentMd5)
-            {
-                MessageBox.Show($"Strange. MD5 was wrong for {item.PathSource}: was {media.MD5} but blob calculated {blob.ContentMd5}");
-                media.MD5 = blob.ContentMd5;
-            }
-
-            item.Item.State = ImportItem.ImportState.Complete;
-            media.State = MediaItemState.Active;
-            item.Item.UploadDate = DateTime.Now;
-
-            ServiceInterop.CompleteImportForItem(item.ID);
-            MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.PathSource}");
-        }
-    }
-
-    private static int pipelineCount = 2;
-
+        No benefit to doing multiple of these in parallel -- the upload bandwidth
+        is likely the limiting factor. But do do this in the background to remain
+        responsive.
+    ----------------------------------------------------------------------------*/
     public async Task UploadMedia()
     {
-        if (m_uploaderPipelines.Count == 0)
-        {
-            for (int i = 0; i < pipelineCount; i++)
-            {
-                ProducerConsumer<UploaderWork> newPipeline = new ProducerConsumer<UploaderWork>(null, DoUploaderWork);
-                m_uploaderPipelines.Add(newPipeline);
-                newPipeline.Start();
-            }
-        }
-
         AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
-
-        int iPipeLast = 0;
 
         foreach (ImportItem item in ImportItems)
         {
             if (item.State == ImportItem.ImportState.PendingUpload)
             {
-                m_uploaderPipelines[iPipeLast].Producer.QueueRecord(new UploaderWork(item));
-                iPipeLast = (iPipeLast + 1) % pipelineCount;
+                PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
+                TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
+                MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
 
-//                PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
-//                TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
-//                MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
-//
-//                if (media.MD5 != blob.ContentMd5)
-//                {
-//                    MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
-//                    media.MD5 = blob.ContentMd5;
-//                }
-//
-//                item.State = ImportItem.ImportState.Complete;
-//                media.State = MediaItemState.Active;
-//                item.UploadDate = DateTime.Now;
-//
-//                ServiceInterop.CompleteImportForItem(item.ID);
-//                MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+                if (media.MD5 != blob.ContentMd5)
+                {
+                    MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                    media.MD5 = blob.ContentMd5;
+                }
+
+                item.State = ImportItem.ImportState.Complete;
+                media.State = MediaItemState.Active;
+                item.UploadDate = DateTime.Now;
+
+                ServiceInterop.CompleteImportForItem(item.ID);
+                MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
             }
 
             if (item.State == ImportItem.ImportState.MissingFromCatalog)

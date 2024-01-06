@@ -9,7 +9,9 @@ using System.Windows.Media.Animation;
 using HeyRed.Mime;
 using NUnit.Framework.Internal.Execution;
 using TCore;
+using TCore.Pipeline;
 using Thetacat.Azure;
+using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
@@ -294,7 +296,7 @@ public class Cache: ICache
 
         File.Copy(importSource.Local, fullLocalPath);
     }
-
+    
     public async Task DoForegroundCache(int chunkSize)
     {
         AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
