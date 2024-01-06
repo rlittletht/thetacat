@@ -180,7 +180,7 @@ namespace Thetacat
         {
             s_appState = new AppState(CloseAsyncLog, CloseAppLog);
             s_asyncLog = new CatLog(EventType.Information);
-            s_appLog = new CatLog(EventType.Verbose);
+            s_appLog = new CatLog(EventType.Information);
         }
 
         private void LaunchTest(object sender, RoutedEventArgs e)

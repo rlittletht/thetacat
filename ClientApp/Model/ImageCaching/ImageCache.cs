@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using TCore.Pipeline;
+using Thetacat.Logging;
 using Thetacat.Types;
 using Thetacat.UI;
 
@@ -125,20 +126,27 @@ public class ImageCache
     {
         foreach (ImageLoaderWork item in workItems)
         {
-            if (item.PathToImage == null)
+            if (item.PathToImage == null || item.PathToImage.Contains(".nef") || item.PathToImage.Contains(".psd"))
                 continue;
 
-            BitmapImage image = new BitmapImage();
-            image.BeginInit();
-            image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
-            image.UriSource = new Uri(item.PathToImage);
-            image.EndInit();
-            image.Freeze();
-
-            if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
+            try
             {
-                cacheItem.Image = image;
-                TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
+                BitmapImage image = new BitmapImage();
+                image.BeginInit();
+                image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
+                image.UriSource = new Uri(item.PathToImage);
+                image.EndInit();
+                image.Freeze();
+
+                if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
+                {
+                    cacheItem.Image = image;
+                    TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
+                }
+            }
+            catch (Exception e)
+            {
+                MainWindow.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
             }
         }
     }

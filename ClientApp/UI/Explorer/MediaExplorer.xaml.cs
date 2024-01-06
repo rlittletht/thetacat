@@ -22,6 +22,7 @@ using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.UI.Explorer;
 using Thetacat.UI.Explorer.Commands;
+using Thetacat.Util;
 using Image = System.Drawing.Image;
 
 namespace Thetacat.UI
@@ -90,6 +91,11 @@ namespace Thetacat.UI
         {
             if (m_collection != null)
             {
+                if (m_applyMetatagPanel != null)
+                {
+                    m_applyMetatagPanel.Close();
+                    m_applyMetatagPanel = null;
+                }
                 m_collection.Close();
                 m_collection = null;
             }
@@ -149,9 +155,12 @@ namespace Thetacat.UI
         {
             if (m_applyMetatagPanel != null)
             {
+                MicroTimer timer = new MicroTimer();
+                timer.Start();
                 List<MediaItem> mediaItems = GetSelectedMediaItems(selectedItems);
 
                 m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema, m_selector.VectorClock);
+                MainWindow.LogForApp(EventType.Warning, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
             }
 
         }

@@ -10,13 +10,13 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <HierarchicalDataTemplate x:Key="NonCheckableTemplate" DataType="local:CheckableMetatagTreeItem" ItemsSource="{Binding Children}" >
+        <HierarchicalDataTemplate x:Key="NonCheckableTemplate" DataType="{x:Type metatags:IMetatagTreeItem}" ItemsSource="{Binding Children}" >
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
                 <TextBlock Text="{Binding Description}" Margin="15,0,0,0" />
             </StackPanel>
         </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate x:Key="CheckableTemplate" DataType="local:CheckableMetatagTreeItem" ItemsSource="{Binding Children}" >
+        <HierarchicalDataTemplate x:Key="CheckableTemplate" DataType="{x:Type metatags:IMetatagTreeItem}" ItemsSource="{Binding Children}" >
             <StackPanel Orientation="Horizontal">
                 <CheckBox IsChecked="{Binding Checked}" IsThreeState="True" />
                 <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
@@ -37,11 +37,13 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}">
+<!--
             <TreeView.ItemContainerStyle>
                 <Style TargetType="{x:Type TreeViewItem}">
                     <Setter Property="IsExpanded" Value="True"/>
                 </Style>
             </TreeView.ItemContainerStyle>
+            -->
         </TreeView>
         <ContentControl Grid.Row="1">
             <ContentControl.Style>

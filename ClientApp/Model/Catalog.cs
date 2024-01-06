@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Documents;
+using Thetacat.Logging;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -80,6 +81,7 @@ public class Catalog: ICatalog
         ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
 
         IObservableConcurrentDictionary<Guid, MediaItem> dict = m_media.Items;
+        m_media.Items.PushPauseNotifications();
 
         dict.Clear();
         m_virtualLookupTable.Clear();
@@ -126,6 +128,8 @@ public class Catalog: ICatalog
             stacks.AddStack(mediaStack);
             AssociateStackWithMedia(mediaStack, stackType);
         }
+
+        m_media.Items.ResumeNotifications();
     }
 
     private void AssociateStackWithMedia(MediaStack stack, MediaStackType stackType)
@@ -180,7 +184,13 @@ public class Catalog: ICatalog
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath)
     {
         if (m_virtualLookupTable.Count == 0)
+        {
+            MicroTimer timer = new MicroTimer();
+            timer.Start();
+
             BuildVirtualLookup();
+            MainWindow.LogForApp(EventType.Warning, $"BuildVirtualLookup: {timer.Elapsed()}");
+        }
 
         string lookup = virtualPath.ToUpperInvariant();
         if (lookup.StartsWith("/"))

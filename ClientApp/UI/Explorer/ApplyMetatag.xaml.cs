@@ -11,10 +11,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Standards;
+using Thetacat.Util;
 
 namespace Thetacat.UI.Explorer;
 
@@ -38,6 +40,9 @@ public partial class ApplyMetatag : Window
 
     private void Set(MetatagSchema schema, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
     {
+        MicroTimer timer = new MicroTimer();
+        timer.Start();
+
         model.RootAvailable = new MetatagTree(schema.MetatagsWorking, null, null);
         model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, tagsSet.Union(tagsIndeterminate));
 
@@ -45,6 +50,7 @@ public partial class ApplyMetatag : Window
 
         Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
         MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
+        MainWindow.LogForApp(EventType.Warning, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 
     public static Dictionary<string, bool?> GetCheckedAndSetFromSetsAndIndeterminates(List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)

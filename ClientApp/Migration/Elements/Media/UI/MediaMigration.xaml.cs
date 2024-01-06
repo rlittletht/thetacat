@@ -18,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Thetacat.Controls;
 using Thetacat.Import;
+using Thetacat.Logging;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
@@ -196,6 +197,8 @@ public partial class MediaMigration : UserControl
             VerifyStatus.Visibility = Visibility.Collapsed;
             ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Stop();
             SetVerifyResult();
+            verifyTimer.Stop();
+            MainWindow.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer.Elapsed()}");
         }
     }
 
@@ -230,6 +233,7 @@ public partial class MediaMigration : UserControl
             (PseMediaItem item) => item.PathVerified == TriState.Yes && item.InCatalog == false);
     }
 
+    private MicroTimer? verifyTimer;
     /*----------------------------------------------------------------------------
         %%Function: VerifyPaths
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.VerifyPaths
@@ -263,8 +267,11 @@ public partial class MediaMigration : UserControl
         List<PseMediaItem> checkedItems = 
             CheckableListViewSupport<PseMediaItem>.GetCheckedItems(mediaItemsListView);
 
+        verifyTimer = new MicroTimer();
+        verifyTimer.Start();
+
         // split the list into 4 parts and do them in parallel
-        int segCount = 10;
+        int segCount = 4;
         int segLength = checkedItems.Count / segCount;
         int segStart = 0;
         for (int iSeg = 0; iSeg < segCount; iSeg++)

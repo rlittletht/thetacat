@@ -22,6 +22,19 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
     private readonly SynchronizationContext _context;
     private readonly ConcurrentDictionary<TKey, TValue> _dictionary;
 
+    private int m_pausedNotifications = 0;
+
+    public void PushPauseNotifications()
+    {
+        m_pausedNotifications++;
+    }
+
+    public void ResumeNotifications()
+    {
+        m_pausedNotifications--;
+        NotifyObserversOfChange();
+    }
+
     /// <summary>
     /// Initializes an instance of the ObservableConcurrentDictionary class.
     /// </summary>
@@ -42,6 +55,9 @@ public class ObservableConcurrentDictionary<TKey, TValue> : IObservableConcurren
     /// </summary>
     private void NotifyObserversOfChange()
     {
+        if (m_pausedNotifications > 0)
+            return;
+
         NotifyCollectionChangedEventHandler? collectionHandler = CollectionChanged;
         PropertyChangedEventHandler? propertyHandler = PropertyChanged;
 
