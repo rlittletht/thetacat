@@ -147,7 +147,7 @@ namespace Thetacat
             // list
 
             _AppState.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = _AppState.Catalog.Media.Items;
+            CatalogView.ItemsSource = _AppState.Catalog.GetObservableCollection();
             LocalServiceClient.LogService = LogForApp;
 
             if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
@@ -227,9 +227,9 @@ namespace Thetacat
             // build a group by date
             Dictionary<DateTime, List<Guid>> dateGrouping = new();
 
-            foreach (KeyValuePair<Guid, MediaItem> item in _AppState.Catalog.Media.Items)
+            foreach (MediaItem item in _AppState.Catalog.GetMediaCollection())
             {
-                DateTime date = GetLocalDateFromMedia(item.Value);
+                DateTime date = GetLocalDateFromMedia(item);
 
                 if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
                 {
@@ -237,7 +237,7 @@ namespace Thetacat
                     dateGrouping.Add(date, items);
                 }
 
-                items.Add(item.Value.ID);
+                items.Add(item.ID);
             }
 
             ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
@@ -251,7 +251,7 @@ namespace Thetacat
                 List<Guid> items = dateGrouping[date];
                 foreach (Guid id in items)
                 {
-                    MediaItem item = _AppState.Catalog.Media.Items[id];
+                    MediaItem item = _AppState.Catalog.GetMediaFromId(id);
                     m_collection.AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
                     newSegment = false;
                 }
@@ -379,8 +379,7 @@ namespace Thetacat
 
         private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            KeyValuePair<Guid, MediaItem>? selected = CatalogView.SelectedItem as KeyValuePair<Guid, MediaItem>?;
-            MediaItem? item = selected?.Value;
+            MediaItem? item = CatalogView.SelectedItem as MediaItem;
 
             if (item != null)
             {

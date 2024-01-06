@@ -254,12 +254,9 @@ public class Workgroup: IWorkgroup
         if (count <= 0)
             throw new ArgumentOutOfRangeException(nameof(count));
 
-        foreach (KeyValuePair<Guid, MediaItem> item in MainWindow._AppState.Catalog.Media.Items)
+        foreach (MediaItem item in MainWindow._AppState.Catalog.GetMediaCollection())
         {
-            if (item.Key != item.Value.ID)
-                throw new CatExceptionInternalFailure("key doesn't match id");
-
-            if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.Key) && !item.Value.IsCachePending)
+            if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.ID) && !item.IsCachePending)
             {
                 if (countToSkip > 0)
                 {
@@ -267,12 +264,12 @@ public class Workgroup: IWorkgroup
                     continue;
                 }
 
-                itemsToQueue.Add(item.Key, item.Value);
+                itemsToQueue.Add(item.ID, item);
 
                 // we will create this cache entry as Pending and set the vectorClock 0
-                CreateCacheEntryForItem(item.Value, null, true);
+                CreateCacheEntryForItem(item, null, true);
 
-                item.Value.IsCachePending = true;
+                item.IsCachePending = true;
 
                 if (--count == 0)
                     return itemsToQueue;

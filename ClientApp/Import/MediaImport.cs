@@ -163,7 +163,7 @@ public class MediaImport
                 PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
                 
                 TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
-                MediaItem media = MainWindow._AppState.Catalog.Media.Items[item.ID];
+                MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
 
                 if (media.MD5 != blob.ContentMd5)
                 {

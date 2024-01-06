@@ -1,18 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using Thetacat.Migration.Elements.Versions;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types.Parallel;
 
 namespace Thetacat.Types;
 
 public interface ICatalog
 {
-    public IMedia Media { get; }
     public void AddNewMediaItem(MediaItem item);
+    public MediaItem GetMediaFromId(Guid id);
+    public MediaItem GetMediaFromId(string id);
+    public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem);
+
+    public IEnumerable<MediaItem> GetMediaCollection();
+    public ObservableCollection<MediaItem> GetObservableCollection();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);
-    //public void FlushPendingCreates();
     public void PushPendingChanges();
     public void ReadFullCatalogFromServer(MetatagSchema schema);
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);

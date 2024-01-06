@@ -145,7 +145,7 @@ namespace Thetacat.UI
 
             foreach (MediaExplorerItem item in selectedItems)
             {
-                mediaItems.Add(catalog.Media.Items[item.MediaId]);
+                mediaItems.Add(catalog.GetMediaFromId(item.MediaId));
             }
 
             return mediaItems;
@@ -262,7 +262,7 @@ namespace Thetacat.UI
             {
                 Model.ExplorerContextMenu.AppliedTags.Clear();
 
-                if (MainWindow._AppState.Catalog.Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+                if (MainWindow._AppState.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
                 {
                     foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
                     {

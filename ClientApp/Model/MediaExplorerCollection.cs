@@ -157,7 +157,7 @@ public class MediaExplorerCollection
                 {
                     foreach (MediaExplorerItem item in line.Items)
                     {
-                        if (catalog.Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
+                        if (catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
                         {
                             string? path = cache.TryGetCachedFullPath(item.MediaId);
 

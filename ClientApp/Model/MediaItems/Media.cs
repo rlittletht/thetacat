@@ -7,7 +7,7 @@ using Thetacat.Types.Parallel;
 
 namespace Thetacat.Model;
 
-public class Media: IMedia
+public class Media
 {
     private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
 

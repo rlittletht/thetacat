@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Security.Cryptography;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
-using System.Windows.Documents;
 using Thetacat.Logging;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
@@ -15,20 +15,26 @@ namespace Thetacat.Model;
 
 // The catalog manages the following data (from the database):
 //  - Media Items (MediaItem)
-public class Catalog: ICatalog
+//  - Meditags (Mediatag)
+
+// It provides threadsafe access to the media
+// To bind to an observable collection, this will be maintained as an additional
+// dataset and lazily updated only on the UI thread (so it will not be suitable for enumerating
+// the true state of the catalog. its only a view)
+public class Catalog : ICatalog
 {
     private readonly Dictionary<MediaStackType, MediaStacks> m_mediaStacks;
     private readonly Media m_media;
 
-    public IMedia Media => (IMedia)m_media;
+    public MediaItem GetMediaFromId(Guid id) => m_media.Items[id];
+    public MediaItem GetMediaFromId(string id) => m_media.Items[Guid.Parse(id)];
+    public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
+
+    // BE CAREFUL WITH THIS! It will create a snapshot of the underlying data, which could be SLOW
+    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
 
     public MediaStacks VersionStacks => m_mediaStacks[MediaStackType.Version];
     public MediaStacks MediaStacks => m_mediaStacks[MediaStackType.Media];
-
-    //    public void Clear()
-    //    {
-    //        m_items.Clear();
-    //    }
 
     public Catalog()
     {
@@ -50,6 +56,8 @@ public class Catalog: ICatalog
 
         if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
+
+        AddToObservableCollection(item);
     }
 
     public bool HasMediaItem(Guid mediaId)
@@ -75,7 +83,6 @@ public class Catalog: ICatalog
         }
     }
 
-
     public void ReadFullCatalogFromServer(MetatagSchema schema)
     {
         ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
@@ -87,7 +94,7 @@ public class Catalog: ICatalog
         m_virtualLookupTable.Clear();
         if (catalog.MediaItems == null || catalog.MediaTags == null)
             return;
-        
+
         foreach (ServiceMediaItem item in catalog.MediaItems)
         {
             MediaItem mediaItem = new MediaItem(item);
@@ -130,28 +137,46 @@ public class Catalog: ICatalog
         }
 
         m_media.Items.ResumeNotifications();
-    }
-
-    private void AssociateStackWithMedia(MediaStack stack, MediaStackType stackType)
-    {
-        foreach (MediaStackItem item in stack.Items)
+        if (m_observableView != null)
         {
-            if (Media.Items.TryGetValue(item.MediaId, out MediaItem? mediaItem))
-            {
-                switch ((int)stackType)
-                {
-                    case MediaStackType.s_MediaType:
-                        mediaItem.MediaStack = stack.StackId;
-                        break;
-                    case MediaStackType.s_VersionType:
-                        mediaItem.VersionStack = stack.StackId;
-                        break;
-                    default:
-                        throw new CatExceptionInternalFailure($"unknown stack type {stackType}");
-                }
-            }
+            m_observableView.Clear();
+            m_observableView.ReplaceCollection(GetMediaCollection());
         }
     }
+
+    #region Observable Collection Support
+
+    private ObservableCollection<MediaItem>? m_observableView;
+
+    public ObservableCollection<MediaItem> GetObservableCollection()
+    {
+        if (m_observableView == null)
+        {
+            m_observableView = new ObservableCollection<MediaItem>(GetMediaCollection());
+        }
+
+        return m_observableView;
+    }
+
+    private void AddToObservableCollection(MediaItem item)
+    {
+        if (m_observableView == null)
+            return;
+
+        m_observableView.Add(item);
+    }
+
+    private void RemoveFromObservableCollection(MediaItem item)
+    {
+        if (m_observableView == null)
+            return;
+
+        m_observableView.Remove(item);
+    }
+
+#endregion
+
+    #region Virtual Paths
 
     private ConcurrentDictionary<string, MediaItem> m_virtualLookupTable = new ConcurrentDictionary<string, MediaItem>();
     private object m_virtualLookupTableLock = new Object();
@@ -176,9 +201,9 @@ public class Catalog: ICatalog
 
     private void BuildVirtualLookup()
     {
-        foreach (KeyValuePair<Guid, MediaItem> item in Media.Items)
+        foreach (MediaItem item in GetMediaCollection())
         {
-            AddToVirtualLookup(m_virtualLookupTable, item.Value);
+            AddToVirtualLookup(m_virtualLookupTable, item);
         }
     }
 
@@ -209,6 +234,31 @@ public class Catalog: ICatalog
         }
 
         return null;
+    }
+
+    #endregion
+
+    #region Media Stacks
+
+    private void AssociateStackWithMedia(MediaStack stack, MediaStackType stackType)
+    {
+        foreach (MediaStackItem item in stack.Items)
+        {
+            if (TryGetMedia(item.MediaId, out MediaItem? mediaItem))
+            {
+                switch ((int)stackType)
+                {
+                    case MediaStackType.s_MediaType:
+                        mediaItem.MediaStack = stack.StackId;
+                        break;
+                    case MediaStackType.s_VersionType:
+                        mediaItem.VersionStack = stack.StackId;
+                        break;
+                    default:
+                        throw new CatExceptionInternalFailure($"unknown stack type {stackType}");
+                }
+            }
+        }
     }
 
     /*----------------------------------------------------------------------------
@@ -253,7 +303,7 @@ public class Catalog: ICatalog
 
         bool pushNeeded = map.ContainsKey(index);
 
-        MediaItem mediaItem = Media.Items[mediaId];
+        MediaItem mediaItem = GetMediaFromId(mediaId);
 
         if (!pushNeeded && !renumberNeeded)
             // simplest. we're done
@@ -308,4 +358,6 @@ public class Catalog: ICatalog
         else
             throw new CatExceptionInternalFailure("unknown stack type");
     }
+
+#endregion
 }

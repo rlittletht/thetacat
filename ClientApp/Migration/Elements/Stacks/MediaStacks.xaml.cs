@@ -86,7 +86,7 @@ namespace Thetacat.Migration.Elements.Versions
 
             foreach (StackMigrateSummaryItem checkedItem in checkedItems)
             {
-                if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(checkedItem.MediaID, out MediaItem? catItem))
+                if (!MainWindow._AppState.Catalog.TryGetMedia(checkedItem.MediaID, out MediaItem? catItem))
                     throw new CatExceptionDataCoherencyFailure($"media not found for summary item: {checkedItem}");
 
                 MediaStacks stacks = MainWindow._AppState.Catalog.GetStacksFromType(checkedItem.StackType);

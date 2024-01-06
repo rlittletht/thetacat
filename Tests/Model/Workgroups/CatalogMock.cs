@@ -1,4 +1,6 @@
-﻿using Thetacat.Model;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
@@ -30,12 +32,19 @@ public class CatalogMock : ICatalog
         }
     }
 
-    public IMedia Media => m_media;
+    public Media Media => m_media;
 
     public void AddNewMediaItem(MediaItem item)
     {
         throw new NotImplementedException();
     }
+
+    public MediaItem GetMediaFromId(Guid id) => m_media.Items[id];
+    public MediaItem GetMediaFromId(string id) => m_media.Items[Guid.Parse(id)];
+    public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
+
+    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
 

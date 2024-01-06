@@ -12,9 +12,9 @@ public class TestCatalog
         foreach (MediaStackItem item in stack.Items)
         {
             if (stack.Type.Equals(MediaStackType.Media))
-                Assert.AreEqual(stack.StackId, catalog.Media.Items[item.MediaId].MediaStack);
+                Assert.AreEqual(stack.StackId, catalog.GetMediaFromId(item.MediaId).MediaStack);
             else if (stack.Type.Equals(MediaStackType.Version))
-                Assert.AreEqual(stack.StackId, catalog.Media.Items[item.MediaId].VersionStack);
+                Assert.AreEqual(stack.StackId, catalog.GetMediaFromId(item.MediaId).VersionStack);
             else
                 throw new CatExceptionInternalFailure("unknown stack type");
 

@@ -40,16 +40,16 @@
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=Key}">
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=ID}">
                                 <GridViewColumnHeader Tag="Key" Click="SortType" Content="Key" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value.VirtualPath}">
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
                                 <GridViewColumnHeader Tag="VirtualPath" Click="SortType" Content="VirtualPath" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value.State}">
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=State}">
                                 <GridViewColumnHeader Tag="State" Click="SortType" Content="State" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=Value.CacheStatus}">
+                            <GridViewColumn DisplayMemberBinding="{Binding Path=CacheStatus}">
                                 <GridViewColumnHeader Tag="Cached" Click="SortType" Content="Cached" />
                             </GridViewColumn>
                         </GridView.Columns>
