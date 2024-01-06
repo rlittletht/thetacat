@@ -109,6 +109,7 @@ public class TcSettings
     public void WriteSettings()
     {
         SubEnum = null;
+        Directory.CreateDirectory(Path.GetDirectoryName(m_settingsPath));
         using WriteFile<TcSettings> file = WriteFile<TcSettings>.CreateSettingsFile(XmlSettingsDescription, m_settingsPath, this);
 
         file.SerializeSettings(XmlSettingsDescription, this);

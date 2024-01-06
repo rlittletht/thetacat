@@ -38,7 +38,7 @@ namespace Thetacat.UI.Options
 
         public bool FSaveSettings()
         {
-            MainWindow._AppState.Settings.StorageContainer = _Model.StorageAccount;
+            MainWindow._AppState.Settings.AzureStorageAccount = _Model.StorageAccount;
             MainWindow._AppState.Settings.StorageContainer = _Model.Container;
             MainWindow._AppState.Settings.SqlConnection = _Model.SqlConnection;
 

@@ -21,7 +21,7 @@
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
     <PackageReference Include="TCore.Pipeline" Version="1.1.0" />
     <PackageReference Include="TCore.Sql" Version="2.2.3" />
-    <PackageReference Include="TCore.XmlSettings" Version="1.2.0" />
+    <PackageReference Include="TCore.XmlSettings" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
