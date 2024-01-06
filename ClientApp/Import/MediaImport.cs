@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -105,17 +106,14 @@ public class MediaImport
         }
     }
 
-    public void CreateCatalogItemsAndUpdateImportTable(ICatalog catalog, MetatagSchema metatagSchema)
+    private void CreateCatalogAndUpdateImportTableWork(IProgressReport report, ICatalog catalog, MetatagSchema metatagSchema)
     {
-        ProgressDialog progress = new ProgressDialog();
-        progress.Show();
-
         int total = ImportItems.Count;
         int current = 0;
 
         foreach (ImportItem item in ImportItems)
         {
-            progress.UpdateProgress((current * 1000) / total);
+            report.UpdateProgress((current * 100.0) / total);
             // create a new MediaItem for this item
             MediaItem mediaItem = new(item);
 
@@ -145,7 +143,13 @@ public class MediaImport
         // also flush any pending schema changes now
 
         ServiceInterop.InsertImportItems(ImportItems);
-        progress.Close();
+        report.WorkCompleted();
+    }
+
+    public void CreateCatalogItemsAndUpdateImportTable(ICatalog catalog, MetatagSchema metatagSchema)
+    {
+        ProgressDialog.DoWorkWithProgress(
+            (report) => CreateCatalogAndUpdateImportTableWork(report, catalog, metatagSchema));
     }
 
     public async Task UploadMedia()

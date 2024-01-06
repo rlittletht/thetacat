@@ -622,18 +622,20 @@ public class MediaItem : INotifyPropertyChanged
     ----------------------------------------------------------------------------*/
     public static string CalculateMD5Hash(string localPath)
     {
-        using FileStream fs = File.Open(
-            localPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read);
+        return Checksum.GetMD5ForPathSync(localPath);
 
-        using MD5 md5 = System.Security.Cryptography.MD5.Create();
-
-        byte[] hash = md5.ComputeHash(fs);
-
-        string fullContentMd5 = Convert.ToBase64String(hash);
-
-        return fullContentMd5;
+//        using FileStream fs = File.Open(
+//            localPath,
+//            FileMode.Open,
+//            FileAccess.Read,
+//            FileShare.Read);
+//
+//        using MD5 md5 = System.Security.Cryptography.MD5.Create();
+//
+//        byte[] hash = md5.ComputeHash(fs);
+//
+//        string fullContentMd5 = Convert.ToBase64String(hash);
+//
+//        return fullContentMd5;
     }
 }

@@ -31,6 +31,7 @@ using NUnit.Framework;
 using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
+using System.Threading;
 using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.UI.Options;
@@ -407,6 +408,21 @@ namespace Thetacat
         private void SelectSmallPreview(object sender, RoutedEventArgs e)
         {
             Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
+        }
+
+        void DoWork(IProgressReport report)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                Thread.Sleep(50);
+                report.UpdateProgress(i);
+            }
+            report.WorkCompleted();
+        }
+
+        private void TestProgressDialog(object sender, RoutedEventArgs e)
+        {
+            ProgressDialog.DoWorkWithProgress(DoWork, this);
         }
     }
 }

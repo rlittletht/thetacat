@@ -154,6 +154,7 @@ public class Catalog: ICatalog
     }
 
     private ConcurrentDictionary<string, MediaItem> m_virtualLookupTable = new ConcurrentDictionary<string, MediaItem>();
+    private object m_virtualLookupTableLock = new Object();
 
     private void AddToVirtualLookup(ConcurrentDictionary<string, MediaItem> lookupTable, MediaItem item)
     {
@@ -183,13 +184,16 @@ public class Catalog: ICatalog
 
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath)
     {
-        if (m_virtualLookupTable.Count == 0)
+        lock (m_virtualLookupTableLock)
         {
-            MicroTimer timer = new MicroTimer();
-            timer.Start();
+            if (m_virtualLookupTable.Count == 0)
+            {
+                MicroTimer timer = new MicroTimer();
+                timer.Start();
 
-            BuildVirtualLookup();
-            MainWindow.LogForApp(EventType.Warning, $"BuildVirtualLookup: {timer.Elapsed()}");
+                BuildVirtualLookup();
+                MainWindow.LogForApp(EventType.Warning, $"BuildVirtualLookup: {timer.Elapsed()}");
+            }
         }
 
         string lookup = virtualPath.ToUpperInvariant();

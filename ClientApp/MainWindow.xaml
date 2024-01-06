@@ -25,6 +25,9 @@
                 <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
                 <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
             </MenuItem>
+            <MenuItem Header="_Debug">
+                <MenuItem Header="Test Progress" Click="TestProgressDialog"/>
+            </MenuItem>
         </Menu>
         <Grid>
             <Grid.RowDefinitions>

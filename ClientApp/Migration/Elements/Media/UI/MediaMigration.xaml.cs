@@ -24,6 +24,7 @@ using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Model;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -305,6 +306,25 @@ public partial class MediaMigration : UserControl
         }
     }
 
+    private void DoPrePopulateWork(IProgressReport report, List<PseMediaItem> checkedItems)
+    {
+        int i = 0, iMax = checkedItems.Count;
+
+        foreach (PseMediaItem item in checkedItems)
+        {
+            report.UpdateProgress((i++ * 100.0) / iMax);
+            item.UpdateCatalogStatus();
+
+            // here we can pre-populate our cache.
+            MediaItem mediaItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
+            MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
+            mediaItem.NotifyCacheStatusChanged();
+            // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
+            // metadata?  There are some things that have to get updated when the catalog item is created...
+        }
+        report.WorkCompleted();
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: MigrateToCatalog
         %%Qualified: Thetacat.Migration.Elements.Metadata.UI.MediaMigration.MigrateToCatalog
@@ -325,18 +345,8 @@ public partial class MediaMigration : UserControl
             });
 
         import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
-        foreach (PseMediaItem item in checkedItems)
-        {
-            item.UpdateCatalogStatus();
+        ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
-            // here we can pre-populate our cache.
-            MediaItem mediaItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
-            MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
-            mediaItem.NotifyCacheStatusChanged();
-            // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
-            // metadata?  There are some things that have to get updated when the catalog item is created...
-
-        }
         // and lastly we have to add the items we just manually added to our cache
         // (we don't have any items we are tracking. these should all be adds)
         MainWindow._AppState.Cache.PushChangesToDatabase(null);
