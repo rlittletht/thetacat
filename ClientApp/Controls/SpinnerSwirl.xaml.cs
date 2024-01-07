@@ -9,9 +9,11 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Thetacat.Util;
 
 namespace Thetacat.Controls
 {
@@ -23,6 +25,26 @@ namespace Thetacat.Controls
         public SpinnerSwirl()
         {
             InitializeComponent();
+        }
+
+        public void Start()
+        {
+            ThreadContext.InvokeOnUiThread(
+                () =>
+                {
+                    Visibility = Visibility.Visible;
+                    ((Storyboard?)Resources.FindName("spinner"))?.Begin();
+                });
+        }
+
+        public void Stop()
+        {
+            ThreadContext.InvokeOnUiThread(
+                () =>
+                {
+                    Visibility = Visibility.Collapsed;
+                    ((Storyboard?)Resources.FindName("spinner"))?.Stop();
+                });
         }
     }
 }

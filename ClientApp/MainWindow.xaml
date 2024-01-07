@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat"
         xmlns:ui="clr-namespace:Thetacat.UI"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Closing="OnClosing">
     <Window.Resources>
@@ -21,19 +22,21 @@
             <MenuItem Header="_View">
                 <MenuItem Header="App log monitor" Click="ToggleAppLog" />
                 <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
-                <MenuItem Header="Large pictures" Click="SelectLargePreview"/>
+                <MenuItem Header="Large pictures" Click="SelectLargePreview" />
                 <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
                 <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
             </MenuItem>
             <MenuItem Header="_Debug">
-                <MenuItem Header="Test Progress" Click="TestProgressDialog"/>
+                <MenuItem Header="Test Progress" Click="TestProgressDialog" />
+                <MenuItem Header="Test QueueBackground Process (5 Second)" Click="StartBackground5s" />
+                <MenuItem Header="Test QueueBackground Process (1m Second)" Click="StartBackground1m" />
             </MenuItem>
         </Menu>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="6*" />
-                <RowDefinition Height="4*" />
-                <RowDefinition Height="48" />
+                <RowDefinition Height="7*" />
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <ui:MediaExplorer x:Name="Explorer" Grid.Row="0" />
             <ListView Name="CatalogView" Grid.Row="1" MouseDoubleClick="HandleDoubleClick">
@@ -61,8 +64,12 @@
                     <ColumnDefinition Width="192" />
                     <ColumnDefinition Width="10*" />
                 </Grid.ColumnDefinitions>
-                <Image Name="TestImage" MaxWidth="192" Grid.Column="0" />
-                <Grid HorizontalAlignment="Right" Margin="0 10 0 5" Grid.Column="1">
+                <!-- Must make the background transparent in order to have the hittesting hit the entire region-->
+                <Grid Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
+                    <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                           VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed"/>
+                </Grid>
+                <Grid HorizontalAlignment="Right" Margin="0 4 0 5" Grid.Column="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="108" />
                         <ColumnDefinition Width="108" />
@@ -71,14 +78,14 @@
                         <ColumnDefinition Width="40.87" />
                     </Grid.ColumnDefinitions>
                     <Button Content="Download Cache" Click="DoCacheItems" IsDefault="True" Grid.Column="0" Height="24"
-                            Margin="5,4,0,5" />
+                            Margin="5,0,0,0" />
                     <Button Content="Upload Pending" Click="UploadItems" IsDefault="True" Grid.Column="1" Height="24"
-                            Margin="5,4,5,5" />
+                            Margin="5,0,5,0" />
                     <Button Content="Update Catalog" Click="UpdateMediaItems" IsDefault="True" Grid.Column="2"
                             Height="24"
-                            Margin="0,4,5,5" />
+                            Margin="0,0,5,0" />
                     <Button Content="Connect" Click="ConnectToDatabase" IsDefault="True" Grid.Column="3" Height="24"
-                            Margin="0,4,5,5" Grid.ColumnSpan="2" />
+                            Margin="0,0,5,0" Grid.ColumnSpan="2" />
                 </Grid>
             </Grid>
         </Grid>

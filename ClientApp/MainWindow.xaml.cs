@@ -47,6 +47,8 @@ using Thetacat.Util;
 using Image = System.Drawing.Image;
 using List = NUnit.Framework.List;
 using Thetacat.UI.Explorer;
+using Thetacat.UI.ProgressReporting;
+using BackgroundWorker = Thetacat.Util.BackgroundWorker;
 
 namespace Thetacat
 {
@@ -94,6 +96,7 @@ namespace Thetacat
         private static IAppState? s_appState;
         private static CatLog? s_asyncLog;
         private static CatLog? s_appLog;
+        private BackgroundWorkers m_mainBackgroundWorkers;
 
         public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
         public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
@@ -154,6 +157,8 @@ namespace Thetacat
                 ShowAsyncLog();
             if (_AppState.Settings.ShowAppLogOnStart ?? false)
                 ShowAppLog();
+
+            m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         }
 
         void OnClosing(object sender, EventArgs e)
@@ -422,6 +427,63 @@ namespace Thetacat
         private void TestProgressDialog(object sender, RoutedEventArgs e)
         {
             ProgressDialog.DoWorkWithProgress(DoWork, this);
+        }
+
+        private void BackgroundTestTask(IProgressReport progressReport, int totalMsec)
+        {
+            int interval = Math.Max(1, totalMsec / 50); // we want 50 updates
+            int elapsed = 0;
+
+            while (elapsed < totalMsec)
+            {
+                Thread.Sleep(interval);
+                elapsed += interval;
+                progressReport.UpdateProgress(((double)elapsed / totalMsec));
+            }
+            progressReport.WorkCompleted();
+        }
+
+        private void StartBackground5s(object sender, RoutedEventArgs e)
+        {
+            m_mainBackgroundWorkers.AddWork(
+                "background 5s test task",
+                (progress) => BackgroundTestTask(progress, 5000));
+        }
+
+        private void StartBackground1m(object sender, RoutedEventArgs e)
+        {
+            m_mainBackgroundWorkers.AddWork(
+                "background 1m test task",
+                (progress) => BackgroundTestTask(progress, 60000));
+        }
+
+        private ProgressListDialog? m_backgroundProgressDialog;
+
+        private void HandleSpinnerDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (m_backgroundProgressDialog == null)
+            {
+                m_backgroundProgressDialog = new ProgressListDialog();
+                m_backgroundProgressDialog.ProgressReports.ItemsSource = m_mainBackgroundWorkers.Workers;
+                m_backgroundProgressDialog.Owner = this;
+                m_backgroundProgressDialog.Show();
+                m_backgroundProgressDialog.Closing +=
+                    (_, _) =>
+                    {
+                        m_backgroundProgressDialog = null;
+                    };
+                m_backgroundProgressDialog.Show();
+            }
+        }
+
+        private int m_lastSpinnerClick = 0;
+
+        private void HandleSpinnerMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.Timestamp - m_lastSpinnerClick < 200)
+                HandleSpinnerDoubleClick(sender, e);
+
+            m_lastSpinnerClick = e.Timestamp;
         }
     }
 }
