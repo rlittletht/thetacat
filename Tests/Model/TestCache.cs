@@ -8,6 +8,7 @@ using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Tests.Model;
 
@@ -19,7 +20,12 @@ public class TestCache
     {
     }
 
-// DoForegroundCache is going to:
+    private static void AddWorkMock(string description, BackgroundWorkerWork work)
+    {
+
+    }
+
+// StartBackgroundCaching is going to:
     //   * Call RefreshWorkgroupMedia
     //        * Sync workgroup media (to know which items are already cached/being cached by other clients)
     //        * Get the workgroup vector clock
@@ -33,7 +39,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
         // which leaves us media items 1 and 4 to cache. 
 
-        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock, AddWorkMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
@@ -147,7 +153,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
         // which leaves us media items 1 and 4 to cache. 
 
-        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock, AddWorkMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
@@ -282,7 +288,7 @@ public class TestCache
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching all 4 itmes,
         // which leaves us with nothing to update
 
-        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock);
+        AppState state = new AppState(CloseMonitorMock, CloseMonitorMock, AddWorkMock);
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =

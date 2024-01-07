@@ -7,6 +7,13 @@ namespace Thetacat.UI;
 public class ProgressDialogModel: INotifyPropertyChanged
 {
     private int m_progressValue = 0;
+    private bool m_isIndeterminate = false;
+
+    public bool IsIndeterminate
+    {
+        get => m_isIndeterminate;
+        set => SetField(ref m_isIndeterminate, value);
+    }
 
     public int ProgressValue
     {

@@ -256,7 +256,9 @@ public class Workgroup: IWorkgroup
 
         foreach (MediaItem item in MainWindow._AppState.Catalog.GetMediaCollection())
         {
-            if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.ID) && !item.IsCachePending)
+            if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.ID) 
+                && !item.IsCachePending 
+                && item.State == MediaItemState.Active)
             {
                 if (countToSkip > 0)
                 {

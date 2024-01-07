@@ -303,11 +303,11 @@ namespace Thetacat
             }
         }
 
-        private async void DoCacheItems(object sender, RoutedEventArgs e)
+        private void DoCacheItems(object sender, RoutedEventArgs e)
         {
             try
             {
-                await _AppState.Cache.DoForegroundCache(100);
+                _AppState.Cache.StartBackgroundCaching(100);
             }
             catch (Exception ex)
             {
@@ -328,7 +328,7 @@ namespace Thetacat
                 return;
             }
 
-            await import.UploadMedia();
+            import.UploadMedia();
         }
 
         private AsyncLogMonitor? m_asyncLogMonitor;
@@ -431,6 +431,14 @@ namespace Thetacat
 
         private void BackgroundTestTask(IProgressReport progressReport, int totalMsec)
         {
+            bool fIndeterminate = true;
+
+            if (totalMsec < 0)
+            {
+                progressReport.SetIndeterminate();
+                totalMsec = -totalMsec;
+            }
+
             int interval = Math.Max(1, totalMsec / 50); // we want 50 updates
             int elapsed = 0;
 
@@ -438,7 +446,8 @@ namespace Thetacat
             {
                 Thread.Sleep(interval);
                 elapsed += interval;
-                progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
+                if (!fIndeterminate)
+                    progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
             }
             progressReport.WorkCompleted();
         }
@@ -455,6 +464,13 @@ namespace Thetacat
             _AppState.AddBackgroundWork(
                 "background 1m test task",
                 (progress) => BackgroundTestTask(progress, 60000));
+        }
+
+        private void StartBackground10sIndet(object sender, RoutedEventArgs e)
+        {
+            _AppState.AddBackgroundWork(
+                "background 1m test task",
+                (progress) => BackgroundTestTask(progress, -10000));
         }
 
         public void AddBackgroundWork(string description, BackgroundWorkerWork work)

@@ -8,6 +8,6 @@
         WindowStartupLocation="CenterOwner"
         Title="ProgressDialog" Height="100" Width="300">
     <Grid Margin="20">
-        <ProgressBar Minimum="0" Maximum="1000" Value="{Binding Path=ProgressValue}"/>
+        <ProgressBar Minimum="0" Maximum="1000" Value="{Binding Path=ProgressValue}" IsIndeterminate="{Binding Path=IsIndeterminate}"/>
     </Grid>
 </Window>

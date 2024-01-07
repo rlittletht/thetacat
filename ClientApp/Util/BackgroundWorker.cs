@@ -22,6 +22,12 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
         set => SetField(ref m_description, value);
     }
 
+    public bool IsIndeterminate
+    {
+        get => m_isIndeterminate;
+        set => SetField(ref m_isIndeterminate, value);
+    }
+
     public int TenthPercentComplete
     {
         get => m_tenthPercentComplete;
@@ -39,6 +45,7 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
     }
 
     private IProgressReport? m_progressInner;
+    private bool m_isIndeterminate;
 
     public void Start(IProgressReport? progress)
     {
@@ -71,5 +78,10 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
     public void WorkCompleted()
     {
         m_progressInner?.WorkCompleted();
+    }
+
+    public void SetIndeterminate()
+    {
+        IsIndeterminate = true;
     }
 }

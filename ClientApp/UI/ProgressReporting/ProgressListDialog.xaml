@@ -19,6 +19,7 @@
                         <StackPanel Orientation="Vertical">
                             <TextBlock Text="{Binding Path=Description}" Margin="0,5,0,5"/>
                             <ProgressBar Minimum="0" Maximum="1000" Value="{Binding Path=TenthPercentComplete}"
+                                         IsIndeterminate="{Binding Path=IsIndeterminate}"
                                          Height="16"/>
                         </StackPanel>
                     </Grid>

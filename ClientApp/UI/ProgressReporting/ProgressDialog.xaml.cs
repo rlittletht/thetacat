@@ -18,6 +18,7 @@ namespace Thetacat.UI;
 public interface IProgressReport
 {
     public void UpdateProgress(double progress);
+    public void SetIndeterminate();
     public void WorkCompleted();
 }
 
@@ -46,6 +47,11 @@ public partial class ProgressDialog : Window, IProgressReport
     {
         Model.ProgressValue = 1000;
         Application.Current.Dispatcher.Invoke(Close);
+    }
+
+    public void SetIndeterminate()
+    {
+        Model.IsIndeterminate = true;
     }
 
     public ProgressDialog()

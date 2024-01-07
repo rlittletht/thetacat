@@ -17,7 +17,7 @@ public interface ICache
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
     public bool IsItemCached(Guid id);
-    public Task DoForegroundCache(int chunkSize);
+    public void StartBackgroundCaching(int chunkSize);
     public void PrimeCacheFromImport(MediaItem item, PathSegment importSource);
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
     public string? TryGetCachedFullPath(Guid id);

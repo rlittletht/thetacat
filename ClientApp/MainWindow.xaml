@@ -30,6 +30,7 @@
                 <MenuItem Header="Test Progress" Click="TestProgressDialog" />
                 <MenuItem Header="Test QueueBackground Process (5 Second)" Click="StartBackground5s" />
                 <MenuItem Header="Test QueueBackground Process (1m Second)" Click="StartBackground1m" />
+                <MenuItem Header="Test Indeterminate Background Process (10s Second)" Click="StartBackground10sIndet" />
             </MenuItem>
         </Menu>
         <Grid>

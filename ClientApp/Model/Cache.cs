@@ -16,6 +16,7 @@ using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.Util;
 
 namespace Thetacat.Model;
@@ -296,37 +297,92 @@ public class Cache: ICache
 
         File.Copy(importSource.Local, fullLocalPath);
     }
-    
-    public async Task DoForegroundCache(int chunkSize)
+
+    public void DoCacheWork(IProgressReport progressReport, int chunkSize)
     {
+        // this is an indeterminate progress report, so just report infinately
+
         AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+        progressReport.SetIndeterminate();
 
         QueueCacheDownloads(chunkSize);
 
-        // and now download
-        while (m_cacheQueue.TryDequeue(out MediaItem? item))
+        while (m_cacheQueue.IsEmpty == false)
         {
-            ICacheEntry cacheEntry = Entries[item.ID];
-
-            if (cacheEntry.LocalPending)
+            // and now download what we queued
+            while (m_cacheQueue.TryDequeue(out MediaItem? item))
             {
-                // first thing, unmark it since its no longer in our queue to download
-                // (if it fails, we will want to do it again...)
-                cacheEntry.LocalPending = false;
-                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
-                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
-                {
+                ICacheEntry cacheEntry = Entries[item.ID];
 
-                    item.LocalPath = fullLocalPath;
-                    item.IsCachePending = false;
+                if (cacheEntry.LocalPending)
+                {
+                    // first thing, unmark it since its no longer in our queue to download
+                    // (if it fails, we will want to do it again...)
                     cacheEntry.LocalPending = false;
-                    cacheEntry.CachedDate = DateTime.Now;
-                    item.NotifyCacheStatusChanged();
+                    string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
+                    Task<bool> task = FEnsureMediaItemDownloadedToCache(item, fullLocalPath);
+
+                    task.Wait();
+                    if (task.IsCanceled || task.IsFaulted)
+                    {
+                        MainWindow.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
+                        _Workgroup.PushChangesToDatabase(null);
+                        return;
+                    }
+                    if (task.Result)
+                    {
+
+                        item.LocalPath = fullLocalPath;
+                        item.IsCachePending = false;
+                        cacheEntry.LocalPending = false;
+                        cacheEntry.CachedDate = DateTime.Now;
+                        item.NotifyCacheStatusChanged();
+                    }
                 }
             }
-        }
 
-        _Workgroup.PushChangesToDatabase(null);
+            _Workgroup.PushChangesToDatabase(null);
+
+            // and do it again, until we don't have any left to cache
+            QueueCacheDownloads(chunkSize);
+        }
+        progressReport.WorkCompleted();
+    }
+
+    public void StartBackgroundCaching(int chunkSize)
+    {
+        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+
+        MainWindow._AppState.AddBackgroundWork(
+            "Populating cache from Azure",
+            (progress) => DoCacheWork(progress, chunkSize));
+//
+//        QueueCacheDownloads(chunkSize);
+//
+//        // and now download
+//        while (m_cacheQueue.TryDequeue(out MediaItem? item))
+//        {
+//            ICacheEntry cacheEntry = Entries[item.ID];
+//
+//            if (cacheEntry.LocalPending)
+//            {
+//                // first thing, unmark it since its no longer in our queue to download
+//                // (if it fails, we will want to do it again...)
+//                cacheEntry.LocalPending = false;
+//                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
+//                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
+//                {
+//
+//                    item.LocalPath = fullLocalPath;
+//                    item.IsCachePending = false;
+//                    cacheEntry.LocalPending = false;
+//                    cacheEntry.CachedDate = DateTime.Now;
+//                    item.NotifyCacheStatusChanged();
+//                }
+//            }
+//        }
+//
+//        _Workgroup.PushChangesToDatabase(null);
     }
 
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)

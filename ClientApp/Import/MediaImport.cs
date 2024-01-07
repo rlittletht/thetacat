@@ -162,9 +162,10 @@ public class MediaImport
 
             foreach (ImportItem item in ImportItems)
             {
+                i++;
                 progress.UpdateProgress((i * 100.0) / iMax);
 
-                if (item.State == ImportItem.ImportState.PendingUpload)
+                if (item.State == ImportItem.ImportState.PendingUpload && !item.SourcePath.Local.EndsWith("MOV"))
                 {
                     PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
                     Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
@@ -215,7 +216,7 @@ public class MediaImport
         is likely the limiting factor. But do do this in the background to remain
         responsive.
     ----------------------------------------------------------------------------*/
-    public async Task UploadMedia()
+    public void UploadMedia()
     {
         AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
 
