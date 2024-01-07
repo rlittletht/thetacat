@@ -64,7 +64,7 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
 
     public void UpdateProgress(double progress)
     {
-        TenthPercentComplete = (int)Math.Round((progress * 1000));
+        TenthPercentComplete = (int)Math.Round((progress * 10));
         m_progressInner?.UpdateProgress(progress);
     }
 

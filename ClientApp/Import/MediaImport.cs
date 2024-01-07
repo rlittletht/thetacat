@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
@@ -153,6 +154,59 @@ public class MediaImport
             (report) => CreateCatalogAndUpdateImportTableWork(report, catalog, metatagSchema));
     }
 
+    private void UploadPendingMediaWork(IProgressReport progress)
+    {
+        try
+        {
+            int i = 0, iMax = ImportItems.Count;
+
+            foreach (ImportItem item in ImportItems)
+            {
+                progress.UpdateProgress((i * 100.0) / iMax);
+
+                if (item.State == ImportItem.ImportState.PendingUpload)
+                {
+                    PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
+                    Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
+
+                    task.Wait();
+
+                    if (task.IsCanceled || task.IsFaulted)
+                    {
+                        MainWindow.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
+                        return;
+                    }
+
+                    TcBlob blob = task.Result;
+                    MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
+
+                    if (media.MD5 != blob.ContentMd5)
+                    {
+                        MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                        media.MD5 = blob.ContentMd5;
+                    }
+
+                    item.State = ImportItem.ImportState.Complete;
+                    media.State = MediaItemState.Active;
+                    item.UploadDate = DateTime.Now;
+
+                    ServiceInterop.CompleteImportForItem(item.ID);
+                    MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+                }
+
+                if (item.State == ImportItem.ImportState.MissingFromCatalog)
+                {
+                    ServiceInterop.DeleteImportItem(item.ID);
+                    MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
+                }
+            }
+        }
+        finally
+        {
+            progress.WorkCompleted();
+        }
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: UploadMedia
         %%Qualified: Thetacat.Import.MediaImport.UploadMedia
@@ -165,33 +219,6 @@ public class MediaImport
     {
         AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
 
-        foreach (ImportItem item in ImportItems)
-        {
-            if (item.State == ImportItem.ImportState.PendingUpload)
-            {
-                PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
-                TcBlob blob = await AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
-                MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
-
-                if (media.MD5 != blob.ContentMd5)
-                {
-                    MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
-                    media.MD5 = blob.ContentMd5;
-                }
-
-                item.State = ImportItem.ImportState.Complete;
-                media.State = MediaItemState.Active;
-                item.UploadDate = DateTime.Now;
-
-                ServiceInterop.CompleteImportForItem(item.ID);
-                MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
-            }
-
-            if (item.State == ImportItem.ImportState.MissingFromCatalog)
-            {
-                ServiceInterop.DeleteImportItem(item.ID);
-                MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
-            }
-        }
+        MainWindow._AppState.AddBackgroundWork("Uploading pending media",  UploadPendingMediaWork);
     }
 }

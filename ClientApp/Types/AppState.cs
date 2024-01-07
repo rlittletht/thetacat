@@ -4,15 +4,18 @@ using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
+using Thetacat.Util;
 
 namespace Thetacat.Types;
 
 public class AppState : IAppState
 {
     public delegate void CloseLogMonitorDelegate(bool skipClose);
-
+    public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork work);
     private readonly CloseLogMonitorDelegate? m_closeAsyncLog;
     private readonly CloseLogMonitorDelegate? m_closeAppLog;
+    private readonly AddBackgroundWorkDelegate m_addBackgroundWork;
+
     public TcSettings.TcSettings Settings { get; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
@@ -21,6 +24,7 @@ public class AppState : IAppState
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
     public string AzureStorageAccount => MainWindow._AppState.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
     public string StorageContainer => MainWindow._AppState.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
+    public void AddBackgroundWork(string description, BackgroundWorkerWork work) => m_addBackgroundWork(description, work);
 
     public void RefreshMetatagSchema()
     {
@@ -37,7 +41,7 @@ public class AppState : IAppState
         Catalog = catalog;
     }
 
-    public AppState(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
+    public AppState(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate, AddBackgroundWorkDelegate addBackgroundWork)
     {
         Settings = new TcSettings.TcSettings();
         AppSecrets.MasterSqlConnectionString = Settings.SqlConnection ?? String.Empty;
@@ -47,6 +51,7 @@ public class AppState : IAppState
         Cache = new Cache(Settings);
         m_closeAsyncLog = closeAsyncLogDelegate;
         m_closeAppLog = closeAppLogDelegate;
+        m_addBackgroundWork = addBackgroundWork;
     }
 
     public void RegisterWindowPlace(Window window, string key)

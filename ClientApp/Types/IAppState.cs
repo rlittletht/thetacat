@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
+using Thetacat.Util;
 
 namespace Thetacat.Types;
 
@@ -22,4 +23,5 @@ public interface IAppState
     void RefreshMetatagSchema();
     void CloseAsyncLogMonitor(bool skipClose);
     void CloseAppLogMonitor(bool skipClose);
+    public void AddBackgroundWork(string description, BackgroundWorkerWork work);
 }

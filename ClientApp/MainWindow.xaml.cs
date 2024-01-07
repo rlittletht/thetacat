@@ -184,7 +184,7 @@ namespace Thetacat
 
         void InitializeThetacat()
         {
-            s_appState = new AppState(CloseAsyncLog, CloseAppLog);
+            s_appState = new AppState(CloseAsyncLog, CloseAppLog, AddBackgroundWork);
             s_asyncLog = new CatLog(EventType.Information);
             s_appLog = new CatLog(EventType.Information);
         }
@@ -438,23 +438,28 @@ namespace Thetacat
             {
                 Thread.Sleep(interval);
                 elapsed += interval;
-                progressReport.UpdateProgress(((double)elapsed / totalMsec));
+                progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
             }
             progressReport.WorkCompleted();
         }
 
         private void StartBackground5s(object sender, RoutedEventArgs e)
         {
-            m_mainBackgroundWorkers.AddWork(
+            _AppState.AddBackgroundWork(
                 "background 5s test task",
                 (progress) => BackgroundTestTask(progress, 5000));
         }
 
         private void StartBackground1m(object sender, RoutedEventArgs e)
         {
-            m_mainBackgroundWorkers.AddWork(
+            _AppState.AddBackgroundWork(
                 "background 1m test task",
                 (progress) => BackgroundTestTask(progress, 60000));
+        }
+
+        public void AddBackgroundWork(string description, BackgroundWorkerWork work)
+        {
+            m_mainBackgroundWorkers.AddWork(description, work);
         }
 
         private ProgressListDialog? m_backgroundProgressDialog;
