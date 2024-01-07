@@ -28,7 +28,7 @@ public class Media
             (id, metatag, value)
         VALUES ";
 
-    public static void ExecutePartedCommands<T>(string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
+    public static void ExecutePartedCommands<T>(Sql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -45,7 +45,7 @@ public class Media
                 if (!string.IsNullOrWhiteSpace(command))
                 {
                     LocalServiceClient.LogService?.Invoke(EventType.Verbose, command);
-                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
                     current = 0;
                 }
 
@@ -68,7 +68,7 @@ public class Media
             if (!string.IsNullOrWhiteSpace(sCmd))
             {
                 LocalServiceClient.LogService?.Invoke(EventType.Verbose, sCmd);
-                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
             }
         }
     }
@@ -83,9 +83,9 @@ public class Media
     public static void InsertNewMediaItems(IEnumerable<MediaItem> items)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
@@ -96,6 +96,7 @@ public class Media
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
             ExecutePartedCommands(
+                sql,
                 s_queryInsertMedia,
                 items,
                 item =>
@@ -119,6 +120,7 @@ public class Media
                 s_aliases);
 
             ExecutePartedCommands(
+                sql,
                 s_queryInsertMediaTag,
                 tagsToInsert,
                 item =>
@@ -126,16 +128,65 @@ public class Media
                 1000,
                 ", ",
                 s_aliases);
-
-
+            sql.Commit();
         }
         catch (Exception)
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
+        finally
+        {
+            sql.Close();
+        }
+    }
 
-        LocalServiceClient.Sql.Commit();
+    static readonly string s_queryFullCatalog = @"
+            SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_media$$.md5
+            FROM $$#tcat_media$$";
+
+    public static List<ServiceMediaItem> ReadFullCatalogMedia()
+    {
+        return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaItem>>(
+            s_queryFullCatalog,
+            s_aliases,
+            (SqlReader reader, Guid correlationId, ref List<ServiceMediaItem> building) =>
+            {
+                Guid mediaId = reader.Reader.GetGuid(0);
+                    building.Add(
+                        new ServiceMediaItem()
+                        {
+                            Id = mediaId,
+                            VirtualPath = reader.Reader.GetString(1),
+                            MimeType = reader.Reader.GetString(2),
+                            State = reader.Reader.GetString(3),
+                            MD5 = reader.Reader.GetString(4)
+                        });
+            });
+    }
+
+    static readonly string s_queryFullMediaTags = @"
+            SELECT $$tcat_mediatags$$.id, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value
+            FROM $$#tcat_mediatags$$";
+
+    public static List<ServiceMediaTag> ReadFullCatalogMediaTags()
+    {
+        HashSet<Guid> mediaAdded = new();
+
+        return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaTag>>(
+            s_queryFullMediaTags,
+            s_aliases,
+            (SqlReader reader, Guid correlationId, ref List<ServiceMediaTag> building) =>
+            {
+                Guid mediaId = reader.Reader.GetGuid(0);
+                building.Add(
+                    new ServiceMediaTag()
+                    {
+                        Id = reader.Reader.GetGuid(1),
+                        MediaId = mediaId,
+                        Value = reader.Reader.IsDBNull(2) ? null : reader.Reader.GetString(2)
+                    });
+            });
     }
 
     static readonly string s_queryFullCatalogWithTags = @"
@@ -143,7 +194,7 @@ public class Media
             FROM $$#tcat_media$$
             FULL OUTER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id";
 
-    public static ServiceCatalog ReadFullCatalog()
+    public static ServiceCatalog ReadFullCatalog_OldWithJoin()
     {
         HashSet<Guid> mediaAdded = new();
 
@@ -323,9 +374,9 @@ public class Media
     public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
@@ -336,6 +387,7 @@ public class Media
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
             ExecutePartedCommands(
+                sql,
                 string.Empty,
                 diffs,
                 diff =>
@@ -348,19 +400,24 @@ public class Media
                 s_aliases);
 
             ExecutePartedCommands(
+                sql,
                 string.Empty,
                 updateTags,
                 updateTag => updateTag,
                 1000,
                 " ",
                 s_aliases);
+
+            sql.Commit();
         }
         catch (Exception)
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
-
-        LocalServiceClient.Sql.Commit();
+        finally
+        {
+            sql.Close();
+        }
     }
 }

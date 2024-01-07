@@ -17,7 +17,7 @@ public class Metatags
     public static ServiceMetatagSchema GetMetatagSchema()
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -35,7 +35,7 @@ public class Metatags
         {
             ServiceMetatagSchema schema =
                 SqlReader.DoGenericMultiSetQueryDelegateRead<ServiceMetatagSchema>(
-                    LocalServiceClient.Sql,
+                    sql,
                     crid,
                     sQuery,
                     (SqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
@@ -71,8 +71,12 @@ public class Metatags
         {
             return new ServiceMetatagSchema()
                    {
-                       SchemaVersion = LocalServiceClient.Sql.NExecuteScalar(new SqlCommandTextInit(selectSchemaVersion)),
+                       SchemaVersion = sql.NExecuteScalar(new SqlCommandTextInit(selectSchemaVersion)),
                    };
+        }
+        finally
+        {
+            sql.Close();
         }
     }
 
@@ -175,18 +179,27 @@ public class Metatags
         // now build the boilerlate around the updates
         // (note that the CATCH block doesn't include the rollback -- that is included
         // automatically
-        string sql = WrapSqlTransactionTryCatch(
+        string cmd = WrapSqlTransactionTryCatch(
             BuildWrapSqlVersionCheckUpdate(
                 schemaDiff.BaseSchemaVersion,
                 string.Join("\n ", updates)),
             "select 0");
 
-        int result = LocalServiceClient.Sql.NExecuteScalar(new SqlCommandTextInit(sql));
+        Sql sql = LocalServiceClient.GetConnection();
 
-        if (result == 0)
+        try
         {
-            MessageBox.Show("Failed to update schema");
-            return;
+            int result = sql.NExecuteScalar(new SqlCommandTextInit(cmd));
+
+            if (result == 0)
+            {
+                MessageBox.Show("Failed to update schema");
+                return;
+            }
+        }
+        finally
+        {
+            sql.Close();
         }
     }
 }

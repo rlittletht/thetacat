@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Thetacat.Migration.Elements.Versions;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
@@ -22,7 +23,7 @@ public interface ICatalog
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);
     public void PushPendingChanges();
-    public void ReadFullCatalogFromServer(MetatagSchema schema);
+    /* async */ public Task ReadFullCatalogFromServer(MetatagSchema schema);
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
     public MediaStacks VersionStacks { get; }
     public MediaStacks MediaStacks { get; }

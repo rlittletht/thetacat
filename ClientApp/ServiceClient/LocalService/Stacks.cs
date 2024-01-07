@@ -25,7 +25,7 @@ public class Stacks
     public static List<ServiceStack> GetAllStacks()
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -39,7 +39,7 @@ public class Stacks
         {
             List<ServiceStack> stacks =
                 SqlReader.DoGenericQueryDelegateRead(
-                    LocalServiceClient.Sql,
+                    sql,
                     crid,
                     sQuery,
                     (SqlReader reader, Guid correlationId, ref List<ServiceStack> building) =>
@@ -79,6 +79,10 @@ public class Stacks
         {
             return new List<ServiceStack>();
         }
+        finally
+        {
+            sql.Close();
+        }
     }
 
     public static void AddInsertStackMediaToCommands(MediaStackDiff diff, List<string> updates)
@@ -115,7 +119,7 @@ public class Stacks
     public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
         List<string> commands = new();
 
@@ -123,7 +127,7 @@ public class Stacks
         {
             AddUpdatesForDiff(diff, commands);
         }
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
@@ -134,19 +138,24 @@ public class Stacks
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
             Media.ExecutePartedCommands(
+                sql,
                 string.Empty,
                 commands,
-                (command)=>command,
+                (command) => command,
                 1000,
                 " ",
                 s_aliases);
+
+            sql.Commit();
         }
         catch (Exception)
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
-
-        LocalServiceClient.Sql.Commit();
+        finally
+        {
+            sql.Close();
+        }
     }
 }

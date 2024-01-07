@@ -3,7 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using NUnit.Framework;
 using Thetacat.Logging;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
@@ -83,9 +86,37 @@ public class Catalog : ICatalog
         }
     }
 
-    public void ReadFullCatalogFromServer(MetatagSchema schema)
+    private async Task<ServiceCatalog> GetFullServiceCatalogAsync()
     {
-        ServiceCatalog catalog = ServiceInterop.ReadFullCatalog();
+        Task<List<ServiceMediaItem>> taskGetMedia =
+            Task.Run(ServiceInterop.ReadFullCatalogMedia);
+
+        Task<List<ServiceMediaTag>> taskGetMediaTags =
+            Task.Run(ServiceInterop.ReadFullCatalogMediaTags);
+
+        List<Task> tasks = new List<Task>() { taskGetMedia, taskGetMediaTags };
+
+        await Task.WhenAll(tasks);
+
+        return new ServiceCatalog()
+               {
+                   MediaItems = taskGetMedia.Result,
+                   MediaTags = taskGetMediaTags.Result
+               };
+    }
+
+    public async Task ReadFullCatalogFromServer(MetatagSchema schema)
+    {
+        MicroTimer timer = new MicroTimer();
+        timer.Reset();
+        timer.Start();
+
+        ServiceCatalog catalog = await GetFullServiceCatalogAsync();
+
+        MainWindow.LogForApp(EventType.Warning, $"ServiceInterop.ReadFullCatalog: {timer.Elapsed()}");
+
+        timer.Reset();
+        timer.Start();
 
         IObservableConcurrentDictionary<Guid, MediaItem> dict = m_media.Items;
         m_media.Items.PushPauseNotifications();
@@ -100,6 +131,10 @@ public class Catalog : ICatalog
             MediaItem mediaItem = new MediaItem(item);
             dict.Add(mediaItem.ID, mediaItem);
         }
+
+        MainWindow.LogForApp(EventType.Warning, $"Populate Media Dictionary: {timer.Elapsed()}");
+        timer.Reset();
+        timer.Start();
 
         bool refreshedSchema = false;
         foreach (ServiceMediaTag tag in catalog.MediaTags)
@@ -121,6 +156,10 @@ public class Catalog : ICatalog
             m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
 
+        MainWindow.LogForApp(EventType.Warning, $"MediaTags added: {timer.Elapsed()}");
+        timer.Reset();
+        timer.Start();
+
         // read all the version stacks
         MediaStacks.Clear();
         VersionStacks.Clear();
@@ -136,12 +175,18 @@ public class Catalog : ICatalog
             AssociateStackWithMedia(mediaStack, stackType);
         }
 
+        MainWindow.LogForApp(EventType.Warning, $"Stacks associated: {timer.Elapsed()}");
+        timer.Reset();
+        timer.Start();
+
         m_media.Items.ResumeNotifications();
         if (m_observableView != null)
         {
             m_observableView.Clear();
             m_observableView.ReplaceCollection(GetMediaCollection());
         }
+
+        MainWindow.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
     }
 
     #region Observable Collection Support

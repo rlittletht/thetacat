@@ -31,6 +31,7 @@ using NUnit.Framework;
 using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
+using System.Security.AccessControl;
 using System.Threading;
 using Thetacat.Import;
 using Thetacat.Model;
@@ -265,12 +266,16 @@ namespace Thetacat
             LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
         }
 
-        private void ConnectToDatabase(object sender, RoutedEventArgs e)
+        private async void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
             LogForApp(EventType.Information, "Beginning read catalog");
             MicroTimer timer = new MicroTimer();
 
-            _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+            await _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+
+            LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
+            timer.Reset();
+            timer.Start();
 
             List<MediaExplorerItem> explorerItems = new();
 
@@ -281,8 +286,11 @@ namespace Thetacat
             m_collection.UpdateItemsPerLine();
 
             LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
+            timer.Reset();
+            timer.Start();
 
             BuildTimelineCollectionFromMedia();
+            LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
 
             timer.Reset();
             timer.Start();
@@ -315,7 +323,7 @@ namespace Thetacat
             }
         }
 
-        private async void UploadItems(object sender, RoutedEventArgs e)
+        private void UploadItems(object sender, RoutedEventArgs e)
         {
             MediaImport? import = null;
 

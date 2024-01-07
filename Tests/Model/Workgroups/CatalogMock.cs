@@ -58,7 +58,7 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
-    public void ReadFullCatalogFromServer(MetatagSchema schema)
+    public Task ReadFullCatalogFromServer(MetatagSchema schema)
     {
         throw new NotImplementedException();
     }

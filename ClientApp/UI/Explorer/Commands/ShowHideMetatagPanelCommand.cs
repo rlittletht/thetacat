@@ -22,5 +22,7 @@ public class ShowHideMetatagPanelCommand : ICommand
         m_showHideDelegate(parameter as MediaExplorerItem);
     }
 
+#pragma warning disable CS0067
     public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
 }

@@ -12,31 +12,16 @@ public delegate void LogDelegate(EventType eventType, string log, string? detail
 
 public class LocalServiceClient
 {
-    private static Sql? m_sql;
     public static LogDelegate? LogService { get; set; }
 
-    public static Sql Sql
+    public static Sql GetConnection()
     {
-        get
-        {
-            if (m_sql == null)
-                throw new Exception("client not initialized");
-
-            return m_sql;
-        }
-    }
-
-    public static void EnsureConnected()
-    {
-        if (m_sql != null)
-            return;
-
         if (String.IsNullOrWhiteSpace(AppSecrets.MasterSqlConnectionString))
             throw new CatExceptionNoSqlConnection();
 
         try
         {
-            m_sql = Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
+            return Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
         }
         catch (Exception e)
         {
@@ -115,17 +100,18 @@ public class LocalServiceClient
         selectTags.AddAliases(aliases);
 
         string sQuery = selectTags.ToString();
+        Sql? sql = null;
 
         try
         {
-            LocalServiceClient.EnsureConnected();
+            sql = LocalServiceClient.GetConnection();
 
             T t =
                 SqlReader.DoGenericQueryDelegateRead(
-                    LocalServiceClient.Sql,
+                    sql,
                     crid,
                     sQuery,
-                    delegateReader, 
+                    delegateReader,
                     custDelegate);
 
             return t;
@@ -138,12 +124,16 @@ public class LocalServiceClient
         {
             return new T();
         }
+        finally
+        {
+            sql?.Close();
+        }
     }
 
     public static void DoGenericCommandWithAliases(string query, Dictionary<string, string> aliases, CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -154,7 +144,7 @@ public class LocalServiceClient
 
         try
         {
-            LocalServiceClient.Sql.ExecuteNonQuery(
+            sql.ExecuteNonQuery(
                 new SqlCommandTextInit(query, aliases),
                 custDelegate);
 
@@ -163,6 +153,10 @@ public class LocalServiceClient
         catch (TcSqlExceptionNoResults)
         {
             return;
+        }
+        finally
+        {
+            sql.Close();
         }
     }
 }

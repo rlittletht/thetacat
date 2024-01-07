@@ -25,5 +25,7 @@ public class SelectPanelCommand : ICommand
         MainWindow.LogForApp(EventType.Information, $"Invoke SelectPanel");
     }
 
+#pragma warning disable CS0067
     public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
 }

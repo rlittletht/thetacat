@@ -26,7 +26,7 @@ public class Import
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -39,7 +39,7 @@ public class Import
         {
             List<ServiceImportItem> importItems =
                 SqlReader.DoGenericQueryDelegateRead(
-                    LocalServiceClient.Sql,
+                    sql,
                     crid,
                     sQuery,
                     (SqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
@@ -65,6 +65,10 @@ public class Import
         {
             return new List<ServiceImportItem>();
         }
+        finally
+        {
+            sql.Close();
+        }
     }
 
     private static readonly string s_queryUpdateState = @"
@@ -80,13 +84,13 @@ public class Import
     public static void CompleteImportForItem(Guid id)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
-            LocalServiceClient.Sql.ExecuteNonQuery(
+            sql.ExecuteNonQuery(
                 new SqlCommandTextInit(s_queryUpdateState, s_aliases),
                 (cmd) =>
                 {
@@ -94,49 +98,53 @@ public class Import
                     cmd.Parameters.AddWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.Complete));
                 });
 
-            LocalServiceClient.Sql.ExecuteNonQuery(
+            sql.ExecuteNonQuery(
                 new SqlCommandTextInit(s_updateMediaState, s_aliases),
                 (cmd) =>
                 {
                     cmd.Parameters.AddWithValue("@MediaID", id);
                     cmd.Parameters.AddWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
                 });
+
+            sql.Commit();
         }
         catch
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
         finally
         {
-            LocalServiceClient.Sql.Commit();
+            sql.Close();
         }
     }
 
     public static void DeleteImportItem(Guid id)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
 
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
-            LocalServiceClient.Sql.ExecuteNonQuery(
+            sql.ExecuteNonQuery(
                 new SqlCommandTextInit(s_deleteImportItem, s_aliases),
                 (cmd) =>
                 {
                     cmd.Parameters.AddWithValue("@MediaID", id);
                 });
+
+            sql.Commit();
         }
         catch
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
         finally
         {
-            LocalServiceClient.Sql.Commit();
+            sql.Close();
         }
     }
 
@@ -148,10 +156,10 @@ public class Import
     public static void InsertImportItems(IEnumerable<ImportItem> items)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        Sql sql = LocalServiceClient.GetConnection();
         StringBuilder sb = new StringBuilder();
 
-        LocalServiceClient.Sql.BeginTransaction();
+        sql.BeginTransaction();
 
         try
         {
@@ -164,7 +172,7 @@ public class Import
             {
                 if (current == 1000)
                 {
-                    LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
+                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
                     current = 0;
                     sb.Clear();
                     sb.Append(s_queryInsertImportItem);
@@ -180,14 +188,18 @@ public class Import
             }
 
             if (current > 0)
-                LocalServiceClient.Sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
+
+            sql.Commit();
         }
         catch (Exception)
         {
-            LocalServiceClient.Sql.Rollback();
+            sql.Rollback();
             throw;
         }
-
-        LocalServiceClient.Sql.Commit();
+        finally
+        {
+            sql.Close();
+        }
     }
 }

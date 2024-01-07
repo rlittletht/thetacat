@@ -50,8 +50,11 @@ public class ServiceInterop
 
     public static ServiceCatalog ReadFullCatalog()
     {
-        return LocalService.Media.ReadFullCatalog();
+        return LocalService.Media.ReadFullCatalog_OldWithJoin();
     }
+
+    public static List<ServiceMediaTag> ReadFullCatalogMediaTags() => LocalService.Media.ReadFullCatalogMediaTags();
+    public static List<ServiceMediaItem> ReadFullCatalogMedia() => LocalService.Media.ReadFullCatalogMedia();
 
     public static List<ServiceWorkgroup> GetAvailableWorkgroups()
     {
