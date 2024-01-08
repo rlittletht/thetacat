@@ -65,7 +65,7 @@ public class AzureCat
 
         if (m_catalogContainer == null)
         {
-            container = await OpenContainerForCatalog(MainWindow._AppState.StorageContainer);
+            container = await OpenContainerForCatalog(App.State.StorageContainer);
             if (container == null)
                 throw new CatExceptionAzureFailure();
         }
@@ -87,7 +87,7 @@ public class AzureCat
 
         if (m_catalogContainer == null)
         {
-            container = await OpenContainerForCatalog(MainWindow._AppState.StorageContainer);
+            container = await OpenContainerForCatalog(App.State.StorageContainer);
             if (container == null)
                 throw new CatExceptionAzureFailure();
         }

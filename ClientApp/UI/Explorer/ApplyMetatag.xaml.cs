@@ -35,7 +35,7 @@ public partial class ApplyMetatag : Window
         m_applyDelegate = applyDelegate;
         InitializeComponent();
         DataContext = model;
-        MainWindow._AppState.RegisterWindowPlace(this, "ApplyMetatagWindow");
+        App.State.RegisterWindowPlace(this, "ApplyMetatagWindow");
     }
 
     private void Set(MetatagSchema schema, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)

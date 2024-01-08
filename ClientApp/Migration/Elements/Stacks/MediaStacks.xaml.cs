@@ -86,10 +86,10 @@ namespace Thetacat.Migration.Elements.Versions
 
             foreach (StackMigrateSummaryItem checkedItem in checkedItems)
             {
-                if (!MainWindow._AppState.Catalog.TryGetMedia(checkedItem.MediaID, out MediaItem? catItem))
+                if (!App.State.Catalog.TryGetMedia(checkedItem.MediaID, out MediaItem? catItem))
                     throw new CatExceptionDataCoherencyFailure($"media not found for summary item: {checkedItem}");
 
-                MediaStacks stacks = MainWindow._AppState.Catalog.GetStacksFromType(checkedItem.StackType);
+                MediaStacks stacks = App.State.Catalog.GetStacksFromType(checkedItem.StackType);
 
                 // create the stack if necessary
                 if (!stacks.Items.TryGetValue(checkedItem.StackID, out MediaStack? stack))
@@ -100,7 +100,7 @@ namespace Thetacat.Migration.Elements.Versions
                     stacks.AddStack(stack);
                 }
 
-                MainWindow._AppState.Catalog.AddMediaToStackAtIndex(checkedItem.StackType, stack.StackId, checkedItem.MediaID, checkedItem.StackIndex);
+                App.State.Catalog.AddMediaToStackAtIndex(checkedItem.StackType, stack.StackId, checkedItem.MediaID, checkedItem.StackIndex);
             }
 
             m_migrateSummaryItems.Clear();

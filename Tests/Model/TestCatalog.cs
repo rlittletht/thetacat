@@ -29,7 +29,6 @@ public class TestCatalog
     public static void TestAddMediaToStackAtIndex_AddToEmptyStack()
     {
         Catalog catalog = new Catalog();
-        MainWindow.SetStateForTests(null);
 
         MediaStacks stacks = catalog.GetStacksFromType(MediaStackType.Version);
         MediaStack stack = stacks.CreateNewStack();
@@ -61,7 +60,6 @@ public class TestCatalog
     [Test]
     public static void TestAddMediaToStackAtIndex_AddToSingleItemStack_NoConflict()
     {
-        MainWindow.SetStateForTests(null);
         Catalog catalog = new Catalog();
         MediaStacks stacks = catalog.GetStacksFromType(MediaStackType.Version);
         MediaStack stack = stacks.CreateNewStack();

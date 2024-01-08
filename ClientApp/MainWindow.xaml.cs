@@ -65,7 +65,6 @@ namespace Thetacat
 #endregion
 
         public static bool InUnitTest { get; set; } = false;
-        private static IAppState? s_appState;
         private static CatLog? s_asyncLog;
         private static CatLog? s_appLog;
         private readonly BackgroundWorkers m_mainBackgroundWorkers;
@@ -93,8 +92,6 @@ namespace Thetacat
             }
         }
 
-        public static IAppState _AppState => App.State;
-
         public static string ClientName = Environment.MachineName;
 
         private MediaExplorerCollection m_collection;
@@ -105,7 +102,7 @@ namespace Thetacat
             InitializeThetacat();
 
             m_collection = new MediaExplorerCollection(14.0);
-            Explorer.SetExplorerItemSize(_AppState.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
+            Explorer.SetExplorerItemSize(App.State.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
             // we have to load the catalog AND the pending upload list
             // we also have to confirm that all the items int he pending
             // upload list still exist in the catalog, and if they don't
@@ -113,13 +110,13 @@ namespace Thetacat
             // they are already uploaded), then remove them from the import
             // list
 
-            _AppState.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = _AppState.Catalog.GetObservableCollection();
+            App.State.RegisterWindowPlace(this, "MainWindow");
+            CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
             LocalServiceClient.LogService = LogForApp;
 
-            if (_AppState.Settings.ShowAsyncLogOnStart ?? false)
+            if (App.State.Settings.ShowAsyncLogOnStart ?? false)
                 ShowAsyncLog();
-            if (_AppState.Settings.ShowAppLogOnStart ?? false)
+            if (App.State.Settings.ShowAppLogOnStart ?? false)
                 ShowAppLog();
 
             m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
@@ -127,8 +124,8 @@ namespace Thetacat
 
         void OnClosing(object sender, EventArgs e)
         {
-            _AppState.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
-            _AppState.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
+            App.State.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
+            App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
             m_collection.Close();
             Explorer.Close();
 
@@ -138,12 +135,7 @@ namespace Thetacat
             if (m_appLogMonitor != null)
                 CloseAppLog(false);
 
-            _AppState.Settings.WriteSettings();
-        }
-
-        public static void SetStateForTests(IAppState? appState)
-        {
-            s_appState = appState;
+            App.State.Settings.WriteSettings();
         }
 
         void InitializeThetacat()
@@ -182,7 +174,7 @@ namespace Thetacat
             if (mediaDate != null)
                 return mediaDate.Value.ToLocalTime().Date;
 
-            string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
+            string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
             if (path != null)
                 return File.GetCreationTime(path);
@@ -198,7 +190,7 @@ namespace Thetacat
             // build a group by date
             Dictionary<DateTime, List<Guid>> dateGrouping = new();
 
-            foreach (MediaItem item in _AppState.Catalog.GetMediaCollection())
+            foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
             {
                 DateTime date = GetLocalDateFromMedia(item);
 
@@ -222,7 +214,7 @@ namespace Thetacat
                 List<Guid> items = dateGrouping[date];
                 foreach (Guid id in items)
                 {
-                    MediaItem item = _AppState.Catalog.GetMediaFromId(id);
+                    MediaItem item = App.State.Catalog.GetMediaFromId(id);
                     m_collection.AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
                     newSegment = false;
                 }
@@ -236,7 +228,7 @@ namespace Thetacat
             LogForApp(EventType.Information, "Beginning read catalog");
             MicroTimer timer = new MicroTimer();
 
-            await _AppState.Catalog.ReadFullCatalogFromServer(_AppState.MetatagSchema);
+            await App.State.Catalog.ReadFullCatalogFromServer(App.State.MetatagSchema);
 
             LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
             timer.Reset();
@@ -262,7 +254,7 @@ namespace Thetacat
             LogForApp(EventType.Information, "Beginning reset content");
             Explorer.ResetContent(m_collection); // explorerItems);
 
-            AzureCat.EnsureCreated(_AppState.AzureStorageAccount);
+            AzureCat.EnsureCreated(App.State.AzureStorageAccount);
             LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
         }
 
@@ -272,7 +264,7 @@ namespace Thetacat
             if (options.ShowDialog() ?? false)
             {
                 options.SaveToSettings();
-                _AppState.Settings.WriteSettings();
+                App.State.Settings.WriteSettings();
             }
         }
 
@@ -280,7 +272,7 @@ namespace Thetacat
         {
             try
             {
-                _AppState.Cache.StartBackgroundCaching(100);
+                App.State.Cache.StartBackgroundCaching(100);
             }
             catch (Exception ex)
             {
@@ -369,7 +361,7 @@ namespace Thetacat
 
         private void UpdateMediaItems(object sender, RoutedEventArgs e)
         {
-            _AppState.Catalog.PushPendingChanges();
+            App.State.Catalog.PushPendingChanges();
         }
 
         private void SelectLargePreview(object sender, RoutedEventArgs e)
@@ -427,21 +419,21 @@ namespace Thetacat
 
         private void StartBackground5s(object sender, RoutedEventArgs e)
         {
-            _AppState.AddBackgroundWork(
+            App.State.AddBackgroundWork(
                 "background 5s test task",
                 (progress) => BackgroundTestTask(progress, 5000));
         }
 
         private void StartBackground1m(object sender, RoutedEventArgs e)
         {
-            _AppState.AddBackgroundWork(
+            App.State.AddBackgroundWork(
                 "background 1m test task",
                 (progress) => BackgroundTestTask(progress, 60000));
         }
 
         private void StartBackground10sIndet(object sender, RoutedEventArgs e)
         {
-            _AppState.AddBackgroundWork(
+            App.State.AddBackgroundWork(
                 "background 1m test task",
                 (progress) => BackgroundTestTask(progress, -10000));
         }

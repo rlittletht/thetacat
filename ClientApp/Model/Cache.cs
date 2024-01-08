@@ -230,7 +230,7 @@ public class Cache: ICache
             {
                 // add this to our queue
                 entry.Value.LocalPending = true;
-                MediaItem item = MainWindow._AppState.Catalog.GetMediaFromId(entry.Key);
+                MediaItem item = App.State.Catalog.GetMediaFromId(entry.Key);
                 item.IsCachePending = true;
                 m_cacheQueue.Enqueue(item);
                 chunkSize--; // since we just added one
@@ -253,7 +253,7 @@ public class Cache: ICache
 
     public void QueueCacheDownloads(int chunkSize)
     {
-        QueueCacheDownloadsFromMedia(MainWindow._AppState.Catalog.GetMediaCollection(), MainWindow._AppState.Cache, chunkSize);
+        QueueCacheDownloadsFromMedia(App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
     }
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
@@ -285,7 +285,7 @@ public class Cache: ICache
     {
         // we still have to make an entry in the cache db
         // since we are manually caching it right now, set the time to now and pending to false)
-        _Workgroup.CreateCacheEntryForItem(MainWindow._AppState.Cache, item, DateTime.Now, false);
+        _Workgroup.CreateCacheEntryForItem(App.State.Cache, item, DateTime.Now, false);
         // now get the destination path it wants us to use
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");
@@ -307,7 +307,7 @@ public class Cache: ICache
     {
         // this is an indeterminate progress report, so just report infinately
 
-        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
         progressReport.SetIndeterminate();
 
         QueueCacheDownloads(chunkSize);
@@ -356,9 +356,9 @@ public class Cache: ICache
 
     public void StartBackgroundCaching(int chunkSize)
     {
-        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
 
-        MainWindow._AppState.AddBackgroundWork(
+        App.State.AddBackgroundWork(
             "Populating cache from Azure",
             (progress) => DoCacheWork(progress, chunkSize));
 //

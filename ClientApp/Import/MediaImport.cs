@@ -70,7 +70,7 @@ public class MediaImport
 
         foreach (ServiceImportItem item in items)
         {
-            if (!MainWindow._AppState.Catalog.HasMediaItem(item.ID))
+            if (!App.State.Catalog.HasMediaItem(item.ID))
             {
                 MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
 
@@ -179,7 +179,7 @@ public class MediaImport
                     }
 
                     TcBlob blob = task.Result;
-                    MediaItem media = MainWindow._AppState.Catalog.GetMediaFromId(item.ID);
+                    MediaItem media = App.State.Catalog.GetMediaFromId(item.ID);
 
                     if (media.MD5 != blob.ContentMd5)
                     {
@@ -218,8 +218,8 @@ public class MediaImport
     ----------------------------------------------------------------------------*/
     public void UploadMedia()
     {
-        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
 
-        MainWindow._AppState.AddBackgroundWork("Uploading pending media",  UploadPendingMediaWork);
+        App.State.AddBackgroundWork("Uploading pending media",  UploadPendingMediaWork);
     }
 }

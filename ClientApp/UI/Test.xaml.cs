@@ -31,7 +31,7 @@ namespace Thetacat.UI
         {
             InitializeComponent();
 
-            MainWindow._AppState.RegisterWindowPlace(this, "MainWindow");
+            App.State.RegisterWindowPlace(this, "MainWindow");
         }
 
         SQLiteConnection OpenDatabase()

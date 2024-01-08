@@ -137,8 +137,8 @@ public class MediaExplorerCollection
         timer.Start();
         int minRow = Math.Max(row - RowsPerExplorer, 0);
         int maxRow = Math.Min(row + (2 * RowsPerExplorer), m_collection.TopCollection.Count - 1);
-        ICatalog catalog = MainWindow._AppState.Catalog;
-        ICache cache = MainWindow._AppState.Cache;
+        ICatalog catalog = App.State.Catalog;
+        ICache cache = App.State.Cache;
 
         MainWindow.LogForApp(EventType.Information, $"starting ensure images: {minRow}-{maxRow}");
 
@@ -180,7 +180,7 @@ public class MediaExplorerCollection
     
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
-        string? path = MainWindow._AppState.Cache.TryGetCachedFullPath(item.ID);
+        string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
         MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath, item.ID);
 

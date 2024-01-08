@@ -175,7 +175,7 @@ public class CacheConfigModel: INotifyPropertyChanged
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(MainWindow._AppState.Settings.SqlConnection))
+        if (string.IsNullOrWhiteSpace(App.State.Settings.SqlConnection))
             return;
 
         try

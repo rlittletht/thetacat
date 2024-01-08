@@ -93,7 +93,7 @@ public partial class MediaTagMigrateSummary : UserControl
             if (metadataItem.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.GetMetatagFromId(metadataItem.CatID.Value);
+            Metatag? metatag = App.State.MetatagSchema.GetMetatagFromId(metadataItem.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {metadataItem.CatID.Value}");
@@ -130,7 +130,7 @@ public partial class MediaTagMigrateSummary : UserControl
             if (mediaTagValue.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.GetMetatagFromId(mediaTagValue.CatID.Value);
+            Metatag? metatag = App.State.MetatagSchema.GetMetatagFromId(mediaTagValue.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {mediaTagValue.CatID.Value}");
@@ -166,7 +166,7 @@ public partial class MediaTagMigrateSummary : UserControl
                 continue;
             }
 
-            MediaItem catItem = MainWindow._AppState.Catalog.GetMediaFromId(item.CatID);
+            MediaItem catItem = App.State.Catalog.GetMediaFromId(item.CatID);
 
             AddMetadataValuesToMigrationItems(item, catItem);
             AddMetatagsToMirationItems(item, catItem);
@@ -182,7 +182,7 @@ public partial class MediaTagMigrateSummary : UserControl
     ----------------------------------------------------------------------------*/
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        MetatagSchemaDiff diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
+        MetatagSchemaDiff diff = App.State.MetatagSchema.BuildDiffForSchemas();
 
         if (!diff.IsEmpty)
         {
@@ -195,7 +195,7 @@ public partial class MediaTagMigrateSummary : UserControl
 
         foreach (MediaTagMigrateItem item in checkedItems)
         {
-            if (!MainWindow._AppState.Catalog.TryGetMedia(item.MediaID, out MediaItem? catItem))
+            if (!App.State.Catalog.TryGetMedia(item.MediaID, out MediaItem? catItem))
             {
                 MainWindow.LogForApp(EventType.Warning, $"can't find media item {item}");
             }

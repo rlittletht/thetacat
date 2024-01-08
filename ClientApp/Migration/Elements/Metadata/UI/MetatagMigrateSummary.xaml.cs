@@ -61,7 +61,7 @@ public partial class MetadataMigrateSummary : UserControl
     public void RebuildSchemaDiff()
     {
         // build the schema differences for all the metadata and metatag migration tabs
-        m_diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
+        m_diff = App.State.MetatagSchema.BuildDiffForSchemas();
         m_metatagMigrationItems.Clear();
 
         foreach (MetatagSchemaDiffOp op in m_diff.Ops)
@@ -78,7 +78,7 @@ public partial class MetadataMigrateSummary : UserControl
         // commit all the diff ops
         ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
 
-        MainWindow._AppState.RefreshMetatagSchema();
+        App.State.RefreshMetatagSchema();
         _Migrate.ReloadSchemas();
         RebuildSchemaDiff();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");

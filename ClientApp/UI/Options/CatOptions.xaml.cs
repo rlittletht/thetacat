@@ -25,7 +25,7 @@ public partial class CatOptions : Window
         InitializeComponent();
         CacheConfigTab.LoadFromSettings();
         AccountTab.LoadFromSettings();
-        MainWindow._AppState.RegisterWindowPlace(this, "CatOptions");
+        App.State.RegisterWindowPlace(this, "CatOptions");
     }
 
     public void SaveToSettings()
@@ -35,7 +35,7 @@ public partial class CatOptions : Window
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
 
-        MainWindow._AppState.Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
     }
 
     private void DoSave(object sender, RoutedEventArgs e)

@@ -133,7 +133,7 @@ namespace Thetacat.UI
         {
             m_itemSize = itemSize;
             SetModelFromExplorerItemSize(m_itemSize);
-            MainWindow._AppState.Settings.ExplorerItemSize = itemSize;
+            App.State.Settings.ExplorerItemSize = itemSize;
         }
 
         private ApplyMetatag? m_applyMetatagPanel = null;
@@ -141,7 +141,7 @@ namespace Thetacat.UI
         private List<MediaItem> GetSelectedMediaItems(IEnumerable<MediaExplorerItem> selectedItems)
         {
             List<MediaItem> mediaItems = new();
-            ICatalog catalog = MainWindow._AppState.Catalog;
+            ICatalog catalog = App.State.Catalog;
 
             foreach (MediaExplorerItem item in selectedItems)
             {
@@ -159,7 +159,7 @@ namespace Thetacat.UI
                 timer.Start();
                 List<MediaItem> mediaItems = GetSelectedMediaItems(selectedItems);
 
-                m_applyMetatagPanel.UpdateForMedia(mediaItems, MainWindow._AppState.MetatagSchema, m_selector.VectorClock);
+                m_applyMetatagPanel.UpdateForMedia(mediaItems, App.State.MetatagSchema, m_selector.VectorClock);
                 MainWindow.LogForApp(EventType.Warning, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
             }
 
@@ -184,7 +184,7 @@ namespace Thetacat.UI
 
         void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
         {
-            MetatagSchema schema = MainWindow._AppState.MetatagSchema;
+            MetatagSchema schema = App.State.MetatagSchema;
 
             if (m_selector.VectorClock != vectorClock)
             {
@@ -262,7 +262,7 @@ namespace Thetacat.UI
             {
                 Model.ExplorerContextMenu.AppliedTags.Clear();
 
-                if (MainWindow._AppState.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
+                if (App.State.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
                 {
                     foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
                     {

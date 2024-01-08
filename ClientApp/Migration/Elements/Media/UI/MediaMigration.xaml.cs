@@ -127,7 +127,7 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
-        foreach(TcSettings.TcSettings.MapPair subst in MainWindow._AppState.Settings.ElementsSubstitutions)
+        foreach(TcSettings.TcSettings.MapPair subst in App.State.Settings.ElementsSubstitutions)
 //        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
 //            string[] pair = s.Split(",");
@@ -245,10 +245,10 @@ public partial class MediaMigration : UserControl
 
         List<string> regValues = new();
 
-        MainWindow._AppState.Settings.ElementsSubstitutions.Clear();
+        App.State.Settings.ElementsSubstitutions.Clear();
         foreach (PathSubstitution sub in _Migrate.MediaMigrate.PathSubstitutions)
         {
-            MainWindow._AppState.Settings.ElementsSubstitutions.Add(
+            App.State.Settings.ElementsSubstitutions.Add(
                 new TcSettings.TcSettings.MapPair()
                 {
                     From = sub.From,
@@ -257,7 +257,7 @@ public partial class MediaMigration : UserControl
             pathSubst.Add(sub.From, sub.To);
         }
 
-        MainWindow._AppState.Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 
@@ -316,8 +316,8 @@ public partial class MediaMigration : UserControl
             item.UpdateCatalogStatus();
 
             // here we can pre-populate our cache.
-            MediaItem mediaItem = MainWindow._AppState.Catalog.GetMediaFromId(item.CatID);
-            MainWindow._AppState.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.CatID);
+            App.State.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
             mediaItem.NotifyCacheStatusChanged();
             // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
             // metadata?  There are some things that have to get updated when the catalog item is created...
@@ -344,12 +344,12 @@ public partial class MediaMigration : UserControl
                 pseItem.CatID = catalogItem.ID;
             });
 
-        import.CreateCatalogItemsAndUpdateImportTable(MainWindow._AppState.Catalog, MainWindow._AppState.MetatagSchema);
+        import.CreateCatalogItemsAndUpdateImportTable(App.State.Catalog, App.State.MetatagSchema);
         ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
         // and lastly we have to add the items we just manually added to our cache
         // (we don't have any items we are tracking. these should all be adds)
-        MainWindow._AppState.Cache.PushChangesToDatabase(null);
+        App.State.Cache.PushChangesToDatabase(null);
         _Migrate.ReloadSchemas();
     }
 

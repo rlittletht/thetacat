@@ -22,8 +22,8 @@ public class AppState : IAppState
     public ICatalog Catalog { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
-    public string AzureStorageAccount => MainWindow._AppState.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
-    public string StorageContainer => MainWindow._AppState.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
+    public string AzureStorageAccount => App.State.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
+    public string StorageContainer => App.State.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {

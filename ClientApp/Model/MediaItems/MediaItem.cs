@@ -130,7 +130,7 @@ public class MediaItem : INotifyPropertyChanged
         {
             SetField(ref Stacks[MediaStackType.Version], value);
             if (value != null)
-                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);
+                VerifyMediaInMediaStack(App.State.Catalog.VersionStacks, value.Value);
         }
     }
 
@@ -141,7 +141,7 @@ public class MediaItem : INotifyPropertyChanged
         {
             SetField(ref Stacks[MediaStackType.Media], value);
             if (value != null)
-                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.MediaStacks, value.Value);
+                VerifyMediaInMediaStack(App.State.Catalog.MediaStacks, value.Value);
         }
     }
 
@@ -287,7 +287,7 @@ public class MediaItem : INotifyPropertyChanged
 
 #region Cache Status/Media State
 
-    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
+    public string CacheStatus => App.State.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
 
     public void NotifyCacheStatusChanged()
     {

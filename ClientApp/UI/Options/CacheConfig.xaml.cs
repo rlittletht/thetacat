@@ -41,11 +41,11 @@ public partial class CacheConfig : UserControl
 
     public void LoadFromSettings()
     {
-        _Model.CacheLocation = MainWindow._AppState.Settings.CacheLocation ?? string.Empty;
-        _Model.SetCacheTypeFromString(MainWindow._AppState.Settings.CacheType ?? string.Empty);
-        if (MainWindow._AppState.Settings.WorkgroupId != null)
+        _Model.CacheLocation = App.State.Settings.CacheLocation ?? string.Empty;
+        _Model.SetCacheTypeFromString(App.State.Settings.CacheType ?? string.Empty);
+        if (App.State.Settings.WorkgroupId != null)
         {
-            _Model.WorkgroupID = MainWindow._AppState.Settings.WorkgroupId;
+            _Model.WorkgroupID = App.State.Settings.WorkgroupId;
             _Model.PopulateWorkgroups();
             _Model.SetWorkgroup(Guid.Parse(_Model.WorkgroupID));
             try
@@ -58,9 +58,9 @@ public partial class CacheConfig : UserControl
             }
             catch (Exception)
             {
-                _Model.WorkgroupName = MainWindow._AppState.Settings.WorkgroupName ?? String.Empty;
-                _Model.WorkgroupCacheRoot = MainWindow._AppState.Settings.WorkgroupCacheRoot ?? String.Empty;
-                _Model.WorkgroupServerPath = MainWindow._AppState.Settings.WorkgroupCacheServer ?? String.Empty;
+                _Model.WorkgroupName = App.State.Settings.WorkgroupName ?? String.Empty;
+                _Model.WorkgroupCacheRoot = App.State.Settings.WorkgroupCacheRoot ?? String.Empty;
+                _Model.WorkgroupServerPath = App.State.Settings.WorkgroupCacheServer ?? String.Empty;
             }
         }
     }
@@ -135,13 +135,13 @@ public partial class CacheConfig : UserControl
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
-        MainWindow._AppState.Settings.CacheLocation = _Model.CacheLocation;
+        App.State.Settings.CacheLocation = _Model.CacheLocation;
 
-        MainWindow._AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
+        App.State.Settings.CacheType = Cache.StringFromCacheType(cacheType);
 
         if (cacheType == Cache.CacheType.Private)
         {
-            MainWindow._AppState.Settings.WorkgroupId = null;
+            App.State.Settings.WorkgroupId = null;
         }
         else
         {
@@ -178,7 +178,7 @@ public partial class CacheConfig : UserControl
                 ServiceInterop.UpdateWorkgroup(workgroup);
             }
 
-            MainWindow._AppState.Settings.WorkgroupId = workgroup.ID.ToString();
+            App.State.Settings.WorkgroupId = workgroup.ID.ToString();
         }
         return true;
     }

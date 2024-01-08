@@ -29,14 +29,14 @@ namespace Thetacat.UI
             System.Diagnostics.PresentationTraceSources.SetTraceLevel(
                 AppLogView.LogEntries.ItemContainerGenerator,
                 System.Diagnostics.PresentationTraceLevel.High);
-            MainWindow._AppState.RegisterWindowPlace(this, "appLogView");
+            App.State.RegisterWindowPlace(this, "appLogView");
             AppLogView.SetAutoscroll();
         }
 
         void OnClosing(object sender, EventArgs e)
         {
             AppLogView.UnsetAutoscroll();
-            MainWindow._AppState.CloseAppLogMonitor(true);
+            App.State.CloseAppLogMonitor(true);
         }
     }
 }

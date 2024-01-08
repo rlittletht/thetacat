@@ -188,7 +188,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (InCatalog)
             return;
 
-        MediaItem? item = MainWindow._AppState.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!);
+        MediaItem? item = App.State.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!);
 
         if (item != null)
         {

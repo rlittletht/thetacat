@@ -33,6 +33,6 @@ public partial class MediaItemDetails : Window
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
         m_mediaItem = item;
         DataContext = m_mediaItem;
-        MainWindow._AppState.RegisterWindowPlace(this, "mediaItem-details");
+        App.State.RegisterWindowPlace(this, "mediaItem-details");
     }
 }

@@ -75,7 +75,7 @@ public partial class MigrationManager : Window
             ReloadSchemasForTabs);
 
         BuildMetadataReportFromDatabase(database);
-        MainWindow._AppState.RegisterWindowPlace(this, "ElementsMigrationManager");
+        App.State.RegisterWindowPlace(this, "ElementsMigrationManager");
     }
 
     private void OnMetatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)

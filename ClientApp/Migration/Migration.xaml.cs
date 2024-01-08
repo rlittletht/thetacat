@@ -38,14 +38,14 @@ public partial class Migration : Window, INotifyPropertyChanged
 
     public Migration()
     {
-        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
-            MainWindow._AppState.RefreshMetatagSchema();
+        if (App.State.MetatagSchema.SchemaVersionWorking == 0)
+            App.State.RefreshMetatagSchema();
 
         InitializeComponent();
         DataContext = this;
-        ElementsDb = MainWindow._AppState.Settings.ElementsDatabase ?? string.Empty;
+        ElementsDb = App.State.Settings.ElementsDatabase ?? string.Empty;
 
-        MainWindow._AppState.RegisterWindowPlace(this, "Migration");
+        App.State.RegisterWindowPlace(this, "Migration");
     }
 
     private void LaunchElementsMigration(object sender, RoutedEventArgs e)
@@ -60,10 +60,10 @@ public partial class Migration : Window, INotifyPropertyChanged
     {
         PathSegment path = new PathSegment(ElementsDb);
 
-        if (MainWindow._AppState.Settings.ElementsDatabase != path)
+        if (App.State.Settings.ElementsDatabase != path)
         {
-            MainWindow._AppState.Settings.ElementsDatabase = path;
-            MainWindow._AppState.Settings.WriteSettings();
+            App.State.Settings.ElementsDatabase = path;
+            App.State.Settings.WriteSettings();
         }
     }
 }

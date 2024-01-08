@@ -22,7 +22,7 @@ namespace Thetacat.UI.ProgressReporting
         public ProgressListDialog()
         {
             InitializeComponent();
-            MainWindow._AppState.RegisterWindowPlace(this, "ProgressListDialog");
+            App.State.RegisterWindowPlace(this, "ProgressListDialog");
         }
     }
 }

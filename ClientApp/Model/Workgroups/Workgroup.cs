@@ -283,7 +283,7 @@ public class Workgroup: IWorkgroup
 
     public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)
     {
-        return GetNextItemsForQueueFromMediaCollection(MainWindow._AppState.Catalog.GetMediaCollection(), MainWindow._AppState.Cache, count);
+        return GetNextItemsForQueueFromMediaCollection(App.State.Catalog.GetMediaCollection(), App.State.Cache, count);
     }
 
     /*----------------------------------------------------------------------------
@@ -315,7 +315,7 @@ public class Workgroup: IWorkgroup
                 if (!cache.Entries.ContainsKey(mediaId))
                 {
                     // database has an item we didn't have. that's fine. just add it
-                    AddServiceWorkgroupMediaToCache(MainWindow._AppState.Cache.Entries, media);
+                    AddServiceWorkgroupMediaToCache(App.State.Cache.Entries, media);
                     continue;
                 }
 
@@ -425,6 +425,6 @@ public class Workgroup: IWorkgroup
     ----------------------------------------------------------------------------*/
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
     {
-        PushChangesToDatabaseWithCache(MainWindow._AppState.Cache, itemsForCache);
+        PushChangesToDatabaseWithCache(App.State.Cache, itemsForCache);
     }
 }
