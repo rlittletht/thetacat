@@ -206,7 +206,7 @@ public class Cache: ICache
         return item.VirtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void QueueCacheDownloads(int chunkSize)
+    public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
     {
         if (Type != CacheType.Workgroup)
         {
@@ -233,7 +233,7 @@ public class Cache: ICache
                 MediaItem item = MainWindow._AppState.Catalog.GetMediaFromId(entry.Key);
                 item.IsCachePending = true;
                 m_cacheQueue.Enqueue(item);
-                chunkSize--;    // since we just added one
+                chunkSize--; // since we just added one
             }
         }
 
@@ -241,14 +241,19 @@ public class Cache: ICache
             return;
 
         // now let's stake our claim to some items we're going to cache
-        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(chunkSize);
-        _Workgroup.PushChangesToDatabase(itemsForCache);
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, chunkSize);
+        _Workgroup.PushChangesToDatabaseWithCache(cache, itemsForCache);
 
         // lastly, queue all the items left in itemsForCache
         foreach (MediaItem item in itemsForCache.Values)
         {
             m_cacheQueue.Enqueue(item);
         }
+    }
+
+    public void QueueCacheDownloads(int chunkSize)
+    {
+        QueueCacheDownloadsFromMedia(MainWindow._AppState.Catalog.GetMediaCollection(), MainWindow._AppState.Cache, chunkSize);
     }
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
@@ -280,7 +285,7 @@ public class Cache: ICache
     {
         // we still have to make an entry in the cache db
         // since we are manually caching it right now, set the time to now and pending to false)
-        _Workgroup.CreateCacheEntryForItem(item, DateTime.Now, false);
+        _Workgroup.CreateCacheEntryForItem(MainWindow._AppState.Cache, item, DateTime.Now, false);
         // now get the destination path it wants us to use
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");

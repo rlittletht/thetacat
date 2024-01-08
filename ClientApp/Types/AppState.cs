@@ -12,9 +12,9 @@ public class AppState : IAppState
 {
     public delegate void CloseLogMonitorDelegate(bool skipClose);
     public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork work);
-    private readonly CloseLogMonitorDelegate? m_closeAsyncLog;
-    private readonly CloseLogMonitorDelegate? m_closeAppLog;
-    private readonly AddBackgroundWorkDelegate m_addBackgroundWork;
+    private CloseLogMonitorDelegate? m_closeAsyncLog;
+    private CloseLogMonitorDelegate? m_closeAppLog;
+    private AddBackgroundWorkDelegate? m_addBackgroundWork;
 
     public TcSettings.TcSettings Settings { get; }
     public MetatagSchema MetatagSchema { get; }
@@ -24,7 +24,25 @@ public class AppState : IAppState
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
     public string AzureStorageAccount => MainWindow._AppState.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
     public string StorageContainer => MainWindow._AppState.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
-    public void AddBackgroundWork(string description, BackgroundWorkerWork work) => m_addBackgroundWork(description, work);
+
+    public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
+    {
+        m_closeAsyncLog = closeAsyncLogDelegate;
+        m_closeAppLog = closeAppLogDelegate;
+    }
+
+    public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate)
+    {
+        m_addBackgroundWork = addWorkDelegate;;
+    }
+
+    public void AddBackgroundWork(string description, BackgroundWorkerWork work)
+    {
+        if (m_addBackgroundWork == null)
+            throw new CatExceptionInitializationFailure("no background work collection available");
+
+        m_addBackgroundWork(description, work);
+    }
 
     public void RefreshMetatagSchema()
     {
@@ -41,7 +59,7 @@ public class AppState : IAppState
         Catalog = catalog;
     }
 
-    public AppState(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate, AddBackgroundWorkDelegate addBackgroundWork)
+    public AppState()
     {
         Settings = new TcSettings.TcSettings();
         AppSecrets.MasterSqlConnectionString = Settings.SqlConnection ?? String.Empty;
@@ -49,9 +67,9 @@ public class AppState : IAppState
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
         Cache = new Cache(Settings);
-        m_closeAsyncLog = closeAsyncLogDelegate;
-        m_closeAppLog = closeAppLogDelegate;
-        m_addBackgroundWork = addBackgroundWork;
+        m_closeAsyncLog = null;
+        m_closeAppLog = null;
+        m_addBackgroundWork = null;
     }
 
     public void RegisterWindowPlace(Window window, string key)

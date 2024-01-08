@@ -7,6 +7,7 @@ using System.Windows;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
 using Thetacat.Util;
+using static Thetacat.Types.AppState;
 
 namespace Thetacat.Types;
 
@@ -24,4 +25,6 @@ public interface IAppState
     void CloseAsyncLogMonitor(bool skipClose);
     void CloseAppLogMonitor(bool skipClose);
     public void AddBackgroundWork(string description, BackgroundWorkerWork work);
+    public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate);
+    public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate);
 }

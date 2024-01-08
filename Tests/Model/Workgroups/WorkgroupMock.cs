@@ -41,6 +41,15 @@ public class WorkgroupMock : Workgroup, IWorkgroup
         UpdateFromWorkgroupMediaClock(entries, mediaClock);
     }
 
+    public new Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(IEnumerable<MediaItem> mediaCollection, ICache cache, int count)
+    {
+        if (m_getNextItemsForQueueDelegate == null)
+            return base.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, count);
+
+        throw new NotImplementedException();
+        // return m_getNextItemsForQueueDelegate();
+    }
+
     public new Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)
     {
         if (m_getNextItemsForQueueDelegate == null)

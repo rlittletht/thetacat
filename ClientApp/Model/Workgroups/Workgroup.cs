@@ -214,14 +214,14 @@ public class Workgroup: IWorkgroup
         This will take make a cache entry for the media item. it will ensure
         that 
     ----------------------------------------------------------------------------*/
-    public void CreateCacheEntryForItem(MediaItem item, DateTime? cachedDate, bool pending)
+    public void CreateCacheEntryForItem(ICache cache, MediaItem item, DateTime? cachedDate, bool pending)
     {
         PathSegment cacheItemPath = Cache.EnsureUniqueLocalCacheVirtualPath(FullPathToCacheRoot, item);
 
         // we will create this cache entry as Pending and set the vectorClock 0
 
         // when we go to update the cache in the workgroup database, if the 
-        MainWindow._AppState.Cache.Entries.TryAdd(
+        cache.Entries.TryAdd(
             item.ID,
             new WorkgroupCacheEntry(
                 item.ID,
@@ -246,7 +246,7 @@ public class Workgroup: IWorkgroup
         we assume the caller is going to update the workgroup database right after
         this to prevent other clients from trying to cache the same files.
     ----------------------------------------------------------------------------*/
-    public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)
+    public Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(IEnumerable<MediaItem> mediaCollection, ICache cache, int count)
     {
         Dictionary<Guid, MediaItem> itemsToQueue = new();
         int countToSkip = 0;
@@ -254,10 +254,10 @@ public class Workgroup: IWorkgroup
         if (count <= 0)
             throw new ArgumentOutOfRangeException(nameof(count));
 
-        foreach (MediaItem item in MainWindow._AppState.Catalog.GetMediaCollection())
+        foreach (MediaItem item in mediaCollection)
         {
-            if (!MainWindow._AppState.Cache.Entries.ContainsKey(item.ID) 
-                && !item.IsCachePending 
+            if (!cache.Entries.ContainsKey(item.ID)
+                && !item.IsCachePending
                 && item.State == MediaItemState.Active)
             {
                 if (countToSkip > 0)
@@ -269,7 +269,7 @@ public class Workgroup: IWorkgroup
                 itemsToQueue.Add(item.ID, item);
 
                 // we will create this cache entry as Pending and set the vectorClock 0
-                CreateCacheEntryForItem(item, null, true);
+                CreateCacheEntryForItem(cache, item, null, true);
 
                 item.IsCachePending = true;
 
@@ -277,7 +277,13 @@ public class Workgroup: IWorkgroup
                     return itemsToQueue;
             }
         }
+
         return itemsToQueue;
+    }
+
+    public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)
+    {
+        return GetNextItemsForQueueFromMediaCollection(MainWindow._AppState.Catalog.GetMediaCollection(), MainWindow._AppState.Cache, count);
     }
 
     /*----------------------------------------------------------------------------
@@ -291,7 +297,7 @@ public class Workgroup: IWorkgroup
         queue for caching. if passed in, then we will remove any items that
         were LocalPending but no longer are (because another client claimed them)
     ----------------------------------------------------------------------------*/
-    void DoThreeWayMerge(Dictionary<Guid, MediaItem>? itemsForCache)
+    void DoThreeWayMerge(ICache cache, Dictionary<Guid, MediaItem>? itemsForCache)
     {
         // first, get the latest workgroup media
         ServiceWorkgroupMediaClock mediaWithClock = _Database.GetLatestWorkgroupMediaWithClock();
@@ -306,7 +312,7 @@ public class Workgroup: IWorkgroup
             {
                 Guid mediaId = media.MediaId ?? throw new CatExceptionServiceDataFailure();
 
-                if (!MainWindow._AppState.Cache.Entries.ContainsKey(mediaId))
+                if (!cache.Entries.ContainsKey(mediaId))
                 {
                     // database has an item we didn't have. that's fine. just add it
                     AddServiceWorkgroupMediaToCache(MainWindow._AppState.Cache.Entries, media);
@@ -314,7 +320,7 @@ public class Workgroup: IWorkgroup
                 }
 
                 // we have the item. is it different?
-                WorkgroupCacheEntry wgEntry = (WorkgroupCacheEntry)MainWindow._AppState.Cache.Entries[mediaId];
+                WorkgroupCacheEntry wgEntry = (WorkgroupCacheEntry)cache.Entries[mediaId];
                 if (wgEntry.LocalPending)
                 {
                     // this was one that we were going to cache ourselves, but we don't have to now
@@ -341,13 +347,7 @@ public class Workgroup: IWorkgroup
         m_baseVectorClock = mediaWithClock.VectorClock;
     }
 
-    /*----------------------------------------------------------------------------
-        %%Function: PushChangesToDatabase
-        %%Qualified: Thetacat.Model.Workgroups.Workgroup.PushChangesToDatabase
-
-        Build up a set of changes we need to make on the server
-    ----------------------------------------------------------------------------*/
-    public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
+    public void PushChangesToDatabaseWithCache(ICache cache, Dictionary<Guid, MediaItem>? itemsForCache)
     {
         int retryCount = 10; // retry for coherency failures 10 times
 
@@ -356,7 +356,7 @@ public class Workgroup: IWorkgroup
             Dictionary<Guid, List<KeyValuePair<string, string>>> cacheChanges = new();
             List<WorkgroupCacheEntry> inserts = new();
 
-            foreach (KeyValuePair<Guid, ICacheEntry> entry in MainWindow._AppState.Cache.Entries)
+            foreach (KeyValuePair<Guid, ICacheEntry> entry in cache.Entries)
             {
                 WorkgroupCacheEntry wgEntry = (WorkgroupCacheEntry)entry.Value;
 
@@ -395,7 +395,7 @@ public class Workgroup: IWorkgroup
                 }
                 foreach (KeyValuePair<Guid, List<KeyValuePair<string, string>>> change in cacheChanges)
                 {
-                    ((WorkgroupCacheEntry)MainWindow._AppState.Cache.Entries[change.Key]).ResetBaseEntry();
+                    ((WorkgroupCacheEntry)cache.Entries[change.Key]).ResetBaseEntry();
                 }
 
                 return;
@@ -411,9 +411,20 @@ public class Workgroup: IWorkgroup
                 if (retryCount == 0)
                     throw; // retry if we have failed too many times
 
-                DoThreeWayMerge(itemsForCache);
+                DoThreeWayMerge(cache, itemsForCache);
                 // fall through to continue
             }
         }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: PushChangesToDatabase
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.PushChangesToDatabase
+
+        Build up a set of changes we need to make on the server
+    ----------------------------------------------------------------------------*/
+    public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
+    {
+        PushChangesToDatabaseWithCache(MainWindow._AppState.Cache, itemsForCache);
     }
 }

@@ -1,37 +1,14 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Data.SQLite;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Azure.Core;
-using Azure.Identity;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Rapid;
-using Emgu.CV.Structure;
-using Microsoft.Extensions.Azure;
-using Microsoft.Windows.Themes;
-using System.Security.Cryptography;
-using NUnit.Framework;
 using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
-using System.Security.AccessControl;
 using System.Threading;
 using Thetacat.Import;
 using Thetacat.Model;
@@ -40,16 +17,10 @@ using Thetacat.Azure;
 using Thetacat.Logging;
 using Thetacat.UI;
 using MessageBox = System.Windows.Forms.MessageBox;
-using RestoreWindowPlace;
-using Thetacat.Migration.Elements.Media.UI;
-using Thetacat.Migration.Elements.Media;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Util;
-using Image = System.Drawing.Image;
-using List = NUnit.Framework.List;
 using Thetacat.UI.Explorer;
 using Thetacat.UI.ProgressReporting;
-using BackgroundWorker = Thetacat.Util.BackgroundWorker;
 
 namespace Thetacat
 {
@@ -97,7 +68,7 @@ namespace Thetacat
         private static IAppState? s_appState;
         private static CatLog? s_asyncLog;
         private static CatLog? s_appLog;
-        private BackgroundWorkers m_mainBackgroundWorkers;
+        private readonly BackgroundWorkers m_mainBackgroundWorkers;
 
         public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
         public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
@@ -122,15 +93,7 @@ namespace Thetacat
             }
         }
 
-        public static IAppState _AppState
-        {
-            get
-            {
-                if (s_appState == null)
-                    throw new Exception($"app state uninitialized. _AppState queried too early");
-                return s_appState;
-            }
-        }
+        public static IAppState _AppState => App.State;
 
         public static string ClientName = Environment.MachineName;
 
@@ -185,7 +148,9 @@ namespace Thetacat
 
         void InitializeThetacat()
         {
-            s_appState = new AppState(CloseAsyncLog, CloseAppLog, AddBackgroundWork);
+            App.State.SetupLogging(CloseAsyncLog, CloseAppLog);
+            App.State.SetupBackgroundWorkers(AddBackgroundWork);
+
             s_asyncLog = new CatLog(EventType.Information);
             s_appLog = new CatLog(EventType.Information);
         }
