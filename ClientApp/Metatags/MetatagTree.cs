@@ -16,7 +16,7 @@ public class MetatagTree : IMetatagTreeItem
 {
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
-    public MetatagTree(List<Metatag> metatags, IEnumerable<Metatag>? metatagsExclude, IEnumerable<Metatag>? metatagsInclude)
+    public MetatagTree(IEnumerable<Metatag> metatags, IEnumerable<Metatag>? metatagsExclude, IEnumerable<Metatag>? metatagsInclude)
     {
         Dictionary<Guid, MetatagTreeItem> IdMap = new();
 
@@ -80,7 +80,7 @@ public class MetatagTree : IMetatagTreeItem
     public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
     public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
 
-    public MetatagTree(List<Metatag> metatags)
+    public MetatagTree(IEnumerable<Metatag> metatags)
     {
         Dictionary<Guid, MetatagTreeItem> IdMap = new();
 

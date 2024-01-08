@@ -17,7 +17,7 @@ public class MediaTag
 
     public static MediaTag CreateMediaTag(MetatagSchema schema, Guid metatagId, string? value)
     {
-        Metatag? tag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(metatagId));
+        Metatag? tag = schema.GetMetatagFromId(metatagId);
 
         if (tag == null)
         {

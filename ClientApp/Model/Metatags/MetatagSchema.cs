@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Windows.Markup;
 using Emgu.CV.Features2D;
@@ -15,11 +16,11 @@ namespace Thetacat.Model.Metatags;
 public class MetatagSchema
 {
 
-    private MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
+    private readonly MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
 
     public MetatagTree WorkingTree => m_schemaWorking.Tree;
-    public List<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
+    public IEnumerable<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
     public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
 
     void EnsureBaseAndVersion()
@@ -30,6 +31,8 @@ public class MetatagSchema
             m_schemaWorking.SchemaVersion++;
         }
     }
+
+    public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
 
     static Metatag? FindFirstMatchingItemInSchemaDefinition(MetatagSchemaDefinition schemaDef, IMetatagMatcher<IMetatag> matcher)
     {
@@ -69,7 +72,9 @@ public class MetatagSchema
         {
             IMetatagTreeItem? item = schemaDef.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(name), -1);
 
-            return item != null ? FindFirstMatchingItemInSchemaDefinition(schemaDef, MetatagMatcher.CreateIdMatch(item.ID)) : null;
+            return item != null
+                ? schemaDef.GetMetatagFromId(Guid.Parse(item.ID))
+                : null;
         }
 
         // otherwise, just return the first matching name
@@ -78,9 +83,6 @@ public class MetatagSchema
 
     public Metatag? FindByName(Metatag? parent, string name)
     {
-        if (m_schemaWorking == null)
-            return null;
-
         return FindByNameInSchemaDefinition(m_schemaWorking, parent, name);
     }
 
@@ -91,7 +93,7 @@ public class MetatagSchema
 
         EnsureBaseAndVersion();
 
-        m_schemaWorking.Metatags.Add(metatag);
+        m_schemaWorking.AddMetatag(metatag);
 
         IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
 
@@ -246,24 +248,25 @@ public class MetatagSchema
     {
         GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
 
-        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_WidthID)) == null)
+        if (GetMetatagFromId(BuiltinTags.s_WidthID) == null)
             AddMetatag(BuiltinTags.s_Width);
-        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_HeightID)) == null)
+        if (GetMetatagFromId(BuiltinTags.s_HeightID) == null)
             AddMetatag(BuiltinTags.s_Height);
-        if (FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(BuiltinTags.s_OriginalMediaDateID)) == null)
+        if (GetMetatagFromId(BuiltinTags.s_OriginalMediaDateID) == null)
             AddMetatag(BuiltinTags.s_OriginalMediaDate);
     }
 
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
         m_schemaBase = null;
-        m_schemaWorking.Metatags.Clear();
+        m_schemaWorking.Clear();
 
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
             {
-                m_schemaWorking.Metatags.Add(Metatag.CreateFromService(serviceMetatag));
+                Metatag metatag = Metatag.CreateFromService(serviceMetatag);
+                m_schemaWorking.AddMetatag(metatag);
             }
         }
 

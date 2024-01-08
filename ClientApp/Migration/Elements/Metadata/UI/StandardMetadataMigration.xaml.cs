@@ -150,7 +150,7 @@ public partial class StandardMetadataMigration : UserControl
             if (item.CatID != null)
             {
                 // make sure its really there
-                if (MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                if (MainWindow._AppState.MetatagSchema.GetMetatagFromId(item.CatID.Value) != null)
                     continue;
 
                 Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");

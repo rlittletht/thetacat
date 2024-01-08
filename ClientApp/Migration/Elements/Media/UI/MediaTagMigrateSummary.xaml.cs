@@ -93,8 +93,7 @@ public partial class MediaTagMigrateSummary : UserControl
             if (metadataItem.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
-                MetatagMatcher.CreateIdMatch(metadataItem.CatID.Value));
+            Metatag? metatag = MainWindow._AppState.MetatagSchema.GetMetatagFromId(metadataItem.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {metadataItem.CatID.Value}");
@@ -131,8 +130,7 @@ public partial class MediaTagMigrateSummary : UserControl
             if (mediaTagValue.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
-                MetatagMatcher.CreateIdMatch(mediaTagValue.CatID.Value));
+            Metatag? metatag = MainWindow._AppState.MetatagSchema.GetMetatagFromId(mediaTagValue.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {mediaTagValue.CatID.Value}");

@@ -86,7 +86,7 @@ public class Catalog : ICatalog
         }
     }
 
-    private async Task<ServiceCatalog> GetFullServiceCatalogAsync()
+    private async Task<ServiceCatalog> GetFullCatalogAsync()
     {
         Task<List<ServiceMediaItem>> taskGetMedia =
             Task.Run(ServiceInterop.ReadFullCatalogMedia);
@@ -111,7 +111,7 @@ public class Catalog : ICatalog
         timer.Reset();
         timer.Start();
 
-        ServiceCatalog catalog = await GetFullServiceCatalogAsync();
+        ServiceCatalog catalog = await GetFullCatalogAsync();
 
         MainWindow.LogForApp(EventType.Warning, $"ServiceInterop.ReadFullCatalog: {timer.Elapsed()}");
 
@@ -139,14 +139,14 @@ public class Catalog : ICatalog
         bool refreshedSchema = false;
         foreach (ServiceMediaTag tag in catalog.MediaTags)
         {
-            Metatag? metatag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(tag.Id));
+            Metatag? metatag = schema.GetMetatagFromId(tag.Id);
 
             if (metatag == null)
             {
                 if (!refreshedSchema)
                 {
                     schema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
-                    metatag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(tag.Id));
+                    metatag = schema.GetMetatagFromId(tag.Id);
                 }
 
                 if (metatag == null)
