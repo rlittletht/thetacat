@@ -40,7 +40,6 @@ public class MediaExplorerCollection
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
-    private readonly ImageCache m_imageCache;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
 
     public MediaExplorerCollection(
@@ -61,8 +60,7 @@ public class MediaExplorerCollection
                     from.LineLabel = "";
                     to.LineLabel = fromString;
                 });
-        m_imageCache = new ImageCache();
-        m_imageCache.ImageCacheUpdated += OnImageCacheUpdated;
+        App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
     }
 
     private object m_lock = new object();
@@ -76,7 +74,7 @@ public class MediaExplorerCollection
 
     public void Close()
     {
-        m_imageCache.Close();
+       // ImageCache.Close is now handled in MainWindow
     }
 
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
@@ -162,7 +160,7 @@ public class MediaExplorerCollection
                             string? path = cache.TryGetCachedFullPath(item.MediaId);
 
                             if (path != null)
-                                m_imageCache.TryAddItem(mediaItem, path);
+                                App.State.ImageCache.TryAddItem(mediaItem, path);
                         }
                     }
                 }
@@ -188,7 +186,7 @@ public class MediaExplorerCollection
         
         if (path != null)
         {
-            ImageCacheItem? cacheItem = m_imageCache.GetAnyExistingItem(item.ID);
+            ImageCacheItem? cacheItem = App.State.ImageCache.GetAnyExistingItem(item.ID);
             explorerItem.TileImage = cacheItem?.Image;
         }
 

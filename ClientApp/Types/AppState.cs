@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using Thetacat.Model;
+using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Metatags;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
@@ -19,6 +20,7 @@ public class AppState : IAppState
     public TcSettings.TcSettings Settings { get; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
+    public ImageCache ImageCache { get; private set; }
     public ICatalog Catalog { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
@@ -70,6 +72,8 @@ public class AppState : IAppState
         m_closeAsyncLog = null;
         m_closeAppLog = null;
         m_addBackgroundWork = null;
+        // this will start the caching pipelines
+        ImageCache = new ImageCache();
     }
 
     public void RegisterWindowPlace(Window window, string key)

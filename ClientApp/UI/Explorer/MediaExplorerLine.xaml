@@ -21,6 +21,8 @@
                                   CommandParameter="{Binding}" Gesture="Control+LeftClick" />
                     <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.AddExtendSelectPanel}"
                                   CommandParameter="{Binding}" Gesture="Control+Shift+LeftClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.LaunchItem}"
+                                  CommandParameter="{Binding}" Gesture="LeftDoubleClick" />
                 </StackPanel.InputBindings>
                 <StackPanel.ContextMenu>
                     <ContextMenu >

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Model;
+using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Metatags;
 using Thetacat.Util;
 using static Thetacat.Types.AppState;
@@ -13,6 +14,7 @@ namespace Thetacat.Types;
 
 public interface IAppState
 {
+    ImageCache ImageCache { get; }
     ICatalog Catalog { get; }
     TcSettings.TcSettings Settings { get; }
     MetatagSchema MetatagSchema { get; }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -52,6 +54,24 @@ namespace Thetacat.UI
             Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
             Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
             Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
+            Model.LaunchItem = new LaunchItemCommand(LaunchItem);
+        }
+
+        private List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
+
+        public void LaunchItem(MediaExplorerItem? context)
+        {
+            if (context == null)
+                return;
+
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
+            
+            MediaItemZoom zoom = new MediaItemZoom(mediaItem);
+
+            zoom.Closing += OnMediaZoomClosing;
+
+            m_zooms.Add(zoom);
+            zoom.Show();
         }
 
         public void UpdateCollectionDimensions()
@@ -87,8 +107,20 @@ namespace Thetacat.UI
             UpdateCollectionDimensions();
         }
 
+        private void OnMediaZoomClosing(object? sender, CancelEventArgs e)
+        {
+            if (sender != null)
+                m_zooms.Remove((MediaItemZoom)sender);
+        }
+
         public void Close()
         {
+            foreach (MediaItemZoom zoom in m_zooms)
+            {
+                zoom.Closing -= OnMediaZoomClosing;
+                zoom.Close();
+            }
+
             if (m_collection != null)
             {
                 if (m_applyMetatagPanel != null)

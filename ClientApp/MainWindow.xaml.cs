@@ -128,6 +128,7 @@ namespace Thetacat
             App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
             m_collection.Close();
             Explorer.Close();
+            App.State.ImageCache.Close();
 
             if (m_asyncLogMonitor != null)
                 CloseAsyncLog(false);
