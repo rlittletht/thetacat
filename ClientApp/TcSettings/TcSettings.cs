@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -39,56 +40,70 @@ public class TcSettings
     public string? ExplorerItemSize;
 
     public List<MapPair> ElementsSubstitutions = new();
+    public Dictionary<string, Rectangle> Placements { get; private set; } = new();
+    private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
 
     public TcSettings()
     {
+#pragma warning disable format // @formatter:off
         XmlSettingsDescription =
             XmlDescriptionBuilder<TcSettings>
                .Build(s_uri, "Settings")
-               .AddChildElement("Options")
-               .AddChildElement("ShowAsyncLogOnStart")
-               .AddAttribute("value", GetShowAsyncLogOnStart, SetShowAsyncLogOnStart)
-               .AddElement("ShowAppLogOnStart")
-               .AddAttribute("value", GetShowAppLogOnStart, SetShowAppLogOnStart)
-               .AddElement("MediaExplorer")
-               .AddAttribute("ItemSize", GetExplorerItemSize, SetExplorerItemSize)
+                  .AddChildElement("Options")
+                     .AddChildElement("ShowAsyncLogOnStart")
+                      .AddAttribute("value", GetShowAsyncLogOnStart, SetShowAsyncLogOnStart)
+                     .AddElement("ShowAppLogOnStart")
+                      .AddAttribute("value", GetShowAppLogOnStart, SetShowAppLogOnStart)
+                     .AddElement("MediaExplorer")
+                      .AddAttribute("ItemSize", GetExplorerItemSize, SetExplorerItemSize)
+                  .Pop()
                .Pop()
+                  .AddChildElement("Account")
+                     .AddChildElement("AzureStorageAccount", GetStorageAccountNameValue, SetStorageAccountNameValue)
+                     .AddElement("StorageContainer", GetStorageContainerValue, SetStorageContainerValue)
+                     .AddElement("SqlConnection", GetSqlConnection, SetSqlConnection)
+                  .Pop()
                .Pop()
-               .AddChildElement("Account")
-               .AddChildElement("AzureStorageAccount", GetStorageAccountNameValue, SetStorageAccountNameValue)
-               .AddElement("StorageContainer", GetStorageContainerValue, SetStorageContainerValue)
-               .AddElement("SqlConnection", GetSqlConnection, SetSqlConnection)
-               .Pop()
-               .Pop()
-               .AddChildElement("Migration")
-               .AddChildElement("ElementsDatabase", GetElementsDatabaseValue, SetElementsDatabaseValue)
-               .AddElement("Substitutions")
-               .AddChildElement("Substitution")
-               .SetRepeating(
-                    TcSettings.CreateElementsSubstitutionRepeatContext,
-                    TcSettings.AreRemainingElementsSubstitutions,
-                    TcSettings.CommitElementsSubstitutionRepeatItem)
-               .AddAttribute("From", GetSubstitutionFrom, SetSubstitutionFrom)
-               .AddAttribute("To", GetSubstitutionTo, SetSubstitutionTo)
-               .Pop()
-               .Pop()
+                  .AddChildElement("Migration")
+                     .AddChildElement("ElementsDatabase", GetElementsDatabaseValue, SetElementsDatabaseValue)
+                     .AddElement("Substitutions")
+                        .AddChildElement("Substitution")
+                         .SetRepeating(
+                              TcSettings.CreateElementsSubstitutionRepeatContext,
+                              TcSettings.AreRemainingElementsSubstitutions,
+                              TcSettings.CommitElementsSubstitutionRepeatItem)
+                         .AddAttribute("From", GetSubstitutionFrom, SetSubstitutionFrom)
+                         .AddAttribute("To", GetSubstitutionTo, SetSubstitutionTo)
+                     .Pop()
+                  .Pop()
                .AddElement("CacheOptions")
-               .AddChildElement("CacheType")
-               .AddAttribute("Type", GetCacheTypeValue, SetCacheTypeValue)
-               .AddElement("PrivateCache")
-               .AddChildElement("CacheLocation", GetCacheLocationValue, SetCacheLocationValue)
+                  .AddChildElement("CacheType")
+                   .AddAttribute("Type", GetCacheTypeValue, SetCacheTypeValue)
+                  .AddElement("PrivateCache")
+                     .AddChildElement("CacheLocation", GetCacheLocationValue, SetCacheLocationValue)
+                  .Pop()
+                  .AddElement("WorkgroupCache")
+                     .AddChildElement("Workgroup")
+                      .AddAttribute("ID", GetWorkgroupIDValue, SetWorkgroupIDValue)
+                     .AddElement("CachedValues")
+                      .AddAttribute("Server", GetWorkgroupCacheServerValue, SetWorkgroupCacheServerValue)
+                      .AddAttribute("CacheRoot", GetWorkgroupCacheRootValue, SetWorkgroupCacheRootValue)
+                      .AddAttribute("Name", GetWorkgroupNameValue, SetWorkgroupNameValue)
+                  .Pop()
                .Pop()
-               .AddElement("WorkgroupCache")
-               .AddChildElement("Workgroup")
-               .AddAttribute("ID", GetWorkgroupIDValue, SetWorkgroupIDValue)
-               .AddElement("CachedValues")
-               .AddAttribute("Server", GetWorkgroupCacheServerValue, SetWorkgroupCacheServerValue)
-               .AddAttribute("CacheRoot", GetWorkgroupCacheRootValue, SetWorkgroupCacheRootValue)
-               .AddAttribute("Name", GetWorkgroupNameValue, SetWorkgroupNameValue)
-               .Pop()
-               .Pop()
+               .AddElement("WindowPlacements")
+                  .AddChildElement("Placement")
+                   .SetRepeating(
+                        TcSettings.CreatePlacementRepeatItem,
+                        TcSettings.AreRemainingPlacementItems,
+                        TcSettings.CommitPlacementsItem)
+                   .AddAttribute("Name", TcSettings.GetPlacementName, TcSettings.SetPlacementName)
+                   .AddAttribute("X", TcSettings.GetPlacementX, TcSettings.SetPlacementX)
+                   .AddAttribute("Y", TcSettings.GetPlacementY, TcSettings.SetPlacementY)
+                   .AddAttribute("Width", TcSettings.GetPlacementWidth, TcSettings.SetPlacementWidth)
+                   .AddAttribute("Height", TcSettings.GetPlacementHeight, TcSettings.SetPlacementHeight)
                .Pop();
-
+#pragma warning restore format // @formatter: on
         try
         {
             using ReadFile<TcSettings> file = ReadFile<TcSettings>.CreateSettingsFile(m_settingsPath);
@@ -108,7 +123,8 @@ public class TcSettings
 
     public void WriteSettings()
     {
-        SubEnum = null;
+        SubstitutionsEnumerator = null;
+        PlacementsEnumerator = null;
         string? directory = Path.GetDirectoryName(m_settingsPath);
 
         if (directory != null)
@@ -163,20 +179,20 @@ public class TcSettings
     private static void   SetWorkgroupNameValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName = value;
     private static string? GetWorkgroupNameValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName;
 
-    private IEnumerator<MapPair>? SubEnum;
-
+    #region Substitutions
+    private IEnumerator<MapPair>? SubstitutionsEnumerator;
 
     private static RepeatContext<TcSettings>.RepeatItemContext CreateElementsSubstitutionRepeatContext(
         TcSettings settings,
         Element<TcSettings> element,
         RepeatContext<TcSettings>.RepeatItemContext? parent)
     {
-        if (settings.SubEnum != null)
+        if (settings.SubstitutionsEnumerator != null)
         {
             return new RepeatContext<TcSettings>.RepeatItemContext(
                 element,
                 parent,
-                settings.SubEnum.Current);
+                settings.SubstitutionsEnumerator.Current);
         }
 
         return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, new MapPair());
@@ -187,9 +203,9 @@ public class TcSettings
         if (settings.ElementsSubstitutions.Count == 0)
             return false;
 
-        settings.SubEnum ??= settings.ElementsSubstitutions.GetEnumerator();
+        settings.SubstitutionsEnumerator ??= settings.ElementsSubstitutions.GetEnumerator();
 
-        return settings.SubEnum.MoveNext();
+        return settings.SubstitutionsEnumerator.MoveNext();
     }
 
     private static void CommitElementsSubstitutionRepeatItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
@@ -220,6 +236,137 @@ public class TcSettings
 
         ((MapPair)context.RepeatKey).To = value;
     }
+    #endregion
 
-#endregion
+    #region Placements
+
+    public static string? GetPlacementX(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
+        ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Value.X.ToString();
+
+    public static string? GetPlacementY(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
+        ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Value.Y.ToString();
+
+    public static string? GetPlacementWidth(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
+        ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Value.Width.ToString();
+
+    public static string? GetPlacementHeight(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
+        ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Value.Height.ToString();
+
+    public static void SetPlacementX(
+        TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext)
+    {
+        if (repeatItemContext == null)
+            throw new ArgumentNullException(nameof(repeatItemContext));
+
+        KeyValuePair<string, Rectangle> pair = (KeyValuePair<string, Rectangle>)repeatItemContext.RepeatKey;
+
+        repeatItemContext.RepeatKey =
+            new KeyValuePair<string, Rectangle>(
+                pair.Key,
+                pair.Value with { X = int.Parse(value) });
+    }
+
+    public static void SetPlacementY(
+        TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext)
+    {
+        if (repeatItemContext == null)
+            throw new ArgumentNullException(nameof(repeatItemContext));
+
+        KeyValuePair<string, Rectangle> pair = (KeyValuePair<string, Rectangle>)repeatItemContext.RepeatKey;
+
+        repeatItemContext.RepeatKey =
+            new KeyValuePair<string, Rectangle>(
+                pair.Key,
+                pair.Value with { Y = int.Parse(value) });
+    }
+
+    public static void SetPlacementWidth(
+        TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext)
+    {
+        if (repeatItemContext == null)
+            throw new ArgumentNullException(nameof(repeatItemContext));
+
+        KeyValuePair<string, Rectangle> pair = (KeyValuePair<string, Rectangle>)repeatItemContext.RepeatKey;
+
+        repeatItemContext.RepeatKey =
+            new KeyValuePair<string, Rectangle>(
+                pair.Key,
+                pair.Value with { Width = int.Parse(value) });
+    }
+
+    public static void SetPlacementHeight(
+        TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext)
+    {
+        if (repeatItemContext == null)
+            throw new ArgumentNullException(nameof(repeatItemContext));
+
+        KeyValuePair<string, Rectangle> pair = (KeyValuePair<string, Rectangle>)repeatItemContext.RepeatKey;
+
+        repeatItemContext.RepeatKey =
+            new KeyValuePair<string, Rectangle>(
+                pair.Key,
+                pair.Value with { Height = int.Parse(value) });
+    }
+
+    public static void SetPlacementName(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext)
+    {
+        if (repeatItemContext == null)
+            throw new ArgumentNullException(nameof(repeatItemContext));
+
+        // we can't assign to Key directly, so create a new key/value pair with the new key and the existing value
+        repeatItemContext.RepeatKey =
+            new KeyValuePair<string, Rectangle>(
+                value,
+                ((KeyValuePair<string, Rectangle>)repeatItemContext.RepeatKey).Value);
+    }
+
+    public static string? GetPlacementName(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
+        ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Key;
+
+    #region Placement Repeaters
+
+    public static RepeatContext<TcSettings>.RepeatItemContext CreatePlacementRepeatItem(
+        TcSettings settings,
+        Element<TcSettings> element,
+        RepeatContext<TcSettings>.RepeatItemContext? parent)
+    {
+        if (settings.PlacementsEnumerator != null)
+        {
+            // we are enumerating the placements. return a key/value pair for the current item
+            return new RepeatContext<TcSettings>.RepeatItemContext(
+                element,
+                parent,
+                new KeyValuePair<string, Rectangle>(settings.PlacementsEnumerator.Current.Key, settings.Placements[settings.PlacementsEnumerator.Current.Key]));
+        }
+
+        return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, new KeyValuePair<string, Rectangle>());
+    }
+
+
+    public static bool AreRemainingPlacementItems(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (settings.PlacementsEnumerator == null)
+            settings.PlacementsEnumerator = settings.Placements.GetEnumerator();
+
+        return settings.PlacementsEnumerator.MoveNext();
+    }
+
+    public static void CommitPlacementsItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (itemContext == null)
+            throw new ArgumentNullException(nameof(itemContext));
+
+        KeyValuePair<string, Rectangle> pair = ((KeyValuePair<string, Rectangle>)itemContext.RepeatKey);
+        if (settings.Placements == null)
+            settings.Placements = new Dictionary<string, Rectangle>();
+
+        // where can we store the name away? its not part of the rectangle...have to squirrel it away somewhere...
+        settings.Placements.Add(pair.Key, pair.Value);
+    }
+
+    #endregion
+
+    #endregion
+
+    #endregion
 }

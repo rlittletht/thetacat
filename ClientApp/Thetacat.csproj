@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All" Version="1.12.10" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
+    <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
     <PackageReference Include="TCore.Pipeline" Version="1.1.0" />
     <PackageReference Include="TCore.Sql" Version="2.2.3" />
@@ -30,10 +31,6 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\git\RestoreWindowPlace\RestoreWindowPlace\RestoreWindowPlace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
