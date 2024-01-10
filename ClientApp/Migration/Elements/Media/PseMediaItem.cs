@@ -180,7 +180,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;
 
-    public void UpdateCatalogStatus()
+    public void UpdateCatalogStatus(bool verifyMd5)
     {
         if (PathVerified != TriState.Yes)
             return;
@@ -188,7 +188,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (InCatalog)
             return;
 
-        MediaItem? item = App.State.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!);
+        MediaItem? item = App.State.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!, verifyMd5);
 
         if (item != null)
         {
@@ -198,7 +198,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         }
     }
 
-    public void CheckPath(Dictionary<string, string> subst)
+    public void CheckPath(Dictionary<string, string> subst, bool verifyMd5)
     {
         if (PathVerified == TriState.Yes)
             return;
@@ -220,7 +220,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (PathVerified == TriState.Yes)
         {
             // see if we think we already have this item in our catalog
-            UpdateCatalogStatus();
+            UpdateCatalogStatus(verifyMd5);
         }
 
         // MainWindow.LogForAsync(EventType.Information, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}");

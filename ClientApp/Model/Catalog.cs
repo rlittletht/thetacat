@@ -252,7 +252,7 @@ public class Catalog : ICatalog
         }
     }
 
-    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath)
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath, bool verifyMd5)
     {
         lock (m_virtualLookupTableLock)
         {
@@ -272,6 +272,12 @@ public class Catalog : ICatalog
 
         if (m_virtualLookupTable.TryGetValue(lookup, out MediaItem? item))
         {
+            if (!verifyMd5)
+            {
+                // we're going to assume the MD5 hash will match
+                return item;
+            }
+
             // since we found a matching virtualPath, let's see if the MD5 matches
             string md5 = Checksum.GetMD5ForPathSync(fullLocalPath);
             if (md5 == item.MD5)

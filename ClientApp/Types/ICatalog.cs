@@ -24,7 +24,7 @@ public interface ICatalog
     public MediaStacks GetStacksFromType(MediaStackType stackType);
     public void PushPendingChanges();
     /* async */ public Task ReadFullCatalogFromServer(MetatagSchema schema);
-    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath);
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath, bool verifyMd5);
     public MediaStacks VersionStacks { get; }
     public MediaStacks MediaStacks { get; }
     public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index);

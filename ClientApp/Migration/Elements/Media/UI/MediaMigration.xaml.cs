@@ -36,6 +36,8 @@ public partial class MediaMigration : UserControl
 {
     private ElementsMigrate? m_migrate;
 
+    private readonly MediaMigrationModel m_model = new();
+
     private ElementsMigrate _Migrate
     {
         get
@@ -53,6 +55,8 @@ public partial class MediaMigration : UserControl
     public MediaMigration()
     {
         InitializeComponent();
+        m_model.VerifyMD5 = true;
+        DataContext = m_model;
     }
 
     /*----------------------------------------------------------------------------
@@ -217,7 +221,7 @@ public partial class MediaMigration : UserControl
                 {
                     for (int i = start; i < end; i++)
                     {
-                        items[i].CheckPath(subs);
+                        items[i].CheckPath(subs, m_model.VerifyMD5);
                     }
                 })
            .ContinueWith(delegate { CompleteVerifyTask(); }, uiScheduler);
@@ -313,7 +317,7 @@ public partial class MediaMigration : UserControl
         foreach (PseMediaItem item in checkedItems)
         {
             report.UpdateProgress((i++ * 100.0) / iMax);
-            item.UpdateCatalogStatus();
+            item.UpdateCatalogStatus(false /*verifyMd5*/);
 
             // here we can pre-populate our cache.
             MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.CatID);
