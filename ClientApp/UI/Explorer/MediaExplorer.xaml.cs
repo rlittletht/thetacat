@@ -57,7 +57,7 @@ namespace Thetacat.UI
             Model.LaunchItem = new LaunchItemCommand(LaunchItem);
         }
 
-        private List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
+        private readonly List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
 
         public void LaunchItem(MediaExplorerItem? context)
         {

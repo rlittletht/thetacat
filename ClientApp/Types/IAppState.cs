@@ -14,6 +14,7 @@ namespace Thetacat.Types;
 
 public interface IAppState
 {
+    ImageCache PreviewImageCache { get; }
     ImageCache ImageCache { get; }
     ICatalog Catalog { get; }
     TcSettings.TcSettings Settings { get; }

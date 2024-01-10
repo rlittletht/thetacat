@@ -7,7 +7,7 @@
         xmlns:ui="clr-namespace:Thetacat.UI"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Closing="OnClosing">
+        Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded">
     <Window.Resources>
         <local:MathConverter x:Key="MathConverter" />
     </Window.Resources>

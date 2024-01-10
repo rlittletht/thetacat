@@ -20,6 +20,7 @@ public class AppState : IAppState
     public TcSettings.TcSettings Settings { get; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
+    public ImageCache PreviewImageCache { get; private set; }
     public ImageCache ImageCache { get; private set; }
     public ICatalog Catalog { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
@@ -73,7 +74,8 @@ public class AppState : IAppState
         m_closeAppLog = null;
         m_addBackgroundWork = null;
         // this will start the caching pipelines
-        ImageCache = new ImageCache();
+        PreviewImageCache = new ImageCache();
+        ImageCache = new ImageCache(true);
     }
 
     public void RegisterWindowPlace(Window window, string key)

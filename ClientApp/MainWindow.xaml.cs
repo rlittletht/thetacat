@@ -114,11 +114,6 @@ namespace Thetacat
             CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
             LocalServiceClient.LogService = LogForApp;
 
-            if (App.State.Settings.ShowAsyncLogOnStart ?? false)
-                ShowAsyncLog();
-            if (App.State.Settings.ShowAppLogOnStart ?? false)
-                ShowAppLog();
-
             m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         }
 
@@ -128,6 +123,7 @@ namespace Thetacat
             App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
             m_collection.Close();
             Explorer.Close();
+            App.State.PreviewImageCache.Close();
             App.State.ImageCache.Close();
 
             if (m_asyncLogMonitor != null)
@@ -158,13 +154,14 @@ namespace Thetacat
         private void LaunchMigration(object sender, RoutedEventArgs e)
         {
             Migration.Migration migration = new();
-
+            migration.Owner = this;
             migration.Show();
         }
 
         private void ManageMetatags(object sender, RoutedEventArgs e)
         {
             Metatags.ManageMetadata manage = new();
+            manage.Owner = this;
             manage.Show();
         }
 
@@ -306,6 +303,7 @@ namespace Thetacat
                 return;
 
             m_asyncLogMonitor = new AsyncLogMonitor();
+            m_asyncLogMonitor.Owner = this;
             m_asyncLogMonitor.Show();
         }
 
@@ -330,6 +328,7 @@ namespace Thetacat
                 return;
 
             m_appLogMonitor = new AppLogMonitor();
+            m_appLogMonitor.Owner = this;
             m_appLogMonitor.Show();
         }
 
@@ -356,6 +355,7 @@ namespace Thetacat
             {
                 MediaItemDetails details = new MediaItemDetails(item);
 
+                details.Owner = this;
                 details.ShowDialog();
             }
         }
@@ -471,6 +471,14 @@ namespace Thetacat
                 HandleSpinnerDoubleClick(sender, e);
 
             m_lastSpinnerClick = e.Timestamp;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (App.State.Settings.ShowAsyncLogOnStart ?? false)
+                ShowAsyncLog();
+            if (App.State.Settings.ShowAppLogOnStart ?? false)
+                ShowAppLog();
         }
     }
 }

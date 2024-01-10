@@ -51,7 +51,8 @@ public partial class Migration : Window, INotifyPropertyChanged
     private void LaunchElementsMigration(object sender, RoutedEventArgs e)
     {
         SaveSettingsIfNeeded();
-        MigrationManager elements = new MigrationManager(ElementsDb);
+        MigrationManager elements = new(ElementsDb);
+        elements.Owner = this.Owner;
         elements.Show();
         this.Close();
     }

@@ -60,7 +60,7 @@ public class MediaExplorerCollection
                     from.LineLabel = "";
                     to.LineLabel = fromString;
                 });
-        App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
+        App.State.PreviewImageCache.ImageCacheUpdated += OnImageCacheUpdated;
     }
 
     private object m_lock = new object();
@@ -74,7 +74,7 @@ public class MediaExplorerCollection
 
     public void Close()
     {
-       // ImageCache.Close is now handled in MainWindow
+       // PreviewImageCache.Close is now handled in MainWindow
     }
 
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
@@ -160,7 +160,7 @@ public class MediaExplorerCollection
                             string? path = cache.TryGetCachedFullPath(item.MediaId);
 
                             if (path != null)
-                                App.State.ImageCache.TryAddItem(mediaItem, path);
+                                App.State.PreviewImageCache.TryAddItem(mediaItem, path);
                         }
                     }
                 }
@@ -186,7 +186,7 @@ public class MediaExplorerCollection
         
         if (path != null)
         {
-            ImageCacheItem? cacheItem = App.State.ImageCache.GetAnyExistingItem(item.ID);
+            ImageCacheItem? cacheItem = App.State.PreviewImageCache.GetAnyExistingItem(item.ID);
             explorerItem.TileImage = cacheItem?.Image;
         }
 

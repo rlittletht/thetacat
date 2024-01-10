@@ -11,8 +11,8 @@ using Thetacat.UI;
 namespace Thetacat.Model.ImageCaching;
 
 /*----------------------------------------------------------------------------
-    %%Class: ImageCache
-    %%Qualified: Thetacat.Model.ImageCache
+    %%Class: PreviewImageCache
+    %%Qualified: Thetacat.Model.PreviewImageCache
 
     This caches images for the explorer windows. 
 
@@ -31,9 +31,11 @@ public class ImageCache
     private readonly ProducerConsumer<ImageLoaderWork>? m_imageLoaderPipeline;
     private const int s_picturePreviewWidth = 512;
 
+    private bool m_fFullFidelity = false;
+
     public event EventHandler<ImageCacheUpdateEventArgs>? ImageCacheUpdated;
 
-    public ImageCache()
+    public ImageCache(bool fFullFidelity = false)
     {
         // don't start the pipeline thread if we're under a unit test.
         if (!MainWindow.InUnitTest)
@@ -42,6 +44,7 @@ public class ImageCache
             m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
             m_imageLoaderPipeline.Start();
         }
+        m_fFullFidelity = fFullFidelity;
     }
 
     public void Close()
@@ -133,7 +136,11 @@ public class ImageCache
             {
                 BitmapImage image = new BitmapImage();
                 image.BeginInit();
-                image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
+                if (!m_fFullFidelity)
+                {
+                    image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
+                }
+
                 image.UriSource = new Uri(item.PathToImage);
                 image.EndInit();
                 image.Freeze();
