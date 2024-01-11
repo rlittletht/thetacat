@@ -9,6 +9,7 @@ using System.Windows;
 using HeyRed.Mime;
 using TCore.Pipeline;
 using Thetacat.Azure;
+using Thetacat.Import.UI;
 using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Model.Metatags;
@@ -20,8 +21,8 @@ using Thetacat.Util;
 namespace Thetacat.Import;
 
 /*----------------------------------------------------------------------------
-    %%Class: MediaImport
-    %%Qualified: Thetacat.Import.MediaImport
+    %%Class: MediaImporter
+    %%Qualified: Thetacat.Import.MediaImporter
 
     Create this in order to import media into the catalog.
 
@@ -36,12 +37,12 @@ namespace Thetacat.Import;
     If the constructor is given just the source string, then this will
     return the pending-upload items for this source (presumably this client)
 ----------------------------------------------------------------------------*/
-public class MediaImport
+public class MediaImporter
 {
     public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
-    public MediaImport(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+    public MediaImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
         {
@@ -52,7 +53,7 @@ public class MediaImport
         }
     }
 
-    public MediaImport(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+    public MediaImporter(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (string file in files)
         {
@@ -63,9 +64,20 @@ public class MediaImport
         }
     }
 
-    public MediaImport(string source)
+    /*----------------------------------------------------------------------------
+        %%Function: MediaImporter
+        %%Qualified: Thetacat.Import.MediaImporter.MediaImporter
+
+        This is the interactive version, intended to be attached to an import
+        dialog
+    ----------------------------------------------------------------------------*/
+    public MediaImporter()
     {
-        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(source);
+    }
+
+    public MediaImporter(string clientSource)
+    {
+        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(clientSource);
         bool skippedItems = false;
 
         foreach (ServiceImportItem item in items)
@@ -78,7 +90,7 @@ public class MediaImport
                 ImportItems.Add(
                     new ImportItem(
                         item.ID,
-                        source,
+                        clientSource,
                         PathSegment.CreateFromString(item.SourceServer),
                         PathSegment.CreateFromString(item.SourcePath),
                         ImportItem.ImportState.MissingFromCatalog));
@@ -88,7 +100,7 @@ public class MediaImport
                 ImportItems.Add(
                     new ImportItem(
                         item.ID,
-                        source,
+                        clientSource,
                         PathSegment.CreateFromString(item.SourceServer),
                         PathSegment.CreateFromString(item.SourcePath),
                         ImportItem.StateFromString(item.State ?? string.Empty)));
@@ -210,7 +222,7 @@ public class MediaImport
 
     /*----------------------------------------------------------------------------
         %%Function: UploadMedia
-        %%Qualified: Thetacat.Import.MediaImport.UploadMedia
+        %%Qualified: Thetacat.Import.MediaImporter.UploadMedia
 
         No benefit to doing multiple of these in parallel -- the upload bandwidth
         is likely the limiting factor. But do do this in the background to remain
@@ -222,4 +234,13 @@ public class MediaImport
 
         App.State.AddBackgroundWork("Uploading pending media",  UploadPendingMediaWork);
     }
+
+    public static void LaunchImporter(Window parentWindow)
+    {
+        MediaImporter importer = new MediaImporter();
+        MediaImport import = new(importer);
+        import.Owner = parentWindow;
+        import.ShowDialog();
+    }
+
 }

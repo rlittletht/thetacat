@@ -1,0 +1,77 @@
+﻿<Window x:Class="Thetacat.Import.UI.MediaImport"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Import.UI"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
+        mc:Ignorable="d"
+        Title="MediaImport" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="64" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0">Source path:</TextBlock>
+            <TextBox Grid.Column="1" Text="{Binding Path=SourcePath}" />
+            <Button Grid.Column="2" Content="..." Click="BrowseForPath" />
+            <Button Grid.Column="3" Content="Add" Click="AddToSources" />
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="8*" />
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="Sources">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <TreeView ItemsSource="{Binding Path=Nodes}" Name="Sources">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <DockPanel LastChildFill="True">
+                                    <CheckBox IsChecked="{Binding Path=Checked}" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
+                                </DockPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                    <Button Content="Add to import" Click="AddToImport" Grid.Row="1"/>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Items to import" Grid.Column="1">
+                <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items">
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}" ItemsSource="{Binding Children}">
+                            <DockPanel LastChildFill="True">
+                                <CheckBox IsChecked="{Binding Path=Checked}" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
+                            </DockPanel>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </GroupBox>
+        </Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="192"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="1" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
+                <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                       VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

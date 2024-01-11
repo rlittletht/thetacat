@@ -15,6 +15,7 @@
         <!--VerticalAlignment="Stretch">-->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="T_ools">
+                <MenuItem Header="_Import" Click="LaunchImport" />
                 <MenuItem Header="_Migration" Click="LaunchMigration" />
                 <MenuItem Header="Meta_tags" Click="ManageMetatags" />
                 <MenuItem Header="Options" Click="LaunchOptions" />

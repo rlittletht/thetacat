@@ -14,14 +14,17 @@
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.0.5324" />
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
     <PackageReference Include="Meziantou.Framework.WPF" Version="1.5.5" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.35.0" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All" Version="1.12.10" />
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
     <PackageReference Include="TCore.Pipeline" Version="1.1.0" />
     <PackageReference Include="TCore.Sql" Version="2.2.3" />
     <PackageReference Include="TCore.XmlSettings" Version="1.4.0" />
+    <PackageReference Include="winapicp" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

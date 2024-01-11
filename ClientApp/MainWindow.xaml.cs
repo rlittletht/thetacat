@@ -280,11 +280,11 @@ namespace Thetacat
 
         private void UploadItems(object sender, RoutedEventArgs e)
         {
-            MediaImport? import = null;
+            MediaImporter? import = null;
 
             try
             {
-                import = new MediaImport(MainWindow.ClientName);
+                import = new MediaImporter(MainWindow.ClientName);
             }
             catch (CatExceptionCanceled)
             {
@@ -479,6 +479,11 @@ namespace Thetacat
                 ShowAsyncLog();
             if (App.State.Settings.ShowAppLogOnStart ?? false)
                 ShowAppLog();
+        }
+
+        private void LaunchImport(object sender, RoutedEventArgs e)
+        {
+            MediaImporter.LaunchImporter(this);
         }
     }
 }

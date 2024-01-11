@@ -61,9 +61,9 @@ public class ImportItem: INotifyPropertyChanged
     public PathSegment SourcePath { get => m_sourcePath; set => SetField(ref m_sourcePath, value); }
     public ImportState State { get => m_state; set => SetField(ref m_state, value); }
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
-    public MediaImport.NotifyCatalogItemCreatedDelegate? m_onCatalogItemCreated;
+    public MediaImporter.NotifyCatalogItemCreatedDelegate? m_onCatalogItemCreated;
 
-    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImport.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
+    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
     {
         ID = id;
         m_source = source;

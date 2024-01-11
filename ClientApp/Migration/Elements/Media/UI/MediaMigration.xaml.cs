@@ -339,7 +339,7 @@ public partial class MediaMigration : UserControl
     private void MigrateToCatalog(object sender, RoutedEventArgs e)
     {
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
-        MediaImport import = new MediaImport(
+        MediaImporter importer = new MediaImporter(
             checkedItems, 
             MainWindow.ClientName,
             (itemFile, catalogItem) =>
@@ -348,7 +348,7 @@ public partial class MediaMigration : UserControl
                 pseItem.CatID = catalogItem.ID;
             });
 
-        import.CreateCatalogItemsAndUpdateImportTable(App.State.Catalog, App.State.MetatagSchema);
+        importer.CreateCatalogItemsAndUpdateImportTable(App.State.Catalog, App.State.MetatagSchema);
         ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
         // and lastly we have to add the items we just manually added to our cache
