@@ -20,6 +20,7 @@ using Thetacat.Controls;
 using Thetacat.Metatags;
 using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;

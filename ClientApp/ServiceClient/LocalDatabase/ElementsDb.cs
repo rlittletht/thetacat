@@ -10,13 +10,15 @@ using Emgu.CV.Util;
 using MetadataExtractor;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore;
+using Thetacat.Migration.Elements;
 using Thetacat.Migration.Elements.Media;
+using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Migration.Elements.Versions;
 using Thetacat.ServiceClient;
 using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 
-namespace Thetacat.Migration.Elements.Metadata.UI;
+namespace Thetacat.ServiceClient.LocalDatabase;
 
 /*
 NOTES on Elements database
@@ -180,7 +182,7 @@ public class ElementsDb
     {
         try
         {
-            return 
+            return
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryMetatagDefinitions,

@@ -19,6 +19,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Versions;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 

@@ -23,6 +23,7 @@ using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Media.UI;
 using Thetacat.Migration.Elements.Metadata.UI.Media;
 using Thetacat.Model;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;

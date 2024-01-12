@@ -15,8 +15,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Identity.Client;
 using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;
 

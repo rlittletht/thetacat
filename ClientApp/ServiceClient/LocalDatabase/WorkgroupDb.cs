@@ -6,13 +6,14 @@ using System.Text;
 using System.Windows;
 using TCore;
 using Thetacat.Migration.Elements.Metadata.UI;
+using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;
 
-namespace Thetacat.Model.Workgroups;
+namespace Thetacat.ServiceClient.LocalDatabase;
 
 public class WorkgroupDb
 {
@@ -95,7 +96,7 @@ public class WorkgroupDb
     private readonly string s_queryWorkgroupClock = @"
         SELECT value FROM tcat_workgroup_vectorclock WHERE clock = 'workgroup-clock'";
 
-    private readonly string s_insertWorkgroupClient =@"
+    private readonly string s_insertWorkgroupClient = @"
         INSERT INTO tcat_workgroup_clients (id, name, vectorClock) VALUES (@Id, @Name, @VectorClock)";
 
     private readonly string s_updateWorkgroupClock = @"
@@ -182,7 +183,7 @@ public class WorkgroupDb
                 try
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
-                        _Connection.DoGenericQueryDelegateRead<ServiceWorkgroupMediaClock>(
+                        _Connection.DoGenericQueryDelegateRead(
                             Guid.NewGuid(),
                             s_queryWorkgroupMediaClock,
                             s_aliases,
@@ -208,9 +209,9 @@ public class WorkgroupDb
                 catch (TcSqlExceptionNoResults)
                 {
                     return new ServiceWorkgroupMediaClock()
-                           {
-                               VectorClock = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock)),
-                           };
+                    {
+                        VectorClock = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock)),
+                    };
                 }
             });
     }
@@ -241,7 +242,7 @@ public class WorkgroupDb
     T DoExclusiveDatabaseWork<T>(Func<T> work)
     {
         _Connection.BeginExclusiveTransaction();
-        
+
         try
         {
             T t = work();
@@ -301,7 +302,7 @@ public class WorkgroupDb
 
         foreach (Guid key in cacheChanges.Keys)
         {
-            List<KeyValuePair<string,string>> updates = cacheChanges[key];
+            List<KeyValuePair<string, string>> updates = cacheChanges[key];
 
             if (updates.Count == 0)
                 continue;
@@ -329,7 +330,7 @@ public class WorkgroupDb
             updateLines.Add(builder.ToString());
         }
 
-        DoExclusiveDatabaseWork<bool>(
+        DoExclusiveDatabaseWork(
             () =>
             {
                 int currectVector = _Connection.NExecuteScalar(s_queryWorkgroupClock);
