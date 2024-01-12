@@ -87,7 +87,7 @@ namespace Thetacat.Import.UI
             }
         }
 
-        private void AddToSources(object sender, RoutedEventArgs e)
+        private async void AddToSources(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists(m_model.SourcePath))
             {
@@ -99,13 +99,24 @@ namespace Thetacat.Import.UI
 
             string directoryLeaf = Path.GetRelativePath(parent, m_model.SourcePath);
 
-            ImportNode node = new ImportNode(true, directoryLeaf, "", parent, true);
+            List<ImportNode> nodesToAdd =
+                await DoBackgroundWorkAsync<List<ImportNode>>(
+                    "Adding items to source",
+                    (progress) =>
+                    {
+                        List<ImportNode> _nodesToAdd = new();
 
-            m_model.Nodes.Add(node);
-            ProcessNode(node);
+                        ImportNode node = new ImportNode(true, directoryLeaf, "", parent, true);
+
+                        _nodesToAdd.Add(node);
+                        ProcessNode(node);
+                        return _nodesToAdd;
+                    });
+
+            m_model.Nodes.AddRange(nodesToAdd);
         }
 
-        private void AddFilesInNodeToImportItems(ImportNode node)
+        private void AddFilesInNodeToImportItems(List<ImportNode> nodesToAdd, ImportNode node)
         {
             ImportNode parent = new ImportNode(true, node.FullPath, "", node.FullPath, true);
 
@@ -116,25 +127,42 @@ namespace Thetacat.Import.UI
             }
 
             if (parent.Children.Count > 0)
-                m_model.ImportItems.Add(parent);
+                nodesToAdd.Add(parent);
         }
 
-        private void AddToImport(object sender, RoutedEventArgs e)
+        private async void AddToImport(object sender, RoutedEventArgs e)
         {
             List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(Sources);
 
-            foreach (ImportNode node in checkedItems)
-            {
-                AddFilesInNodeToImportItems(node);
-            }
+            List<ImportNode> nodesToAdd =
+                await DoBackgroundWorkAsync<List<ImportNode>>(
+                    "Adding import items",
+                    (progress) =>
+                    {
+                        List<ImportNode> _nodesToAdd = new();
+
+                        foreach (ImportNode node in checkedItems)
+                        {
+                            AddFilesInNodeToImportItems(_nodesToAdd, node);
+                        }
+
+                        return _nodesToAdd;
+                    });
+
+            m_model.ImportItems.AddRange(nodesToAdd);
         }
 
         private ProgressListDialog? m_backgroundProgressDialog;
         private readonly BackgroundWorkers m_importBackgroundWorkers;
 
-        public void AddBackgroundWork(string description, BackgroundWorkerWork work)
+        public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
         {
             m_importBackgroundWorkers.AddWork(description, work);
+        }
+
+        public async Task<T> DoBackgroundWorkAsync<T>(string description, BackgroundWorkerWork<T> work)
+        {
+            return await m_importBackgroundWorkers.DoWorkAsync<T>(description, work);
         }
 
         private void HandleSpinnerDoubleClick(object sender, MouseButtonEventArgs e)
@@ -159,6 +187,16 @@ namespace Thetacat.Import.UI
                 HandleSpinnerDoubleClick(sender, e);
 
             m_lastSpinnerClick = e.Timestamp;
+        }
+
+        private void UncheckNode(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void CheckNode(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

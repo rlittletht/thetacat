@@ -6,12 +6,12 @@ using Thetacat.UI;
 
 namespace Thetacat.Util;
 
-public delegate void BackgroundWorkerWork(IProgressReport progress);
-public delegate void OnWorkCompletedDelegate(BackgroundWorker worker);
+public delegate T BackgroundWorkerWork<T>(IProgressReport progress);
+public delegate void OnWorkCompletedDelegate(IBackgroundWorker worker);
 
 // a single background worker created to do a specific work item. This doesn't
 // handle any threading issues, that's the job of the BackgroundWorkers object
-public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
+public class BackgroundWorker<T>: INotifyPropertyChanged, IProgressReport, IBackgroundWorker
 {
     private int m_tenthPercentComplete;
     private string m_description;
@@ -34,10 +34,10 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
         set => SetField(ref m_tenthPercentComplete, value);
     }
 
-    private readonly BackgroundWorkerWork m_work;
+    private readonly BackgroundWorkerWork<T> m_work;
     private readonly OnWorkCompletedDelegate? m_onWorkCompleted;
 
-    public BackgroundWorker(string description, BackgroundWorkerWork work, OnWorkCompletedDelegate? onWorkComplete)
+    public BackgroundWorker(string description, BackgroundWorkerWork<T> work, OnWorkCompletedDelegate? onWorkComplete)
     {
         m_description = description;
         m_work = work;
@@ -47,11 +47,13 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
     private IProgressReport? m_progressInner;
     private bool m_isIndeterminate;
 
-    public void Start(IProgressReport? progress)
+    public T Start(IProgressReport? progress)
     {
         m_progressInner = progress;
-        m_work(this);
+        T t = m_work(this);
         m_onWorkCompleted?.Invoke(this);
+
+        return t;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -61,9 +63,9 @@ public class BackgroundWorker: INotifyPropertyChanged, IProgressReport
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    protected bool SetField<T1>(ref T1 field, T1 value, [CallerMemberName] string? propertyName = null)
     {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        if (EqualityComparer<T1>.Default.Equals(field, value)) return false;
         field = value;
         OnPropertyChanged(propertyName);
         return true;

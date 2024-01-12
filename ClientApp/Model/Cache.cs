@@ -303,7 +303,7 @@ public class Cache: ICache
         File.Copy(importSource.Local, fullLocalPath);
     }
 
-    public void DoCacheWork(IProgressReport progressReport, int chunkSize)
+    public bool DoCacheWork(IProgressReport progressReport, int chunkSize)
     {
         // this is an indeterminate progress report, so just report infinately
 
@@ -332,7 +332,7 @@ public class Cache: ICache
                     {
                         MainWindow.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
                         _Workgroup.PushChangesToDatabase(null);
-                        return;
+                        return false;
                     }
                     if (task.Result)
                     {
@@ -352,6 +352,7 @@ public class Cache: ICache
             QueueCacheDownloads(chunkSize);
         }
         progressReport.WorkCompleted();
+        return true;
     }
 
     public void StartBackgroundCaching(int chunkSize)

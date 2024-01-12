@@ -41,7 +41,7 @@
                             <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
                                                       ItemsSource="{Binding Children}">
                                 <DockPanel LastChildFill="True">
-                                    <CheckBox IsChecked="{Binding Path=Checked}" />
+                                    <CheckBox IsChecked="{Binding Path=Checked}" Checked="CheckNode" Unchecked="UncheckNode" />
                                     <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
                                 </DockPanel>
                             </HierarchicalDataTemplate>
@@ -63,12 +63,12 @@
                 </TreeView>
             </GroupBox>
         </Grid>
-        <Grid>
+        <Grid Grid.Row="2" Height="32">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="32" />
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="192"/>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="1" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
+            <Grid Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
                 <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"
                                        VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
             </Grid>

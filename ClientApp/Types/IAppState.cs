@@ -27,7 +27,7 @@ public interface IAppState
     void RefreshMetatagSchema();
     void CloseAsyncLogMonitor(bool skipClose);
     void CloseAppLogMonitor(bool skipClose);
-    public void AddBackgroundWork(string description, BackgroundWorkerWork work);
+    public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work);
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate);
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate);
 }

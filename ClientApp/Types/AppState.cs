@@ -12,7 +12,8 @@ namespace Thetacat.Types;
 public class AppState : IAppState
 {
     public delegate void CloseLogMonitorDelegate(bool skipClose);
-    public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork work);
+    public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork<bool> work);
+
     private CloseLogMonitorDelegate? m_closeAsyncLog;
     private CloseLogMonitorDelegate? m_closeAppLog;
     private AddBackgroundWorkDelegate? m_addBackgroundWork;
@@ -39,7 +40,7 @@ public class AppState : IAppState
         m_addBackgroundWork = addWorkDelegate;;
     }
 
-    public void AddBackgroundWork(string description, BackgroundWorkerWork work)
+    public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work)
     {
         if (m_addBackgroundWork == null)
             throw new CatExceptionInitializationFailure("no background work collection available");

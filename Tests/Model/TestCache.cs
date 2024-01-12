@@ -20,7 +20,7 @@ public class TestCache
     {
     }
 
-    private static void AddWorkMock(string description, BackgroundWorkerWork work)
+    private static void AddWorkMock(string description, BackgroundWorkerWork<bool> work)
     {
 
     }

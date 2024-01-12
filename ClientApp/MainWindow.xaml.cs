@@ -395,7 +395,7 @@ namespace Thetacat
             ProgressDialog.DoWorkWithProgress(DoWork, this);
         }
 
-        private void BackgroundTestTask(IProgressReport progressReport, int totalMsec)
+        private bool BackgroundTestTask(IProgressReport progressReport, int totalMsec)
         {
             bool fIndeterminate = true;
 
@@ -416,6 +416,7 @@ namespace Thetacat
                     progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
             }
             progressReport.WorkCompleted();
+            return true;
         }
 
         private void StartBackground5s(object sender, RoutedEventArgs e)
@@ -439,7 +440,7 @@ namespace Thetacat
                 (progress) => BackgroundTestTask(progress, -10000));
         }
 
-        public void AddBackgroundWork(string description, BackgroundWorkerWork work)
+        public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
         {
             m_mainBackgroundWorkers.AddWork(description, work);
         }

@@ -37,6 +37,10 @@ public class CheckableTreeViewSupport<T> where T: class, ICheckableTreeViewItem<
         return checkedItems;
     }
 
+    public static void CheckItemSubtree()
+    {
+    }
+
     public static void ToggleItems(IEnumerable<object?>? items)
     {
         if (items == null)

@@ -166,7 +166,7 @@ public class MediaImporter
             (report) => CreateCatalogAndUpdateImportTableWork(report, catalog, metatagSchema));
     }
 
-    private void UploadPendingMediaWork(IProgressReport progress)
+    private bool UploadPendingMediaWork(IProgressReport progress)
     {
         try
         {
@@ -187,7 +187,7 @@ public class MediaImporter
                     if (task.IsCanceled || task.IsFaulted)
                     {
                         MainWindow.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
-                        return;
+                        return false;
                     }
 
                     TcBlob blob = task.Result;
@@ -218,6 +218,8 @@ public class MediaImporter
         {
             progress.WorkCompleted();
         }
+
+        return true;
     }
 
     /*----------------------------------------------------------------------------
