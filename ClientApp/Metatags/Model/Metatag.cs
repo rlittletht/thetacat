@@ -4,7 +4,7 @@ using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class Metatag : IMetatag
 {

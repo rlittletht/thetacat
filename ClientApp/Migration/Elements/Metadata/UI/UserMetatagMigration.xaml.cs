@@ -19,7 +19,7 @@ using System.Windows.Shapes;
 using Emgu.CV.Features2D;
 using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.ServiceClient.LocalService;

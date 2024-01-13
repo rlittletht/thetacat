@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Types.Parallel;

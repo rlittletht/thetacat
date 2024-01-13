@@ -1,5 +1,5 @@
-﻿using Thetacat.Model;
-using Thetacat.Model.Metatags;
+﻿using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using Thetacat.ServiceClient;
 
 namespace Tests.Model;

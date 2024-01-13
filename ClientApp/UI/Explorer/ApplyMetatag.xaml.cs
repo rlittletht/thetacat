@@ -13,8 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Logging;
 using Thetacat.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Util;
 

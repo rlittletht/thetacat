@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text;
 using Thetacat.Metatags;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 namespace Tests.Model.Metatags;
 

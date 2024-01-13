@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Folder Include="Azure\" />
+    <Folder Include="Model\Metatags\" />
     <Folder Include="Secrets\" />
   </ItemGroup>
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 /*----------------------------------------------------------------------------
     %%Class: MetatagSchemaDiff

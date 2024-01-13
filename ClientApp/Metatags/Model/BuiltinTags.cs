@@ -1,7 +1,7 @@
 ﻿using System;
 using Thetacat.Standards;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class BuiltinTags
 {

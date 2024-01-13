@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using NUnit.Framework;
 using Thetacat.Logging;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Types.Parallel;

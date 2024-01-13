@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Security.Cryptography;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
 namespace Thetacat.Metatags;

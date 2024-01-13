@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using MetadataExtractor;
 using Microsoft.Identity.Client;
+using Thetacat.Metatags.Model;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Model.Metatags;
 
 namespace Thetacat.Migration.Elements;
 

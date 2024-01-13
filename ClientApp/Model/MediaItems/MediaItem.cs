@@ -21,13 +21,13 @@ using MetadataExtractor.Formats.Jpeg;
 using NUnit.Framework;
 using Thetacat.Import;
 using Thetacat.Logging;
-using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Model;
 

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Model;
 

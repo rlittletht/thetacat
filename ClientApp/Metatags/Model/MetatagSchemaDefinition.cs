@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Thetacat.Metatags;
 using Thetacat.Types;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 /*----------------------------------------------------------------------------
     %%Class: MetatagSchemaDefinition

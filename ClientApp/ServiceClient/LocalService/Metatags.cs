@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using TCore;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.ServiceClient.LocalService;
 

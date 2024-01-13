@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Thetacat.Import;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient.LocalService;
 
 namespace Thetacat.ServiceClient;

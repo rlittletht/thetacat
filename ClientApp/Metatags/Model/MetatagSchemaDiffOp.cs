@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class MetatagSchemaDiffOp
 {

@@ -11,7 +11,7 @@ using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class MetatagSchema
 {
@@ -203,7 +203,7 @@ public class MetatagSchema
     {
         StandardDefinition? def = MetatagStandards.GetDefinitionForStandardAndType(standard, type);
 
-        if (def == null) 
+        if (def == null)
             return null;
 
         return FindStandardItem(standard, def);
@@ -234,7 +234,7 @@ public class MetatagSchema
         {
             // we have to create one
             dirTag = Metatag.Create(parent?.ID, standardDefinitions.StandardTag, description, standard, idStatic);
-            
+
             if (parent == null)
                 AddStandardRoot(dirTag);
             else

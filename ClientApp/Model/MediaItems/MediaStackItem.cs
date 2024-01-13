@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 

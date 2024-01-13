@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Thetacat.Standards;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class MetatagBuilder
 {

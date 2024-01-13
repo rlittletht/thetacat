@@ -20,7 +20,6 @@ using System.Windows.Shapes;
 using Microsoft.Identity.Client;
 using Thetacat.Controls.MetatagTreeViewControl;
 using Thetacat.Metatags;
-using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 

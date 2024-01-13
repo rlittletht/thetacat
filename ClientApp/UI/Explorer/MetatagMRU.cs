@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.UI.Explorer;
 

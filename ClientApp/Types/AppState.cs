@@ -1,10 +1,10 @@
 ﻿using System;
 using System.DirectoryServices.ActiveDirectory;
 using System.Windows;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
-using Thetacat.Model.Metatags;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;

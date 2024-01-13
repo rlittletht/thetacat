@@ -1,7 +1,7 @@
 ﻿using System;
 using Thetacat.Types;
 
-namespace Thetacat.Model.Metatags;
+namespace Thetacat.Metatags.Model;
 
 public class MetatagMatcher : IMetatagMatcher<IMetatag>
 {
