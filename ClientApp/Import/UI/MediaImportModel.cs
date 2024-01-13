@@ -9,8 +9,9 @@ namespace Thetacat.Import.UI;
 public class MediaImportModel: INotifyPropertyChanged
 {
     private string m_sourcePath = String.Empty;
-    public ObservableCollection<ImportNode> Nodes { get; set; } = new ObservableCollection<ImportNode>();
-    public ObservableCollection<ImportNode> ImportItems { get; set; } = new ObservableCollection<ImportNode>();
+    public ObservableCollection<ImportNode> Nodes { get; set; } = new();
+    public ObservableCollection<ImportNode> ImportItems { get; set; } = new();
+    public ObservableCollection<string> FileExtensions { get; set; } = new();
 
     public string SourcePath
     {

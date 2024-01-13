@@ -11,7 +11,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
@@ -41,32 +41,62 @@
                             <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
                                                       ItemsSource="{Binding Children}">
                                 <DockPanel LastChildFill="True">
-                                    <CheckBox IsChecked="{Binding Path=Checked}" Checked="CheckNode" Unchecked="UncheckNode" />
+                                    <CheckBox IsChecked="{Binding Path=Checked}" Click="OnCheckboxClick" />
                                     <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
                                 </DockPanel>
                             </HierarchicalDataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
-                    <Button Content="Add to import" Click="AddToImport" Grid.Row="1"/>
+                    <Button Content="Add to import" Click="AddToImport" Grid.Row="1" />
                 </Grid>
             </GroupBox>
             <GroupBox Header="Items to import" Grid.Column="1">
-                <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items">
-                    <TreeView.ItemTemplate>
-                        <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}" ItemsSource="{Binding Children}">
-                            <DockPanel LastChildFill="True">
-                                <CheckBox IsChecked="{Binding Path=Checked}" />
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
-                            </DockPanel>
-                        </HierarchicalDataTemplate>
-                    </TreeView.ItemTemplate>
-                </TreeView>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="8*" />
+                        <RowDefinition Height="2*" />
+                    </Grid.RowDefinitions>
+                    <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <DockPanel LastChildFill="True">
+                                    <CheckBox IsChecked="{Binding Path=Checked}" Click="OnCheckboxClick" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
+                                </DockPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="112" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <ListBox Name="ExtensionList" ItemsSource="{Binding Path=FileExtensions}"
+                                     SelectionMode="Multiple" Grid.Row="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                <Button Content="Uncheck" Click="UncheckSelectedExtensions" Grid.Row="2" Width="56"/>
+                                <Button Content="Check" Click="CheckSelectedExtensions" Grid.Row="2" Width="56"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
             </GroupBox>
         </Grid>
         <Grid Grid.Row="2" Height="32">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="32" />
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
                 <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"

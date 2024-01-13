@@ -39,6 +39,7 @@ namespace Thetacat.Import.UI
             m_importer = importer;
             Sources.ItemsSource = m_model.Nodes;
             m_importBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
+            App.State.RegisterWindowPlace(this, "media-import");
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -116,13 +117,17 @@ namespace Thetacat.Import.UI
             m_model.Nodes.AddRange(nodesToAdd);
         }
 
-        private void AddFilesInNodeToImportItems(List<ImportNode> nodesToAdd, ImportNode node)
+        private void AddFilesInNodeToImportItems(List<ImportNode> nodesToAdd, HashSet<string> extensions, ImportNode node)
         {
             ImportNode parent = new ImportNode(true, node.FullPath, "", node.FullPath, true);
 
             foreach (string file in Directory.GetFiles(node.FullPath))
             {
                 ImportNode fileNode = new ImportNode(true, file, "", parent.Path, false);
+                string extension = Path.GetExtension(file).ToLowerInvariant();
+                if (extension.Length > 1)
+                    extensions.Add(extension);
+
                 parent.Children.Add(fileNode);
             }
 
@@ -133,6 +138,7 @@ namespace Thetacat.Import.UI
         private async void AddToImport(object sender, RoutedEventArgs e)
         {
             List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(Sources);
+            HashSet<string> extensions = new HashSet<string>(m_model.FileExtensions);
 
             List<ImportNode> nodesToAdd =
                 await DoBackgroundWorkAsync<List<ImportNode>>(
@@ -143,13 +149,17 @@ namespace Thetacat.Import.UI
 
                         foreach (ImportNode node in checkedItems)
                         {
-                            AddFilesInNodeToImportItems(_nodesToAdd, node);
+                            AddFilesInNodeToImportItems(_nodesToAdd, extensions, node);
                         }
 
                         return _nodesToAdd;
                     });
 
             m_model.ImportItems.AddRange(nodesToAdd);
+            m_model.FileExtensions.Clear();
+            List<string> sortedExtensions = new List<string>(extensions);
+            sortedExtensions.Sort();
+            m_model.FileExtensions.AddRange(sortedExtensions);
         }
 
         private ProgressListDialog? m_backgroundProgressDialog;
@@ -189,14 +199,47 @@ namespace Thetacat.Import.UI
             m_lastSpinnerClick = e.Timestamp;
         }
 
-        private void UncheckNode(object sender, RoutedEventArgs e)
+        private void OnCheckboxClick(object sender, RoutedEventArgs e)
         {
-
+            CheckableTreeViewSupport<ImportNode>.DoCheckboxClickSetUnsetChildren(sender, e);
         }
 
-        private void CheckNode(object sender, RoutedEventArgs e)
+        private void ToggleSelectedExtensions(object sender, RoutedEventArgs e)
         {
+            
+        }
 
+        HashSet<string> GetSelectedExtensions()
+        {
+            HashSet<string> selected = new();
+
+            foreach (object? item in ExtensionList.SelectedItems)
+            {
+                if (item is string extensions)
+                    selected.Add(extensions);
+            }
+
+            return selected;
+        }
+
+        private void UncheckSelectedExtensions(object sender, RoutedEventArgs e)
+        {
+            HashSet<string> selected = GetSelectedExtensions();
+
+            CheckableTreeViewSupport<ImportNode>.FilterAndToggleSetSubtree(
+                m_model.ImportItems,
+                (ImportNode node) => selected.Contains(Path.GetExtension(node.Name).ToLowerInvariant()),
+                false);
+        }
+
+        private void CheckSelectedExtensions(object sender, RoutedEventArgs e)
+        {
+            HashSet<string> selected = GetSelectedExtensions();
+
+            CheckableTreeViewSupport<ImportNode>.FilterAndToggleSetSubtree(
+                m_model.ImportItems,
+                (ImportNode node) => selected.Contains(Path.GetExtension(node.Name).ToLowerInvariant()),
+                true);
         }
     }
 }
