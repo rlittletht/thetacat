@@ -148,6 +148,7 @@ public partial class MediaTagMigrateSummary : UserControl
         AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Width, item.ImageWidth.ToString());
         AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Height, item.ImageHeight.ToString());
         AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_OriginalMediaDate, item.FileDateOriginal.ToUniversalTime().ToString("u"));
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u"));
     }
 
     void AddVersionStacksToMigrationItems(PseMediaItem item, MediaItem catItem)

@@ -254,6 +254,8 @@ public class MetatagSchema
             AddMetatag(BuiltinTags.s_Height);
         if (GetMetatagFromId(BuiltinTags.s_OriginalMediaDateID) == null)
             AddMetatag(BuiltinTags.s_OriginalMediaDate);
+        if (GetMetatagFromId(BuiltinTags.s_ImportDateID) == null)
+            AddMetatag(BuiltinTags.s_ImportDate);
     }
 
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)

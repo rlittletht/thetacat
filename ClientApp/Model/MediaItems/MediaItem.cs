@@ -264,9 +264,26 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
-#endregion
+    public DateTime? ImportDate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_ImportDateID, out MediaTag? tag))
+                return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
-#region Changes/Versions
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_ImportDate, value?.ToUniversalTime().ToString("u"));
+            FAddOrUpdateMediaTag(tag);
+            OnPropertyChanged(nameof(ImportDate));
+        }
+    }
+
+    #endregion
+
+    #region Changes/Versions
 
     public bool MaybeHasChanges => m_base != null;
 
@@ -556,6 +573,8 @@ public class MediaItem : INotifyPropertyChanged
             FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()));
             FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()));
         }
+
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")));
 
         string? dateTimeString =
             TryGetMediaTagValueFromStandardAndType(
