@@ -39,7 +39,8 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public string VolumeName { get; set; } = string.Empty;
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
-    public DateTime FileDateOriginal { get; set; }
+    public DateTime? FileDateOriginal { get; set; }
+    public DateTime ImportDate { get; set; }
     public PathSegment? VerifiedPath { get; set; }
 
     public bool InCatalog

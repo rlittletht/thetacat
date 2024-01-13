@@ -76,6 +76,11 @@ media_stack_to_media_table
     location in the stack, with 0 being the "top" of the stack (most recent). [PARENT_ID] is the MEDIA_ID of the
     item below this item (the largest index has 0 for a parent)
 
+// IMPORT DATE
+// Elements creates a tag for each import that happens. These tags are of type "import", and they are named
+// "import YYYY-MM-DDThh:mm:ss".  They appear to be in UTC. So to figure out when media was imported, you have
+// to find the import tag that was applied to it
+
 useful queries:
 
     Show all the string-type metadata values for all of the media in the library. One row per metadata / media pair.
@@ -100,8 +105,8 @@ public class ElementsDb
             { "tag_table", "TT" },
             { "metadata_description_table", "MDT" },
             { "metadata_string_table", "MST" },
-//            { "", "" },
-//            { "", "" },
+            { "tag_to_media_table", "TMT" },
+            { "media_table", "MT" }
         };
 
     private static readonly string s_queryMediaStacks = @"
@@ -362,6 +367,54 @@ public class ElementsDb
             MessageBox.Show($"warnings: {string.Join(",", m_log)}");
     }
 
+    private static readonly string s_queryMediaImportDates = @"
+        SELECT $$media_table$$.id, $$tag_table$$.name 
+            FROM $$#media_table$$
+            INNER JOIN $$#tag_to_media_table$$ on $$tag_to_media_table$$.media_id = $$media_table$$.id
+            INNER JOIN $$#tag_table$$ on $$tag_table$$.id = $$tag_to_media_table$$.tag_id
+            WHERE $$tag_table$$.type_name = 'import' ";
+
+    
+    void ReadMediaImportDates(Dictionary<int, PseMediaItem> items)
+    {
+        List<PseMediaImportItem> imports;
+
+        try
+        {
+            imports = _Connection.DoGenericQueryDelegateRead(
+                Guid.NewGuid(),
+                s_queryMediaImportDates,
+                s_aliases,
+                (ISqlReader reader, Guid crid, ref List<PseMediaImportItem> building) =>
+                {
+                    building.Add(
+                        new PseMediaImportItem()
+                        {
+                            ID = reader.GetInt32(0),
+                            Name = reader.GetString(1)
+                        });
+                });
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            imports = new List<PseMediaImportItem>();
+        }
+
+        // now add the dates to the media
+        foreach (PseMediaImportItem import in imports)
+        {
+            if (import.Name == null)
+                throw new CatExceptionServiceDataFailure("name not set in import item");
+
+            if (items.TryGetValue(import.ID, out PseMediaItem? item))
+            {
+                DateTime date = DateTime.Parse(import.Name[7..]);
+
+                item.ImportDate = date.ToLocalTime();
+            }
+        }
+    }
+
     private static readonly string s_queryMediaTags = @"
         SELECT TMT.media_id, TT.id
             FROM tag_to_media_table TMT
@@ -462,6 +515,7 @@ public class ElementsDb
         Dictionary<int, PseMediaItem> map = ReadMediaDictionary();
         ReadMediaTagValues(map);
         ReadMediaMetatags(metatagMigrate, map);
+        ReadMediaImportDates(map);
         return map.Values;
     }
 

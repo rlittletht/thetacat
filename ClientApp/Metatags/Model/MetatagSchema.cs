@@ -272,6 +272,8 @@ public class MetatagSchema
             }
         }
 
+        EnsureBuiltinMetatagsDefined();
+
         m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
     }
 
