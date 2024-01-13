@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -60,6 +61,15 @@ namespace Thetacat
         {
             m_appState = new AppState();
 
+            string? directory = Path.GetDirectoryName(SettingsPath);
+
+            if (directory != null)
+                Directory.CreateDirectory(directory);
+
+            directory = Path.GetDirectoryName(ClientDatabasePath);
+            if (directory != null)
+                Directory.CreateDirectory(directory);
+
             WindowPlace = new WindowPlace(LoadPlacements, SavePlacements);
         }
 
@@ -68,5 +78,11 @@ namespace Thetacat
             base.OnExit(e);
             WindowPlace.Save();
         }
+
+        public static string SettingsPath => 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
+
+        public static string ClientDatabasePath => 
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\client.db");
     }
 }

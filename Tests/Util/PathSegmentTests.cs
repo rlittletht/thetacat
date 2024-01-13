@@ -15,7 +15,7 @@ public class PathSegmentTests
     [Test]
     public static void TestCreateFromString(string path, string expectedSegment, string? expectedLocal)
     {
-        PathSegment expected = PathSegment.CreateForTest(expectedSegment, expectedLocal);
+        PathSegment expected = new PathSegment(expectedSegment, expectedLocal);
         PathSegment actual = PathSegment.CreateFromString(path);
 
         Assert.AreEqual(expected, actual);
@@ -33,7 +33,7 @@ public class PathSegmentTests
     [Test]
     public static void TestPathCombineBoth(string pathA, string pathB, string expectedSegment, string? expectedLocal)
     {
-        PathSegment expected = PathSegment.CreateForTest(expectedSegment, expectedLocal);
+        PathSegment expected = new PathSegment(expectedSegment, expectedLocal);
 
         PathSegment segmentA = new PathSegment(pathA);
         PathSegment segmentB = new PathSegment(pathB);
@@ -52,7 +52,7 @@ public class PathSegmentTests
     [Test]
     public static void TestGetPathRoot(string path, string expectedSegment, string? expectedLocal)
     {
-        PathSegment expected = PathSegment.CreateForTest(expectedSegment, expectedLocal);
+        PathSegment expected = new PathSegment(expectedSegment, expectedLocal);
 
         PathSegment actual1 = PathSegment.GetPathRoot(path);
         PathSegment actual2 = PathSegment.GetPathRoot(new PathSegment(path));

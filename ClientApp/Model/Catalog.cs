@@ -279,7 +279,7 @@ public class Catalog : ICatalog
             }
 
             // since we found a matching virtualPath, let's see if the MD5 matches
-            string md5 = Checksum.GetMD5ForPathSync(fullLocalPath);
+            string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalPath);
             if (md5 == item.MD5)
                 return item;
         }

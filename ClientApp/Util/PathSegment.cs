@@ -7,7 +7,7 @@ namespace Thetacat.Util;
 // this could also be a full path, but not necessarily
 public class PathSegment
 {
-    private string m_segment;
+    private readonly string m_segment;
     private string? m_local;
 
     public PathSegment()
@@ -15,15 +15,16 @@ public class PathSegment
         m_segment = string.Empty;
     }
 
-    public static PathSegment CreateForTest(string segmentIn, string? local)
+    public PathSegment(PathSegment segmentIn)
     {
-        PathSegment segment =
-            new()
-            {
-                m_segment = segmentIn,
-                m_local = local
-            };
-        return segment;
+        m_segment = segmentIn.m_segment;
+        m_local = segmentIn.m_local;
+    }
+
+    public PathSegment(string segmentIn, string? local)
+    {
+        m_segment = segmentIn;
+        m_local = local;
     }
 
     public PathSegment(string segment)
@@ -108,11 +109,7 @@ public class PathSegment
 
     public PathSegment Clone()
     {
-        return new PathSegment()
-               {
-                   m_segment = m_segment,
-                   m_local = m_local
-               };
+        return new PathSegment(this);
     }
 
     public static bool operator ==(PathSegment? left, PathSegment? right)

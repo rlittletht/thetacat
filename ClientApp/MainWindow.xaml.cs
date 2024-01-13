@@ -125,6 +125,8 @@ namespace Thetacat
             Explorer.Close();
             App.State.PreviewImageCache.Close();
             App.State.ImageCache.Close();
+            App.State.Md5Cache.Close();
+            App.State.ClientDatabase.Close();
 
             if (m_asyncLogMonitor != null)
                 CloseAsyncLog(false);

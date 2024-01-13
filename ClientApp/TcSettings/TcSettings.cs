@@ -106,7 +106,7 @@ public class TcSettings
 #pragma warning restore format // @formatter: on
         try
         {
-            using ReadFile<TcSettings> file = ReadFile<TcSettings>.CreateSettingsFile(m_settingsPath);
+            using ReadFile<TcSettings> file = ReadFile<TcSettings>.CreateSettingsFile(App.SettingsPath);
             file.DeSerialize(XmlSettingsDescription, this);
         }
         catch (Exception ex) when
@@ -125,19 +125,14 @@ public class TcSettings
     {
         SubstitutionsEnumerator = null;
         PlacementsEnumerator = null;
-        string? directory = Path.GetDirectoryName(m_settingsPath);
 
-        if (directory != null)
-            Directory.CreateDirectory(directory);
-
-        using WriteFile<TcSettings> file = WriteFile<TcSettings>.CreateSettingsFile(XmlSettingsDescription, m_settingsPath, this);
+        using WriteFile<TcSettings> file = WriteFile<TcSettings>.CreateSettingsFile(XmlSettingsDescription, App.SettingsPath, this);
 
         file.SerializeSettings(XmlSettingsDescription, this);
     }
 
     #region Xml Option Reading/Writing Support
 
-    private readonly string m_settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
     private readonly XmlDescription<TcSettings> XmlSettingsDescription;
 
     private static void SetShowAsyncLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart = bool.Parse(value ?? bool.FalseString);

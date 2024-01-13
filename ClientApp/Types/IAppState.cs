@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Model;
+using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Metatags;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Util;
 using static Thetacat.Types.AppState;
 
@@ -20,6 +22,9 @@ public interface IAppState
     TcSettings.TcSettings Settings { get; }
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
+    ClientDatabase ClientDatabase { get; }
+    Md5Cache Md5Cache { get; }
+
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }
 

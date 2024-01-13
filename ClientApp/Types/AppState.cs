@@ -1,10 +1,13 @@
 ﻿using System;
+using System.DirectoryServices.ActiveDirectory;
 using System.Windows;
 using Thetacat.Model;
+using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Metatags;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -28,6 +31,8 @@ public class AppState : IAppState
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
     public string AzureStorageAccount => App.State.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
     public string StorageContainer => App.State.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
+    public ClientDatabase ClientDatabase { get; init; }
+    public Md5Cache Md5Cache { get; init; }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
@@ -77,6 +82,8 @@ public class AppState : IAppState
         // this will start the caching pipelines
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(true);
+        ClientDatabase = new ClientDatabase(App.ClientDatabasePath);
+        Md5Cache = new Md5Cache(ClientDatabase);
     }
 
     public void RegisterWindowPlace(Window window, string key)

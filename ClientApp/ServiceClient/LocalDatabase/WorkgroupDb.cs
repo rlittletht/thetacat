@@ -257,7 +257,7 @@ public class WorkgroupDb
         }
     }
 
-    private static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
+    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;

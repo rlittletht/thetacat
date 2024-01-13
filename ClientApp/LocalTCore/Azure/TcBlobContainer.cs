@@ -95,7 +95,7 @@ public class TcBlobContainer
             // local path exists. Check to see if the MD5 hash matches
             if (md5Expected != null)
             {
-                string md5 = await Checksum.GetMD5ForPath(localPath);
+                string md5 = await App.State.Md5Cache.GetMd5ForPathAsync(localPath);
 
                 if (md5 == md5Expected)
                     return new TcBlob(blobName, md5, null);
@@ -128,7 +128,7 @@ public class TcBlobContainer
         if (response.IsError)
             throw new CatExceptionAzureFailure($"could not download for {localPath}: {response.ReasonPhrase}");
 
-        md5Blob ??= await Checksum.GetMD5ForPath(localPath);
+        md5Blob ??= await App.State.Md5Cache.GetMd5ForPathAsync(localPath);
 
         return new TcBlob(blobName, md5Blob, properties.ETag);
     }

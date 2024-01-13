@@ -205,6 +205,7 @@ public partial class MediaMigration : UserControl
             SetVerifyResult();
             verifyTimer?.Stop();
             MainWindow.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer?.Elapsed()}");
+            App.State.Md5Cache.CommitCacheItems();
         }
     }
 

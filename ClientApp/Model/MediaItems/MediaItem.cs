@@ -622,7 +622,7 @@ public class MediaItem : INotifyPropertyChanged
     ----------------------------------------------------------------------------*/
     public static string CalculateMD5Hash(string localPath)
     {
-        return Checksum.GetMD5ForPathSync(localPath);
+        return App.State.Md5Cache.GetMd5ForPathSync(localPath);
 
 //        using FileStream fs = File.Open(
 //            localPath,
