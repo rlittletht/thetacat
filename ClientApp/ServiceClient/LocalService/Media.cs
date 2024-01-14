@@ -312,7 +312,7 @@ public class Media
     {
         string? value = mediaTag.Value == null ? null : Sql.Sqlify(mediaTag.Value);
 
-        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ) ";
+        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ";
     }
 
     static List<string> BuildUpdateItemTagsSql(MediaItemDiff diffOp)

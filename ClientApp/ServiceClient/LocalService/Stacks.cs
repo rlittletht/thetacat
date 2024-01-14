@@ -107,7 +107,7 @@ public class Stacks
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
                 return updates;
             case MediaStack.Op.Update:
-                updates.Add($"UPDATE tcat_stacks SET description='{Sql.Sqlify(diff.Stack.Description)}' WHERE id='{diff.Stack.StackId.ToString()}");
+                updates.Add($"UPDATE tcat_stacks SET description='{Sql.Sqlify(diff.Stack.Description)}' WHERE id='{diff.Stack.StackId.ToString()}'");
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
                 AddInsertStackMediaToCommands(diff, updates);
                 return updates;

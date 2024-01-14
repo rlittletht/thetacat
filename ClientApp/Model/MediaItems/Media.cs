@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Thetacat.Logging;
 using Thetacat.ServiceClient;
@@ -9,19 +10,19 @@ namespace Thetacat.Model;
 
 public class Media
 {
-    private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
+    private readonly ConcurrentDictionary<Guid, MediaItem> m_items;
 
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
+    public ConcurrentDictionary<Guid, MediaItem> Items => m_items;
 
     public Media()
     {
-        m_items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_items = new ConcurrentDictionary<Guid, MediaItem>();
     }
 
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;
-        m_items.Add(item.ID, item);
+        m_items.TryAdd(item.ID, item);
     }
 
     public void PushPendingChanges()
@@ -33,8 +34,8 @@ public class Media
         foreach (MediaItemDiff diff in diffs)
         {
             if (diff.DiffOp == MediaItemDiff.Op.Delete)
-                Items.Remove(diff.ID);
-            else if (Items.TryGetValue(diff.ID, out MediaItem item))
+                Items.TryRemove(diff.ID, out MediaItem? removing);
+            else if (Items.TryGetValue(diff.ID, out MediaItem? item))
             {
                 if (item.VectorClock == diff.VectorClock)
                     item.ResetPendingChanges();

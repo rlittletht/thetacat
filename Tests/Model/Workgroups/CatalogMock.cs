@@ -18,7 +18,7 @@ public class CatalogMock : ICatalog
 
         foreach (ServiceMediaItem item in items)
         {
-            m_media.Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
+            m_media.Items.TryAdd(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
         }
     }
 
@@ -28,7 +28,7 @@ public class CatalogMock : ICatalog
 
         foreach (MediaItem item in items)
         {
-            m_media.Items.Add(item.ID, item);
+            m_media.Items.TryAdd(item.ID, item);
         }
     }
 

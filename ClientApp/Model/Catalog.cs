@@ -60,7 +60,7 @@ public class Catalog : ICatalog
         if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
 
-        AddToObservableCollection(item);
+        ThreadContext.InvokeOnUiThread(() => AddToObservableCollection(item));
     }
 
     public bool HasMediaItem(Guid mediaId)
@@ -118,8 +118,8 @@ public class Catalog : ICatalog
         timer.Reset();
         timer.Start();
 
-        IObservableConcurrentDictionary<Guid, MediaItem> dict = m_media.Items;
-        m_media.Items.PushPauseNotifications();
+        ConcurrentDictionary<Guid, MediaItem> dict = m_media.Items;
+        // m_media.Items.PushPauseNotifications();
 
         dict.Clear();
         m_virtualLookupTable.Clear();
@@ -129,7 +129,7 @@ public class Catalog : ICatalog
         foreach (ServiceMediaItem item in catalog.MediaItems)
         {
             MediaItem mediaItem = new MediaItem(item);
-            dict.Add(mediaItem.ID, mediaItem);
+            dict.TryAdd(mediaItem.ID, mediaItem);
         }
 
         MainWindow.LogForApp(EventType.Warning, $"Populate Media Dictionary: {timer.Elapsed()}");
@@ -179,7 +179,7 @@ public class Catalog : ICatalog
         timer.Reset();
         timer.Start();
 
-        m_media.Items.ResumeNotifications();
+//        m_media.Items.ResumeNotifications();
         if (m_observableView != null)
         {
             m_observableView.Clear();

@@ -45,7 +45,11 @@ public class MediaItemData : INotifyPropertyChanged
         m_mimeType = source.m_mimeType;
         m_md5 = source.m_md5;
         m_state = source.m_state;
-        m_tags = new ConcurrentDictionary<Guid, MediaTag>(source.Tags);
+        m_tags = new();
+        foreach (KeyValuePair<Guid, MediaTag> tag in source.m_tags)
+        {
+            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value));
+        }
         m_virtualPath = source.m_virtualPath;
     }
 

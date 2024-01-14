@@ -107,6 +107,8 @@ public partial class MediaTagMigrateSummary : UserControl
         // see if this tag is already set on the media item
         if (catItem.Tags.TryGetValue(metatag.ID, out MediaTag? existing))
         {
+            bool identical = true;
+
             // check to see if the values are the same (we won't change them, we will just log it
             // and move on
             if (existing.Value != null && existing.Value != value)
@@ -114,10 +116,13 @@ public partial class MediaTagMigrateSummary : UserControl
                 MainWindow.LogForApp(
                 EventType.Warning,
                     $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {value}");
+                identical = false;
             }
 
-            // since we already have the tag, just skip
-            return;
+            // since we already have the tag, just skip (except for import date -- we want to override the
+            // value that import prepopulated)
+            if (metatag.ID != BuiltinTags.s_ImportDateID || identical == true)
+                return;
         }
 
         m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, value));

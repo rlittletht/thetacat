@@ -70,7 +70,13 @@ public class MetatagSchema
     {
         if (parent != null)
         {
-            IMetatagTreeItem? item = schemaDef.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(name), -1);
+            // first find the parent
+            IMetatagTreeItem? parentItem = schemaDef.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(parent.ID.ToString()), -1);
+
+            if (parentItem == null)
+                throw new CatExceptionInternalFailure($"couldn't find metatag parent: {parent}");
+
+            IMetatagTreeItem? item = parentItem.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(name), -1);
 
             return item != null
                 ? schemaDef.GetMetatagFromId(Guid.Parse(item.ID))

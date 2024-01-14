@@ -208,7 +208,9 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
         foreach (string key in subst.Keys)
         {
-            newPath = newPath.Replace(key, subst[key]);
+            // don't double substitute if its already been done
+            if (!newPath.ToLowerInvariant().Contains(subst[key].ToLowerInvariant()))
+                newPath = newPath.Replace(key, subst[key]);
         }
 
         newPath = newPath.Replace("/", "\\");
