@@ -26,6 +26,8 @@
                 <MenuItem Header="Large pictures" Click="SelectLargePreview" />
                 <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
                 <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
+                <Separator/>
+                <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo"/>
             </MenuItem>
             <MenuItem Header="_Debug">
                 <MenuItem Header="Test Progress" Click="TestProgressDialog" />

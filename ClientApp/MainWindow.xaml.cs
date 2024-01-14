@@ -504,5 +504,12 @@ namespace Thetacat
 
             }
         }
+
+        private void ShowCacheInfo(object sender, RoutedEventArgs e)
+        {
+            CacheInfo cacheInfo = new CacheInfo();
+            cacheInfo.Owner = this;
+            cacheInfo.ShowDialog();
+        }
     }
 }

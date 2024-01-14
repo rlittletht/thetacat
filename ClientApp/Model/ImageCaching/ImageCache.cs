@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore.Pipeline;
 using Thetacat.Logging;
 using Thetacat.Types;
@@ -144,6 +146,10 @@ public class ImageCache
                 image.UriSource = new Uri(item.PathToImage);
                 image.EndInit();
                 image.Freeze();
+
+                Interlocked.Add(ref m_cacheSize, image.PixelHeight * image.PixelWidth * 4);
+                Interlocked.Add(ref m_numImages, 1);
+
                 MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {image.DecodePixelWidth}");
                 if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
                 {
@@ -158,5 +164,11 @@ public class ImageCache
         }
     }
 
-    #endregion
+    private long m_cacheSize = 0;
+    private long m_numImages = 0;
+
+    public long CacheSize => m_cacheSize;
+    public long NumImages => m_numImages;
+
+#endregion
 }
