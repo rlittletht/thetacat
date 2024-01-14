@@ -15,6 +15,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using Emgu.CV.Cuda;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Standards;
@@ -42,6 +43,7 @@ public partial class CacheConfig : UserControl
     public void LoadFromSettings()
     {
         _Model.CacheLocation = App.State.Settings.CacheLocation ?? string.Empty;
+        _Model.DerivativeLocation = App.State.Settings.DerivativeCache ?? string.Empty;
         _Model.SetCacheTypeFromString(App.State.Settings.CacheType ?? string.Empty);
         if (App.State.Settings.WorkgroupId != null)
         {
@@ -135,6 +137,27 @@ public partial class CacheConfig : UserControl
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
+        PathSegment derivativeLocation = new PathSegment(_Model.DerivativeLocation);
+        try
+        {
+            PathSegment formatsDirectory = PathSegment.Join(derivativeLocation, "cat-derivatives/formats");
+
+            if (!Directory.Exists(formatsDirectory.Local))
+            {
+                Directory.CreateDirectory(formatsDirectory.Local);
+                if (!Directory.Exists(formatsDirectory.Local))
+                {
+                    throw new CatExceptionInternalFailure("directory didn't exist after create");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"can't create or use derivative location {derivativeLocation}: {ex}");
+            return false;
+        }
+
+        App.State.Settings.DerivativeCache = derivativeLocation;
         App.State.Settings.CacheLocation = _Model.CacheLocation;
 
         App.State.Settings.CacheType = Cache.StringFromCacheType(cacheType);

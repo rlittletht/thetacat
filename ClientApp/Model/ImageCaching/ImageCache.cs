@@ -31,7 +31,8 @@ public class ImageCache
 {
     public ConcurrentDictionary<Guid, ImageCacheItem> Items = new ConcurrentDictionary<Guid, ImageCacheItem>();
     private readonly ProducerConsumer<ImageLoaderWork>? m_imageLoaderPipeline;
-    private const int s_picturePreviewWidth = 512;
+//    private const int s_picturePreviewWidth = 512;
+    private const int s_picturePreviewWidth = 260;
 
     private bool m_fFullFidelity = false;
 

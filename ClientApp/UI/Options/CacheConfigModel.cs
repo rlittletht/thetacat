@@ -15,6 +15,12 @@ namespace Thetacat.UI.Options;
 
 public class CacheConfigModel: INotifyPropertyChanged
 {
+    public string DerivativeLocation
+    {
+        get => m_derivativeLocation;
+        set => SetField(ref m_derivativeLocation, value);
+    }
+
     public class CacheTypeItem
     {
         public Cache.CacheType Type;
@@ -78,6 +84,7 @@ public class CacheConfigModel: INotifyPropertyChanged
     private CacheTypeItem m_cacheType = s_cacheTypePrivate;
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
+    private string m_derivativeLocation;
 
     public string WorkgroupCacheRoot
     {

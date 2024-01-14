@@ -41,6 +41,7 @@ public class TcSettings
     public string? ExplorerItemSize;
 
     public string? TimelineType;
+    public string? DerivativeCache;
 
     public List<MapPair> ElementsSubstitutions = new();
     public Dictionary<string, Rectangle> Placements { get; private set; } = new();
@@ -87,6 +88,10 @@ public class TcSettings
                      .Pop()
                   .Pop()
                .AddElement("CacheOptions")
+                  .AddChildElement("Client")
+                    .AddChildElement("DerivativeCache", (settings, _) => settings.DerivativeCache, (settings, value, _) => settings.DerivativeCache = value)
+                    .Pop()
+                  .Pop()
                   .AddChildElement("CacheType")
                    .AddAttribute("Type", GetCacheTypeValue, SetCacheTypeValue)
                   .AddElement("PrivateCache")
