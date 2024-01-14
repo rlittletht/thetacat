@@ -36,12 +36,25 @@
         </Menu>
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="7*" />
                 <RowDefinition Height="3*" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
-            <ui:MediaExplorer x:Name="Explorer" Grid.Row="0" />
-            <ListView Name="CatalogView" Grid.Row="1" MouseDoubleClick="HandleDoubleClick">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Jump to date:" Grid.Column="0"/>
+                <TextBox Text="{Binding Path=JumpDate}" Width="128" Grid.Column="1"/>
+                <Button Content="Jump" Click="JumpToDate" Grid.Column="2"/>
+                <TextBlock Text="{Binding Path=WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right"/>
+            </Grid>
+            <ui:MediaExplorer x:Name="Explorer" Grid.Row="1" />
+            <ListView Name="CatalogView" Grid.Row="2" MouseDoubleClick="HandleDoubleClick">
                 <ListView.View>
                     <GridView>
                         <GridView.Columns>
@@ -61,7 +74,7 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="192" />
                     <ColumnDefinition Width="10*" />

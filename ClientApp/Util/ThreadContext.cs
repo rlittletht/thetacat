@@ -7,6 +7,12 @@ public static class ThreadContext
 {
     public static void InvokeOnUiThread(Action action)
     {
+        if (Application.Current == null || Application.Current.Dispatcher == null)
+        {
+            action();
+            return;
+        }
+
         if (Application.Current.Dispatcher.CheckAccess())
         {
             action();

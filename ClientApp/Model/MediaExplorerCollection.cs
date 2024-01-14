@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Meziantou.Framework.WPF.Collections;
+using NUnit.Framework;
 using TCore.Pipeline;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
@@ -21,19 +22,38 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
+public enum TimelineType
+{
+    MediaDate,
+    ImportDate
+}
+
 /*----------------------------------------------------------------------------
     %%Class: MediaExplorerCollection
     %%Qualified: Thetacat.Model.MediaExplorerCollection
 
-    This holds all of the backing data for an explorer view
+    This holds all of the backing data for an explorer view and the main
+    window
 
     The explorer view is a list of explorer lines. All are stored here
 
     The collections can only be added or removed from a single thread.
     Other threads can *update* items
 ----------------------------------------------------------------------------*/
-public class MediaExplorerCollection
+public class MediaExplorerCollection: INotifyPropertyChanged
 {
+    public string WindowDateRange
+    {
+        get => m_windowDateRange;
+        set => SetField(ref m_windowDateRange, value);
+    }
+
+    public string JumpDate
+    {
+        get => m_jumpDate;
+        set => SetField(ref m_jumpDate, value);
+    }
+
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
@@ -41,6 +61,9 @@ public class MediaExplorerCollection
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
+    public TimelineType TimelineType { get; set; }
+
+    public double PanelHeight => m_panelItemHeight;
 
     public MediaExplorerCollection(
         double leadingLabelWidth, double explorerHeight = 0.0, double explorerWidth = 0.0, double itemHeight = 0.0, double itemWidth = 0.0)
@@ -69,8 +92,11 @@ public class MediaExplorerCollection
     private double m_explorerHeight;
     private double m_panelItemHeight;
     private double m_panelItemWidth;
+    private string m_windowDateRange;
+    private string m_jumpDate;
 
-    private int RowsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemHeight);
+    private int ColumnsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemWidth);
+    private int RowsPerExplorer => (int)Math.Round(m_explorerHeight / m_panelItemHeight);
 
     public void Close()
     {
@@ -126,6 +152,34 @@ public class MediaExplorerCollection
         RebuildLineOffsetsMap();
     }
 
+    public int GetLineToScrollTo(string dateString)
+    {
+        if (!DateTime.TryParse(dateString, out DateTime date))
+        {
+            MessageBox.Show($"Can't parse {dateString} as a date");
+            return -1;
+        }
+
+        // scan through our items to find the first greater or equal to the date
+        return m_collection.GetNearestLineGreaterOrEqualMatching(
+                0,
+                (line) => GetTimelineDateFromItem(line.Items[0]) >= date)
+           .lineNumber;
+    }
+
+    public void NotifyTopVisibleItem(int row)
+    {
+        // we have a new top item. calculate the segments visible
+
+        MediaExplorerLineModel lineTop = m_collection.GetNearestLineLessOrEqualMatching(row, (line) => !string.IsNullOrWhiteSpace(line.LineLabel)).line;
+        MediaExplorerLineModel lineBottom = m_collection.GetNearestLineLessOrEqualMatching(row + RowsPerExplorer, (line) => !string.IsNullOrWhiteSpace(line.LineLabel)).line;
+
+        string first = lineTop.LineLabel;
+        string last = lineBottom.LineLabel;
+
+        WindowDateRange = first == last ? first : $"{first} - {last}";
+    }
+
     public void EnsureImagesForSurroundingRows(int row)
     {
         if (m_collection.TopCollection.Count == 0)
@@ -160,7 +214,10 @@ public class MediaExplorerCollection
                             string? path = cache.TryGetCachedFullPath(item.MediaId);
 
                             if (path != null)
+                            {
+                                MainWindow.LogForApp(EventType.Warning, $"trying to queue {path} for load");
                                 App.State.PreviewImageCache.TryAddItem(mediaItem, path);
+                            }
                         }
                     }
                 }
@@ -306,5 +363,35 @@ public class MediaExplorerCollection
                 throw new CatExceptionDebugFailure($"item {item.MediaId} is in selection list, but not selected");
         }
 #endif
+    }
+
+    public DateTime GetTimelineDateFromItem(MediaExplorerItem item)
+    {
+        MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
+
+        return GetTimelineDateFromMediaItem(mediaItem);
+    }
+
+    public DateTime GetTimelineDateFromMediaItem(MediaItem mediaItem)
+    {
+        if (TimelineType == TimelineType.ImportDate)
+            return mediaItem.ImportDate!.Value;
+
+        return mediaItem.OriginalMediaDate!.Value;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

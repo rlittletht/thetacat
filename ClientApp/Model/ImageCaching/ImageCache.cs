@@ -144,7 +144,7 @@ public class ImageCache
                 image.UriSource = new Uri(item.PathToImage);
                 image.EndInit();
                 image.Freeze();
-
+                MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {image.DecodePixelWidth}");
                 if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
                 {
                     cacheItem.Image = image;

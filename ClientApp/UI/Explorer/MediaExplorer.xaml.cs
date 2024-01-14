@@ -83,6 +83,10 @@ namespace Thetacat.UI
             m_collection?.UpdateItemsPerLine();
         }
 
+        public void ScrollTo(int line)
+        {
+        }
+
         public void ResetContent(MediaExplorerCollection collection)
         {
             m_collection = collection;
@@ -136,6 +140,7 @@ namespace Thetacat.UI
         private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
+            m_collection?.NotifyTopVisibleItem((int)e.VerticalOffset);
             m_collection?.EnsureImagesForSurroundingRows((int)e.VerticalOffset);
         }
 

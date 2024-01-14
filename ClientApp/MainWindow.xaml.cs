@@ -10,6 +10,7 @@ using Thetacat.Types;
 using Thetacat.Controls;
 using System.ComponentModel;
 using System.Threading;
+using System.Windows.Media;
 using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.UI.Options;
@@ -94,14 +95,13 @@ namespace Thetacat
 
         public static string ClientName = Environment.MachineName;
 
-        private MediaExplorerCollection m_collection;
+        private readonly MediaExplorerCollection m_collection = new(14.0);
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeThetacat();
 
-            m_collection = new MediaExplorerCollection(14.0);
             Explorer.SetExplorerItemSize(App.State.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
             // we have to load the catalog AND the pending upload list
             // we also have to confirm that all the items int he pending
@@ -113,6 +113,7 @@ namespace Thetacat
             App.State.RegisterWindowPlace(this, "MainWindow");
             CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
             LocalServiceClient.LogService = LogForApp;
+            DataContext = m_collection;
 
             m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         }
@@ -487,6 +488,21 @@ namespace Thetacat
         private void LaunchImport(object sender, RoutedEventArgs e)
         {
             MediaImporter.LaunchImporter(this);
+        }
+
+        private void JumpToDate(object sender, RoutedEventArgs e)
+        {
+            int line = m_collection.GetLineToScrollTo(m_collection.JumpDate);
+
+            if (line != -1)
+            {
+                if (VisualTreeHelper.GetChild(Explorer.ExplorerBox, 0) is ScrollViewer scrollViewer)
+                {
+                    double scrollTo = line;
+                    scrollViewer.ScrollToVerticalOffset(scrollTo);
+                }
+
+            }
         }
     }
 }

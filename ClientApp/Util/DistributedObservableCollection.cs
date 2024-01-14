@@ -26,6 +26,7 @@ public class DistributedObservableCollection<T, T1>
 {
     public delegate T LineFactoryDelegate(T? reference);
     public delegate void MoveLinePropertiesDelegate(T from, T to);
+    public delegate bool MatchLineDelegate(T check);
 
     private readonly ObservableCollection<T> m_collection = new();
 
@@ -326,6 +327,31 @@ public class DistributedObservableCollection<T, T1>
         }
 
         m_collection[m_collection.Count - 1].EndSegmentAfter = true;
+    }
+
+    public (T line, int lineNumber) GetNearestLineLessOrEqualMatching(int lineStart, MatchLineDelegate matcher)
+    {
+        if (lineStart >= m_collection.Count)
+            return (m_collection[0], 0);
+
+        for (int i = lineStart; i >= 0; i--)
+        {
+            if (matcher(m_collection[i]))
+                return (m_collection[i], i);
+        }
+
+        return (m_collection[lineStart], lineStart);
+    }
+
+    public (T line, int lineNumber) GetNearestLineGreaterOrEqualMatching(int lineStart, MatchLineDelegate matcher)
+    {
+        for (int i = lineStart; i < m_collection.Count; i++)
+        {
+            if (matcher(m_collection[i]))
+                return (m_collection[i], i);
+        }
+
+        return (m_collection[lineStart], lineStart);
     }
 
     public T GetCurrentLine()
