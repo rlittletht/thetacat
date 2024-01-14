@@ -20,9 +20,9 @@
             <RowDefinition Height="3*" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
-            <TextBlock Text="{Binding Path=ID}" Style="{StaticResource Heading}" />
+            <TextBlock Text="{Binding Path=MediaItem.ID}" Style="{StaticResource Heading}" />
             <TextBlock Text=":" Style="{StaticResource Heading}" />
-            <TextBlock Text="{Binding Path=FullPath}" Style="{StaticResource Heading}" />
+            <TextBlock Text="{Binding Path=MediaItem.VirtualPath}" Style="{StaticResource Heading}" />
         </StackPanel>
         <Image Source="{Binding Path=Image}" Grid.Row="1" />
         <Grid Grid.Row="2">
@@ -42,15 +42,16 @@
                         <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
                         <TextBlock Text="Image Height" />
                         <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
-                        <TextBlock Text="Original File Date" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalFileDate}" />
-                        <TextBlock Text="MD5 Hash" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Text="MD5 Hash" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
                         <TextBlock Text="Mime Type" />
                         <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Original File Date" />
+                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
+                        <TextBlock Text="Import Date" />
+                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
+                        <TextBlock Text="MD5 Hash" />
+                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
