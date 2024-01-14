@@ -168,9 +168,9 @@ namespace Thetacat
             manage.Show();
         }
 
-        DateTime GetLocalDateFromMedia(MediaItem item)
+        public static DateTime GetLocalDateFromMedia(MediaItem item, DateTime? mediaDate)
         {
-            DateTime? mediaDate = item.OriginalMediaDate;
+//            DateTime? mediaDate = item.OriginalMediaDate;
 
             if (mediaDate != null)
                 return mediaDate.Value.ToLocalTime().Date;
@@ -183,46 +183,46 @@ namespace Thetacat
             return DateTime.Now;
         }
 
-        void BuildTimelineCollectionFromMedia()
-        {
-            MicroTimer timer = new MicroTimer();
-            LogForApp(EventType.Information, "Beginning building timeline collection");
-
-            // build a group by date
-            Dictionary<DateTime, List<Guid>> dateGrouping = new();
-
-            foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
-            {
-                DateTime date = GetLocalDateFromMedia(item);
-
-                if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
-                {
-                    items = new List<Guid>();
-                    dateGrouping.Add(date, items);
-                }
-
-                items.Add(item.ID);
-            }
-
-            ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
-
-            m_collection.Clear();
-
-            foreach (DateTime date in sortedDates)
-            {
-                bool newSegment = true;
-
-                List<Guid> items = dateGrouping[date];
-                foreach (Guid id in items)
-                {
-                    MediaItem item = App.State.Catalog.GetMediaFromId(id);
-                    m_collection.AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
-                    newSegment = false;
-                }
-            }
-
-            LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
-        }
+//        void BuildTimelineCollectionFromMedia()
+//        {
+//            MicroTimer timer = new MicroTimer();
+//            LogForApp(EventType.Information, "Beginning building timeline collection");
+//
+//            // build a group by date
+//            Dictionary<DateTime, List<Guid>> dateGrouping = new();
+//
+//            foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
+//            {
+//                DateTime date = GetLocalDateFromMedia(item);
+//
+//                if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
+//                {
+//                    items = new List<Guid>();
+//                    dateGrouping.Add(date, items);
+//                }
+//
+//                items.Add(item.ID);
+//            }
+//
+//            ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
+//
+//            m_collection.Clear();
+//
+//            foreach (DateTime date in sortedDates)
+//            {
+//                bool newSegment = true;
+//
+//                List<Guid> items = dateGrouping[date];
+//                foreach (Guid id in items)
+//                {
+//                    MediaItem item = App.State.Catalog.GetMediaFromId(id);
+//                    m_collection.AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
+//                    newSegment = false;
+//                }
+//            }
+//
+//            LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
+//        }
 
         private async void ConnectToDatabase(object sender, RoutedEventArgs e)
         {
@@ -247,7 +247,19 @@ namespace Thetacat
             timer.Reset();
             timer.Start();
 
-            BuildTimelineCollectionFromMedia();
+            TimelineType timelineType = m_collection.TimelineType;
+            if (timelineType.Equals(TimelineType.None))
+            {
+                if (App.State.Settings.TimelineType != null)
+                    timelineType = App.State.Settings.TimelineType;
+
+                if (timelineType.Equals(TimelineType.None))
+                    timelineType = TimelineType.MediaDate;
+            }
+
+            m_collection.ResetTimeline();
+            m_collection.SetTimelineType(timelineType);
+
             LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
 
             timer.Reset();
@@ -511,5 +523,16 @@ namespace Thetacat
             cacheInfo.Owner = this;
             cacheInfo.ShowDialog();
         }
+
+        private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e)
+        {
+            m_collection.SetTimelineType(TimelineType.MediaDate);
+        }
+
+        private void ChooseImportDateTimeline(object sender, RoutedEventArgs e)
+        {
+            m_collection.SetTimelineType(TimelineType.ImportDate);
+        }
+
     }
 }

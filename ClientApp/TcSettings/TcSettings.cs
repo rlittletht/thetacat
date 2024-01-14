@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Identity.Client;
 using TCore.XmlSettings;
+using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
 
 namespace Thetacat.TcSettings;
 
@@ -39,6 +40,8 @@ public class TcSettings
     public bool? ShowAppLogOnStart;
     public string? ExplorerItemSize;
 
+    public string? TimelineType;
+
     public List<MapPair> ElementsSubstitutions = new();
     public Dictionary<string, Rectangle> Placements { get; private set; } = new();
     private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
@@ -58,9 +61,16 @@ public class TcSettings
                       .AddAttribute("ItemSize", GetExplorerItemSize, SetExplorerItemSize)
                   .Pop()
                .Pop()
+                  .AddChildElement("View")
+                    .AddChildElement("Explorer")
+                        .AddChildElement("Timeline")
+                            .AddAttribute("Type", (settings, _) => settings.TimelineType, (settings, value, _) => settings.TimelineType = value)
+                        .Pop()
+                    .Pop()
+                  .Pop()
                   .AddChildElement("Account")
-                     .AddChildElement("AzureStorageAccount", GetStorageAccountNameValue, SetStorageAccountNameValue)
-                     .AddElement("StorageContainer", GetStorageContainerValue, SetStorageContainerValue)
+                     .AddChildElement("AzureStorageAccount", (settings, _) => settings.AzureStorageAccount, (settings, value, _) => settings.AzureStorageAccount = value)
+                     .AddElement("StorageContainer", (settings, _) => settings.StorageContainer, (settings, value, _) => settings.StorageContainer = value)
                      .AddElement("SqlConnection", GetSqlConnection, SetSqlConnection)
                   .Pop()
                .Pop()

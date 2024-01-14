@@ -28,6 +28,10 @@
                 <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
                 <Separator/>
                 <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo"/>
+                <MenuItem Header="Timeline" Name="TimelineMenu">
+                    <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline" IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}"/>
+                    <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline" IsChecked="{Binding Path=IsImportDateTimeline, Mode=OneWay}"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Debug">
                 <MenuItem Header="Test Progress" Click="TestProgressDialog" />

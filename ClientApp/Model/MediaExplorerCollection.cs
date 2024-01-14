@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net.Mime;
@@ -21,12 +22,6 @@ using Thetacat.UI.Explorer;
 using Thetacat.Util;
 
 namespace Thetacat.Model;
-
-public enum TimelineType
-{
-    MediaDate,
-    ImportDate
-}
 
 /*----------------------------------------------------------------------------
     %%Class: MediaExplorerCollection
@@ -54,6 +49,22 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         set => SetField(ref m_jumpDate, value);
     }
 
+    public TimelineType TimelineType
+    {
+        get => m_timelineType;
+        set
+        {
+            if (SetField(ref m_timelineType, value))
+            {
+                OnPropertyChanged(nameof(IsMediaDateTimeline));
+                OnPropertyChanged(nameof(IsImportDateTimeline));
+            }
+        }
+    }
+
+    public bool IsMediaDateTimeline => TimelineType.Equals(TimelineType.MediaDate);
+    public bool IsImportDateTimeline => TimelineType.Equals(TimelineType.ImportDate);
+
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
@@ -61,7 +72,6 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
-    public TimelineType TimelineType { get; set; }
 
     public double PanelHeight => m_panelItemHeight;
 
@@ -92,8 +102,9 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     private double m_explorerHeight;
     private double m_panelItemHeight;
     private double m_panelItemWidth;
-    private string m_windowDateRange;
-    private string m_jumpDate;
+    private string m_windowDateRange = String.Empty;
+    private string m_jumpDate = String.Empty;
+    private TimelineType m_timelineType = TimelineType.None;
 
     private int ColumnsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemWidth);
     private int RowsPerExplorer => (int)Math.Round(m_explorerHeight / m_panelItemHeight);
@@ -365,6 +376,65 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 #endif
     }
 
+    void BuildTimelineFromMediaCatalog()
+    {
+        MicroTimer timer = new MicroTimer();
+        MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");
+
+        // build a group by date
+        Dictionary<DateTime, List<Guid>> dateGrouping = new();
+
+        foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
+        {
+            DateTime date = GetTimelineDateFromMediaItem(item);
+
+            if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
+            {
+                items = new List<Guid>();
+                dateGrouping.Add(date, items);
+            }
+
+            items.Add(item.ID);
+        }
+
+        ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
+
+        Clear();
+
+        foreach (DateTime date in sortedDates)
+        {
+            bool newSegment = true;
+
+            List<Guid> items = dateGrouping[date];
+            foreach (Guid id in items)
+            {
+                MediaItem item = App.State.Catalog.GetMediaFromId(id);
+                AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
+                newSegment = false;
+            }
+        }
+
+        MainWindow.LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
+    }
+
+    public void ResetTimeline()
+    {
+        TimelineType = TimelineType.None;
+        Clear();
+    }
+
+    public void SetTimelineType(TimelineType type)
+    {
+        if (type.Equals(TimelineType))
+            return;
+
+        App.State.Settings.TimelineType = type;
+        App.State.Settings.WriteSettings();
+
+        TimelineType = type;
+        BuildTimelineFromMediaCatalog();
+    }
+
     public DateTime GetTimelineDateFromItem(MediaExplorerItem item)
     {
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
@@ -374,10 +444,10 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public DateTime GetTimelineDateFromMediaItem(MediaItem mediaItem)
     {
-        if (TimelineType == TimelineType.ImportDate)
-            return mediaItem.ImportDate!.Value;
+        if (TimelineType.Equals(TimelineType.ImportDate))
+            return MainWindow.GetLocalDateFromMedia(mediaItem, mediaItem.ImportDate);
 
-        return mediaItem.OriginalMediaDate!.Value;
+        return MainWindow.GetLocalDateFromMedia(mediaItem, mediaItem.OriginalMediaDate);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
