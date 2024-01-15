@@ -33,6 +33,7 @@ public class AppState : IAppState
     public string StorageContainer => App.State.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
     public ClientDatabase ClientDatabase { get; init; }
     public Md5Cache Md5Cache { get; init; }
+    public Derivatives Derivatives { get; init; }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
@@ -84,6 +85,7 @@ public class AppState : IAppState
         ImageCache = new ImageCache(true);
         ClientDatabase = new ClientDatabase(App.ClientDatabasePath);
         Md5Cache = new Md5Cache(ClientDatabase);
+        Derivatives = new Derivatives(ClientDatabase);
     }
 
     public void RegisterWindowPlace(Window window, string key)

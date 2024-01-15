@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore.Pipeline;
 using Thetacat.Logging;
+using Thetacat.Model.Client;
 using Thetacat.Types;
 using Thetacat.UI;
 
@@ -101,6 +102,7 @@ public class ImageCache
         public Guid MediaKey { get; set; }
         public string? PathToImage { get; set; }
         public double AspectRatio { get; set; }
+        public int? OriginalWidth { get; set; }
 
         public ImageLoaderWork()
         {
@@ -111,6 +113,7 @@ public class ImageCache
             MediaKey = mediaItem.ID;
             PathToImage = cacheItem.LocalPath;
             AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
+            OriginalWidth = mediaItem.ImageWidth;
         }
 
         public void InitFrom(ImageLoaderWork t)
@@ -118,6 +121,7 @@ public class ImageCache
             MediaKey = t.MediaKey;
             PathToImage = t.PathToImage;
             AspectRatio = t.AspectRatio;
+            OriginalWidth = t.OriginalWidth;
         }
     }
 
@@ -137,14 +141,24 @@ public class ImageCache
 
             try
             {
+                int scaleWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
+                double scale = (double)scaleWidth / (item.OriginalWidth ?? 1.0);
+                string path = item.PathToImage;
+
+                DerivativeItem? derivative = null;
+
+                // see if there is a derivative for this
+                if (!m_fFullFidelity && App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scale, out derivative))
+                    path = derivative.Path.Local;
+
                 BitmapImage image = new BitmapImage();
                 image.BeginInit();
                 if (!m_fFullFidelity)
                 {
-                    image.DecodePixelWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
+                    image.DecodePixelWidth = scaleWidth;
                 }
 
-                image.UriSource = new Uri(item.PathToImage);
+                image.UriSource = new Uri(path);
                 image.EndInit();
                 image.Freeze();
 
@@ -152,6 +166,12 @@ public class ImageCache
                 Interlocked.Add(ref m_numImages, 1);
 
                 MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {image.DecodePixelWidth}");
+
+                MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaKey);
+
+                if (derivative == null)
+                    App.State.Derivatives.QueueSaveResampledImage(mediaItem, image);
+
                 if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
                 {
                     cacheItem.Image = image;

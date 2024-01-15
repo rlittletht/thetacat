@@ -120,6 +120,8 @@ namespace Thetacat
 
         void OnClosing(object sender, EventArgs e)
         {
+            App.State.Derivatives.CommitDerivatives();
+            App.State.Derivatives.Close();
             App.State.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
             App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
             m_collection.Close();
@@ -127,6 +129,7 @@ namespace Thetacat
             App.State.PreviewImageCache.Close();
             App.State.ImageCache.Close();
             App.State.Md5Cache.Close();
+
             App.State.ClientDatabase.Close();
 
             if (m_asyncLogMonitor != null)

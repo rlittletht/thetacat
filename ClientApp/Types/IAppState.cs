@@ -24,6 +24,7 @@ public interface IAppState
     ICache Cache { get; }
     ClientDatabase ClientDatabase { get; }
     Md5Cache Md5Cache { get; }
+    Derivatives Derivatives { get; }
 
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }

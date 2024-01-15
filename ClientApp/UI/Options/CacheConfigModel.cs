@@ -84,7 +84,7 @@ public class CacheConfigModel: INotifyPropertyChanged
     private CacheTypeItem m_cacheType = s_cacheTypePrivate;
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
-    private string m_derivativeLocation;
+    private string m_derivativeLocation = string.Empty;
 
     public string WorkgroupCacheRoot
     {

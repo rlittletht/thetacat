@@ -141,6 +141,7 @@ public partial class CacheConfig : UserControl
         try
         {
             PathSegment formatsDirectory = PathSegment.Join(derivativeLocation, "cat-derivatives/formats");
+            // other derivatives may exist but they will create their directories on demand
 
             if (!Directory.Exists(formatsDirectory.Local))
             {

@@ -23,6 +23,7 @@ public class ClientDatabase
         new()
         {
             { "tcat_md5cache", "MDC" },
+            { "tcat_derivatives", "DER" },
         };
 
     private readonly string m_database;
@@ -107,6 +108,100 @@ public class ClientDatabase
         m_connection?.Close();
     }
 
+    private readonly string s_queryDerivatives = @"
+        SELECT $$tcat_derivatives$$.media, $$tcat_derivatives$$.mimeType, $$tcat_derivatives$$.scaleFactor, $$tcat_derivatives$$.path
+        FROM $$#tcat_derivatives$$";
+
+    public List<DerivativeDbItem> ReadDerivatives()
+    {
+        try
+        {
+            return _Connection.DoGenericQueryDelegateRead(
+                Guid.NewGuid(),
+                s_queryDerivatives,
+                s_aliases,
+                (ISqlReader reader, Guid crid, ref List<DerivativeDbItem> building) =>
+                {
+                    building.Add(
+                        new DerivativeDbItem(
+                            reader.GetGuid(0),
+                            reader.GetString(1),
+                            reader.GetDouble(2),
+                            reader.GetString(3)));
+                });
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new List<DerivativeDbItem>();
+        }
+    }
+
+
+    string BuildDerivativeInsertCommand(DerivativeItem item)
+    {
+        return
+            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, path) VALUES ('{Sql.Sqlify(item.MediaId.ToString())}', '{Sql.Sqlify(item.MimeType)}', {item.ScaleFactor}, '{Sql.Sqlify(item.Path)}') ";
+    }
+
+    string BuildDerivativeDeleteCommand(DerivativeItem item)
+    {
+        return $"DELETE FROM tcat_derivatives WHERE media='{Sql.Sqlify(item.MediaId.ToString())}' AND mimeType='{Sql.Sqlify(item.MimeType)}' AND scaleFactor={item.ScaleFactor}";
+    }
+
+    List<string> BuildDerivativeInsertCommands(IEnumerable<DerivativeItem> items)
+    {
+        List<string> commands = new List<string>();
+        foreach (DerivativeItem item in items)
+        {
+            commands.Add(BuildDerivativeInsertCommand(item));
+        }
+
+        return commands;
+    }
+
+    List<string> BuildDerivativeDeleteCommands(IEnumerable<DerivativeItem> items)
+    {
+        List<string> commands = new List<string>();
+        foreach (DerivativeItem item in items)
+        {
+            commands.Add(BuildDerivativeDeleteCommand(item));
+        }
+
+        return commands;
+    }
+
+    public void ExecuteDerivativeUpdates(IEnumerable<DerivativeItem> deletes, IEnumerable<DerivativeItem> inserts)
+    {
+        List<string> insertCommands = BuildDerivativeInsertCommands(inserts);
+        List<string> deleteCommands = BuildDerivativeDeleteCommands(deletes);
+
+        _Connection.BeginTransaction();
+        try
+        {
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                deleteCommands,
+                (line) => line,
+                100,
+                ";");
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                insertCommands,
+                (line) => line,
+                100,
+                ";");
+            _Connection.Commit();
+            return;
+        }
+        catch
+        {
+            _Connection.Rollback();
+            throw;
+        }
+    }
+
     private readonly string s_queryAllMd5Cache = @"
         SELECT $$tcat_md5cache$$.path, $$tcat_md5cache$$.lastModified, 
             $$tcat_md5cache$$.size, $$tcat_md5cache$$.md5
@@ -143,7 +238,7 @@ public class ClientDatabase
 
     string BuildMd5DeleteCommand(Md5CacheItem item)
     {
-        return $"DELETE ROM tcat_md5cache WHERE path='{Sql.Sqlify(item.Path)}'";
+        return $"DELETE FROM tcat_md5cache WHERE path='{Sql.Sqlify(item.Path)}'";
     }
 
     List<string> BuildMd5InsertCommands(IEnumerable<Md5CacheItem> items)
