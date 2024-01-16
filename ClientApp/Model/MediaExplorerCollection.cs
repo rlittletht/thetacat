@@ -414,7 +414,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         }
 
         IComparer<DateTime> comparer =
-            TimelineOrder == TimelineOrder.Descending
+            TimelineOrder.Equals(TimelineOrder.Descending)
                 ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x))
                 : Comparer<DateTime>.Create((y, x) => y.CompareTo(x));
 
