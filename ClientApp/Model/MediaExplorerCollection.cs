@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Meziantou.Framework.WPF.Collections;
+using Microsoft.Identity.Client;
 using NUnit.Framework;
 using TCore.Pipeline;
 using Thetacat.Logging;
@@ -49,6 +50,18 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         set => SetField(ref m_jumpDate, value);
     }
 
+    public TimelineOrder TimelineOrder
+    {
+        get => m_timelineOrder;
+        set
+        {
+            if (SetField(ref m_timelineOrder, value))
+            {
+                OnPropertyChanged(nameof(IsTimelineAscending));
+                OnPropertyChanged(nameof(IsTimelineDescending));
+            }
+        }
+    }
     public TimelineType TimelineType
     {
         get => m_timelineType;
@@ -64,6 +77,8 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public bool IsMediaDateTimeline => TimelineType.Equals(TimelineType.MediaDate);
     public bool IsImportDateTimeline => TimelineType.Equals(TimelineType.ImportDate);
+    public bool IsTimelineAscending => TimelineOrder.Equals(TimelineOrder.Ascending);
+    public bool IsTimelineDescending => TimelineOrder.Equals(TimelineOrder.Descending);
 
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
@@ -105,6 +120,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     private string m_windowDateRange = String.Empty;
     private string m_jumpDate = String.Empty;
     private TimelineType m_timelineType = TimelineType.None;
+    private TimelineOrder m_timelineOrder = TimelineOrder.None;
 
     private int ColumnsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemWidth);
     private int RowsPerExplorer => (int)Math.Round(m_explorerHeight / m_panelItemHeight);
@@ -397,7 +413,12 @@ public class MediaExplorerCollection: INotifyPropertyChanged
             items.Add(item.ID);
         }
 
-        ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet();
+        IComparer<DateTime> comparer =
+            TimelineOrder == TimelineOrder.Descending
+                ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x))
+                : Comparer<DateTime>.Create((y, x) => y.CompareTo(x));
+
+        ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet(comparer);
 
         Clear();
 
@@ -420,7 +441,33 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     public void ResetTimeline()
     {
         TimelineType = TimelineType.None;
+        TimelineOrder = TimelineOrder.Ascending;
         Clear();
+    }
+
+    public void SetTimelineTypeAndOrder(TimelineType type, TimelineOrder order)
+    {
+        if (type.Equals(TimelineType) && order.Equals(TimelineOrder))
+            return;
+
+        if (!type.Equals(TimelineType))
+        {
+            App.State.Settings.TimelineType = type;
+            App.State.Settings.WriteSettings();
+
+            TimelineType = type;
+        }
+
+        if (!order.Equals(TimelineOrder))
+        {
+            App.State.Settings.TimelineOrder = order;
+            App.State.Settings.WriteSettings();
+
+            TimelineOrder = order;
+        }
+
+        BuildTimelineFromMediaCatalog();
+
     }
 
     public void SetTimelineType(TimelineType type)
@@ -432,6 +479,18 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         App.State.Settings.WriteSettings();
 
         TimelineType = type;
+        BuildTimelineFromMediaCatalog();
+    }
+
+    public void SetTimelineOrder(TimelineOrder order)
+    {
+        if (order.Equals(TimelineOrder))
+            return;
+
+        App.State.Settings.TimelineOrder = order;
+        App.State.Settings.WriteSettings();
+
+        TimelineOrder = order;
         BuildTimelineFromMediaCatalog();
     }
 

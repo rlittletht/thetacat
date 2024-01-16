@@ -260,8 +260,18 @@ namespace Thetacat
                     timelineType = TimelineType.MediaDate;
             }
 
+            TimelineOrder timelineOrder = m_collection.TimelineOrder;
+            if (timelineOrder.Equals(TimelineOrder.None))
+            {
+                if (App.State.Settings.TimelineOrder != null)
+                    timelineOrder = App.State.Settings.TimelineOrder;
+
+                if (timelineOrder.Equals(TimelineOrder.None))
+                    timelineOrder = TimelineOrder.Ascending;
+            }
+
             m_collection.ResetTimeline();
-            m_collection.SetTimelineType(timelineType);
+            m_collection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
 
             LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
 
@@ -527,15 +537,12 @@ namespace Thetacat
             cacheInfo.ShowDialog();
         }
 
-        private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e)
-        {
-            m_collection.SetTimelineType(TimelineType.MediaDate);
-        }
+        private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.MediaDate);
+        private void ChooseImportDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.ImportDate);
 
-        private void ChooseImportDateTimeline(object sender, RoutedEventArgs e)
-        {
-            m_collection.SetTimelineType(TimelineType.ImportDate);
-        }
+        private void ChooseAscending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Ascending);
+        private void ChooseDescending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Descending);
+
 
     }
 }

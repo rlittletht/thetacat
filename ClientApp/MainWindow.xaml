@@ -31,6 +31,8 @@
                 <MenuItem Header="Timeline" Name="TimelineMenu">
                     <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline" IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}"/>
                     <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline" IsChecked="{Binding Path=IsImportDateTimeline, Mode=OneWay}"/>
+                    <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending" IsChecked="{Binding Path=IsTimelineAscending, Mode=OneWay}"/>
+                    <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending" IsChecked="{Binding Path=IsTimelineDescending, Mode=OneWay}"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Debug">

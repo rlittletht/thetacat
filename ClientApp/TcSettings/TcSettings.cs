@@ -41,6 +41,8 @@ public class TcSettings
     public string? ExplorerItemSize;
 
     public string? TimelineType;
+    public string? TimelineOrder;
+
     public string? DerivativeCache;
 
     public List<MapPair> ElementsSubstitutions = new();
@@ -66,6 +68,7 @@ public class TcSettings
                     .AddChildElement("Explorer")
                         .AddChildElement("Timeline")
                             .AddAttribute("Type", (settings, _) => settings.TimelineType, (settings, value, _) => settings.TimelineType = value)
+                            .AddAttribute("Order", (settings, _) => settings.TimelineOrder, (settings, value, _) => settings.TimelineOrder = value)
                         .Pop()
                     .Pop()
                   .Pop()
