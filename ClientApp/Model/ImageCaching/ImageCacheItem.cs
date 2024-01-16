@@ -8,11 +8,11 @@ namespace Thetacat.Model.ImageCaching;
 
 public class ImageCacheItem : INotifyPropertyChanged
 {
-    private BitmapImage? m_image;
+    private BitmapSource? m_image;
     public string LocalPath { get; set; }
     public Guid MediaId { get; set; }
 
-    public BitmapImage? Image
+    public BitmapSource? Image
     {
         get => m_image;
         set => SetField(ref m_image, value);

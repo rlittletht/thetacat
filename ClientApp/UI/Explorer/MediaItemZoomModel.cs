@@ -9,9 +9,9 @@ namespace Thetacat.UI.Explorer;
 public class MediaItemZoomModel:INotifyPropertyChanged
 {
     private MediaItem? m_mediaItem;
-    private BitmapImage? m_image;
+    private BitmapSource? m_image;
 
-    public BitmapImage? Image
+    public BitmapSource? Image
     {
         get => m_image;
         set => SetField(ref m_image, value);

@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using Emgu.CV.CvEnum;
+using Emgu.CV;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore.Pipeline;
 using Thetacat.Logging;
 using Thetacat.Model.Client;
 using Thetacat.Types;
 using Thetacat.UI;
+using Path = System.IO.Path;
 
 namespace Thetacat.Model.ImageCaching;
 
@@ -31,7 +37,9 @@ namespace Thetacat.Model.ImageCaching;
 public class ImageCache
 {
     public ConcurrentDictionary<Guid, ImageCacheItem> Items = new ConcurrentDictionary<Guid, ImageCacheItem>();
+
     private readonly ProducerConsumer<ImageLoaderWork>? m_imageLoaderPipeline;
+
 //    private const int s_picturePreviewWidth = 512;
     private const int s_picturePreviewWidth = 260;
 
@@ -48,6 +56,7 @@ public class ImageCache
             m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
             m_imageLoaderPipeline.Start();
         }
+
         m_fFullFidelity = fFullFidelity;
     }
 
@@ -86,6 +95,7 @@ public class ImageCache
         if (ImageCacheUpdated != null)
             ImageCacheUpdated(this, new ImageCacheUpdateEventArgs() { MediaId = mediaId });
     }
+
     public void ResetImageForKey(Guid mediaId)
     {
         if (Items.TryGetValue(mediaId, out ImageCacheItem? item))
@@ -95,7 +105,7 @@ public class ImageCache
         }
     }
 
-    #region Image Loading/Threading
+#region Image Loading/Threading
 
     class ImageLoaderWork : IPipelineBase<ImageLoaderWork>
     {
@@ -125,6 +135,159 @@ public class ImageCache
         }
     }
 
+    public static readonly HashSet<string> SkipExtensions =
+        new HashSet<string>()
+        {
+            ".psd", ".mov", ".mp4"
+        };
+
+    public static readonly HashSet<string> ReformatExtensions =
+        new HashSet<string>()
+        {
+            ".nef"
+        };
+
+    private BitmapImage LoadBitmapFromPath(string path, int? scaleWidth)
+    {
+        bool ignoreColorProfile = false;
+
+        while (true)
+        {
+            try
+            {
+                BitmapImage image = new BitmapImage();
+                image.BeginInit();
+                if (scaleWidth != null)
+                {
+                    image.DecodePixelWidth = scaleWidth.Value;
+                }
+
+                if (ignoreColorProfile)
+                {
+                    image.CreateOptions |= BitmapCreateOptions.IgnoreColorProfile;
+                }
+
+                image.UriSource = new Uri(path);
+                image.EndInit();
+                image.Freeze();
+
+                return image;
+            }
+            catch (FileFormatException)
+            {
+                if (ignoreColorProfile)
+                    throw;
+                ignoreColorProfile = true;
+            }
+        }
+    }
+
+    private BitmapSource LoadThroughEmgu(string filename, int? scaleWidth)
+    {
+        using Mat mat = Emgu.CV.CvInvoke.Imread(filename, ImreadModes.Unchanged);
+
+  //      using Mat matOut = new Mat(512, 512, mat.Depth, mat.NumberOfChannels);
+//
+
+        return mat.ToBitmapSource();
+//        Array ary = matOut.GetData(
+//        CvInvoke.ResizeForFrame(mat, matOut, new System.Drawing.Size(512, 512));
+//        mat.Save($"c:\\temp\\{baseName}-1.jpg");
+//        string outFile = $"c:\\temp\\{baseName}-2.jpg";
+//        matOut.Save(outFile);
+//
+//        img.Source = new BitmapImage(new Uri(outFile));
+//        // PortableImage image = J2kImage.FromFile(filename);
+//
+//        //                BitmapSource bsrc = BitmapSource.Create(mat.Width, mat.Height, 300, 300, PixelFormats.Bgr24, ))
+//        //                img.Source = new CachedBitmap()
+    }
+
+
+    private BitmapImage LoadBitmapThroughDecoder(string path, int? scaleWidth)
+    {
+        bool ignoreColorProfile = false;
+
+        while (true)
+        {
+            try
+            {
+                BitmapSource source;
+
+                try
+                {
+                    source = LoadBitmapFromPath(path, scaleWidth);
+
+                    // this will fail with some (all?) NEF files trying to copy the metadata, even if we specify to ignore the color
+                    // profile. LoadBitmapFromPath seems to recover from this.
+
+                    // its unclear if we lose anything by using LoadBitmapFromPath (which just loads creates the BitmapImage using
+                    // the path. Some forum comments imply that you miss out on some codecs just going the BitmapImage route.
+
+                    // if that turns out to be the case, then we can first try using BitmapDecoder, and if it fails we can
+                    // fall back to BitmapImage, then call back on LoadThroughEmgu (which will be necessary for jp2 files, at the very
+                    // least.
+
+//                    BitmapCreateOptions options = ignoreColorProfile ? BitmapCreateOptions.IgnoreColorProfile : BitmapCreateOptions.None;
+//                    BitmapDecoder decoder = BitmapDecoder.Create(new Uri(path), BitmapCreateOptions.IgnoreColorProfile, BitmapCacheOption.Default);
+//
+//                    BitmapFrame frame = decoder.Frames[0];
+//                    source = frame;
+//
+//                    if (source.Metadata != null)
+//                    {
+//                        ImageMetadata cloned = source.Metadata.Clone();
+//                    }
+                }
+                catch
+                {
+                    source = LoadThroughEmgu(path, scaleWidth);
+                }
+
+                JpegBitmapEncoder encoder = new();
+
+                encoder.QualityLevel = 100;
+                encoder.Frames.Add(BitmapFrame.Create(source));
+
+                using MemoryStream memoryStream = new MemoryStream();
+                encoder.Save(memoryStream);
+
+                BitmapImage image = new();
+                image.BeginInit();
+                if (scaleWidth != null)
+                {
+                    image.DecodePixelWidth = scaleWidth.Value;
+                }
+
+                if (ignoreColorProfile)
+                {
+                    image.CreateOptions |= BitmapCreateOptions.IgnoreColorProfile;
+                }
+
+                image.StreamSource = new MemoryStream(memoryStream.ToArray());
+                image.EndInit();
+                image.Freeze();
+
+                return image;
+            }
+            catch (FileFormatException)
+            {
+                if (ignoreColorProfile)
+                    throw;
+                ignoreColorProfile = true;
+            }
+        }
+    }
+
+    private static Dictionary<string, int> s_formatPriorities =
+        new()
+        {
+            { "image/png", 0 },
+            { "image/bmp", 1 },
+            { "image/gif", 5 },
+            { "image/jpeg", 10 },
+        };
+
     /*----------------------------------------------------------------------------
         %%Function: DoImageLoaderWork
         %%Qualified: Thetacat.Model.MediaExplorerCollection.DoImageLoaderWork
@@ -136,45 +299,111 @@ public class ImageCache
     {
         foreach (ImageLoaderWork item in workItems)
         {
-            if (item.PathToImage == null || item.PathToImage.Contains(".nef") || item.PathToImage.Contains(".psd"))
+            if (item.PathToImage == null)
+            {
+                MainWindow.LogForApp(EventType.Warning, $"skipping null path");
                 continue;
+            }
 
+            string lowerPath = item.PathToImage.ToLowerInvariant();
+            string extension = Path.GetExtension(lowerPath);
+
+            if (SkipExtensions.Contains(extension))
+            {
+                MainWindow.LogForApp(EventType.Warning, $"skipping {lowerPath} due to extension");
+                continue;
+            }
+
+            DerivativeItem? formatDerivative = null;
+            BitmapImage? fullImage = null;
+            string? pathToFullImage = null;
+            int pixelsCached = 0;
+
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaKey);
             try
             {
-                int scaleWidth = Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth));
-                double scale = (double)scaleWidth / (item.OriginalWidth ?? 1.0);
-                string path = item.PathToImage;
-
-                DerivativeItem? derivative = null;
-
-                // see if there is a derivative for this
-                if (!m_fFullFidelity && App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scale, out derivative))
-                    path = derivative.Path.Local;
-
-                BitmapImage image = new BitmapImage();
-                image.BeginInit();
-                if (!m_fFullFidelity)
+                // first get a readable source for this image
+                if (ReformatExtensions.Contains(extension))
                 {
-                    image.DecodePixelWidth = scaleWidth;
+                    if (!App.State.Derivatives.TryGetFormatDerivative(item.MediaKey, s_formatPriorities, out formatDerivative))
+                    {
+                        // we have to get a full fidelity format derivative
+                        fullImage = LoadBitmapThroughDecoder(item.PathToImage, null);
+                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, fullImage);
+                    }
+                    else
+                    {
+                        pathToFullImage = formatDerivative.Path.Local;
+                    }
                 }
 
-                image.UriSource = new Uri(path);
-                image.EndInit();
-                image.Freeze();
+                // figure out if we are resampling this image
+                double scaleFactor =
+                    (m_fFullFidelity || item.OriginalWidth == null)
+                        ? 1.0
+                        : (double)Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth)) / item.OriginalWidth.Value;
+                int targetWidth = 0;
 
-                Interlocked.Add(ref m_cacheSize, image.PixelHeight * image.PixelWidth * 4);
+                if (Derivatives.CompareDoubles(scaleFactor, 1.0, 4) != 0)
+                    targetWidth = (int)Math.Floor(item.OriginalWidth!.Value * scaleFactor);
+
+                string path = item.PathToImage;
+
+                // if we have a resampled derivative, use it
+                // else if we have a fullImage, use it to scale to a resampled derivative (and queue it as a new derivative)
+                // else if we have a pathToFullImage, use that as the source to resample (and queue it as a new derivative)
+                // else use the original ImagePathToSourceas the source to resample (and queue it as a new derivative)
+
+                DerivativeItem? derivative = null;
+                BitmapSource? targetBitmap = null;
+
+                // see if there is a derivative for this
+                if (!m_fFullFidelity)
+                {
+                    if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, out derivative, 0.02))
+                    {
+                        path = derivative.Path.Local;
+                    }
+                    else if (fullImage != null)
+                    {
+                        TransformedBitmap transformed = new TransformedBitmap(fullImage, new ScaleTransform(scaleFactor, scaleFactor));
+                        pixelsCached = transformed.PixelHeight * transformed.PixelWidth * 4;
+
+                        transformed.Freeze();
+                        targetBitmap = transformed;
+                    }
+                    else if (pathToFullImage != null)
+                    {
+                        path = pathToFullImage;
+                    }
+                }
+                else
+                {
+                    if (fullImage != null)
+                        targetBitmap = fullImage;
+                    else if (pathToFullImage != null)
+                        path = pathToFullImage;
+                }
+
+                if (targetBitmap == null)
+                {
+                    BitmapImage image = LoadBitmapFromPath(path, m_fFullFidelity ? null : targetWidth);
+                    pixelsCached = image.PixelHeight * image.PixelWidth * 4;
+                    targetBitmap = image;
+                }
+
+                Interlocked.Add(ref m_cacheSize, pixelsCached);
                 Interlocked.Add(ref m_numImages, 1);
 
-                MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {image.DecodePixelWidth}");
+//                MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {scaleWidth}");
 
-                MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaKey);
 
-                if (derivative == null)
-                    App.State.Derivatives.QueueSaveResampledImage(mediaItem, image);
+                if (derivative == null && !m_fFullFidelity)
+                    App.State.Derivatives.QueueSaveResampledImage(mediaItem, targetBitmap);
 
                 if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
                 {
-                    cacheItem.Image = image;
+                    cacheItem.Image = targetBitmap;
                     TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
                 }
             }

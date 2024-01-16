@@ -13,7 +13,7 @@ public class MediaExplorerItem : INotifyPropertyChanged
     private Guid m_mediaId;
     private string m_tileSrc;
     public string m_tileLabel;
-    private BitmapImage? m_tileImage;
+    private BitmapSource? m_tileImage;
     private bool m_selected;
 
     public bool Selected
@@ -35,7 +35,7 @@ public class MediaExplorerItem : INotifyPropertyChanged
         set => SetField(ref m_tileSrc, value);
     }
 
-    public BitmapImage? TileImage
+    public BitmapSource? TileImage
     {
         get
         {
