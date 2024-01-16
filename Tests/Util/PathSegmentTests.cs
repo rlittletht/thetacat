@@ -81,4 +81,53 @@ public class PathSegmentTests
         Assert.AreEqual(expected, actual);
         Assert.AreEqual(expected.Local, expectedLocal);
     }
+
+    [TestCase("foo.txt", new string[]{})]
+    [TestCase("foo/foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("bar\\foo\\foo.txt", new string[] { "bar/foo/foo.txt", "foo/foo.txt" })]
+    [TestCase("c:\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("\\\\baz\\boo\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("\\\\baz\\boo\\foo\\bum\\bun\\foo.txt", new string[] { "foo/bum/bun/foo.txt", "bum/bun/foo.txt", "bun/foo.txt" })]
+    [Test]
+    public static void TestTraverseDirectories_TraverseAll(string localPath, string[] expected)
+    {
+        List<string> actual = new();
+
+        PathSegment path = new(localPath);
+
+        path.TraverseDirectories(
+            (segment) =>
+            {
+                actual.Add(segment);
+                return true;
+            });
+
+        Assert.AreEqual(expected, actual);
+    }
+
+    [TestCase("foo.txt", new string[] { })]
+    [TestCase("foo/foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("bar\\foo\\foo.txt", new string[] { "bar/foo/foo.txt" })]
+    [TestCase("c:\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [TestCase("\\\\baz\\boo\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
+    [Test]
+    public static void TestTraverseDirectories_TraverseOnlyOne(string localPath, string[] expected)
+    {
+        List<string> actual = new();
+
+        PathSegment path = new(localPath);
+        int c = 0;
+
+        path.TraverseDirectories(
+            (segment) =>
+            {
+                c++;
+                actual.Add(segment);
+                return c < 1;
+            });
+
+        Assert.AreEqual(expected, actual);
+    }
 }

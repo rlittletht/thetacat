@@ -26,17 +26,22 @@ public class CheckableTreeViewSupport<T> where T: class, ICheckableTreeViewItem<
         }
     }
 
-    public static List<T> GetCheckedItems(TreeView view, AdditionalValidationDelegate? additionaValidation = null)
+    public static List<T> GetCheckedItems(IEnumerable<T> root, AdditionalValidationDelegate? additionaValidation = null)
     {
         // build the list to check (only the marked items)
         List<T> checkedItems = new List<T>();
 
-        foreach (T t in view.ItemsSource)
+        foreach (T t in root)
         {
             AddCheckedItemsToList(checkedItems, t, additionaValidation);
         }
 
         return checkedItems;
+    }
+
+    public static List<T> GetCheckedItems(TreeView view, AdditionalValidationDelegate? additionaValidation = null)
+    {
+        return GetCheckedItems((IEnumerable<T>)view.ItemsSource);
     }
 
     public static void ToggleItems(IEnumerable<object?>? items, bool? set = null)
@@ -66,6 +71,40 @@ public class CheckableTreeViewSupport<T> where T: class, ICheckableTreeViewItem<
                 ToggleItems(node.Children, node.Checked);
         }
     }
+
+    public static bool? SetParentCheckStateForChildren(IEnumerable<T> subtree)
+    {
+        bool? fCurrent = null;
+        bool fFirst = true;
+
+        foreach (T item in subtree)
+        {
+            if (item.Children.Count > 0)
+            {
+                bool? childrenSet = SetParentCheckStateForChildren(item.Children);
+
+                if (childrenSet != null)
+                    item.Checked = childrenSet.Value;
+
+                if (fFirst)
+                    fCurrent = item.Checked;
+                fFirst = false;
+
+                if (fCurrent != childrenSet)
+                    fCurrent = null;
+            }
+
+            if (fFirst)
+                fCurrent = item.Checked;
+
+            if (fCurrent != item.Checked)
+                fCurrent = null;
+            fFirst = false;
+        }
+
+        return fCurrent;
+    }
+
 
     public static void FilterAndToggleSetSubtree(IEnumerable<T> subtree, FilterItemDelegate filter, bool? set = null)
     {

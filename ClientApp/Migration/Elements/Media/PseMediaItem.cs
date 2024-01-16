@@ -176,7 +176,10 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     string GetFullyQualifiedForSlashed()
     {
-        return VerifiedPath?.ToString() ?? $"{VolumeName}/{FullPath}";
+        if (Path.IsPathRooted(FullPath))
+            return VerifiedPath?.ToString() ?? $"{VolumeName}{FullPath}";
+        else
+            return VerifiedPath?.ToString() ?? $"{VolumeName}/{FullPath}";
     }
 
     public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;

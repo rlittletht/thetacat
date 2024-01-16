@@ -15,12 +15,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TCore.Pipeline;
+using Thetacat.Model;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.UI.ProgressReporting;
 using Thetacat.Util;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using Directory = System.IO.Directory;
 using Path = System.IO.Path;
+using PathSegment = Thetacat.Util.PathSegment;
 
 namespace Thetacat.Import.UI
 {
@@ -88,7 +91,7 @@ namespace Thetacat.Import.UI
             }
         }
 
-        private async void AddToSources(object sender, RoutedEventArgs e)
+        private async void SetSourcePath(object sender, RoutedEventArgs e)
         {
             if (!Directory.Exists(m_model.SourcePath))
             {
@@ -101,7 +104,7 @@ namespace Thetacat.Import.UI
             string directoryLeaf = Path.GetRelativePath(parent, m_model.SourcePath);
 
             List<ImportNode> nodesToAdd =
-                await DoBackgroundWorkAsync<List<ImportNode>>(
+                await m_importBackgroundWorkers.DoWorkAsync(
                     "Adding items to source",
                     (progress) =>
                     {
@@ -113,7 +116,8 @@ namespace Thetacat.Import.UI
                         ProcessNode(node);
                         return _nodesToAdd;
                     });
-
+            m_model.Nodes.Clear();
+            m_model.ImportItems.Clear();
             m_model.Nodes.AddRange(nodesToAdd);
         }
 
@@ -123,7 +127,7 @@ namespace Thetacat.Import.UI
 
             foreach (string file in Directory.GetFiles(node.FullPath))
             {
-                ImportNode fileNode = new ImportNode(true, file, "", parent.Path, false);
+                ImportNode fileNode = new ImportNode(true, Path.GetFileName(file), "", parent.Path, false);
                 string extension = Path.GetExtension(file).ToLowerInvariant();
                 if (extension.Length > 1)
                     extensions.Add(extension);
@@ -141,7 +145,7 @@ namespace Thetacat.Import.UI
             HashSet<string> extensions = new HashSet<string>(m_model.FileExtensions);
 
             List<ImportNode> nodesToAdd =
-                await DoBackgroundWorkAsync<List<ImportNode>>(
+                await m_importBackgroundWorkers.DoWorkAsync(
                     "Adding import items",
                     (progress) =>
                     {
@@ -154,7 +158,7 @@ namespace Thetacat.Import.UI
 
                         return _nodesToAdd;
                     });
-
+                
             m_model.ImportItems.AddRange(nodesToAdd);
             m_model.FileExtensions.Clear();
             List<string> sortedExtensions = new List<string>(extensions);
@@ -164,16 +168,6 @@ namespace Thetacat.Import.UI
 
         private ProgressListDialog? m_backgroundProgressDialog;
         private readonly BackgroundWorkers m_importBackgroundWorkers;
-
-        public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
-        {
-            m_importBackgroundWorkers.AddWork(description, work);
-        }
-
-        public async Task<T> DoBackgroundWorkAsync<T>(string description, BackgroundWorkerWork<T> work)
-        {
-            return await m_importBackgroundWorkers.DoWorkAsync<T>(description, work);
-        }
 
         private void HandleSpinnerDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -230,6 +224,8 @@ namespace Thetacat.Import.UI
                 m_model.ImportItems,
                 (ImportNode node) => selected.Contains(Path.GetExtension(node.Name).ToLowerInvariant()),
                 false);
+            CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
+            ExtensionList.SelectedItems.Clear();
         }
 
         private void CheckSelectedExtensions(object sender, RoutedEventArgs e)
@@ -240,6 +236,75 @@ namespace Thetacat.Import.UI
                 m_model.ImportItems,
                 (ImportNode node) => selected.Contains(Path.GetExtension(node.Name).ToLowerInvariant()),
                 true);
+            CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
+            ExtensionList.SelectedItems.Clear();
+        }
+
+        MediaItem? LookupMediaIdForPath(string fullPathLocal, string sourcePath, string name)
+        {
+            string fullLocalWithName = Path.Join(fullPathLocal, name);
+
+            PathSegment relativePathWithName = new(Path.GetRelativePath(sourcePath, fullLocalWithName));
+
+            ICatalog catalog = App.State.Catalog;
+            MediaItem? item = null;
+
+            // first, treat the relativePath as the virtual path
+            item = catalog.LookupItemFromVirtualPath(relativePathWithName, fullLocalWithName, true);
+
+            if (item != null)
+                return item;
+
+            // no match, now working our way from full paths to the name, keep trying
+            PathSegment fullWithName = new(fullLocalWithName);
+            fullWithName.TraverseDirectories(
+                (segment) =>
+                {
+                    item = catalog.LookupItemFromVirtualPath(segment, fullLocalWithName, true);
+                    return item == null; // continue if we didn't find it
+                });
+
+            return item;
+        }
+
+        private bool SearchForImportedItemsWork(IProgressReport progress)
+        {
+            List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(m_model.ImportItems);
+            int count = checkedItems.Count;
+            int i = 0;
+            foreach (ImportNode item in checkedItems)
+            {
+                progress.UpdateProgress((i++ * 100.0) / count);
+                // see if we have a match in the catalog
+                if (item.MediaId != null)
+                    continue; // already matched
+
+                if (item.IsDirectory)
+                    continue;
+
+                // first, do we have a match on path?
+                MediaItem? mediaItem = LookupMediaIdForPath(item.Path, m_model.SourcePath, item.Name);
+
+                if (mediaItem != null)
+                {
+                    item.MediaId = mediaItem.ID;
+                    item.MD5 = mediaItem.MD5;
+                    item.Checked = false;
+                    continue;
+                }
+
+                // do a deeper scan here?
+            }
+
+            // lastly, go through and uncheck any items where all the children are unchecked
+            CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
+            progress.WorkCompleted();
+            return true;
+        }
+
+        private void SearchForImportedItems(object sender, RoutedEventArgs e)
+        {
+            m_importBackgroundWorkers.AddWork("searching for already imported items", SearchForImportedItemsWork);
         }
     }
 }

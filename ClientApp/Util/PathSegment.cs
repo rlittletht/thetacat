@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using NUnit.Framework.Constraints;
+using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Util;
 
@@ -110,6 +112,38 @@ public class PathSegment
     public PathSegment Clone()
     {
         return new PathSegment(this);
+    }
+
+    public bool HasDirectory()
+    {
+        return m_segment.Contains("/");
+    }
+
+    public delegate bool TraverseDelegate(PathSegment segment);
+
+    /*----------------------------------------------------------------------------
+        %%Function: TraverseDirectories
+        %%Qualified: Thetacat.Util.PathSegment.TraverseDirectories
+
+        delegate should return false if we should not continue to traverse
+    ----------------------------------------------------------------------------*/
+    public void TraverseDirectories(TraverseDelegate traverseItem)
+    {
+        string? root = Path.GetPathRoot(Local);
+        string rootedDirectory = string.IsNullOrEmpty(root) ? Local : Path.GetRelativePath(root, Local);
+
+        PathSegment current = new(rootedDirectory);
+        while (current.HasDirectory())
+        {
+            if (!traverseItem(current))
+                return;
+
+            int ich = current.m_segment.IndexOf("/") + 1;
+
+            if (ich == -1)
+                throw new CatExceptionInternalFailure("no directory separator with a directory present?");
+            current = new(current.m_segment[ich..]);
+        }
     }
 
     public static bool operator ==(PathSegment? left, PathSegment? right)

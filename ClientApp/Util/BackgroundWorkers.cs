@@ -8,6 +8,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 namespace Thetacat.Util;
 
 // a collection of background workers. Each added item will have a notion of finishing
+// each unit of work will be run independent of other work
 public class BackgroundWorkers
 {
     public delegate void StartFirstWorkerDelegate();

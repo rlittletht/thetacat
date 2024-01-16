@@ -121,7 +121,7 @@ public class Md5Cache
 
     public string GetMd5ForPathSync(string localPath)
     {
-        if (TryLookupMd5(localPath, out string? md5))
+        if (TryLookupMd5(new PathSegment(localPath), out string? md5))
             return md5!;
 
         md5 = Checksum.GetMD5ForPathSync(localPath);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -13,8 +14,15 @@ public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNo
     private string m_md5;
     private string m_path;
     private bool m_isDirectory;
+    private Guid? m_mediaId;
 
     public ObservableCollection<ImportNode> Children { get; set; } = new ObservableCollection<ImportNode>();
+
+    public Guid? MediaId
+    {
+        get => m_mediaId;
+        set => SetField(ref m_mediaId, value);
+    }
 
     public bool Checked
     {
