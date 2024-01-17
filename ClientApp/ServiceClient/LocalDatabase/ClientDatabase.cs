@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
-using Emgu.CV.Util;
 using TCore;
 using Thetacat.Model.Client;
 using Thetacat.TCore.TcSqlLite;

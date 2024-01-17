@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Windows.Markup;
-using Emgu.CV.Features2D;
-using MetadataExtractor;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Thetacat.Metatags;
 using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 

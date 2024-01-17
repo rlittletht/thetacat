@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Forms.Design;
 using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;

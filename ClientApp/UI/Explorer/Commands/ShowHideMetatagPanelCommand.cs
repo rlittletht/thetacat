@@ -1,6 +1,5 @@
 ﻿using System.Windows.Input;
 using System;
-using Thetacat.Logging;
 
 namespace Thetacat.UI.Explorer.Commands;
 

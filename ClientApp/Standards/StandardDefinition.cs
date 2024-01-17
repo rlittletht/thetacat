@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Thetacat.Standards;
+﻿namespace Thetacat.Standards;
 
 public class StandardDefinition
 {

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.CompilerServices;
 using Thetacat.Import;
 using Thetacat.ServiceClient;

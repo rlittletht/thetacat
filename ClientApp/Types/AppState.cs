@@ -1,5 +1,4 @@
 ﻿using System;
-using System.DirectoryServices.ActiveDirectory;
 using System.Windows;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;

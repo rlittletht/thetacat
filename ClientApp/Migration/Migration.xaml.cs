@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Types;
 using Thetacat.Util;
 
 namespace Thetacat.Migration;

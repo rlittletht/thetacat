@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using Thetacat.Metatags.Model;
-using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient.LocalDatabase;

@@ -1,6 +1,4 @@
-﻿using Tests.Model.Workgroups;
-using Thetacat;
-using Thetacat.Model;
+﻿using Thetacat.Model;
 using Thetacat.Types;
 
 namespace Tests.Model;

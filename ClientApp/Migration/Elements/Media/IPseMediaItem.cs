@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Model;
 
 namespace Thetacat.Migration.Elements.Media;
 

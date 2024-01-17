@@ -1,5 +1,4 @@
-﻿using System.Security.RightsManagement;
-using Thetacat;
+﻿using Thetacat;
 using Thetacat.Model.ImageCaching;
 
 namespace Tests.Model.ImageCaching;

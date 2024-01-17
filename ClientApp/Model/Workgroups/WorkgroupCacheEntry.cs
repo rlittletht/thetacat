@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using MetadataExtractor;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore;
 using Thetacat.ServiceClient;
 using Thetacat.Types;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Thetacat.Metatags;
 using Thetacat.Types;
 
 namespace Thetacat.Metatags.Model;

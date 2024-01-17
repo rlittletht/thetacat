@@ -3,18 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Emgu.CV.CvEnum;
 using Emgu.CV;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore.Pipeline;
 using Thetacat.Logging;
 using Thetacat.Model.Client;
 using Thetacat.Types;
-using Thetacat.UI;
 using Path = System.IO.Path;
 
 namespace Thetacat.Model.ImageCaching;

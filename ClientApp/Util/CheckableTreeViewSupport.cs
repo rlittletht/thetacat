@@ -1,11 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using Thetacat.Import.UI;
-using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Metadata.UI;
 
 namespace Thetacat.Util;
 

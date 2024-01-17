@@ -1,5 +1,4 @@
-﻿using System.Windows.Controls;
-using TCore;
+﻿using TCore;
 using Thetacat.TCore.TcSqlLite;
 using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
 

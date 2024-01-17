@@ -1,6 +1,4 @@
-﻿using System.Windows.Forms;
-
-namespace Thetacat.Standards;
+﻿namespace Thetacat.Standards;
 
 public class PhotoshopElementsTags
 {

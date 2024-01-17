@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SQLite;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
-using Emgu.CV.Util;
-using MetadataExtractor;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using TCore;
 using Thetacat.Migration.Elements;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Migration.Elements.Versions;
-using Thetacat.ServiceClient;
 using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 

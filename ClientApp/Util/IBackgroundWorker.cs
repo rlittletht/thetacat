@@ -1,6 +1,4 @@
-﻿using TCore.XmlSettings;
-
-namespace Thetacat.Util;
+﻿namespace Thetacat.Util;
 
 public interface IBackgroundWorker
 {

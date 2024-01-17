@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Windows;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
 namespace Thetacat.UI.Options;

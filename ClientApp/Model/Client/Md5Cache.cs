@@ -2,12 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
 namespace Thetacat.Model.Client;
 

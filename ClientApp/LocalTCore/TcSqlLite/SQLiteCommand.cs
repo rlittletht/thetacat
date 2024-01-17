@@ -1,6 +1,4 @@
-﻿using System.Data.SQLite;
-
-namespace Thetacat.TCore.TcSqlLite;
+﻿namespace Thetacat.TCore.TcSqlLite;
 
 public class SQLiteCommand : ISqlCommand
 {

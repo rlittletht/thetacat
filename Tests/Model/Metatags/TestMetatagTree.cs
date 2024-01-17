@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Text;
+﻿using System.Text;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 

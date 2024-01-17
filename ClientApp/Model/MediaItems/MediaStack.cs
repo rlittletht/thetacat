@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Forms.VisualStyles;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 

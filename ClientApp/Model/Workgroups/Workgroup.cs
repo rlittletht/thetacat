@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.SQLite;
-using System.IO;
-using System.Windows.Forms;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
-using Thetacat.ServiceClient.LocalService;
 using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;

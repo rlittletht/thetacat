@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Windows.Documents.DocumentStructures;
 using TCore;
 using Thetacat.Import;
 using Thetacat.Model;

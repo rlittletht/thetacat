@@ -1,12 +1,7 @@
-﻿using System;
-using System.Threading;
-using Azure.Core;
+﻿using Azure.Core;
 using Azure.Identity;
 using System.Threading.Tasks;
 using Thetacat.Types;
-using System.ComponentModel;
-using System.Windows;
-using Thetacat.Model;
 
 namespace Thetacat.Azure;
 

@@ -2,14 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Threading;
-using System.Windows.Controls;
-using System.Windows.Forms.VisualStyles;
 using System.Windows.Media.Imaging;
-using NUnit.Framework.Constraints;
 using TCore.Pipeline;
-using Thetacat.Logging;
-using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;

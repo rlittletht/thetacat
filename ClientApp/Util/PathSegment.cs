@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework.Constraints;
-using Thetacat.Model;
 using Thetacat.Types;
 
 namespace Thetacat.Util;

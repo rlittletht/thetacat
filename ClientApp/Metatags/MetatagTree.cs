@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Types;
 using Metatag = Thetacat.Metatags.Model.Metatag;
 

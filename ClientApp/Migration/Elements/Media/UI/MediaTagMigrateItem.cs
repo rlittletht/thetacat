@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Microsoft.Identity.Client;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Util;

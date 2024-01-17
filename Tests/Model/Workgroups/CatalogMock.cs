@@ -4,7 +4,6 @@ using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
-using Thetacat.Types.Parallel;
 
 namespace Tests.Model.Workgroups;
 

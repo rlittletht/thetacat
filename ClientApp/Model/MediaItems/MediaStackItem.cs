@@ -1,10 +1,7 @@
-﻿using Emgu.CV.PpfMatch3d;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Thetacat.Migration.Elements.Metadata.UI;
-using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 

@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Diagnostics.PerformanceData;
-using System.Security.RightsManagement;
-using Thetacat.UI;
 
 namespace Thetacat.Util;
 

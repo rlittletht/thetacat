@@ -1,5 +1,4 @@
 ﻿using System.Data.SQLite;
-using System.Text.RegularExpressions;
 using TCore;
 using Thetacat.TCore.TcSqlLite;
 using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;

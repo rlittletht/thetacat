@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Meziantou.Framework.WPF.Collections;
-using Thetacat.Types.Parallel;
 
 namespace Thetacat.Logging;
 
