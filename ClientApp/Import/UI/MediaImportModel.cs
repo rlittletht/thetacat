@@ -9,9 +9,23 @@ namespace Thetacat.Import.UI;
 public class MediaImportModel: INotifyPropertyChanged
 {
     private string m_sourcePath = String.Empty;
+    private bool m_includeSubdirInVirtualPath = true;
+    private string m_virtualPathPrefix = string.Empty;
     public ObservableCollection<ImportNode> Nodes { get; set; } = new();
     public ObservableCollection<ImportNode> ImportItems { get; set; } = new();
     public ObservableCollection<string> FileExtensions { get; set; } = new();
+
+    public bool IncludeSubdirInVirtualPath
+    {
+        get => m_includeSubdirInVirtualPath;
+        set => SetField(ref m_includeSubdirInVirtualPath, value);
+    }
+
+    public string VirtualPathPrefix
+    {
+        get => m_virtualPathPrefix;
+        set => SetField(ref m_virtualPathPrefix, value);
+    }
 
     public string SourcePath
     {

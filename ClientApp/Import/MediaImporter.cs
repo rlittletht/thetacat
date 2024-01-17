@@ -42,15 +42,24 @@ public class MediaImporter
     public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
-    public MediaImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+    public void AddMediaItemFilesToImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
         {
             PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
-            ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
+            if (file.VirtualPath != null)
+                ImportItems.Add(
+                    new ImportItem(Guid.Empty, source, pathRoot, path, file.VirtualPath, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
+            else
+                ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
         }
+    }
+
+    public MediaImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+    {
+        AddMediaItemFilesToImporter(files, source, notifyDelegate);
     }
 
     public MediaImporter(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)

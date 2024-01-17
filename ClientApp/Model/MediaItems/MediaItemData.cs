@@ -71,7 +71,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_state = MediaItemState.Pending;
         m_md5 = string.Empty;
         m_mimeType = string.Empty;
-        m_virtualPath = importItem.SourcePath;
+        m_virtualPath = importItem.VirtualPath;
         ID = Guid.NewGuid();
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
     }

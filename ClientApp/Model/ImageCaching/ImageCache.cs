@@ -241,6 +241,9 @@ public class ImageCache
                 }
                 catch
                 {
+                    // don't try to use emgu for NEF files -- it will just get the thumbnail. rethrow in this case
+                    if (path.ToLowerInvariant().EndsWith(".nef"))
+                        throw;
                     source = LoadThroughEmgu(path, scaleWidth);
                 }
 

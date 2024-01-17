@@ -72,6 +72,10 @@
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="112" />
+                            <ColumnDefinition Width="192" />
+                            <ColumnDefinition Width="112" />
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="32" />
                         </Grid.ColumnDefinitions>
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
@@ -91,6 +95,19 @@
                                 <Button Content="Check" Click="CheckSelectedExtensions" Grid.Row="2" Width="56"/>
                             </StackPanel>
                         </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                            <TextBlock>Virtual path prefix</TextBlock>
+                            <TextBox Text="{Binding Path=VirtualPathPrefix}"/>
+                            <CheckBox Content="Include subdirectories?" IsChecked="{Binding Path=IncludeSubdirInVirtualPath}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <Button Content="Check Existing" Click="SearchForImportedItems" />
+                            <Button Content="Import" Click="DoImport"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent" VerticalAlignment="Bottom">
+                            <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </GroupBox>
@@ -100,11 +117,6 @@
                 <ColumnDefinition Width="32" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
-                <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"
-                                       VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
-            </Grid>
-            <Button Content="Check Existing" Click="SearchForImportedItems" Grid.Column="1" />
         </Grid>
     </Grid>
 </Window>

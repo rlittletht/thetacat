@@ -64,6 +64,16 @@ public class PathSegment
         return segment;
     }
 
+    public PathSegment Unroot()
+    {
+        PathSegment root = GetPathRoot(this);
+
+        if (root != PathSegment.Empty)
+            return GetRelativePath(root, this);
+
+        return this;
+    }
+
     public PathSegment? GetPathRoot()
     {
         return PathSegment.CreateFromString(Path.GetPathRoot(Local));

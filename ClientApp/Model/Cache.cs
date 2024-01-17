@@ -182,7 +182,7 @@ public class Cache: ICache
 
         // if the virtual path is rooted, we can't use it
         // just use a guid.
-        if (Path.IsPathRooted(item.VirtualPath.Local))
+        if (Path.IsPathRooted(item.VirtualPath.Local) || item.VirtualPath == PathSegment.Empty)
         {
             return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
         }

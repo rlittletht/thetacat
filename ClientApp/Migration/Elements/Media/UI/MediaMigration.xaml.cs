@@ -325,8 +325,6 @@ public partial class MediaMigration : UserControl
             MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.CatID);
             App.State.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
             mediaItem.NotifyCacheStatusChanged();
-            // TODO NOTE:  When are we going to handle version stacks? does that get migrated with
-            // metadata?  There are some things that have to get updated when the catalog item is created...
         }
         report.WorkCompleted();
     }

@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Types;
 using Thetacat.Util;
 
 namespace Thetacat.Import.UI;
 
-public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNode>
+public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNode>, IMediaItemFile
 {
     private bool m_checked;
     private string m_name;
@@ -15,8 +16,16 @@ public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNo
     private string m_path;
     private bool m_isDirectory;
     private Guid? m_mediaId;
+    private string m_matchedItem = string.Empty;
+    private PathSegment? m_virtualPath;
 
     public ObservableCollection<ImportNode> Children { get; set; } = new ObservableCollection<ImportNode>();
+
+    public string MatchedItem
+    {
+        get => m_matchedItem;
+        set => SetField(ref m_matchedItem, value);
+    }
 
     public Guid? MediaId
     {
@@ -46,6 +55,14 @@ public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNo
     {
         get => m_path;
         set => SetField(ref m_path, value);
+    }
+
+    public string FullyQualifiedPath => PathSegment.Join(m_path, m_name).Local;
+
+    public PathSegment? VirtualPath
+    {
+        get => m_virtualPath;
+        set => SetField(ref m_virtualPath, value);
     }
 
     public bool IsDirectory

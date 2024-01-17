@@ -15,11 +15,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TCore.Pipeline;
+using Thetacat.Migration.Elements.Media;
 using Thetacat.Model;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.UI.ProgressReporting;
 using Thetacat.Util;
+using XmpCore.Impl.XPath;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using Directory = System.IO.Directory;
 using Path = System.IO.Path;
@@ -269,42 +271,140 @@ namespace Thetacat.Import.UI
 
         private bool SearchForImportedItemsWork(IProgressReport progress)
         {
-            List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(m_model.ImportItems);
-            int count = checkedItems.Count;
-            int i = 0;
-            foreach (ImportNode item in checkedItems)
+            try
             {
-                progress.UpdateProgress((i++ * 100.0) / count);
-                // see if we have a match in the catalog
-                if (item.MediaId != null)
-                    continue; // already matched
-
-                if (item.IsDirectory)
-                    continue;
-
-                // first, do we have a match on path?
-                MediaItem? mediaItem = LookupMediaIdForPath(item.Path, m_model.SourcePath, item.Name);
-
-                if (mediaItem != null)
+                List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(m_model.ImportItems);
+                int count = checkedItems.Count;
+                int i = 0;
+                foreach (ImportNode item in checkedItems)
                 {
-                    item.MediaId = mediaItem.ID;
-                    item.MD5 = mediaItem.MD5;
-                    item.Checked = false;
-                    continue;
+                    progress.UpdateProgress((i++ * 100.0) / count);
+                    // see if we have a match in the catalog
+                    if (item.MediaId != null)
+                        continue; // already matched
+
+                    if (item.IsDirectory)
+                        continue;
+
+                    // first, do we have a match on path?
+                    MediaItem? mediaItem = LookupMediaIdForPath(item.Path, m_model.SourcePath, item.Name);
+
+                    if (mediaItem == null)
+                    {
+                        string fullLocalWithName = Path.Join(item.Path, item.Name);
+
+                        // do a deeper scan here?
+                        string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalWithName);
+
+                        mediaItem = App.State.Catalog.FindMatchingMediaByMD5(md5);
+                    }
+
+                    if (mediaItem != null)
+                    {
+                        item.MediaId = mediaItem.ID;
+                        item.MD5 = mediaItem.MD5;
+                        item.Checked = false;
+                        item.MatchedItem = $"{mediaItem.VirtualPath}";
+                    }
                 }
 
-                // do a deeper scan here?
+                // lastly, go through and uncheck any items where all the children are unchecked
+                CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
+            }
+            finally
+            {
+                progress.WorkCompleted();
             }
 
-            // lastly, go through and uncheck any items where all the children are unchecked
-            CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
-            progress.WorkCompleted();
             return true;
         }
 
         private void SearchForImportedItems(object sender, RoutedEventArgs e)
         {
             m_importBackgroundWorkers.AddWork("searching for already imported items", SearchForImportedItemsWork);
+        }
+
+        public static PathSegment BuildVirtualPath(string sourcePath, string itemPath, string itemName, bool includeSubdirs, string? virtualPrefix)
+        {
+            PathSegment itemPathWithName = PathSegment.Join(itemPath, itemName);
+            PathSegment relativePath = new PathSegment(Path.GetRelativePath(sourcePath, itemPathWithName));
+
+            if (string.IsNullOrEmpty(virtualPrefix))
+            {
+                // no prefix
+                if (includeSubdirs == false || !relativePath.HasDirectory())
+                    return PathSegment.Empty;
+
+                return relativePath;
+            }
+
+            PathSegment virtualPath =
+                includeSubdirs
+                    ? PathSegment.Join(virtualPrefix, relativePath)
+                    : PathSegment.Join(virtualPrefix, itemName);
+
+            return virtualPath.Unroot();
+        }
+
+        private void DoPrePopulateWork(IProgressReport report, List<ImportNode> checkedItems)
+        {
+            int i = 0, iMax = checkedItems.Count;
+
+            foreach (ImportNode item in checkedItems)
+            {
+                report.UpdateProgress((i++ * 100.0) / iMax);
+                if (item.IsDirectory)
+                    continue;
+
+                // here we can pre-populate our cache.
+                if (item.MediaId == null)
+                    throw new CatExceptionInternalFailure($"media id not set after items added");
+                MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId.Value);
+
+                App.State.Cache.PrimeCacheFromImport(mediaItem, PathSegment.Join(item.Path, item.Name));
+                mediaItem.NotifyCacheStatusChanged();
+            }
+
+            report.WorkCompleted();
+        }
+
+        private void DoImport(object sender, RoutedEventArgs e)
+        {
+            List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(
+                m_model.ImportItems,
+                (node) => !node.IsDirectory);
+
+            foreach (ImportNode item in checkedItems)
+            {
+                if (item.IsDirectory)
+                    continue;
+
+                PathSegment relativePath = new PathSegment(Path.GetRelativePath(m_model.SourcePath, item.Path));
+
+                PathSegment virtualPath =
+                    m_model.IncludeSubdirInVirtualPath
+                        ? PathSegment.Join(m_model.VirtualPathPrefix ?? string.Empty, relativePath, item.Name)
+                        : new PathSegment(m_model.VirtualPathPrefix ?? string.Empty, item.Name);
+
+                item.VirtualPath = virtualPath;
+            }
+
+            m_importer.AddMediaItemFilesToImporter(
+                checkedItems,
+                MainWindow.ClientName,
+                (itemFile, catalogItem) =>
+                {
+                    ImportNode node = itemFile as ImportNode ?? throw new CatExceptionInternalFailure("file item isn't an ImportNode?");
+                    node.MediaId = catalogItem.ID;
+                    node.MatchedItem = catalogItem.VirtualPath;
+                });
+
+            m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.Catalog, App.State.MetatagSchema);
+            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
+
+            // and lastly we have to add the items we just manually added to our cache
+            // (we don't have any items we are tracking. these should all be adds)
+            App.State.Cache.PushChangesToDatabase(null);
         }
     }
 }

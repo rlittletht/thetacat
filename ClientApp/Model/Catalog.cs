@@ -252,6 +252,18 @@ public class Catalog : ICatalog
         }
     }
 
+    public MediaItem? FindMatchingMediaByMD5(string md5)
+    {
+        // slow full item search
+        foreach (MediaItem item in GetMediaCollection())
+        {
+            if (!string.IsNullOrEmpty(item.MD5) && item.MD5 == md5)
+                return item;
+        }
+
+        return null;
+    }
+
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath, bool verifyMd5)
     {
         lock (m_virtualLookupTableLock)

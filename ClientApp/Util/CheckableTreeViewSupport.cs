@@ -19,10 +19,11 @@ public class CheckableTreeViewSupport<T> where T: class, ICheckableTreeViewItem<
         if (t.Checked && (additionaValidation == null || additionaValidation(t)))
         {
             checkedItems.Add(t);
-            foreach (T child in t.Children)
-            {
-                AddCheckedItemsToList(checkedItems, child, additionaValidation);
-            }
+        }
+
+        foreach (T child in t.Children)
+        {
+            AddCheckedItemsToList(checkedItems, child, additionaValidation);
         }
     }
 

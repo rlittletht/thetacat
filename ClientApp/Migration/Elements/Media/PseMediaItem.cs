@@ -42,6 +42,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public DateTime? FileDateOriginal { get; set; }
     public DateTime ImportDate { get; set; }
     public PathSegment? VerifiedPath { get; set; }
+    public PathSegment? VirtualPath => null;
 
     public bool InCatalog
     {

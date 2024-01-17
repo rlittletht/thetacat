@@ -55,6 +55,9 @@ public class ImportItem: INotifyPropertyChanged
     private DateTime m_uploadDate;
     private string m_source;
     private object? m_sourceObject;
+    private PathSegment m_virtualPath;
+
+    public PathSegment VirtualPath { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
     public string Source { get => m_source; set => SetField(ref m_source, value); }
     public DateTime UploadDate { get => m_uploadDate; set => SetField(ref m_uploadDate, value); }
     public PathSegment SourceServer { get => m_sourceServer; set => SetField(ref m_sourceServer, value); }
@@ -72,6 +75,19 @@ public class ImportItem: INotifyPropertyChanged
         m_state = state;
         m_onCatalogItemCreated = onCatalogItemCreated;
         m_sourceObject = sourceObject;
+        m_virtualPath = sourcePath;
+    }
+
+    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, PathSegment virtualPath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
+    {
+        ID = id;
+        m_source = source;
+        m_sourceServer = sourceServer;
+        m_sourcePath = sourcePath;
+        m_state = state;
+        m_onCatalogItemCreated = onCatalogItemCreated;
+        m_sourceObject = sourceObject;
+        m_virtualPath = virtualPath;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
