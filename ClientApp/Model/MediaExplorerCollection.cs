@@ -232,7 +232,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
                             if (path != null)
                             {
-                                MainWindow.LogForApp(EventType.Warning, $"trying to queue {path} for load");
+//                                MainWindow.LogForApp(EventType.Warning, $"trying to queue {path} for load");
                                 App.State.PreviewImageCache.TryAddItem(mediaItem, path);
                             }
                         }
@@ -382,7 +382,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 #endif
     }
 
-    void BuildTimelineFromMediaCatalog()
+    public void BuildTimelineFromMediaCatalog()
     {
         MicroTimer timer = new MicroTimer();
         MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");

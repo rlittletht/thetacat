@@ -512,6 +512,7 @@ namespace Thetacat
         private void LaunchImport(object sender, RoutedEventArgs e)
         {
             MediaImporter.LaunchImporter(this);
+            m_collection.BuildTimelineFromMediaCatalog();
         }
 
         private void JumpToDate(object sender, RoutedEventArgs e)
