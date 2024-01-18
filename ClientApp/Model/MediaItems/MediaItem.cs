@@ -211,7 +211,7 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_Width, value.ToString());
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageWidth));
         }
     }
@@ -228,7 +228,7 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_Height, value.ToString());
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageHeight));
         }
     }
@@ -245,7 +245,7 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(OriginalMediaDate));
         }
     }
@@ -262,7 +262,7 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_ImportDate, value?.ToUniversalTime().ToString("u"));
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImportDate));
         }
     }
@@ -327,6 +327,21 @@ public class MediaItem : INotifyPropertyChanged
 
 #region MediaTags
 
+    private static Dictionary<MetatagStandards.Standard, HashSet<int>> PropertiesAllowedToOverride =
+        new()
+        {
+            {
+                MetatagStandards.Standard.Exif,
+                new HashSet<int>()
+                {
+                    ExifDirectoryBase.TagImageWidth,
+                    ExifDirectoryBase.TagImageHeight,
+                    ExifDirectoryBase.TagXResolution,
+                    ExifDirectoryBase.TagYResolution
+                }
+            }
+        };
+
     /*----------------------------------------------------------------------------
         %%Function: PopulateMediaTagsFromMetadataDirectory
         %%Qualified: Thetacat.Model.MediaItem.PopulateMediaTagsFromMetadataDirectory
@@ -339,6 +354,7 @@ public class MediaItem : INotifyPropertyChanged
         Metatag? parent,
         MetadataExtractor.Directory directory,
         MetatagStandards.Standard standard,
+        bool allowSubifdOverrideIfd,
         List<string>? log = null)
     {
         bool changed = false;
@@ -391,7 +407,15 @@ public class MediaItem : INotifyPropertyChanged
 
             MediaTag newTag = new MediaTag(metatag, value);
 
-            if (FAddOrUpdateMediaTag(newTag, log))
+            bool allowPropertyOverride = false;
+
+            if (allowSubifdOverrideIfd)
+            {
+                if (PropertiesAllowedToOverride.TryGetValue(standard, out HashSet<int>? set))
+                    allowPropertyOverride = set.Contains(def.PropertyTag);
+            }
+
+            if (FAddOrUpdateMediaTag(newTag, allowPropertyOverride, log))
                 changed = true;
         }
 
@@ -422,7 +446,7 @@ public class MediaItem : INotifyPropertyChanged
 
         Add or updated a media tag
     ----------------------------------------------------------------------------*/
-    public bool FAddOrUpdateMediaTag(MediaTag tag, List<string>? log = null)
+    public bool FAddOrUpdateMediaTag(MediaTag tag, bool allowPropertyOverride, List<string>? log = null)
     {
         bool ensuredBase = m_base == null;
 
@@ -437,8 +461,12 @@ public class MediaItem : INotifyPropertyChanged
             {
                 if (oldMediaTag.Value != tag.Value)
                 {
-                    MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
-                    log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                    if (!allowPropertyOverride)
+                    {
+                        MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                        log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                    }
+
                     oldMediaTag.Value = tag.Value;
                 }
                 else
@@ -539,7 +567,8 @@ public class MediaItem : INotifyPropertyChanged
         List<string> log = new List<string>();
 
         string file = LocalPath;
-
+        bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
+            
         // load exif and other data from this item.
         IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
 
@@ -547,7 +576,7 @@ public class MediaItem : INotifyPropertyChanged
 
         foreach (MetadataExtractor.Directory directory in directories)
         {
-            PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, log);
+            PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
         }
 
         metatagSchema.EnsureBuiltinMetatagsDefined();
@@ -556,11 +585,11 @@ public class MediaItem : INotifyPropertyChanged
         Tuple<int, int>? widthHeight = FindWidthHeightFromMediaTags(metatagSchema);
         if (widthHeight != null)
         {
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()));
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()));
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()), true);
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()), true);
         }
 
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")));
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")), true);
 
         string? dateTimeString =
             TryGetMediaTagValueFromStandardAndType(
@@ -589,7 +618,7 @@ public class MediaItem : INotifyPropertyChanged
 
         dateTimeString ??= File.GetCreationTime(file).ToUniversalTime().ToString("u");
 
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalMediaDate, dateTimeString));
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalMediaDate, dateTimeString), true);
 
         return log;
     }

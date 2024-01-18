@@ -373,6 +373,7 @@ namespace Thetacat.Import.UI
                 item.VirtualPath = virtualPath;
             }
 
+            m_importer.ClearItems();
             m_importer.AddMediaItemFilesToImporter(
                 checkedItems,
                 MainWindow.ClientName,

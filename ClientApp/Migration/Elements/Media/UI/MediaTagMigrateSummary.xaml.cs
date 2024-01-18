@@ -202,7 +202,7 @@ public partial class MediaTagMigrateSummary : UserControl
             {
                 MediaTag tag = new MediaTag(item.MetatagSetting, item.Value);
 
-                catItem.FAddOrUpdateMediaTag(tag);
+                catItem.FAddOrUpdateMediaTag(tag, false);
             }
         }
 

@@ -197,10 +197,9 @@ namespace Thetacat.UI
 
         void SetMediatagForMedia(MediaTag mediaTag, IEnumerable<MediaItem> selectedItems)
         {
-
             foreach (MediaItem item in selectedItems)
             {
-                item.FAddOrUpdateMediaTag(mediaTag);
+                item.FAddOrUpdateMediaTag(mediaTag, true);
             }
         }
 

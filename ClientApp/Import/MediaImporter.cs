@@ -39,6 +39,11 @@ public class MediaImporter
     public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
 
+    public void ClearItems()
+    {
+        ImportItems.Clear();
+    }
+
     public void AddMediaItemFilesToImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
