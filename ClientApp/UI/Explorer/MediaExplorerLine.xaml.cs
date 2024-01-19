@@ -1,5 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using Thetacat.Logging;
 using Thetacat.UI.Explorer;
 
 namespace Thetacat.UI
@@ -100,6 +102,14 @@ namespace Thetacat.UI
         {
             get => (double)GetValue(ImageHeightProperty);
             set => SetValue(ImageHeightProperty, value);
+        }
+
+        private void RemoveTagFromItem(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is ExplorerMenuTag tag)
+            {
+                //tag.
+            }
         }
     }
 }

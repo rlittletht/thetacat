@@ -21,12 +21,8 @@
                 <MenuItem Header="Options" Click="LaunchOptions" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="App log monitor" Click="ToggleAppLog" />
-                <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
-                <MenuItem Header="Large pictures" Click="SelectLargePreview" />
-                <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
-                <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
-                <Separator/>
+                <MenuItem Header="_Filter" Click="DefineFilter"/>
+                <Separator />
                 <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo"/>
                 <MenuItem Header="Timeline" Name="TimelineMenu">
                     <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline" IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}"/>
@@ -34,6 +30,12 @@
                     <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending" IsChecked="{Binding Path=IsTimelineAscending, Mode=OneWay}"/>
                     <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending" IsChecked="{Binding Path=IsTimelineDescending, Mode=OneWay}"/>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="App log monitor" Click="ToggleAppLog" />
+                <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
+                <MenuItem Header="Large pictures" Click="SelectLargePreview" />
+                <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
+                <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
             </MenuItem>
             <MenuItem Header="_Debug">
                 <MenuItem Header="Test Progress" Click="TestProgressDialog" />

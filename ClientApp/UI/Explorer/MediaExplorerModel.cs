@@ -19,6 +19,8 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public SelectPanelCommand? ExtendSelectPanel { get; set; }
     public SelectPanelCommand? AddSelectPanel { get; set; }
     public SelectPanelCommand? AddExtendSelectPanel { get; set; }
+    public SelectPanelCommand? ContextSelectPanel { get; set; }
+
     public LaunchItemCommand? LaunchItem { get; set; }
 
     public double PanelItemHeight

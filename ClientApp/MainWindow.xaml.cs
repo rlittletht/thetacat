@@ -543,6 +543,18 @@ namespace Thetacat
         private void ChooseAscending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Ascending);
         private void ChooseDescending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Descending);
 
+        private void DefineFilter(object sender, RoutedEventArgs e)
+        {
+            Filter filter = new Filter();
 
+            filter.Owner = this;
+            if (filter.ShowDialog() is true)
+            {
+                // apply the filter here
+                Dictionary<Guid, bool> metatagFilter = filter.GetMetatagSetsAndUnsetsForFilter();
+
+                m_collection.SetMetatagFilter(metatagFilter);
+            }
+        }
     }
 }

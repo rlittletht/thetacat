@@ -74,6 +74,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
+    private Dictionary<Guid, bool>? m_metatagFilter = null;
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
@@ -392,6 +393,12 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
         foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
         {
+            if (m_metatagFilter != null)
+            {
+                if (!item.MatchesMetatagFilter(m_metatagFilter))
+                    continue;
+            }
+
             DateTime date = GetTimelineDateFromMediaItem(item);
 
             if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
@@ -481,6 +488,12 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         App.State.Settings.WriteSettings();
 
         TimelineOrder = order;
+        BuildTimelineFromMediaCatalog();
+    }
+
+    public void SetMetatagFilter(Dictionary<Guid, bool> metatagFilter)
+    {
+        m_metatagFilter = metatagFilter;
         BuildTimelineFromMediaCatalog();
     }
 

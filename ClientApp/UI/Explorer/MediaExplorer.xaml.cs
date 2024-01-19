@@ -1,8 +1,10 @@
-﻿using System;
+﻿using MetadataExtractor.Formats.Xmp;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -39,6 +41,7 @@ namespace Thetacat.UI
             Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
             Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
             Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
+            Model.ContextSelectPanel = new SelectPanelCommand(m_selector._ContextSelectPanel);
             Model.LaunchItem = new LaunchItemCommand(LaunchItem);
         }
 
@@ -294,7 +297,8 @@ namespace Thetacat.UI
                             new ExplorerMenuTag()
                             {
                                 MediaTagId = tag.Value.Metatag.ID,
-                                TagName = tag.Value.Metatag.Description
+                                TagDescription = tag.Value.Metatag.Description,
+                                TagName = tag.Value.Metatag.Name
                             });
                     }
                 }
@@ -311,9 +315,72 @@ namespace Thetacat.UI
                         new ExplorerMenuTag()
                         {
                             MediaTagId = tag.ID,
-                            TagName = tag.Description
+                            TagDescription = tag.Description,
+                            TagName = tag.Name
                         });
                 }
+            }
+        }
+
+        public static RoutedCommand ApplyMetatagRoutedCommand = new RoutedCommand();
+        public static RoutedCommand RemoveMetatagRoutedCommand = new RoutedCommand();
+
+        private void ExecuteRoutedRemoveMetatag(
+            object sender,
+            ExecutedRoutedEventArgs e)
+        {
+            if (e.Parameter is ExplorerMenuTag menuTag)
+            {
+                List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+
+                RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
+            }
+        }
+
+        private void CanExecuteRoutedRemoveMetatag(
+            object sender,
+            CanExecuteRoutedEventArgs e)
+        {
+            Control target = e.Source as Control;
+
+            if (target != null)
+            {
+                e.CanExecute = true;
+            }
+            else
+            {
+                e.CanExecute = false;
+            }
+        }
+
+        private void ExecuteRoutedApplyMetatag(
+            object sender,
+            ExecutedRoutedEventArgs e)
+        {
+            if (e.Parameter is ExplorerMenuTag menuTag)
+            {
+                MetatagSchema schema = App.State.MetatagSchema;
+                List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+                MediaTag mediaTag = MediaTag.CreateMediaTag(schema, menuTag.MediaTagId, null);
+                SetMediatagForMedia(mediaTag, mediaItems);
+            }
+
+            MessageBox.Show("Custom Command Executed");
+        }
+
+        private void CanExecuteRoutedApplyMetatag(
+            object sender,
+            CanExecuteRoutedEventArgs e)
+        {
+            Control target = e.Source as Control;
+
+            if (target != null)
+            {
+                e.CanExecute = true;
+            }
+            else
+            {
+                e.CanExecute = false;
             }
         }
     }

@@ -23,27 +23,35 @@
                                   CommandParameter="{Binding}" Gesture="Control+Shift+LeftClick" />
                     <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.LaunchItem}"
                                   CommandParameter="{Binding}" Gesture="LeftDoubleClick" />
+                    <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.ContextSelectPanel}"
+                                  CommandParameter="{Binding}" Gesture="RightClick" />
                 </StackPanel.InputBindings>
                 <StackPanel.ContextMenu>
                     <ContextMenu >
                         <MenuItem Header="Remove Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AppliedTags}">
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
-                                    <MenuItem Header="{Binding TagName}" />
+                                    <MenuItem Header="{Binding TagMenuText}" Command="{x:Static local:MediaExplorer.RemoveMetatagRoutedCommand}"
+                                              CommandParameter="{Binding}"
+                                              CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}" />
+                                    <!-- have to set the CommandTarget to the contextmenu. otherwise the target will be whatever has the keyboard focus, which won't have a routed command as an ancestor, so nothing to execute. -->
                                 </DataTemplate>
                             </MenuItem.ItemTemplate>
                         </MenuItem>
                         <MenuItem Header="Apply Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AdvertisedTags}">
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
-                                    <MenuItem Header="{Binding TagName}" />
+                                    <MenuItem Header="{Binding TagMenuText}"
+                                              Command="{x:Static local:MediaExplorer.ApplyMetatagRoutedCommand}"
+                                              CommandParameter="{Binding}"
+                                              CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}" />
                                 </DataTemplate>
                             </MenuItem.ItemTemplate>
                         </MenuItem>
                         <Separator />
                         <MenuItem Header="Show/Hide Metatag Panel" PresentationTraceSources.TraceLevel="High"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
-                                  CommandParameter="{Binding}" />
+                                  CommandParameter="{Binding}"/>
                     </ContextMenu>
                 </StackPanel.ContextMenu>
                 <Image Source="{Binding Path=TileImage}"

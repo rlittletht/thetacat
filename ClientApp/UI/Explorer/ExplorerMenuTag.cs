@@ -9,6 +9,7 @@ public class ExplorerMenuTag: INotifyPropertyChanged
 {
     private Guid m_mediaTagId;
     private string m_tagName = "";
+    private string m_tagDescription = "";
 
     public Guid MediaTagId
     {
@@ -16,11 +17,18 @@ public class ExplorerMenuTag: INotifyPropertyChanged
         set => SetField(ref m_mediaTagId, value);
     }
 
+    public string TagDescription
+    {
+        get => m_tagDescription;
+        set => SetField(ref m_tagDescription, value);
+    }
     public string TagName
     {
         get => m_tagName;
         set => SetField(ref m_tagName, value);
     }
+
+    public string TagMenuText => $"{m_tagName} ({m_tagDescription})";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

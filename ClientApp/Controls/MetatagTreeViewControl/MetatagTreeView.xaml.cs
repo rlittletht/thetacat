@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using Thetacat.Controls.MetatagTreeViewControl;
@@ -167,5 +168,49 @@ public partial class MetatagTreeView : UserControl
         }
 
         return checkedUncheckedAndIndeterminedItems;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetCheckedAndUncheckedItems
+        %%Qualified: Thetacat.Controls.MetatagTreeView.GetCheckedAndUncheckedItems
+
+        This will have an entry for everything checked and unchecked in the tree
+
+        If its not present in the return dictionary, then assume it is
+        indeterminate
+    ----------------------------------------------------------------------------*/
+    public Dictionary<Guid, bool> GetCheckedAndUncheckedItems(bool okToMarkContainer)
+    {
+        Dictionary<Guid, bool> checkedAndUncheckedItems = new();
+        List<string> containersMarked = new();
+
+        foreach (IMetatagTreeItem item in Model.Items)
+        {
+            item.Preorder(
+                (visiting, depth) =>
+                {
+                    if (visiting.Children.Count > 0)
+                    {
+                        if (!okToMarkContainer && visiting.Checked is true)
+                        {
+                            containersMarked.Add(visiting.Name);
+                            return;
+                        }
+                    }
+
+                    if (visiting.Checked != null)
+                        checkedAndUncheckedItems.Add(Guid.Parse(visiting.ID), visiting.Checked.Value);
+                },
+                0);
+        }
+
+        if (containersMarked.Count > 0)
+        {
+            MessageBox.Show(
+                $"At least one container metatag was checked. This isn't supported. No tags applied or removed. Please uncheck: {string.Join(",", containersMarked)} and try again.");
+            return new Dictionary<Guid, bool>();
+        }
+
+        return checkedAndUncheckedItems;
     }
 }

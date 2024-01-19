@@ -148,6 +148,28 @@ public class ItemSelector
         }
     }
 
+    public void _ContextSelectPanel(MediaExplorerItem? context)
+    {
+        if (m_collection == null)
+            return;
+
+        if (context == null)
+        {
+            ClearSelectedItems();
+            m_pinnedSelectionClick = null;
+            m_pinnedSelectionClickSelect = false;
+            m_collection.DebugVerifySelectedItems(m_itemsSelected);
+            NotifySelectionChanged();
+            return;
+        }
+
+        // if the current item is already selected, do nothing
+        if (m_itemsSelected.Contains(context))
+            return;
+
+        _SelectPanel(context);
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: _AddSelectPanel
         %%Qualified: Thetacat.UI.MediaExplorer._AddSelectPanel
