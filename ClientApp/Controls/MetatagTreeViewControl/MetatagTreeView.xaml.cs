@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Thetacat.Controls.MetatagTreeViewControl;
 using Thetacat.Metatags;
 using Thetacat.Standards;
@@ -13,6 +14,19 @@ namespace Thetacat.Controls;
 /// </summary>
 public partial class MetatagTreeView : UserControl
 {
+    public static readonly DependencyProperty ItemContextMenuProperty =
+        DependencyProperty.Register(
+            name: nameof(ItemContextMenu),
+            propertyType: typeof(ContextMenu),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(default(ContextMenu)));
+
+    public ContextMenu ItemContextMenu
+    {
+        get => (ContextMenu)GetValue(CheckableProperty);
+        set => SetValue(CheckableProperty, value);
+    }
+
     public static readonly DependencyProperty CheckableProperty =
         DependencyProperty.Register(
             name: nameof(Checkable),
@@ -46,6 +60,7 @@ public partial class MetatagTreeView : UserControl
     {
         InitializeComponent();
         DataContext = Model;
+        Tree.ItemsSource = Model.Items;
     }
 
     public void SetItems(
@@ -54,8 +69,6 @@ public partial class MetatagTreeView : UserControl
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
         MetatagTree.CloneAndSetCheckedItems(items, Model.Items, initialCheckboxState);
-
-        Tree.ItemsSource = Model.Items;
         Model.SchemaVersion = schemaVersion;
     }
 
@@ -212,5 +225,15 @@ public partial class MetatagTreeView : UserControl
         }
 
         return checkedAndUncheckedItems;
+    }
+
+    private void TreeViewItem_SelectItemOnRightMouseClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TreeViewItem item)
+        {
+            item.IsSelected = true;
+            item.Focus();
+            e.Handled = true;
+        }
     }
 }

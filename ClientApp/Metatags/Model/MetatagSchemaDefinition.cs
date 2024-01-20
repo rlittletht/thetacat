@@ -44,6 +44,7 @@ public class MetatagSchemaDefinition
     {
         m_metatags.Clear();
         m_metatagLookup.Clear();
+        m_tree = null;
     }
 
     public MetatagSchemaDefinition Clone()

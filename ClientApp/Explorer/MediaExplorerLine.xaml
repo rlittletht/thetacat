@@ -31,10 +31,9 @@
                         <MenuItem Header="Remove Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AppliedTags}">
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
-                                    <MenuItem Header="{Binding TagMenuText}" Command="{x:Static local:MediaExplorer.RemoveMetatagRoutedCommand}"
-                                              CommandParameter="{Binding}"
-                                              CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}" />
-                                    <!-- have to set the CommandTarget to the contextmenu. otherwise the target will be whatever has the keyboard focus, which won't have a routed command as an ancestor, so nothing to execute. -->
+                                    <MenuItem Header="{Binding TagMenuText}"
+                                              Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RemoveMenuTag}"
+                                              CommandParameter="{Binding}"/>
                                 </DataTemplate>
                             </MenuItem.ItemTemplate>
                         </MenuItem>
@@ -42,9 +41,8 @@
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
                                     <MenuItem Header="{Binding TagMenuText}"
-                                              Command="{x:Static local:MediaExplorer.ApplyMetatagRoutedCommand}"
-                                              CommandParameter="{Binding}"
-                                              CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}" />
+                                              Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.AddMenuTag}"
+                                              CommandParameter="{Binding}" />
                                 </DataTemplate>
                             </MenuItem.ItemTemplate>
                         </MenuItem>

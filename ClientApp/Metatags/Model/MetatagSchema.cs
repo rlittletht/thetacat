@@ -266,7 +266,7 @@ public class MetatagSchema
     {
         m_schemaBase = null;
         m_schemaWorking.Clear();
-
+        
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)

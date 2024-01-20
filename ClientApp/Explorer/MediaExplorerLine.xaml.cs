@@ -101,12 +101,4 @@ public partial class MediaExplorerLine : UserControl
         get => (double)GetValue(ImageHeightProperty);
         set => SetValue(ImageHeightProperty, value);
     }
-
-    private void RemoveTagFromItem(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem menuItem && menuItem.DataContext is ExplorerMenuTag tag)
-        {
-            //tag.
-        }
-    }
 }

@@ -43,6 +43,8 @@ public partial class MediaExplorer : UserControl
         Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
         Model.ContextSelectPanel = new SelectPanelCommand(m_selector._ContextSelectPanel);
         Model.LaunchItem = new LaunchItemCommand(LaunchItem);
+        Model.RemoveMenuTag = new ProcessMenuTagCommand(RemoveMenuTagFromSelectedItems);
+        Model.AddMenuTag = new ProcessMenuTagCommand(ApplyMenuTagToSelectedItems);
     }
 
     private readonly List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
@@ -322,65 +324,21 @@ public partial class MediaExplorer : UserControl
         }
     }
 
-    public static RoutedCommand ApplyMetatagRoutedCommand = new RoutedCommand();
-    public static RoutedCommand RemoveMetatagRoutedCommand = new RoutedCommand();
-
-    private void ExecuteRoutedRemoveMetatag(
-        object sender,
-        ExecutedRoutedEventArgs e)
+    private void RemoveMenuTagFromSelectedItems(ExplorerMenuTag? menuTag)
     {
-        if (e.Parameter is ExplorerMenuTag menuTag)
-        {
-            List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+        if (menuTag == null) return;
+        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
 
-            RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
-        }
+        RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
     }
 
-    private void CanExecuteRoutedRemoveMetatag(
-        object sender,
-        CanExecuteRoutedEventArgs e)
+    private void ApplyMenuTagToSelectedItems(ExplorerMenuTag? menuTag)
     {
-        Control target = e.Source as Control;
+        if (menuTag == null) return;
 
-        if (target != null)
-        {
-            e.CanExecute = true;
-        }
-        else
-        {
-            e.CanExecute = false;
-        }
-    }
-
-    private void ExecuteRoutedApplyMetatag(
-        object sender,
-        ExecutedRoutedEventArgs e)
-    {
-        if (e.Parameter is ExplorerMenuTag menuTag)
-        {
-            MetatagSchema schema = App.State.MetatagSchema;
-            List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
-            MediaTag mediaTag = MediaTag.CreateMediaTag(schema, menuTag.MediaTagId, null);
-            SetMediatagForMedia(mediaTag, mediaItems);
-        }
-
-        MessageBox.Show("Custom Command Executed");
-    }
-
-    private void CanExecuteRoutedApplyMetatag(
-        object sender,
-        CanExecuteRoutedEventArgs e)
-    {
-        Control target = e.Source as Control;
-
-        if (target != null)
-        {
-            e.CanExecute = true;
-        }
-        else
-        {
-            e.CanExecute = false;
-        }
+        MetatagSchema schema = App.State.MetatagSchema;
+        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+        MediaTag mediaTag = MediaTag.CreateMediaTag(schema, menuTag.MediaTagId, null);
+        SetMediatagForMedia(mediaTag, mediaItems);
     }
 }

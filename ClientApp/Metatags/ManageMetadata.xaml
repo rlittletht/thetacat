@@ -7,13 +7,19 @@
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
         Title="ManageMetadata" Height="450" Width="800">
+    <Window.Resources>
+        <ContextMenu x:Key="MyContextMenu">
+            <MenuItem Header="Edit metatag..." />
+            <MenuItem Header="Delete metatag" />
+        </ContextMenu>
+    </Window.Resources>
     <DockPanel>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="100*"/>
                 <RowDefinition Height="24"/>
             </Grid.RowDefinitions>
-            <controls:MetatagTreeView Checkable="False" ShowSchemaVersion="True" Grid.Row="0" x:Name="MetatagsTree"/>
+            <controls:MetatagTreeView Checkable="False" ShowSchemaVersion="True" Grid.Row="0" x:Name="MetatagsTree" ItemContextMenu="{StaticResource MyContextMenu}"/>
             <Button Content="Refresh Metatags" IsDefault="True" Click="LoadMetatags" Grid.Row="1" />
         </Grid>
     </DockPanel>

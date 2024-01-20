@@ -20,6 +20,8 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public SelectPanelCommand? AddSelectPanel { get; set; }
     public SelectPanelCommand? AddExtendSelectPanel { get; set; }
     public SelectPanelCommand? ContextSelectPanel { get; set; }
+    public ProcessMenuTagCommand? RemoveMenuTag { get; set; }
+    public ProcessMenuTagCommand? AddMenuTag { get; set; }
 
     public LaunchItemCommand? LaunchItem { get; set; }
 

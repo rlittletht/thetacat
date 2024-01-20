@@ -9,14 +9,6 @@
              SizeChanged="OnExplorerSizeChanged"
              Loaded="OnExplorerLoaded"
              x:Name="MediaExplorerControl">
-    <UserControl.CommandBindings>
-        <CommandBinding Command="{x:Static local:MediaExplorer.ApplyMetatagRoutedCommand}"
-                        Executed="ExecuteRoutedApplyMetatag"
-                        CanExecute="CanExecuteRoutedApplyMetatag" />
-        <CommandBinding Command="{x:Static local:MediaExplorer.RemoveMetatagRoutedCommand}"
-                        Executed="ExecuteRoutedRemoveMetatag"
-                        CanExecute="CanExecuteRoutedRemoveMetatag" />
-    </UserControl.CommandBindings>
     <Grid>
         <ItemsControl Name="ExplorerBox" ContextMenuOpening="ItemMenuOpening">
             <ItemsControl.ItemsPanel>
