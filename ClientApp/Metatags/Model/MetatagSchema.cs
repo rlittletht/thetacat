@@ -257,6 +257,11 @@ public class MetatagSchema
             AddMetatag(BuiltinTags.s_ImportDate);
     }
 
+    public void ReplaceFromService()
+    {
+        ReplaceFromService(ServiceInterop.GetMetatagSchema());
+    }
+
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
         m_schemaBase = null;

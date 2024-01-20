@@ -14,6 +14,7 @@ namespace Thetacat.Metatags
         {
             InitializeComponent();
             App.State.RegisterWindowPlace(this, "ManageMetadata");
+            MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
         }
 
         MetatagSchema LoadSampleSchema()
