@@ -391,14 +391,11 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         // build a group by date
         Dictionary<DateTime, List<Guid>> dateGrouping = new();
 
-        foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
-        {
-            if (m_metatagFilter != null)
-            {
-                if (!item.MatchesMetatagFilter(m_metatagFilter))
-                    continue;
-            }
+        IEnumerable<MediaItem> collection =
+            m_metatagFilter == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_metatagFilter);
 
+        foreach (MediaItem item in collection)
+        {
             DateTime date = GetTimelineDateFromMediaItem(item);
 
             if (!dateGrouping.TryGetValue(date, out List<Guid>? items))

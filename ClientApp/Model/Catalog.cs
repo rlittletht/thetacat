@@ -186,6 +186,27 @@ public class Catalog : ICatalog
         MainWindow.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetFilteredMediaItems
+        %%Qualified: Thetacat.Model.Catalog.GetFilteredMediaItems
+
+        return all the items matching the filter (if filter is set to true, then
+        the item must have the tag; if set to false, it must not. if unset, then
+        no requirement
+    ----------------------------------------------------------------------------*/
+    public List<MediaItem> GetFilteredMediaItems(Dictionary<Guid, bool> filter)
+    {
+        List<MediaItem> matched = new();
+
+        foreach (MediaItem item in m_media.Items.Values)
+        {
+            if (item.MatchesMetatagFilter(filter))
+                matched.Add(item);
+        }
+
+        return matched;
+    }
+
     #region Observable Collection Support
 
     private ObservableCollection<MediaItem>? m_observableView;

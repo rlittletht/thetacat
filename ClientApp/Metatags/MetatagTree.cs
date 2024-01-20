@@ -164,6 +164,8 @@ public class MetatagTree : IMetatagTreeItem
         return FindMatchingChild(Children, matcher, levelsToRecurse);
     }
 
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
+
     public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
     {
         MetatagTree newItem = new MetatagTree();

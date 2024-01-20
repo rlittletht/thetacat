@@ -32,7 +32,11 @@ public class BindingProxy : Freezable
 
     public object Data
     {
-        get { return (object)GetValue(DataProperty); }
+        get
+        {
+            MainWindow.LogForApp(EventType.Warning, "got data");
+            return (object)GetValue(DataProperty);
+        }
         set { SetValue(DataProperty, value); }
     }
 

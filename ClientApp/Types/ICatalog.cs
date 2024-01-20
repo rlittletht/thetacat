@@ -16,6 +16,7 @@ public interface ICatalog
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem);
 
     public IEnumerable<MediaItem> GetMediaCollection();
+    public List<MediaItem> GetFilteredMediaItems(Dictionary<Guid, bool> filter);
     public ObservableCollection<MediaItem> GetObservableCollection();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);

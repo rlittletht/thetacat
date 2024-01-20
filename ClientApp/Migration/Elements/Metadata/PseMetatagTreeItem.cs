@@ -68,6 +68,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
 
     public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
     public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
 
     /*----------------------------------------------------------------------------
         %%Function: FindMatchingChild

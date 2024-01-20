@@ -40,6 +40,36 @@ public class MetatagSchemaDefinition
             throw new CatExceptionInternalFailure($"failed to add metatag {metatag} to lookup table. duplicate ID?");
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: RemoveMetatag
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchemaDefinition.RemoveMetatag
+
+    ----------------------------------------------------------------------------*/
+    public void RemoveMetatag(Guid metatagId)
+    {
+        Metatag? tag = GetMetatagFromId(metatagId);
+
+        if (tag == null)
+            return;
+
+        IMetatagTreeItem? treeItem = Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagId), -1);
+
+        if (treeItem == null)
+            throw new CatExceptionInternalFailure("tag was found in list but not in tree?");
+
+        if (treeItem.Children.Count != 0)
+            throw new CatExceptionInternalFailure("Caller should have verified children cound was 0 before calling");
+
+        IMetatagTreeItem? parent = Tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(metatagId));
+
+        if (parent == null)
+            throw new CatExceptionInternalFailure("couldn't find parent of metatag tree item");
+
+        m_metatags.Remove(tag);
+        parent.Children.Remove(treeItem);
+        m_tree = null;
+    }
+
     public void Clear()
     {
         m_metatags.Clear();

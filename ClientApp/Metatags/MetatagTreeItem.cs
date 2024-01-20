@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
@@ -120,6 +121,27 @@ public class MetatagTreeItem: IMetatagTreeItem
 
         return null;
     }
+
+    public static IMetatagTreeItem? FindParentOfChild(IMetatagTreeItem item, IMetatagMatcher<IMetatagTreeItem> treeItemMatcher)
+    {
+        if (treeItemMatcher.IsMatch(item))
+            throw new CatExceptionInternalFailure("should never match <this> when looking for parent");
+
+        foreach (IMetatagTreeItem child in item.Children)
+        {
+            if (treeItemMatcher.IsMatch(child))
+                return item;
+
+            IMetatagTreeItem? parent = child.FindParentOfChild(treeItemMatcher);
+
+            if (parent != null)
+                return parent;
+        }
+
+        return null;
+    }
+
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => FindParentOfChild(this, treeItemMatcher);
 
     public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
     {

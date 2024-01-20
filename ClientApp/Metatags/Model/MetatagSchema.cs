@@ -8,7 +8,6 @@ namespace Thetacat.Metatags.Model;
 
 public class MetatagSchema
 {
-
     private readonly MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
 
@@ -126,6 +125,12 @@ public class MetatagSchema
         AddMetatagNoValidation(metatag);
     }
 
+    public void RemoveMetatag(Guid metatagId)
+    {
+        EnsureBaseAndVersion();
+
+        m_schemaWorking.RemoveMetatag(metatagId);
+    }
     /*----------------------------------------------------------------------------
         %%Function: AddStandardRoot
         %%Qualified: Thetacat.Model.MetatagSchema.AddStandardRoot

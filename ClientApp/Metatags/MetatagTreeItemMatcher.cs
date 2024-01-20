@@ -67,4 +67,13 @@ public class MetatagTreeItemMatcher : IMetatagMatcher<IMetatagTreeItem>
                 m_id = id
             };
     }
+
+    public static MetatagTreeItemMatcher CreateIdMatch(Guid id)
+    {
+        return
+            new MetatagTreeItemMatcher()
+            {
+                m_id = id.ToString()
+            };
+    }
 }

@@ -14,6 +14,7 @@ public interface IMetatagTreeItem
     public string ID { get; }
     public bool? Checked { get; set; }
     public IMetatagTreeItem? FindMatchingChild(IMetatagMatcher<IMetatagTreeItem> matcher, int levelsToRecurse);
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> matcher);
     public void SeekAndDelete(HashSet<string> delete);
     public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher);
     public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate);

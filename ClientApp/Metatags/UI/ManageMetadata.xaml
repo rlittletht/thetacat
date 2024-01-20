@@ -6,11 +6,20 @@
         xmlns:local="clr-namespace:Thetacat.Metatags"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
-        Title="ManageMetadata" Height="450" Width="800">
+        Title="ManageMetadata" Height="450" Width="800"
+        x:Name="ManageMetadataControl">
     <Window.Resources>
+        <local:BindingProxy x:Key="ManageMetatdataModelProxy"
+                            Data="{Binding ElementName=ManageMetadataControl, Path=Model}" />
+
         <ContextMenu x:Key="MyContextMenu">
-            <MenuItem Header="Edit metatag..." />
-            <MenuItem Header="Delete metatag" />
+            <MenuItem Header="Edit metatag..."
+                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.DeleteMetatagCommand}"
+                      CommandParameter="{Binding}" />
+            <MenuItem Header="Delete metatag"
+                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.DeleteMetatagCommand}"
+                      CommandParameter="{Binding}" />
+
         </ContextMenu>
     </Window.Resources>
     <DockPanel>

@@ -21,6 +21,18 @@ public class TestMetatagTree
         Assert.AreEqual(expectedPreorder, actual.ToString());
     }
 
+    public static void AssertList(string expectedList, IEnumerable<Metatag> list)
+    {
+        StringBuilder actual = new StringBuilder();
+
+        foreach (Metatag item in list)
+        {
+            actual.Append($"{item.Name}:");
+        }
+
+        Assert.AreEqual(expectedList, actual.ToString());
+    }
+
     [Test]
     public static void TestNoNesting_NoneChecked()
     {
@@ -322,6 +334,101 @@ public class TestMetatagTree
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, null);
 
         AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag1_3(2)[ ]:metatag1_3_5(3)[ ]:", treeClone);
+    }
+
+    [Test]
+    public static void TestFindParent_1Deep_WithChildren()
+    {
+        List<Metatag> metatags = new(
+            new[]
+            {
+                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
+                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag7
+            }
+        );
+
+        MetatagTree tree = new(metatags);
+
+        IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId3));
+
+        Assert.AreEqual("metatag1", parent!.Name);
+    }
+
+    [Test]
+    public static void TestFindParent_1Deep_SecondChild()
+    {
+        List<Metatag> metatags = new(
+            new[]
+            {
+                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
+                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag7
+            }
+        );
+
+        MetatagTree tree = new(metatags);
+
+        IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId6));
+
+        Assert.AreEqual("metatag2", parent!.Name);
+    }
+
+    [Test]
+    public static void TestFindParent_2Deep_Leaf()
+    {
+        List<Metatag> metatags = new(
+            new[]
+            {
+                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
+                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag7
+            }
+        );
+
+        MetatagTree tree = new(metatags);
+
+        IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId5));
+
+        Assert.AreEqual("metatag1_3", parent!.Name);
+    }
+
+    [Test]
+    public static void TestFindParent_RootIsParent()
+    {
+        List<Metatag> metatags = new(
+            new[]
+            {
+                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
+                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag7
+            }
+        );
+
+        MetatagTree tree = new(metatags);
+
+        IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId1));
+
+        Assert.AreEqual("___Root", parent!.Name);
+    }
+
+    [Test]
+    public static void TestFindParent_RootIsParent_LastChild()
+    {
+        List<Metatag> metatags = new(
+            new[]
+            {
+                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
+                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag7
+            }
+        );
+
+        MetatagTree tree = new(metatags);
+
+        IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId7));
+
+        Assert.AreEqual("___Root", parent!.Name);
     }
 
 }
