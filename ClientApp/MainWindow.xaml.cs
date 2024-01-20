@@ -19,171 +19,171 @@ using Thetacat.UI;
 using MessageBox = System.Windows.Forms.MessageBox;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Util;
-using Thetacat.UI.Explorer;
 using Thetacat.UI.ProgressReporting;
+using Thetacat.Explorer;
 
-namespace Thetacat
+namespace Thetacat;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
-    {
 #region Sort Support
 
-        private GridViewColumnHeader? sortCol = null;
-        private SortAdorner? sortAdorner;
+    private GridViewColumnHeader? sortCol = null;
+    private SortAdorner? sortAdorner;
 
-        public void Sort(ListView listView, GridViewColumnHeader? column)
+    public void Sort(ListView listView, GridViewColumnHeader? column)
+    {
+        if (column == null)
+            return;
+
+        string sortBy = column.Tag?.ToString() ?? string.Empty;
+
+        if (sortAdorner != null && sortCol != null)
         {
-            if (column == null)
-                return;
-
-            string sortBy = column.Tag?.ToString() ?? string.Empty;
-
-            if (sortAdorner != null && sortCol != null)
-            {
-                AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
-                listView.Items.SortDescriptions.Clear();
-            }
-
-            ListSortDirection newDir = ListSortDirection.Ascending;
-            if (sortCol == column && sortAdorner?.Direction == newDir)
-                newDir = ListSortDirection.Descending;
-
-            sortCol = column;
-            sortAdorner = new SortAdorner(sortCol, newDir);
-            AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
-            listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+            AdornerLayer.GetAdornerLayer(sortCol)?.Remove(sortAdorner);
+            listView.Items.SortDescriptions.Clear();
         }
 
-        private void SortType(object sender, RoutedEventArgs e)
-        {
-            Sort(CatalogView, sender as GridViewColumnHeader);
-        }
+        ListSortDirection newDir = ListSortDirection.Ascending;
+        if (sortCol == column && sortAdorner?.Direction == newDir)
+            newDir = ListSortDirection.Descending;
+
+        sortCol = column;
+        sortAdorner = new SortAdorner(sortCol, newDir);
+        AdornerLayer.GetAdornerLayer(sortCol)?.Add(sortAdorner);
+        listView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+    }
+
+    private void SortType(object sender, RoutedEventArgs e)
+    {
+        Sort(CatalogView, sender as GridViewColumnHeader);
+    }
 
 #endregion
 
-        public static bool InUnitTest { get; set; } = false;
-        private static CatLog? s_asyncLog;
-        private static CatLog? s_appLog;
-        private readonly BackgroundWorkers m_mainBackgroundWorkers;
+    public static bool InUnitTest { get; set; } = false;
+    private static CatLog? s_asyncLog;
+    private static CatLog? s_appLog;
+    private readonly BackgroundWorkers m_mainBackgroundWorkers;
 
-        public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
-        public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
+    public static CatLog _AsyncLog => s_asyncLog ?? throw new CatExceptionInitializationFailure("async log not initialized");
+    public static CatLog _AppLog => s_appLog ?? throw new CatExceptionInitializationFailure("appLog not initialized");
 
-        public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+    public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+    {
+        if (_AsyncLog.ShouldLog(eventType))
         {
-            if (_AsyncLog.ShouldLog(eventType))
-            {
-                ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
 
-                _AsyncLog.Log(entry);
-                _AppLog.Log(entry);
-            }
+            _AsyncLog.Log(entry);
+            _AppLog.Log(entry);
         }
+    }
 
-        public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+    public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+    {
+        if (_AppLog.ShouldLog(eventType))
         {
-            if (_AppLog.ShouldLog(eventType))
-            {
-                ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
-                _AppLog.Log(entry);
-            }
+            ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
+            _AppLog.Log(entry);
         }
+    }
 
-        public static string ClientName = Environment.MachineName;
+    public static string ClientName = Environment.MachineName;
 
-        private readonly MediaExplorerCollection m_collection = new(14.0);
+    private readonly MediaExplorerCollection m_collection = new(14.0);
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            InitializeThetacat();
+    public MainWindow()
+    {
+        InitializeComponent();
+        InitializeThetacat();
 
-            Explorer.SetExplorerItemSize(App.State.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
-            // we have to load the catalog AND the pending upload list
-            // we also have to confirm that all the items int he pending
-            // upload list still exist in the catalog, and if they don't
-            // (or if they are marked as active in the catalog, which means
-            // they are already uploaded), then remove them from the import
-            // list
+        Explorer.SetExplorerItemSize(App.State.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
+        // we have to load the catalog AND the pending upload list
+        // we also have to confirm that all the items int he pending
+        // upload list still exist in the catalog, and if they don't
+        // (or if they are marked as active in the catalog, which means
+        // they are already uploaded), then remove them from the import
+        // list
 
-            App.State.RegisterWindowPlace(this, "MainWindow");
-            CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
-            LocalServiceClient.LogService = LogForApp;
-            DataContext = m_collection;
+        App.State.RegisterWindowPlace(this, "MainWindow");
+        CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
+        LocalServiceClient.LogService = LogForApp;
+        DataContext = m_collection;
 
-            m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
-        }
+        m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
+    }
 
-        void OnClosing(object sender, EventArgs e)
-        {
-            App.State.Derivatives.CommitDerivatives();
-            App.State.Derivatives.Close();
-            App.State.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
-            App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
-            m_collection.Close();
-            Explorer.Close();
-            App.State.PreviewImageCache.Close();
-            App.State.ImageCache.Close();
-            App.State.Md5Cache.Close();
+    void OnClosing(object sender, EventArgs e)
+    {
+        App.State.Derivatives.CommitDerivatives();
+        App.State.Derivatives.Close();
+        App.State.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
+        App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
+        m_collection.Close();
+        Explorer.Close();
+        App.State.PreviewImageCache.Close();
+        App.State.ImageCache.Close();
+        App.State.Md5Cache.Close();
 
-            App.State.ClientDatabase.Close();
+        App.State.ClientDatabase.Close();
 
-            if (m_asyncLogMonitor != null)
-                CloseAsyncLog(false);
+        if (m_asyncLogMonitor != null)
+            CloseAsyncLog(false);
 
-            if (m_appLogMonitor != null)
-                CloseAppLog(false);
+        if (m_appLogMonitor != null)
+            CloseAppLog(false);
 
-            App.State.Settings.WriteSettings();
-        }
+        App.State.Settings.WriteSettings();
+    }
 
-        void InitializeThetacat()
-        {
-            App.State.SetupLogging(CloseAsyncLog, CloseAppLog);
-            App.State.SetupBackgroundWorkers(AddBackgroundWork);
+    void InitializeThetacat()
+    {
+        App.State.SetupLogging(CloseAsyncLog, CloseAppLog);
+        App.State.SetupBackgroundWorkers(AddBackgroundWork);
 
-            s_asyncLog = new CatLog(EventType.Information);
-            s_appLog = new CatLog(EventType.Information);
-        }
+        s_asyncLog = new CatLog(EventType.Information);
+        s_appLog = new CatLog(EventType.Information);
+    }
 
-        private void LaunchTest(object sender, RoutedEventArgs e)
-        {
-            UI.Test test = new UI.Test();
+    private void LaunchTest(object sender, RoutedEventArgs e)
+    {
+        UI.Test test = new UI.Test();
 
-            test.Show();
-        }
+        test.Show();
+    }
 
-        private void LaunchMigration(object sender, RoutedEventArgs e)
-        {
-            Migration.Migration migration = new();
-            migration.Owner = this;
-            migration.Show();
-        }
+    private void LaunchMigration(object sender, RoutedEventArgs e)
+    {
+        Migration.Migration migration = new();
+        migration.Owner = this;
+        migration.Show();
+    }
 
-        private void ManageMetatags(object sender, RoutedEventArgs e)
-        {
-            Metatags.ManageMetadata manage = new();
-            manage.Owner = this;
-            manage.Show();
-        }
+    private void ManageMetatags(object sender, RoutedEventArgs e)
+    {
+        Metatags.ManageMetadata manage = new();
+        manage.Owner = this;
+        manage.Show();
+    }
 
-        public static DateTime GetLocalDateFromMedia(MediaItem item, DateTime? mediaDate)
-        {
+    public static DateTime GetLocalDateFromMedia(MediaItem item, DateTime? mediaDate)
+    {
 //            DateTime? mediaDate = item.OriginalMediaDate;
 
-            if (mediaDate != null)
-                return mediaDate.Value.ToLocalTime().Date;
+        if (mediaDate != null)
+            return mediaDate.Value.ToLocalTime().Date;
 
-            string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
+        string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
-            if (path != null)
-                return File.GetCreationTime(path);
+        if (path != null)
+            return File.GetCreationTime(path);
 
-            return DateTime.Now;
-        }
+        return DateTime.Now;
+    }
 
 //        void BuildTimelineCollectionFromMedia()
 //        {
@@ -226,335 +226,334 @@ namespace Thetacat
 //            LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
 //        }
 
-        private async void ConnectToDatabase(object sender, RoutedEventArgs e)
+    private async void ConnectToDatabase(object sender, RoutedEventArgs e)
+    {
+        LogForApp(EventType.Information, "Beginning read catalog");
+        MicroTimer timer = new MicroTimer();
+
+        await App.State.Catalog.ReadFullCatalogFromServer(App.State.MetatagSchema);
+
+        LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
+        timer.Reset();
+        timer.Start();
+
+        List<MediaExplorerItem> explorerItems = new();
+
+        m_collection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
+        m_collection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
+        m_collection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
+        m_collection.AdjustExplorerHeight(Explorer.ExplorerBox.ActualHeight);
+        m_collection.UpdateItemsPerLine();
+
+        LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
+        timer.Reset();
+        timer.Start();
+
+        TimelineType timelineType = m_collection.TimelineType;
+        if (timelineType.Equals(TimelineType.None))
         {
-            LogForApp(EventType.Information, "Beginning read catalog");
-            MicroTimer timer = new MicroTimer();
+            if (App.State.Settings.TimelineType != null)
+                timelineType = App.State.Settings.TimelineType;
 
-            await App.State.Catalog.ReadFullCatalogFromServer(App.State.MetatagSchema);
-
-            LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
-            timer.Reset();
-            timer.Start();
-
-            List<MediaExplorerItem> explorerItems = new();
-
-            m_collection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
-            m_collection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
-            m_collection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
-            m_collection.AdjustExplorerHeight(Explorer.ExplorerBox.ActualHeight);
-            m_collection.UpdateItemsPerLine();
-
-            LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
-            timer.Reset();
-            timer.Start();
-
-            TimelineType timelineType = m_collection.TimelineType;
             if (timelineType.Equals(TimelineType.None))
-            {
-                if (App.State.Settings.TimelineType != null)
-                    timelineType = App.State.Settings.TimelineType;
+                timelineType = TimelineType.MediaDate;
+        }
 
-                if (timelineType.Equals(TimelineType.None))
-                    timelineType = TimelineType.MediaDate;
-            }
+        TimelineOrder timelineOrder = m_collection.TimelineOrder;
+        if (timelineOrder.Equals(TimelineOrder.None))
+        {
+            if (App.State.Settings.TimelineOrder != null)
+                timelineOrder = App.State.Settings.TimelineOrder;
 
-            TimelineOrder timelineOrder = m_collection.TimelineOrder;
             if (timelineOrder.Equals(TimelineOrder.None))
-            {
-                if (App.State.Settings.TimelineOrder != null)
-                    timelineOrder = App.State.Settings.TimelineOrder;
-
-                if (timelineOrder.Equals(TimelineOrder.None))
-                    timelineOrder = TimelineOrder.Ascending;
-            }
-
-            m_collection.ResetTimeline();
-            m_collection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
-
-            LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
-
-            timer.Reset();
-            timer.Start();
-            LogForApp(EventType.Information, "Beginning reset content");
-            Explorer.ResetContent(m_collection); // explorerItems);
-
-            AzureCat.EnsureCreated(App.State.AzureStorageAccount);
-            LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+                timelineOrder = TimelineOrder.Ascending;
         }
 
-        private void LaunchOptions(object sender, RoutedEventArgs e)
+        m_collection.ResetTimeline();
+        m_collection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
+
+        LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
+
+        timer.Reset();
+        timer.Start();
+        LogForApp(EventType.Information, "Beginning reset content");
+        Explorer.ResetContent(m_collection); // explorerItems);
+
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
+        LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+    }
+
+    private void LaunchOptions(object sender, RoutedEventArgs e)
+    {
+        CatOptions options = new CatOptions();
+        if (options.ShowDialog() ?? false)
         {
-            CatOptions options = new CatOptions();
-            if (options.ShowDialog() ?? false)
-            {
-                options.SaveToSettings();
-                App.State.Settings.WriteSettings();
-            }
+            options.SaveToSettings();
+            App.State.Settings.WriteSettings();
+        }
+    }
+
+    private void DoCacheItems(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            App.State.Cache.StartBackgroundCaching(100);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Uncaught exception: {ex.Message}");
+        }
+    }
+
+    private void UploadItems(object sender, RoutedEventArgs e)
+    {
+        MediaImporter? import = null;
+
+        try
+        {
+            import = new MediaImporter(MainWindow.ClientName);
+        }
+        catch (CatExceptionCanceled)
+        {
+            return;
         }
 
-        private void DoCacheItems(object sender, RoutedEventArgs e)
+        import.UploadMedia();
+    }
+
+    private AsyncLogMonitor? m_asyncLogMonitor;
+    private AppLogMonitor? m_appLogMonitor;
+
+    void ShowAsyncLog()
+    {
+        if (m_asyncLogMonitor != null)
+            return;
+
+        m_asyncLogMonitor = new AsyncLogMonitor();
+        m_asyncLogMonitor.Owner = this;
+        m_asyncLogMonitor.Show();
+    }
+
+    void CloseAsyncLog(bool skipClose)
+    {
+        if (!skipClose)
+            m_asyncLogMonitor?.Close();
+        m_asyncLogMonitor = null;
+    }
+
+    private void ToggleAsyncLog(object sender, RoutedEventArgs e)
+    {
+        if (m_asyncLogMonitor != null)
+            CloseAsyncLog(false);
+        else
+            ShowAsyncLog();
+    }
+
+    void ShowAppLog()
+    {
+        if (m_appLogMonitor != null)
+            return;
+
+        m_appLogMonitor = new AppLogMonitor();
+        m_appLogMonitor.Owner = this;
+        m_appLogMonitor.Show();
+    }
+
+    void CloseAppLog(bool skipClose)
+    {
+        if (!skipClose)
+            m_appLogMonitor?.Close();
+        m_appLogMonitor = null;
+    }
+
+    private void ToggleAppLog(object sender, RoutedEventArgs e)
+    {
+        if (m_appLogMonitor != null)
+            CloseAppLog(false);
+        else
+            ShowAppLog();
+    }
+
+    private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        MediaItem? item = CatalogView.SelectedItem as MediaItem;
+
+        if (item != null)
         {
-            try
-            {
-                App.State.Cache.StartBackgroundCaching(100);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Uncaught exception: {ex.Message}");
-            }
+            MediaItemDetails details = new MediaItemDetails(item);
+
+            details.Owner = this;
+            details.ShowDialog();
+        }
+    }
+
+    private void UpdateMediaItems(object sender, RoutedEventArgs e)
+    {
+        App.State.Catalog.PushPendingChanges();
+    }
+
+    private void SelectLargePreview(object sender, RoutedEventArgs e)
+    {
+        Explorer.SetExplorerItemSize(ExplorerItemSize.Large);
+    }
+
+    private void SelectMediumPreview(object sender, RoutedEventArgs e)
+    {
+        Explorer.SetExplorerItemSize(ExplorerItemSize.Medium);
+    }
+
+    private void SelectSmallPreview(object sender, RoutedEventArgs e)
+    {
+        Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
+    }
+
+    void DoWork(IProgressReport report)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            Thread.Sleep(50);
+            report.UpdateProgress(i);
+        }
+        report.WorkCompleted();
+    }
+
+    private void TestProgressDialog(object sender, RoutedEventArgs e)
+    {
+        ProgressDialog.DoWorkWithProgress(DoWork, this);
+    }
+
+    private bool BackgroundTestTask(IProgressReport progressReport, int totalMsec)
+    {
+        bool fIndeterminate = true;
+
+        if (totalMsec < 0)
+        {
+            progressReport.SetIndeterminate();
+            totalMsec = -totalMsec;
         }
 
-        private void UploadItems(object sender, RoutedEventArgs e)
+        int interval = Math.Max(1, totalMsec / 50); // we want 50 updates
+        int elapsed = 0;
+
+        while (elapsed < totalMsec)
         {
-            MediaImporter? import = null;
-
-            try
-            {
-                import = new MediaImporter(MainWindow.ClientName);
-            }
-            catch (CatExceptionCanceled)
-            {
-                return;
-            }
-
-            import.UploadMedia();
+            Thread.Sleep(interval);
+            elapsed += interval;
+            if (!fIndeterminate)
+                progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
         }
+        progressReport.WorkCompleted();
+        return true;
+    }
 
-        private AsyncLogMonitor? m_asyncLogMonitor;
-        private AppLogMonitor? m_appLogMonitor;
+    private void StartBackground5s(object sender, RoutedEventArgs e)
+    {
+        App.State.AddBackgroundWork(
+            "background 5s test task",
+            (progress) => BackgroundTestTask(progress, 5000));
+    }
 
-        void ShowAsyncLog()
+    private void StartBackground1m(object sender, RoutedEventArgs e)
+    {
+        App.State.AddBackgroundWork(
+            "background 1m test task",
+            (progress) => BackgroundTestTask(progress, 60000));
+    }
+
+    private void StartBackground10sIndet(object sender, RoutedEventArgs e)
+    {
+        App.State.AddBackgroundWork(
+            "background 1m test task",
+            (progress) => BackgroundTestTask(progress, -10000));
+    }
+
+    public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
+    {
+        m_mainBackgroundWorkers.AddWork(description, work);
+    }
+
+    private ProgressListDialog? m_backgroundProgressDialog;
+
+    private void HandleSpinnerDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (m_backgroundProgressDialog == null)
         {
-            if (m_asyncLogMonitor != null)
-                return;
-
-            m_asyncLogMonitor = new AsyncLogMonitor();
-            m_asyncLogMonitor.Owner = this;
-            m_asyncLogMonitor.Show();
-        }
-
-        void CloseAsyncLog(bool skipClose)
-        {
-            if (!skipClose)
-                m_asyncLogMonitor?.Close();
-            m_asyncLogMonitor = null;
-        }
-
-        private void ToggleAsyncLog(object sender, RoutedEventArgs e)
-        {
-            if (m_asyncLogMonitor != null)
-                CloseAsyncLog(false);
-            else
-                ShowAsyncLog();
-        }
-
-        void ShowAppLog()
-        {
-            if (m_appLogMonitor != null)
-                return;
-
-            m_appLogMonitor = new AppLogMonitor();
-            m_appLogMonitor.Owner = this;
-            m_appLogMonitor.Show();
-        }
-
-        void CloseAppLog(bool skipClose)
-        {
-            if (!skipClose)
-                m_appLogMonitor?.Close();
-            m_appLogMonitor = null;
-        }
-
-        private void ToggleAppLog(object sender, RoutedEventArgs e)
-        {
-            if (m_appLogMonitor != null)
-                CloseAppLog(false);
-            else
-                ShowAppLog();
-        }
-
-        private void HandleDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            MediaItem? item = CatalogView.SelectedItem as MediaItem;
-
-            if (item != null)
-            {
-                MediaItemDetails details = new MediaItemDetails(item);
-
-                details.Owner = this;
-                details.ShowDialog();
-            }
-        }
-
-        private void UpdateMediaItems(object sender, RoutedEventArgs e)
-        {
-            App.State.Catalog.PushPendingChanges();
-        }
-
-        private void SelectLargePreview(object sender, RoutedEventArgs e)
-        {
-            Explorer.SetExplorerItemSize(ExplorerItemSize.Large);
-        }
-
-        private void SelectMediumPreview(object sender, RoutedEventArgs e)
-        {
-            Explorer.SetExplorerItemSize(ExplorerItemSize.Medium);
-        }
-
-        private void SelectSmallPreview(object sender, RoutedEventArgs e)
-        {
-            Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
-        }
-
-        void DoWork(IProgressReport report)
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                Thread.Sleep(50);
-                report.UpdateProgress(i);
-            }
-            report.WorkCompleted();
-        }
-
-        private void TestProgressDialog(object sender, RoutedEventArgs e)
-        {
-            ProgressDialog.DoWorkWithProgress(DoWork, this);
-        }
-
-        private bool BackgroundTestTask(IProgressReport progressReport, int totalMsec)
-        {
-            bool fIndeterminate = true;
-
-            if (totalMsec < 0)
-            {
-                progressReport.SetIndeterminate();
-                totalMsec = -totalMsec;
-            }
-
-            int interval = Math.Max(1, totalMsec / 50); // we want 50 updates
-            int elapsed = 0;
-
-            while (elapsed < totalMsec)
-            {
-                Thread.Sleep(interval);
-                elapsed += interval;
-                if (!fIndeterminate)
-                    progressReport.UpdateProgress((elapsed * 100.0) / totalMsec);
-            }
-            progressReport.WorkCompleted();
-            return true;
-        }
-
-        private void StartBackground5s(object sender, RoutedEventArgs e)
-        {
-            App.State.AddBackgroundWork(
-                "background 5s test task",
-                (progress) => BackgroundTestTask(progress, 5000));
-        }
-
-        private void StartBackground1m(object sender, RoutedEventArgs e)
-        {
-            App.State.AddBackgroundWork(
-                "background 1m test task",
-                (progress) => BackgroundTestTask(progress, 60000));
-        }
-
-        private void StartBackground10sIndet(object sender, RoutedEventArgs e)
-        {
-            App.State.AddBackgroundWork(
-                "background 1m test task",
-                (progress) => BackgroundTestTask(progress, -10000));
-        }
-
-        public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
-        {
-            m_mainBackgroundWorkers.AddWork(description, work);
-        }
-
-        private ProgressListDialog? m_backgroundProgressDialog;
-
-        private void HandleSpinnerDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (m_backgroundProgressDialog == null)
-            {
-                m_backgroundProgressDialog = new ProgressListDialog();
-                m_backgroundProgressDialog.ProgressReports.ItemsSource = m_mainBackgroundWorkers.Workers;
-                m_backgroundProgressDialog.Owner = this;
-                m_backgroundProgressDialog.Show();
-                m_backgroundProgressDialog.Closing +=
-                    (_, _) =>
-                    {
-                        m_backgroundProgressDialog = null;
-                    };
-                m_backgroundProgressDialog.Show();
-            }
-        }
-
-        private int m_lastSpinnerClick = 0;
-
-        private void HandleSpinnerMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.Timestamp - m_lastSpinnerClick < 200)
-                HandleSpinnerDoubleClick(sender, e);
-
-            m_lastSpinnerClick = e.Timestamp;
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            if (App.State.Settings.ShowAsyncLogOnStart ?? false)
-                ShowAsyncLog();
-            if (App.State.Settings.ShowAppLogOnStart ?? false)
-                ShowAppLog();
-        }
-
-        private void LaunchImport(object sender, RoutedEventArgs e)
-        {
-            MediaImporter.LaunchImporter(this);
-            m_collection.BuildTimelineFromMediaCatalog();
-        }
-
-        private void JumpToDate(object sender, RoutedEventArgs e)
-        {
-            int line = m_collection.GetLineToScrollTo(m_collection.JumpDate);
-
-            if (line != -1)
-            {
-                if (VisualTreeHelper.GetChild(Explorer.ExplorerBox, 0) is ScrollViewer scrollViewer)
+            m_backgroundProgressDialog = new ProgressListDialog();
+            m_backgroundProgressDialog.ProgressReports.ItemsSource = m_mainBackgroundWorkers.Workers;
+            m_backgroundProgressDialog.Owner = this;
+            m_backgroundProgressDialog.Show();
+            m_backgroundProgressDialog.Closing +=
+                (_, _) =>
                 {
-                    double scrollTo = line;
-                    scrollViewer.ScrollToVerticalOffset(scrollTo);
-                }
-
-            }
+                    m_backgroundProgressDialog = null;
+                };
+            m_backgroundProgressDialog.Show();
         }
+    }
 
-        private void ShowCacheInfo(object sender, RoutedEventArgs e)
+    private int m_lastSpinnerClick = 0;
+
+    private void HandleSpinnerMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.Timestamp - m_lastSpinnerClick < 200)
+            HandleSpinnerDoubleClick(sender, e);
+
+        m_lastSpinnerClick = e.Timestamp;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (App.State.Settings.ShowAsyncLogOnStart ?? false)
+            ShowAsyncLog();
+        if (App.State.Settings.ShowAppLogOnStart ?? false)
+            ShowAppLog();
+    }
+
+    private void LaunchImport(object sender, RoutedEventArgs e)
+    {
+        MediaImporter.LaunchImporter(this);
+        m_collection.BuildTimelineFromMediaCatalog();
+    }
+
+    private void JumpToDate(object sender, RoutedEventArgs e)
+    {
+        int line = m_collection.GetLineToScrollTo(m_collection.JumpDate);
+
+        if (line != -1)
         {
-            CacheInfo cacheInfo = new CacheInfo();
-            cacheInfo.Owner = this;
-            cacheInfo.ShowDialog();
-        }
-
-        private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.MediaDate);
-        private void ChooseImportDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.ImportDate);
-
-        private void ChooseAscending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Ascending);
-        private void ChooseDescending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Descending);
-
-        private void DefineFilter(object sender, RoutedEventArgs e)
-        {
-            Filter filter = new Filter();
-
-            filter.Owner = this;
-            if (filter.ShowDialog() is true)
+            if (VisualTreeHelper.GetChild(Explorer.ExplorerBox, 0) is ScrollViewer scrollViewer)
             {
-                // apply the filter here
-                Dictionary<Guid, bool> metatagFilter = filter.GetMetatagSetsAndUnsetsForFilter();
-
-                m_collection.SetMetatagFilter(metatagFilter);
+                double scrollTo = line;
+                scrollViewer.ScrollToVerticalOffset(scrollTo);
             }
+
+        }
+    }
+
+    private void ShowCacheInfo(object sender, RoutedEventArgs e)
+    {
+        CacheInfo cacheInfo = new CacheInfo();
+        cacheInfo.Owner = this;
+        cacheInfo.ShowDialog();
+    }
+
+    private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.MediaDate);
+    private void ChooseImportDateTimeline(object sender, RoutedEventArgs e) => m_collection.SetTimelineType(TimelineType.ImportDate);
+
+    private void ChooseAscending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Ascending);
+    private void ChooseDescending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Descending);
+
+    private void DefineFilter(object sender, RoutedEventArgs e)
+    {
+        Filter filter = new Filter();
+
+        filter.Owner = this;
+        if (filter.ShowDialog() is true)
+        {
+            // apply the filter here
+            Dictionary<Guid, bool> metatagFilter = filter.GetMetatagSetsAndUnsetsForFilter();
+
+            m_collection.SetMetatagFilter(metatagFilter);
         }
     }
 }

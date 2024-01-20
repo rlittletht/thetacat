@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Thetacat.Metatags.Model;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class MetatagMRU
 {

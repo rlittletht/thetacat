@@ -2,9 +2,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Thetacat.UI.Explorer.Commands;
+using Thetacat.Explorer.Commands;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class MediaExplorerModel : INotifyPropertyChanged
 {

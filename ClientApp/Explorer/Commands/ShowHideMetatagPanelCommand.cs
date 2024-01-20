@@ -1,7 +1,8 @@
 ﻿using System.Windows.Input;
 using System;
+using Thetacat.Explorer;
 
-namespace Thetacat.UI.Explorer.Commands;
+namespace Thetacat.Explorer.Commands;
 
 public delegate void ShowHideMetatagPanelDelegate(MediaExplorerItem? context);
 

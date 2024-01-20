@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class MediaExplorerItem : INotifyPropertyChanged
 {

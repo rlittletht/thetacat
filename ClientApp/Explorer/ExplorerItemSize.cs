@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class ExplorerItemSize
 {

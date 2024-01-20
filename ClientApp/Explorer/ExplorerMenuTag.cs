@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
-public class ExplorerMenuTag: INotifyPropertyChanged
+public class ExplorerMenuTag : INotifyPropertyChanged
 {
     private Guid m_mediaTagId;
     private string m_tagName = "";

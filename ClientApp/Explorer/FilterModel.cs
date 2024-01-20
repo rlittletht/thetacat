@@ -1,6 +1,6 @@
 ﻿using Thetacat.Metatags;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class FilterModel
 {

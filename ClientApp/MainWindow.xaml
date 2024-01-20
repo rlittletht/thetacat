@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat"
-        xmlns:ui="clr-namespace:Thetacat.UI"
+        xmlns:xpl="clr-namespace:Thetacat.Explorer"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded">
@@ -63,7 +63,7 @@
                 <Button Content="Jump" Click="JumpToDate" Grid.Column="2"/>
                 <TextBlock Text="{Binding Path=WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right"/>
             </Grid>
-            <ui:MediaExplorer x:Name="Explorer" Grid.Row="1" />
+            <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
             <ListView Name="CatalogView" Grid.Row="2" MouseDoubleClick="HandleDoubleClick">
                 <ListView.View>
                     <GridView>

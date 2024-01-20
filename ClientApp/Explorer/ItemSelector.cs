@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Thetacat.Model;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public delegate void OnSelectionChangedDelegate(IEnumerable<MediaExplorerItem> selectedItems);
 

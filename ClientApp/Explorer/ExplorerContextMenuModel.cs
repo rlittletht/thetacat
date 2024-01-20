@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public class ExplorerContextMenuModel
 {
     public int RecentTagVectorClock { get; set; } = -1;
 
-    public ObservableCollection<ExplorerMenuTag> AppliedTags { get; set; } = 
+    public ObservableCollection<ExplorerMenuTag> AppliedTags { get; set; } =
         new()
         {
             new ExplorerMenuTag() { MediaTagId = Guid.NewGuid(), TagName = "Tag1" },

@@ -1,8 +1,9 @@
 ﻿using System.Windows.Input;
 using System;
 using Thetacat.Logging;
+using Thetacat.Explorer;
 
-namespace Thetacat.UI.Explorer.Commands;
+namespace Thetacat.Explorer.Commands;
 
 public delegate void SelectPanelDelegate(MediaExplorerItem? context);
 

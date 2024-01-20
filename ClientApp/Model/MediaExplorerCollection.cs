@@ -6,10 +6,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
+using Thetacat.Explorer;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
-using Thetacat.UI.Explorer;
 using Thetacat.Util;
 
 namespace Thetacat.Model;

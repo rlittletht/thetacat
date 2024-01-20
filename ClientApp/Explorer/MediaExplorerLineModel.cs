@@ -1,26 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Media.Imaging;
-using Thetacat.Model;
+using Thetacat.Util;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
-public class MediaItemZoomModel:INotifyPropertyChanged
+public class MediaExplorerLineModel : IObservableSegmentableCollectionHolder<MediaExplorerItem>, INotifyPropertyChanged
 {
-    private MediaItem? m_mediaItem;
-    private BitmapSource? m_image;
+    private string m_lineLabel = "";
+    public ObservableCollection<MediaExplorerItem> Items { get; set; } = new ObservableCollection<MediaExplorerItem>();
+    public bool EndSegmentAfter { get; set; } = false;
 
-    public BitmapSource? Image
+    public string LineLabel
     {
-        get => m_image;
-        set => SetField(ref m_image, value);
-    }
-
-    public MediaItem? MediaItem
-    {
-        get => m_mediaItem;
-        set => SetField(ref m_mediaItem, value);
+        get => m_lineLabel;
+        set => SetField(ref m_lineLabel, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

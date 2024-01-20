@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using Thetacat.Explorer;
 using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
@@ -9,7 +10,7 @@ using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Util;
 
-namespace Thetacat.UI.Explorer;
+namespace Thetacat.Explorer;
 
 public delegate void ApplyMetatagsDelegate(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock);
 
