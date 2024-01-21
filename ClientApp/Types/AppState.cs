@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Media;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
@@ -16,6 +17,7 @@ public class AppState : IAppState
     public delegate void CloseLogMonitorDelegate(bool skipClose);
     public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork<bool> work);
 
+    public DpiScale DpiScale { get; set; }
     private CloseLogMonitorDelegate? m_closeAsyncLog;
     private CloseLogMonitorDelegate? m_closeAppLog;
     private AddBackgroundWorkDelegate? m_addBackgroundWork;

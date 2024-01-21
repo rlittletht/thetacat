@@ -125,11 +125,11 @@ public class MetatagSchema
         AddMetatagNoValidation(metatag);
     }
 
-    public void RemoveMetatag(Guid metatagId)
+    public bool FRemoveMetatag(Guid metatagId)
     {
         EnsureBaseAndVersion();
 
-        m_schemaWorking.RemoveMetatag(metatagId);
+        return m_schemaWorking.FRemoveMetatag(metatagId);
     }
     /*----------------------------------------------------------------------------
         %%Function: AddStandardRoot

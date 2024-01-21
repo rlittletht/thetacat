@@ -46,7 +46,7 @@ public class TestMetatagSchemaDefinition
             schemaDef.AddMetatag(metatag);
         }
 
-        schemaDef.RemoveMetatag(TestMetatags.metatagId7);
+        schemaDef.FRemoveMetatag(TestMetatags.metatagId7);
 
         TestMetatagTree.AssertList("metatag1:metatag1_3:metatag1_3_5:metatag2:metatag2_6:", schemaDef.Metatags);
         TestMetatagTree.AssertTree(
@@ -73,7 +73,7 @@ public class TestMetatagSchemaDefinition
             schemaDef.AddMetatag(metatag);
         }
 
-        schemaDef.RemoveMetatag(TestMetatags.metatagId5);
+        schemaDef.FRemoveMetatag(TestMetatags.metatagId5);
 
         TestMetatagTree.AssertList("metatag1:metatag1_3:metatag2:metatag2_6:metatag7:", schemaDef.Metatags);
         TestMetatagTree.AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag1_3(2)[#]:metatag2(1)[#]:metatag2_6(2)[#]:metatag7(1)[#]:", schemaDef.Tree);

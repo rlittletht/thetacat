@@ -21,6 +21,10 @@ using Thetacat.ServiceClient.LocalService;
 using Thetacat.Util;
 using Thetacat.UI.ProgressReporting;
 using Thetacat.Explorer;
+using System.Windows.Media.Imaging;
+using System.Globalization;
+using Microsoft.Windows.EventTracing.Power;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat;
 
@@ -115,6 +119,7 @@ public partial class MainWindow : Window
         DataContext = m_collection;
 
         m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
+        App.State.DpiScale = VisualTreeHelper.GetDpi(this);
     }
 
     void OnClosing(object sender, EventArgs e)
@@ -387,9 +392,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateMediaItems(object sender, RoutedEventArgs e)
+    private void CommitPendingChanges(object sender, RoutedEventArgs e)
     {
         App.State.Catalog.PushPendingChanges();
+        App.State.MetatagSchema.UpdateServer();
     }
 
     private void SelectLargePreview(object sender, RoutedEventArgs e)
@@ -555,5 +561,63 @@ public partial class MainWindow : Window
 
             m_collection.SetMetatagFilter(metatagFilter);
         }
+    }
+
+    private void TestRenderImage(object sender, RoutedEventArgs e)
+    {
+        int imageWidth = 100;
+        int imageHeight = 100;
+        string outputFile = "c:/temp/test.png";
+        // Create the Rectangle
+        DrawingVisual visual = new DrawingVisual();
+        using DrawingContext context = visual.RenderOpen();
+
+        Point pt = new Point(10, 10);
+        double size = 36;
+        string text = "PSD FILE";
+        Brush brush = Brushes.Yellow;
+        DpiScale dpi = App.State.DpiScale;
+
+        context.DrawRectangle(Brushes.White, null, new Rect(0, 0, 512, 512));
+        context.DrawText(
+            new FormattedText(
+                text,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Calibri"),
+                size,
+                brush,
+                dpi.PixelsPerDip),
+            pt);
+
+        context.DrawText(
+            new FormattedText(
+                "PSD FILE",
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Calibri"),
+                36,
+                Brushes.Yellow,
+                App.State.DpiScale.PixelsPerDip),
+            new Point(10, 10));
+
+        context.Close();
+
+        RenderTargetBitmap bitmap = new RenderTargetBitmap(512, 512, 300, 300, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+
+//        context.DrawRectangle(Brushes.Red, null, new Rect(20, 20, 32, 32));
+//        context.Close();
+
+        // Create the Bitmap and render the rectangle onto it.
+//        RenderTargetBitmap bmp = new RenderTargetBitmap(imageWidth, imageHeight, 96, 96, PixelFormats.Pbgra32);
+//        bmp.Render(visual);
+
+        // Save the image to a location on the disk.
+        PngBitmapEncoder encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream fs = new FileStream(outputFile, FileMode.Create);
+        encoder.Save(fs);
+        fs.Close();
     }
 }

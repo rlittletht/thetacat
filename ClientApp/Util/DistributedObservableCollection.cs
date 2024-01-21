@@ -326,6 +326,8 @@ public class DistributedObservableCollection<T, T1>
         m_collection[m_collection.Count - 1].EndSegmentAfter = true;
     }
 
+    public bool IsEmpty => m_collection.Count == 0;
+
     public (T line, int lineNumber) GetNearestLineLessOrEqualMatching(int lineStart, MatchLineDelegate matcher)
     {
         if (lineStart >= m_collection.Count)

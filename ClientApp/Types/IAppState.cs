@@ -22,6 +22,7 @@ public interface IAppState
 
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }
+    public DpiScale DpiScale { get; set; }
 
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema();

@@ -113,6 +113,9 @@ public partial class ManageMetadata : Window
             mediaItem.FRemoveMediaTag(metatagId);
         }
 
-        //App.State.MetatagSchema.
+        if (App.State.MetatagSchema.FRemoveMetatag(metatagId))
+        {
+            MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        }
     }
 }

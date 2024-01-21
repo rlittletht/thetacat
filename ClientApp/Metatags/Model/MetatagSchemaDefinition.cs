@@ -41,16 +41,16 @@ public class MetatagSchemaDefinition
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: RemoveMetatag
-        %%Qualified: Thetacat.Metatags.Model.MetatagSchemaDefinition.RemoveMetatag
+        %%Function: FRemoveMetatag
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchemaDefinition.FRemoveMetatag
 
     ----------------------------------------------------------------------------*/
-    public void RemoveMetatag(Guid metatagId)
+    public bool FRemoveMetatag(Guid metatagId)
     {
         Metatag? tag = GetMetatagFromId(metatagId);
 
         if (tag == null)
-            return;
+            return false;
 
         IMetatagTreeItem? treeItem = Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagId), -1);
 
@@ -67,7 +67,7 @@ public class MetatagSchemaDefinition
 
         m_metatags.Remove(tag);
         parent.Children.Remove(treeItem);
-        m_tree = null;
+        return true;
     }
 
     public void Clear()

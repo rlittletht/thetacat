@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Emgu.CV.CvEnum;
@@ -134,13 +136,13 @@ public class ImageCache
     public static readonly HashSet<string> SkipExtensions =
         new HashSet<string>()
         {
-            ".psd", ".mov", ".mp4"
+            ".pssd", ".mov", ".mp4"
         };
 
     public static readonly HashSet<string> ReformatExtensions =
         new HashSet<string>()
         {
-            ".nef"
+            ".nef", ".psd"
         };
 
     private BitmapImage LoadBitmapFromPath(string path, int? scaleWidth)
@@ -199,6 +201,37 @@ public class ImageCache
 //        //                img.Source = new CachedBitmap()
     }
 
+    private BitmapSource LoadThroughPsd(string filename, int? scaleWidth)
+    {
+        DrawingVisual visual = new DrawingVisual();
+        DrawingContext context = visual.RenderOpen();
+
+        Point pt = new Point(10, 10);
+        double size = 36;
+        string text = "PSD FILE";
+        Brush brush = Brushes.Blue;
+        DpiScale dpi = App.State.DpiScale;
+
+        context.DrawRectangle(Brushes.White, null, new Rect(0, 0, 512, 512));
+        context.DrawText(
+            new FormattedText(
+                text,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Calibri"),
+                size,
+                brush,
+                dpi.PixelsPerDip),
+            pt);
+
+        context.Close();
+
+        RenderTargetBitmap bitmap = new RenderTargetBitmap(512, 512, 300, 300, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        bitmap.Freeze();
+
+        return bitmap;
+    }
 
     private BitmapImage LoadBitmapThroughDecoder(string path, int? scaleWidth)
     {
@@ -212,7 +245,10 @@ public class ImageCache
 
                 try
                 {
-                    source = LoadBitmapFromPath(path, scaleWidth);
+                    if (Path.GetExtension(path.ToLowerInvariant()) == ".psd")
+                        source = LoadThroughPsd(path, scaleWidth);
+                    else
+                        source = LoadBitmapFromPath(path, scaleWidth);
 
                     // this will fail with some (all?) NEF files trying to copy the metadata, even if we specify to ignore the color
                     // profile. LoadBitmapFromPath seems to recover from this.

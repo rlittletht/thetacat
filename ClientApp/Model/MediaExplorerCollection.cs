@@ -187,6 +187,9 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public void NotifyTopVisibleItem(int row)
     {
+        if (m_collection.IsEmpty)
+            return;
+
         // we have a new top item. calculate the segments visible
 
         MediaExplorerLineModel lineTop = m_collection.GetNearestLineLessOrEqualMatching(row, (line) => !string.IsNullOrWhiteSpace(line.LineLabel)).line;
