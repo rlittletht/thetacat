@@ -565,8 +565,6 @@ public partial class MainWindow : Window
 
     private void TestRenderImage(object sender, RoutedEventArgs e)
     {
-        int imageWidth = 100;
-        int imageHeight = 100;
         string outputFile = "c:/temp/test.png";
         // Create the Rectangle
         DrawingVisual visual = new DrawingVisual();
@@ -605,13 +603,6 @@ public partial class MainWindow : Window
 
         RenderTargetBitmap bitmap = new RenderTargetBitmap(512, 512, 300, 300, PixelFormats.Pbgra32);
         bitmap.Render(visual);
-
-//        context.DrawRectangle(Brushes.Red, null, new Rect(20, 20, 32, 32));
-//        context.Close();
-
-        // Create the Bitmap and render the rectangle onto it.
-//        RenderTargetBitmap bmp = new RenderTargetBitmap(imageWidth, imageHeight, 96, 96, PixelFormats.Pbgra32);
-//        bmp.Render(visual);
 
         // Save the image to a location on the disk.
         PngBitmapEncoder encoder = new PngBitmapEncoder();

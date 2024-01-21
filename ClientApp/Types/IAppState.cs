@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
@@ -19,7 +20,7 @@ public interface IAppState
     ClientDatabase ClientDatabase { get; }
     Md5Cache Md5Cache { get; }
     Derivatives Derivatives { get; }
-
+    MetatagMRU MetatagMRU { get; }
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }
     public DpiScale DpiScale { get; set; }

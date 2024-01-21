@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Windows;
 using Thetacat.Metatags.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Explorer;
 
@@ -21,13 +24,30 @@ public class MetatagMRU
         {
             if (tag.ID == metatag.ID)
                 return;
+        }
 
-            // otherwise, add this to the top
-            m_recentTags.Insert(0, tag);
-            if (m_recentTags.Count > maxSize)
-                m_recentTags.RemoveRange(10, m_recentTags.Count - 9);
+        // otherwise, add this to the top
+        m_recentTags.Insert(0, metatag);
+        if (m_recentTags.Count > maxSize)
+            m_recentTags.RemoveRange(10, m_recentTags.Count - 9);
 
-            m_vectorClock++;
+        m_vectorClock++;
+    }
+
+    public void Set(IEnumerable<string> mru)
+    {
+        m_recentTags.Clear();
+        foreach (string id in mru)
+        {
+            Metatag? tag = App.State.MetatagSchema.GetMetatagFromId(Guid.Parse(id));
+
+            if (tag == null)
+            {
+                MessageBox.Show($"unknown metatag {id} in MRU");
+                continue;
+            }
+
+            m_recentTags.Add(tag);
         }
     }
 }

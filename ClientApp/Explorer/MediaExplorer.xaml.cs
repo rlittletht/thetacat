@@ -25,8 +25,6 @@ public partial class MediaExplorer : UserControl
 
     public MediaExplorerModel Model { get; set; } = new();
     private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
-
-    MetatagMRU m_metatagMRU = new MetatagMRU();
     private readonly ItemSelector m_selector;
 
     public MediaExplorer()
@@ -241,6 +239,8 @@ public partial class MediaExplorer : UserControl
                 MessageBox.Show("Strange. We have a false in the checked/indeterminate");
         }
 
+        int mruClock = App.State.MetatagMRU.VectorClock;
+
         // find all the tags to add
         foreach (KeyValuePair<string, bool?> item in checkedUncheckedAndIndeterminate)
         {
@@ -254,9 +254,20 @@ public partial class MediaExplorer : UserControl
                     MediaTag mediaTag = MediaTag.CreateMediaTag(schema, Guid.Parse(item.Key), null);
                     SetMediatagForMedia(mediaTag, mediaItems);
 
-                    m_metatagMRU.TouchMetatag(mediaTag.Metatag);
+                    App.State.MetatagMRU.TouchMetatag(mediaTag.Metatag);
                 }
             }
+        }
+
+        if (mruClock != App.State.MetatagMRU.VectorClock)
+        {
+            App.State.Settings.MetatagMru.Clear();
+            foreach (Metatag tag in App.State.MetatagMRU.RecentTags)
+            {
+                App.State.Settings.MetatagMru.Add(tag.ID.ToString());
+            }
+
+            App.State.Settings.WriteSettings();
         }
 
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
@@ -267,6 +278,7 @@ public partial class MediaExplorer : UserControl
         if (m_applyMetatagPanel == null)
         {
             m_applyMetatagPanel = new ApplyMetatag(ApplySyncMetatags);
+            m_applyMetatagPanel.Closing += ((_, _) => m_applyMetatagPanel = null);
         }
 
         if (m_applyMetatagPanel.IsVisible)
@@ -308,10 +320,10 @@ public partial class MediaExplorer : UserControl
             MainWindow.LogForApp(EventType.Information, $"hit test result: {item.TileSrc}, {item.TileLabel}");
         }
 
-        if (Model.ExplorerContextMenu.RecentTagVectorClock != m_metatagMRU.VectorClock)
+        if (Model.ExplorerContextMenu.RecentTagVectorClock != App.State.MetatagMRU.VectorClock)
         {
             Model.ExplorerContextMenu.AdvertisedTags.Clear();
-            foreach (Metatag tag in m_metatagMRU.RecentTags)
+            foreach (Metatag tag in App.State.MetatagMRU.RecentTags)
             {
                 Model.ExplorerContextMenu.AdvertisedTags.Add(
                     new ExplorerMenuTag()

@@ -39,6 +39,7 @@ public class TcSettings
 
     public string? DerivativeCache;
 
+    public List<string> MetatagMru = new();
     public List<MapPair> ElementsSubstitutions = new();
     public Dictionary<string, Rectangle> Placements { get; private set; } = new();
     private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
@@ -63,6 +64,13 @@ public class TcSettings
                         .AddChildElement("Timeline")
                             .AddAttribute("Type", (settings, _) => settings.TimelineType, (settings, value, _) => settings.TimelineType = value)
                             .AddAttribute("Order", (settings, _) => settings.TimelineOrder, (settings, value, _) => settings.TimelineOrder = value)
+                        .AddElement("MetatagMru")
+                           .AddChildElement("Tag", GetMetatagMruItem, SetMetatagMruItem)
+                             .SetRepeating(
+                                TcSettings.CreateMetatagMruRepeatContext,
+                                TcSettings.AreRemainingMetatagMru,
+                                TcSettings.CommitMetatagMruRepeatItem)
+                           .Pop()
                         .Pop()
                     .Pop()
                   .Pop()
@@ -137,7 +145,7 @@ public class TcSettings
     {
         SubstitutionsEnumerator = null;
         PlacementsEnumerator = null;
-
+        MetatagMruEnumerator = null;
         using WriteFile<TcSettings> file = WriteFile<TcSettings>.CreateSettingsFile(XmlSettingsDescription, App.SettingsPath, this);
 
         file.SerializeSettings(XmlSettingsDescription, this);
@@ -185,6 +193,56 @@ public class TcSettings
 
     private static void   SetWorkgroupNameValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName = value;
     private static string? GetWorkgroupNameValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName;
+
+    #region MetatagMru
+    private IEnumerator<string>? MetatagMruEnumerator;
+
+    private static RepeatContext<TcSettings>.RepeatItemContext CreateMetatagMruRepeatContext(
+        TcSettings settings,
+        Element<TcSettings> element,
+        RepeatContext<TcSettings>.RepeatItemContext? parent)
+    {
+        if (settings.MetatagMruEnumerator != null)
+        {
+            return new RepeatContext<TcSettings>.RepeatItemContext(
+                element,
+                parent,
+                settings.MetatagMruEnumerator.Current);
+        }
+
+        return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, "");
+    }
+
+    private static bool AreRemainingMetatagMru(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (settings.MetatagMru.Count == 0)
+            return false;
+
+        settings.MetatagMruEnumerator ??= settings.MetatagMru.GetEnumerator();
+
+        return settings.MetatagMruEnumerator.MoveNext();
+    }
+
+    private static void CommitMetatagMruRepeatItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (itemContext == null)
+            throw new ArgumentNullException(nameof(itemContext));
+
+        string nested = (string)itemContext.RepeatKey;
+
+        settings.MetatagMru.Add(nested);
+    }
+
+    private static string GetMetatagMruItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((string?)context?.RepeatKey) ?? throw new ArgumentNullException(nameof(context));
+    private static void SetMetatagMruItem(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context?.RepeatKey == null) 
+            throw new ArgumentNullException(nameof(context));
+
+        (context.RepeatKey) = value ?? "";
+    }
+
+    #endregion
 
     #region Substitutions
     private IEnumerator<MapPair>? SubstitutionsEnumerator;

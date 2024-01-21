@@ -183,6 +183,8 @@ public class Catalog : ICatalog
             m_observableView.ReplaceCollection(GetMediaCollection());
         }
 
+        // good time to refresh the MRU now that we loaded the catalog and the schema
+        App.State.MetatagMRU.Set(App.State.Settings.MetatagMru);
         MainWindow.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
     }
 

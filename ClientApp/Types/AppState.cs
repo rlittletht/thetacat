@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Media;
+using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
@@ -35,6 +36,7 @@ public class AppState : IAppState
     public ClientDatabase ClientDatabase { get; init; }
     public Md5Cache Md5Cache { get; init; }
     public Derivatives Derivatives { get; init; }
+    public MetatagMRU MetatagMRU { get; init; }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
@@ -58,6 +60,7 @@ public class AppState : IAppState
     public void RefreshMetatagSchema()
     {
         MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+        MetatagMRU.Set(App.State.Settings.MetatagMru);
     }
 
     public void OverrideCache(ICache cache)
@@ -87,6 +90,7 @@ public class AppState : IAppState
         ClientDatabase = new ClientDatabase(App.ClientDatabasePath);
         Md5Cache = new Md5Cache(ClientDatabase);
         Derivatives = new Derivatives(ClientDatabase);
+        MetatagMRU = new MetatagMRU();
     }
 
     public void RegisterWindowPlace(Window window, string key)
