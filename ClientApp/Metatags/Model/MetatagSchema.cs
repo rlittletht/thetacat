@@ -84,6 +84,16 @@ public class MetatagSchema
         return FindByNameInSchemaDefinition(m_schemaWorking, parent, name);
     }
 
+    public void NotifyChanging()
+    {
+        EnsureBaseAndVersion();
+    }
+
+    public void RebuildWorkingTree()
+    {
+        m_schemaWorking?.RebuildTree();
+    }
+
     void AddMetatagNoValidation(Metatag metatag)
     {
         if (m_schemaWorking == null)

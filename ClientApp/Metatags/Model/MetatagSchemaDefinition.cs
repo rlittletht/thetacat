@@ -25,6 +25,11 @@ public class MetatagSchemaDefinition
 
     private readonly ConcurrentDictionary<Guid, Metatag> m_metatagLookup = new();
 
+    public void RebuildTree()
+    {
+        m_tree = null;
+    }
+
     public Metatag? GetMetatagFromId(Guid id)
     {
         if (m_metatagLookup.TryGetValue(id, out Metatag? metatag))

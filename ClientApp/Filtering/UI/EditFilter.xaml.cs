@@ -78,13 +78,22 @@ namespace Thetacat.Filtering.UI
             }
         }
 
-        public EditFilter(PostfixText? expression = null, Dictionary<Guid, string>? lineageMap = null)
+        public EditFilter(FilterDefinition? definition = null, Dictionary<Guid, string>? lineageMap = null)
         {
             DataContext = m_model;
             InitializeComponent();
 
             m_metatagLineageMap = lineageMap;
-            m_model.Expression = expression ?? new PostfixText();
+            if (definition != null)
+            {
+                m_model.Expression = definition.Expression;
+                m_model.FilterName = definition.FilterName;
+                m_model.Description = definition.Description;
+            }
+            else
+            {
+                m_model.Expression = definition?.Expression ?? new PostfixText();
+            }
 
             InitializeAvailableTags();
             UpdateQueryClauses();
@@ -171,6 +180,12 @@ namespace Thetacat.Filtering.UI
 
             DialogResult = true;
             Close();
+        }
+
+        private void PopClause(object sender, RoutedEventArgs e)
+        {
+            m_model.Expression.Pop();
+            UpdateQueryClauses();
         }
     }
 }

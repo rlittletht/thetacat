@@ -120,7 +120,18 @@ public partial class ChooseFilter : Window
 
     private void DoEditFilter(object sender, RoutedEventArgs e)
     {
+        EditFilter editFilter = new EditFilter(m_model.SelectedFilterDefinition, m_metatagLineageMap);
 
+        editFilter.Owner = this;
+        editFilter.ShowDialog();
+        if (editFilter.DialogResult is true)
+        {
+            FilterDefinition def = editFilter.GetDefinition();
+
+            App.State.Settings.Filters[def.FilterName] = def;
+            App.State.Settings.WriteSettings();
+            FillAvailableFilters();
+        }
     }
 
     private void DoNewFilter(object sender, RoutedEventArgs e)

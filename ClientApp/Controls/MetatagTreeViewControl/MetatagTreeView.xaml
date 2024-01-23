@@ -43,7 +43,7 @@
             <RowDefinition Height="100*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}">
+        <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}" SelectedItemChanged="DoSelectedItemChanged">
             <TreeView.Resources>
                 <Style TargetType="TreeViewItem">
                     <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_SelectItemOnRightMouseClick"/>

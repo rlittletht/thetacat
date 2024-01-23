@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.ObjectiveC;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,6 +15,21 @@ namespace Thetacat.Controls;
 /// </summary>
 public partial class MetatagTreeView : UserControl
 {
+    public delegate void SelectedItemChangedDelegate(object sender, RoutedPropertyChangedEventArgs<Object> e);
+
+    public static readonly DependencyProperty SelectedItemChangedProperty =
+        DependencyProperty.Register(
+            name: nameof(SelectedItemChanged),
+            propertyType: typeof(SelectedItemChangedDelegate),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(default(SelectedItemChangedDelegate)));
+
+    public SelectedItemChangedDelegate SelectedItemChanged
+    {
+        get => (SelectedItemChangedDelegate)GetValue(SelectedItemChangedProperty);
+        set => SetValue(SelectedItemChangedProperty, value);
+    }
+
     public static readonly DependencyProperty ItemContextMenuProperty =
         DependencyProperty.Register(
             name: nameof(ItemContextMenu),
@@ -23,7 +39,7 @@ public partial class MetatagTreeView : UserControl
 
     public ContextMenu ItemContextMenu
     {
-        get => (ContextMenu)GetValue(CheckableProperty);
+        get => (ContextMenu)GetValue(ItemContextMenuProperty);
         set => SetValue(CheckableProperty, value);
     }
 
@@ -237,5 +253,10 @@ public partial class MetatagTreeView : UserControl
             item.Focus();
             e.Handled = true;
         }
+    }
+
+    private void DoSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        SelectedItemChanged?.Invoke(sender, e);
     }
 }

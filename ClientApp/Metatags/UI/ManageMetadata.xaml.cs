@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Windows;
 using System.Windows.Forms;
 using Emgu.CV.Aruco;
 using TCore.PostfixText;
 using Thetacat.Explorer.Commands;
 using Thetacat.Filtering;
+using Thetacat.Filtering.UI;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
+using Thetacat.Standards;
 using Thetacat.Types;
 using Expression = TCore.PostfixText.Expression;
 using MessageBox = System.Windows.MessageBox;
@@ -47,8 +50,10 @@ public partial class ManageMetadata : Window
 
         InitializeComponent();
         App.State.RegisterWindowPlace(this, "ManageMetadata");
+        DataContext = Model;
 
         MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        InitializeAvailableParents();
     }
 
 
@@ -56,6 +61,7 @@ public partial class ManageMetadata : Window
     {
         App.State.RefreshMetatagSchema();
         MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        InitializeAvailableParents();
     }
 
     MessageBoxResult ConfirmDelete(int count, IMetatagTreeItem item)
@@ -123,6 +129,113 @@ public partial class ManageMetadata : Window
         if (App.State.MetatagSchema.FRemoveMetatag(metatagId))
         {
             MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        }
+    }
+
+    private void DoSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is MetatagTreeItem newItem)
+        {
+            Model.SelectedMetatag = new ManageMetadataMetatag(App.State.MetatagSchema.GetMetatagFromId(newItem.ItemId));
+            Model.MetatagBase = new ManageMetadataMetatag(Model.SelectedMetatag);
+
+            if (Model.SelectedMetatag.Parent == null)
+            {
+                Model.CurrentParent = null;
+            }
+            else
+            {
+                foreach (FilterModelMetatagItem parent in Model.AvailableParents)
+                {
+                    if (parent.Metatag.ID == Model.SelectedMetatag.Parent)
+                    {
+                        ParentTag.SelectedItem = parent;
+                        break;
+                    }
+                }
+            }
+
+            Model.SelectedTreeItem = newItem;
+        }
+    }
+
+    void InitializeAvailableParents()
+    {
+        if (m_metatagLineageMap == null)
+            m_metatagLineageMap = EditFilter.BuildLineageMap(MetatagStandards.Standard.User);
+
+        IComparer<KeyValuePair<Guid, string>> comparer =
+            Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
+        ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);
+
+        foreach (KeyValuePair<Guid, string> item in sorted)
+        {
+            Model.AvailableParents.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
+        }
+    }
+
+    private Dictionary<Guid, string>? m_metatagLineageMap;
+
+    private void CreateNew(object sender, RoutedEventArgs e)
+    {
+        if (Model.SelectedMetatag != null && Model.MetatagBase != null)
+        {
+            if (!Model.MetatagBase.CompareTo(Model.SelectedMetatag))
+            {
+                if (MessageBox.Show(
+                        "If you create a new tag, you will lose any changes you have made to this tag. Continue",
+                        "Create new tag",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question)
+                    != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+            }
+        }
+
+        Model.SelectedMetatag = new ManageMetadataMetatag();
+        Model.MetatagBase = new ManageMetadataMetatag(Model.SelectedMetatag);
+    }
+
+    private void DoSave(object sender, RoutedEventArgs e)
+    {
+        if (Model.SelectedMetatag == null)
+        {
+            MessageBox.Show("You must first select and define a metatag");
+            return;
+        }
+
+        // find the metatag and update it
+        Metatag? metatag = App.State.MetatagSchema.GetMetatagFromId(Model.SelectedMetatag.ID);
+
+        bool needNewTree = false;
+
+        if (metatag == null)
+        {
+            metatag = Metatag.Create(
+                Model.CurrentParent?.Metatag.ID,
+                Model.SelectedMetatag.Name,
+                Model.SelectedMetatag.Description,
+                MetatagStandards.Standard.User,
+                Model.SelectedMetatag.ID);
+
+            App.State.MetatagSchema.AddMetatag(metatag);
+            needNewTree = true;
+        }
+        else
+        {
+            App.State.MetatagSchema.NotifyChanging();
+
+            metatag.Name = Model.SelectedMetatag.Name;
+            metatag.Description = Model.SelectedMetatag.Description;
+            needNewTree = metatag.Parent != Model.CurrentParent?.Metatag.ID;
+            metatag.Parent = Model.CurrentParent?.Metatag.ID;
+        }
+
+        if (needNewTree)
+        {
+            App.State.MetatagSchema.RebuildWorkingTree();
         }
     }
 }
