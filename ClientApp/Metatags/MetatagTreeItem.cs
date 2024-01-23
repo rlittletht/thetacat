@@ -160,17 +160,17 @@ public class MetatagTreeItem: IMetatagTreeItem
         return newItem;
     }
 
-    public static void Preorder(IMetatagTreeItem item, VisitTreeItemDelegate visit, int depth)
+    public static void Preorder(IMetatagTreeItem item, IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
-        visit(item, depth);
+        visit(item, parent, depth);
         foreach (IMetatagTreeItem child in item.Children)
         {
-            child.Preorder(visit, depth + 1);
+            child.Preorder(item, visit, depth + 1);
         }
     }
 
-    public void Preorder(VisitTreeItemDelegate visit, int depth)
+    public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
-        Preorder(this, visit, depth);
+        Preorder(this, parent, visit, depth);
     }
 }

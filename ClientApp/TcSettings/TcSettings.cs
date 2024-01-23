@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using TCore.XmlSettings;
+using Thetacat.Filtering;
 
 namespace Thetacat.TcSettings;
 
@@ -44,9 +45,14 @@ public class TcSettings
     public Dictionary<string, Rectangle> Placements { get; private set; } = new();
     private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
 
+    public string? DefaultFilterName;
+
+    public Dictionary<string, FilterDefinition> Filters = new();
+
     public TcSettings()
     {
 #pragma warning disable format // @formatter:off
+        #region XML Descriptor
         XmlSettingsDescription =
             XmlDescriptionBuilder<TcSettings>
                .Build(s_uri, "Settings")
@@ -80,6 +86,19 @@ public class TcSettings
                      .AddElement("SqlConnection", GetSqlConnection, SetSqlConnection)
                   .Pop()
                .Pop()
+                  .AddChildElement("Filters")
+                     .AddAttribute("DefaultFilter", (settings, _) => settings.DefaultFilterName, (settings, value, _) => settings.DefaultFilterName = value)
+                     .AddChildElement("Filter")
+                       .SetRepeating(
+                            TcSettings.CreateFiltersRepeatContext,
+                            TcSettings.AreRemainingFilters,
+                            TcSettings.CommitFiltersRepeatItem)
+                       .AddAttribute("Name", GetFilterName, SetFilterName)
+                         .AddChildElement("Description", GetFilterDescription, SetFilterDescription)
+                         .AddElement("Expression", GetFilterExpressionText, SetFilterExpressionText)
+                         .Pop()
+                       .Pop()
+                  .Pop()
                   .AddChildElement("Migration")
                      .AddChildElement("ElementsDatabase", GetElementsDatabaseValue, SetElementsDatabaseValue)
                      .AddElement("Substitutions")
@@ -123,6 +142,7 @@ public class TcSettings
                    .AddAttribute("Width", TcSettings.GetPlacementWidth, TcSettings.SetPlacementWidth)
                    .AddAttribute("Height", TcSettings.GetPlacementHeight, TcSettings.SetPlacementHeight)
                .Pop();
+        #endregion
 #pragma warning restore format // @formatter: on
         try
         {
@@ -243,6 +263,90 @@ public class TcSettings
     }
 
     #endregion
+
+    #region Filters
+    private IEnumerator<KeyValuePair<string, FilterDefinition>>? FiltersEnumerator;
+
+    private static RepeatContext<TcSettings>.RepeatItemContext CreateFiltersRepeatContext(
+        TcSettings settings,
+        Element<TcSettings> element,
+        RepeatContext<TcSettings>.RepeatItemContext? parent)
+    {
+        if (settings.FiltersEnumerator != null)
+        {
+            return new RepeatContext<TcSettings>.RepeatItemContext(
+                element,
+                parent,
+                settings.FiltersEnumerator.Current);
+        }
+
+        return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, new KeyValuePair<string, FilterDefinition>("", new FilterDefinition()));
+    }
+
+    private static bool AreRemainingFilters(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (settings.ElementsSubstitutions.Count == 0)
+            return false;
+
+        settings.FiltersEnumerator ??= settings.Filters.GetEnumerator();
+
+        bool remaining = settings.FiltersEnumerator.MoveNext();
+        if (!remaining)
+            settings.FiltersEnumerator = null;
+
+        return remaining;
+    }
+
+    private static void CommitFiltersRepeatItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
+    {
+        if (itemContext == null)
+            throw new ArgumentNullException(nameof(itemContext));
+
+        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)itemContext.RepeatKey;
+
+        settings.Filters.Add(pair.Value.FilterName, pair.Value);
+    }
+
+    private static string GetFilterName(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
+       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.FilterName ?? "";
+
+    private static void SetFilterName(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context?.RepeatKey == null)
+            throw new ArgumentNullException(nameof(context));
+
+        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
+
+        pair.Value.FilterName = value;
+    }
+
+    private static string GetFilterDescription(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
+       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.Description ?? "";
+
+    private static void SetFilterDescription(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context?.RepeatKey == null)
+            throw new ArgumentNullException(nameof(context));
+
+        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
+
+        pair.Value.Description = value ?? "";
+    }
+
+    private static string GetFilterExpressionText(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
+       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.ExpressionText ?? "";
+
+    private static void SetFilterExpressionText(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
+    {
+        if (context?.RepeatKey == null)
+            throw new ArgumentNullException(nameof(context));
+
+        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
+
+        pair.Value.ExpressionText = value ?? "";
+    }
+    #endregion
+
 
     #region Substitutions
     private IEnumerator<MapPair>? SubstitutionsEnumerator;

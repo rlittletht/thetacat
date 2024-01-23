@@ -21,16 +21,20 @@
                 <MenuItem Header="Options" Click="LaunchOptions" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_Filter" Click="DefineFilter"/>
+                <MenuItem Header="_Filter" Click="DoChooseFilter" />
                 <Separator />
-                <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo"/>
+                <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo" />
                 <MenuItem Header="Timeline" Name="TimelineMenu">
-                    <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline" IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}"/>
-                    <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline" IsChecked="{Binding Path=IsImportDateTimeline, Mode=OneWay}"/>
-                    <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending" IsChecked="{Binding Path=IsTimelineAscending, Mode=OneWay}"/>
-                    <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending" IsChecked="{Binding Path=IsTimelineDescending, Mode=OneWay}"/>
+                    <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline"
+                              IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}" />
+                    <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline"
+                              IsChecked="{Binding Path=IsImportDateTimeline, Mode=OneWay}" />
+                    <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending"
+                              IsChecked="{Binding Path=IsTimelineAscending, Mode=OneWay}" />
+                    <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending"
+                              IsChecked="{Binding Path=IsTimelineDescending, Mode=OneWay}" />
                 </MenuItem>
-                <Separator/>
+                <Separator />
                 <MenuItem Header="App log monitor" Click="ToggleAppLog" />
                 <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
                 <MenuItem Header="Large pictures" Click="SelectLargePreview" />
@@ -38,7 +42,7 @@
                 <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
             </MenuItem>
             <MenuItem Header="_Debug">
-                <MenuItem Header="Test Render Image" Click="TestRenderImage"/>
+                <MenuItem Header="Test Render Image" Click="TestRenderImage" />
                 <MenuItem Header="Test Progress" Click="TestProgressDialog" />
                 <MenuItem Header="Test QueueBackground Process (5 Second)" Click="StartBackground5s" />
                 <MenuItem Header="Test QueueBackground Process (1m Second)" Click="StartBackground1m" />
@@ -54,15 +58,15 @@
             </Grid.RowDefinitions>
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Jump to date:" Grid.Column="0"/>
-                <TextBox Text="{Binding Path=JumpDate}" Width="128" Grid.Column="1"/>
-                <Button Content="Jump" Click="JumpToDate" Grid.Column="2"/>
-                <TextBlock Text="{Binding Path=WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right"/>
+                <TextBlock Text="Jump to date:" Grid.Column="0" />
+                <TextBox Text="{Binding Path=JumpDate}" Width="128" Grid.Column="1" />
+                <Button Content="Jump" Click="JumpToDate" Grid.Column="2" />
+                <TextBlock Text="{Binding Path=WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right" />
             </Grid>
             <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
             <ListView Name="CatalogView" Grid.Row="2" MouseDoubleClick="HandleDoubleClick">
@@ -92,27 +96,26 @@
                 </Grid.ColumnDefinitions>
                 <!-- Must make the background transparent in order to have the hittesting hit the entire region-->
                 <Grid Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent">
-                    <controls:SpinnerSwirl x:Name="BackgroundActivity" HorizontalAlignment="Left"
-                                           VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed"/>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent"
+                                    VerticalAlignment="Bottom" Width="32">
+                            <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
+                        </StackPanel>
+                        <TextBlock Text="Filter: "/>
+                        <TextBlock Text="{Binding Path=Filter.FilterName}"/>
+                    </StackPanel>
                 </Grid>
-                <Grid HorizontalAlignment="Right" Margin="0 4 0 5" Grid.Column="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="108" />
-                        <ColumnDefinition Width="108" />
-                        <ColumnDefinition Width="108" />
-                        <ColumnDefinition Width="67.13" />
-                        <ColumnDefinition Width="40.87" />
-                    </Grid.ColumnDefinitions>
-                    <Button Content="Download Cache" Click="DoCacheItems" IsDefault="True" Grid.Column="0" Height="24"
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
+                    <Button Content="Rebuild Explorer" Click="DoRebuildTimeline" Height="24"
                             Margin="5,0,0,0" />
-                    <Button Content="Upload Pending" Click="UploadItems" IsDefault="True" Grid.Column="1" Height="24"
+                    <Button Content="Download Cache" Click="DoCacheItems" Height="24"
+                            Margin="5,0,0,0" />
+                    <Button Content="Upload Pending" Click="UploadItems" Height="24"
                             Margin="5,0,5,0" />
-                    <Button Content="Commit Changes" Click="CommitPendingChanges" IsDefault="True" Grid.Column="2"
-                            Height="24"
-                            Margin="0,0,5,0" />
-                    <Button Content="Connect" Click="ConnectToDatabase" IsDefault="True" Grid.Column="3" Height="24"
-                            Margin="0,0,5,0" Grid.ColumnSpan="2" />
-                </Grid>
+                    <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="0,0,5,0" />
+                    <Button Content="Connect" Click="ConnectToDatabase" Height="24" Margin="0,0,5,0" />
+                </StackPanel>
             </Grid>
         </Grid>
     </DockPanel>

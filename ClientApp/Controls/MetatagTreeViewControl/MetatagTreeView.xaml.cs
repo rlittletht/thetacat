@@ -159,7 +159,8 @@ public partial class MetatagTreeView : UserControl
         foreach (IMetatagTreeItem item in Model.Items)
         {
             item.Preorder(
-                (visiting, depth) =>
+                null,
+                (visiting, parent, depth) =>
                 {
                     if (visiting.Children.Count > 0)
                     {
@@ -200,7 +201,8 @@ public partial class MetatagTreeView : UserControl
         foreach (IMetatagTreeItem item in Model.Items)
         {
             item.Preorder(
-                (visiting, depth) =>
+                null,
+                (visiting, parent, depth) =>
                 {
                     if (visiting.Children.Count > 0)
                     {

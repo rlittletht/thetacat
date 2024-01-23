@@ -24,13 +24,14 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
     <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
     <PackageReference Include="TCore.Pipeline" Version="1.2.0" />
-    <PackageReference Include="TCore.PostfixText" Version="1.2.0" />
+    <PackageReference Include="TCore.PostfixText" Version="1.0.0" />
     <PackageReference Include="TCore.Sql" Version="2.2.3" />
     <PackageReference Include="TCore.XmlSettings" Version="1.6.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Azure\" />
+    <Folder Include="Explorer\NewFolder\" />
     <Folder Include="Model\Metatags\" />
     <Folder Include="Secrets\" />
   </ItemGroup>
@@ -46,7 +47,7 @@
     <Compile Update="UI\AppLogMonitor.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Explorer\UI\MediaItemDetails.xaml.cs">
+    <Compile Update="Explorer\MediaItemDetails.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

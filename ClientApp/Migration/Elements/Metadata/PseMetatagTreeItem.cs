@@ -116,8 +116,8 @@ public class PseMetatagTreeItem : IMetatagTreeItem
         return newItem;
     }
 
-    public void Preorder(VisitTreeItemDelegate visit, int depth)
+    public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
-        MetatagTreeItem.Preorder(this, visit, depth);
+        MetatagTreeItem.Preorder(this, parent, visit, depth);
     }
 }

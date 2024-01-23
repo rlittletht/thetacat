@@ -1,0 +1,119 @@
+﻿<Window x:Class="Thetacat.Filtering.UI.EditFilter"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Filtering"
+        mc:Ignorable="d"
+        Title="EditFilter" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="72" />
+            <RowDefinition Height="7*" />
+            <RowDefinition Height="42" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="Add clause" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60*" />
+                            <ColumnDefinition Width="20*" />
+                            <ColumnDefinition Width="20*" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox ItemsSource="{Binding Path=AvailableTags}" Grid.Column="0" SelectedItem="{Binding Path=SelectedTagForClause}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Path=DropdownName}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <ComboBox ItemsSource="{Binding Path=ComparisonOperators}" Grid.Column="1" SelectedItem="{Binding Path=ComparisonOpForClause}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <ComboBox ItemsSource="{Binding Path=ValuesForClause}" Grid.Column="2" IsEditable="True" SelectedItem="{Binding Path=ValueForClause}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Tag description" />
+                            <TextBox Text="{Binding Path=SelectedTagForClause.Metatag.Description}" />
+                        </StackPanel>
+                        <Button Content="Add Clause" Click="AddClause" Grid.Column="1"/>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Postfix Op" Grid.Column="1">
+                <StackPanel>
+                    <ComboBox ItemsSource="{Binding Path=PostfixOperators}" SelectedItem="{Binding Path=PostfixOpForClause}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding }" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Add Op" Click="AddPostfixOp" />
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+        <GroupBox Header="Filter Expression" Grid.Row="1">
+            <ListBox ItemsSource="{Binding Path=ExpressionClauses}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel>
+                            <TextBlock Text="{Binding}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </GroupBox>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                    <TextBlock Text="Filter Name"/>
+                    <TextBox Text="{Binding FilterName}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Description" />
+                <TextBox Text="{Binding Description}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="2">
+                <Button Content="Cancel" Height="24" Width="48" Click="DoCancel"/>
+                <Button Content="Save" Height="24" Width="48" IsDefault="True" Click="DoSave"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

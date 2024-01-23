@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Thetacat.Explorer;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -13,6 +12,7 @@ using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Explorer.Commands;
 using Thetacat.Util;
+using Thetacat.Explorer.UI;
 
 namespace Thetacat.Explorer;
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
@@ -43,7 +44,7 @@ public class CatalogMock : ICatalog
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
 
     public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
-    public List<MediaItem> GetFilteredMediaItems(Dictionary<Guid, bool> filter) => throw new NotImplementedException();
+    public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter) => throw new NotImplementedException();
 
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
 

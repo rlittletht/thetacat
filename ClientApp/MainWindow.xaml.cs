@@ -25,6 +25,7 @@ using System.Windows.Media.Imaging;
 using System.Globalization;
 using Microsoft.Windows.EventTracing.Power;
 using Thetacat.Metatags.Model;
+using Thetacat.Filtering;
 
 namespace Thetacat;
 
@@ -117,6 +118,11 @@ public partial class MainWindow : Window
         CatalogView.ItemsSource = App.State.Catalog.GetObservableCollection();
         LocalServiceClient.LogService = LogForApp;
         DataContext = m_collection;
+        if (!string.IsNullOrWhiteSpace(App.State.Settings.DefaultFilterName))
+        {
+            if (App.State.Settings.Filters.TryGetValue(App.State.Settings.DefaultFilterName, out FilterDefinition? filter))
+                m_collection.SetFilter(filter);
+        }
 
         m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
@@ -549,17 +555,17 @@ public partial class MainWindow : Window
     private void ChooseAscending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Ascending);
     private void ChooseDescending(object sender, RoutedEventArgs e) => m_collection.SetTimelineOrder(TimelineOrder.Descending);
 
-    private void DefineFilter(object sender, RoutedEventArgs e)
+    private void DoChooseFilter(object sender, RoutedEventArgs e)
     {
-        Filter filter = new Filter();
+        ChooseFilter filter = new ChooseFilter(m_collection.GetCurrentFilter());
 
         filter.Owner = this;
+
         if (filter.ShowDialog() is true)
         {
-            // apply the filter here
-            Dictionary<Guid, bool> metatagFilter = filter.GetMetatagSetsAndUnsetsForFilter();
+            FilterDefinition filterDef = filter.GetFilterDefinition();
 
-            m_collection.SetMetatagFilter(metatagFilter);
+            m_collection.SetFilter(filterDef);
         }
     }
 
@@ -610,5 +616,10 @@ public partial class MainWindow : Window
         using FileStream fs = new FileStream(outputFile, FileMode.Create);
         encoder.Save(fs);
         fs.Close();
+    }
+
+    private void DoRebuildTimeline(object sender, RoutedEventArgs e)
+    {
+        m_collection.BuildTimelineFromMediaCatalog();
     }
 }

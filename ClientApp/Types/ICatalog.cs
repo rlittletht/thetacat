@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 
@@ -16,7 +17,7 @@ public interface ICatalog
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem);
 
     public IEnumerable<MediaItem> GetMediaCollection();
-    public List<MediaItem> GetFilteredMediaItems(Dictionary<Guid, bool> filter);
+    public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter);
     public ObservableCollection<MediaItem> GetObservableCollection();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);

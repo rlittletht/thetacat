@@ -1,6 +1,6 @@
 ﻿using Thetacat.Metatags;
 
-namespace Thetacat.Explorer;
+namespace Thetacat.Explorer.UI;
 
 public class ApplyMetatagModel
 {

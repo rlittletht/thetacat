@@ -1,21 +1,31 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Thetacat.Util;
+using Thetacat.Metatags.Model;
 
-namespace Thetacat.Explorer;
+namespace Thetacat.Filtering.UI;
 
-public class MediaExplorerLineModel : IObservableSegmentableCollectionHolder<MediaExplorerItem>, INotifyPropertyChanged
+public class FilterModelMetatagItem: INotifyPropertyChanged
 {
-    private string m_lineLabel = "";
-    public ObservableCollection<MediaExplorerItem> Items { get; set; } = new ObservableCollection<MediaExplorerItem>();
-    public bool EndSegmentAfter { get; set; } = false;
+    private Metatag m_metatag;
+    private string m_dropdownName;
 
-    public string LineLabel
+    public string DropdownName
     {
-        get => m_lineLabel;
-        set => SetField(ref m_lineLabel, value);
+        get => m_dropdownName;
+        set => SetField(ref m_dropdownName, value);
+    }
+
+    public Metatag Metatag
+    {
+        get => m_metatag;
+        set => SetField(ref m_metatag, value);
+    }
+
+    public FilterModelMetatagItem(Metatag metatag, string dropdownName)
+    {
+        m_dropdownName = dropdownName;
+        m_metatag = metatag;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

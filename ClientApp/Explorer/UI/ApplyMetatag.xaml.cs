@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using Thetacat.Explorer;
+using Thetacat.Explorer.UI;
 using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;

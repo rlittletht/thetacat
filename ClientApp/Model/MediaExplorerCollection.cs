@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using Thetacat.Explorer;
+using Thetacat.Explorer.UI;
+using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
@@ -74,7 +76,9 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
-    private Dictionary<Guid, bool>? m_metatagFilter = null;
+    private FilterDefinition? m_filterDefinition;
+
+    public FilterDefinition? Filter => m_filterDefinition;
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
@@ -386,6 +390,11 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 #endif
     }
 
+    public FilterDefinition? GetCurrentFilter()
+    {
+        return m_filterDefinition;
+    }
+
     public void BuildTimelineFromMediaCatalog()
     {
         MicroTimer timer = new MicroTimer();
@@ -395,7 +404,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         Dictionary<DateTime, List<Guid>> dateGrouping = new();
 
         IEnumerable<MediaItem> collection =
-            m_metatagFilter == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_metatagFilter);
+            m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
 
         foreach (MediaItem item in collection)
         {
@@ -491,9 +500,9 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         BuildTimelineFromMediaCatalog();
     }
 
-    public void SetMetatagFilter(Dictionary<Guid, bool> metatagFilter)
+    public void SetFilter(FilterDefinition filter)
     {
-        m_metatagFilter = metatagFilter;
+        m_filterDefinition = filter;
         BuildTimelineFromMediaCatalog();
     }
 

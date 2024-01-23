@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Forms;
 using Emgu.CV.Aruco;
+using TCore.PostfixText;
 using Thetacat.Explorer.Commands;
+using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using Expression = TCore.PostfixText.Expression;
 using MessageBox = System.Windows.MessageBox;
 
 namespace Thetacat.Metatags;
@@ -81,13 +84,17 @@ public partial class ManageMetadata : Window
         if (item == null)
             return;
 
-        Dictionary<Guid, bool> filter = new();
-
+        FilterDefinition filterToThisTag = new FilterDefinition();
         Guid metatagId = Guid.Parse(item.ID);
 
-        filter.Add(metatagId, true);
+        filterToThisTag.Expression.AddExpression(
+            Expression.Create(
+                Value.CreateForField(metatagId.ToString("B")),
+                    Value.Create("$true"),
+                    new ComparisonOperator(ComparisonOperator.Op.Eq)));
 
-        List<MediaItem> matchingItems = App.State.Catalog.GetFilteredMediaItems(filter);
+
+        List<MediaItem> matchingItems = App.State.Catalog.GetFilteredMediaItems(filterToThisTag);
 
         IMetatagTreeItem? treeItem = (App.State.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagId), -1));
 

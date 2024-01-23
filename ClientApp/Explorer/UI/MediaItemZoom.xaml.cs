@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using Thetacat.Explorer.UI;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;

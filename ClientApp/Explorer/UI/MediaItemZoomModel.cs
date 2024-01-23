@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 using Thetacat.Model;
 
-namespace Thetacat.Explorer;
+namespace Thetacat.Explorer.UI;
 
 public class MediaItemZoomModel : INotifyPropertyChanged
 {

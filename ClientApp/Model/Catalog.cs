@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows;
+using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
@@ -196,7 +197,7 @@ public class Catalog : ICatalog
         the item must have the tag; if set to false, it must not. if unset, then
         no requirement
     ----------------------------------------------------------------------------*/
-    public List<MediaItem> GetFilteredMediaItems(Dictionary<Guid, bool> filter)
+    public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter)
     {
         List<MediaItem> matched = new();
 

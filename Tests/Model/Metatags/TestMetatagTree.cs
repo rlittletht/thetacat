@@ -11,7 +11,8 @@ public class TestMetatagTree
         StringBuilder actual = new StringBuilder();
 
         tree.Preorder(
-            (item, depth) =>
+            null,
+            (item, _, depth) =>
             {
                 string isChecked = item.Checked == null ? "#" : (item.Checked == true ? "X" : " ");
                 actual.Append($"{item.Name}({depth})[{isChecked}]:");

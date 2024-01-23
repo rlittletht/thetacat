@@ -181,6 +181,13 @@ public class MetatagSchema
         return metatag;
     }
 
+    public IMetatagTreeItem? GetStandardRootItem(MetatagStandards.Standard standard)
+    {
+        return WorkingTree.FindMatchingChild(
+            MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandard(standard)),
+            1);
+    }
+
     public Metatag? FindStandardItem(MetatagStandards.Standard standard, StandardDefinition item)
     {
         // get the root from the standard

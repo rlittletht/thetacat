@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using MetadataExtractor.Formats.Exif;
+using Thetacat.Filtering;
 using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.ServiceClient;
@@ -680,24 +681,8 @@ public class MediaItem : INotifyPropertyChanged
         The filter defines the tags that must not be set (false) or must be set
         (true). If its not present then it doesn't matter
     ----------------------------------------------------------------------------*/
-    public bool MatchesMetatagFilter(Dictionary<Guid, bool> filter)
+    public bool MatchesMetatagFilter(FilterDefinition filter)
     {
-        foreach (KeyValuePair<Guid, bool> filterItem in filter)
-        {
-            if (filterItem.Value)
-            {
-                // this item *must* be set
-                if (!Tags.ContainsKey(filterItem.Key))
-                    return false;
-            }
-            else
-            {
-                // else it must not be set
-                if (Tags.ContainsKey(filterItem.Key))
-                    return false;
-            }
-        }
-
-        return true;
+        return filter.Expression.FEvaluate(new FilterValueClient(this));
     }
 }
