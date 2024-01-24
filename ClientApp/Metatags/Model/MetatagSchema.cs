@@ -87,6 +87,7 @@ public class MetatagSchema
     public void NotifyChanging()
     {
         EnsureBaseAndVersion();
+        App.State.SetSchemaDirtyState(true);
     }
 
     public void RebuildWorkingTree()
@@ -99,9 +100,10 @@ public class MetatagSchema
         if (m_schemaWorking == null)
             throw new Exception("not initialized");
 
-        EnsureBaseAndVersion();
+        NotifyChanging();
 
         m_schemaWorking.AddMetatag(metatag);
+        App.State.SetSchemaDirtyState(true);
 
         IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
 
@@ -137,7 +139,7 @@ public class MetatagSchema
 
     public bool FRemoveMetatag(Guid metatagId)
     {
-        EnsureBaseAndVersion();
+        NotifyChanging();
 
         return m_schemaWorking.FRemoveMetatag(metatagId);
     }
@@ -301,6 +303,7 @@ public class MetatagSchema
         EnsureBuiltinMetatagsDefined();
 
         m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+        App.State.SetSchemaDirtyState(false);
     }
 
     public MetatagSchemaDiff BuildDiffForSchemas()
@@ -321,5 +324,6 @@ public class MetatagSchema
             ServiceInterop.UpdateMetatagSchema(diff);
             m_schemaBase = null; // working is now the base
         }
+        App.State.SetSchemaDirtyState(false);
     }
 }

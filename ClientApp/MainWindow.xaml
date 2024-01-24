@@ -26,13 +26,13 @@
                 <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo" />
                 <MenuItem Header="Timeline" Name="TimelineMenu">
                     <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline"
-                              IsChecked="{Binding Path=IsMediaDateTimeline, Mode=OneWay}" />
+                              IsChecked="{Binding Path=ExplorerCollection.IsMediaDateTimeline, Mode=OneWay}" />
                     <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline"
-                              IsChecked="{Binding Path=IsImportDateTimeline, Mode=OneWay}" />
+                              IsChecked="{Binding Path=ExplorerCollection.IsImportDateTimeline, Mode=OneWay}" />
                     <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending"
-                              IsChecked="{Binding Path=IsTimelineAscending, Mode=OneWay}" />
+                              IsChecked="{Binding Path=ExplorerCollection.IsTimelineAscending, Mode=OneWay}" />
                     <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending"
-                              IsChecked="{Binding Path=IsTimelineDescending, Mode=OneWay}" />
+                              IsChecked="{Binding Path=ExplorerCollection.IsTimelineDescending, Mode=OneWay}" />
                 </MenuItem>
                 <Separator />
                 <MenuItem Header="App log monitor" Click="ToggleAppLog" />
@@ -52,8 +52,8 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
-                <RowDefinition Height="7*" />
-                <RowDefinition Height="3*" />
+                <RowDefinition Height="10*" />
+                <RowDefinition Height="0" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid>
@@ -64,31 +64,11 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Jump to date:" Grid.Column="0" />
-                <TextBox Text="{Binding Path=JumpDate}" Width="128" Grid.Column="1" />
+                <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Grid.Column="1" />
                 <Button Content="Jump" Click="JumpToDate" Grid.Column="2" />
-                <TextBlock Text="{Binding Path=WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right" />
             </Grid>
             <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
-            <ListView Name="CatalogView" Grid.Row="2" MouseDoubleClick="HandleDoubleClick">
-                <ListView.View>
-                    <GridView>
-                        <GridView.Columns>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=ID}">
-                                <GridViewColumnHeader Tag="Key" Click="SortType" Content="Key" />
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=VirtualPath}">
-                                <GridViewColumnHeader Tag="VirtualPath" Click="SortType" Content="VirtualPath" />
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=State}">
-                                <GridViewColumnHeader Tag="State" Click="SortType" Content="State" />
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Path=CacheStatus}">
-                                <GridViewColumnHeader Tag="Cached" Click="SortType" Content="Cached" />
-                            </GridViewColumn>
-                        </GridView.Columns>
-                    </GridView>
-                </ListView.View>
-            </ListView>
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="192" />
@@ -103,18 +83,19 @@
                                                    VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
                         </StackPanel>
                         <TextBlock Text="Filter: "/>
-                        <TextBlock Text="{Binding Path=Filter.FilterName}"/>
+                        <TextBlock Text="{Binding Path=ExplorerCollection.Filter.FilterName}"/>
                     </StackPanel>
                 </Grid>
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
-                    <Button Content="Rebuild Explorer" Click="DoRebuildTimeline" Height="24"
+                    <Button Content="Rebuild Explorer" Click="DoRebuildTimeline" Height="24" Width="96"
                             Margin="5,0,0,0" />
-                    <Button Content="Download Cache" Click="DoCacheItems" Height="24"
+                    <Button Content="Download Cache" Click="DoCacheItems" Height="24" Width="96"
                             Margin="5,0,0,0" />
-                    <Button Content="Upload Pending" Click="UploadItems" Height="24"
+                    <Button Content="Upload Pending" Click="UploadItems" Height="24" Width="96"
                             Margin="5,0,5,0" />
-                    <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="0,0,5,0" />
-                    <Button Content="Connect" Click="ConnectToDatabase" Height="24" Margin="0,0,5,0" />
+                    <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="0,0,5,0"
+                            Width="96" IsEnabled="{Binding Path=IsDirty}"/>
+                    <Button Content="Connect" Click="ConnectToDatabase" Height="24" Margin="0,0,5,0" Width="96" />
                 </StackPanel>
             </Grid>
         </Grid>

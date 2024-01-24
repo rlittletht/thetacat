@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Thetacat.Explorer.UI;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
@@ -64,8 +65,14 @@ public partial class MediaItemZoom : Window
         }
 
         m_model.Image = cacheItem?.Image;
+        this.KeyDown += DoMediaZoomKeyUp;
 
         InitializeComponent();
     }
 
+    private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+            Close();
+    }
 }

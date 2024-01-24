@@ -28,20 +28,21 @@
                 </StackPanel.InputBindings>
                 <StackPanel.ContextMenu>
                     <ContextMenu >
-                        <MenuItem Header="Remove Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AppliedTags}">
-                            <MenuItem.ItemTemplate>
-                                <DataTemplate>
-                                    <MenuItem Header="{Binding TagMenuText}"
-                                              Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RemoveMenuTag}"
-                                              CommandParameter="{Binding}"/>
-                                </DataTemplate>
-                            </MenuItem.ItemTemplate>
-                        </MenuItem>
                         <MenuItem Header="Apply Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AdvertisedTags}">
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
                                     <MenuItem Header="{Binding TagMenuText}"
                                               Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.AddMenuTag}"
+                                              CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </MenuItem.ItemTemplate>
+                        </MenuItem>
+                        <MenuItem Header="Remove Tags"
+                                  ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AppliedTags}">
+                            <MenuItem.ItemTemplate>
+                                <DataTemplate>
+                                    <MenuItem Header="{Binding TagMenuText}"
+                                              Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RemoveMenuTag}"
                                               CommandParameter="{Binding}" />
                                 </DataTemplate>
                             </MenuItem.ItemTemplate>

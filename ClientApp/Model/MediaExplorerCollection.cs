@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
@@ -30,6 +31,12 @@ namespace Thetacat.Model;
 ----------------------------------------------------------------------------*/
 public class MediaExplorerCollection: INotifyPropertyChanged
 {
+    public bool IsDirty
+    {
+        get => m_isDirty;
+        set => SetField(ref m_isDirty, value);
+    }
+
     public string WindowDateRange
     {
         get => m_windowDateRange;
@@ -116,6 +123,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     private string m_jumpDate = String.Empty;
     private TimelineType m_timelineType = TimelineType.None;
     private TimelineOrder m_timelineOrder = TimelineOrder.None;
+    private bool m_isDirty = false;
 
     private int ColumnsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemWidth);
     private int RowsPerExplorer => (int)Math.Round(m_explorerHeight / m_panelItemHeight);
@@ -513,12 +521,30 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         return GetTimelineDateFromMediaItem(mediaItem);
     }
 
+    public static DateTime GetLocalDateFromMedia(MediaItem item, DateTime? mediaDate)
+    {
+        if (mediaDate != null)
+            return mediaDate.Value.ToLocalTime().Date;
+
+        string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
+
+        if (path != null)
+            return File.GetCreationTime(path);
+
+        return DateTime.Now;
+    }
+
     public DateTime GetTimelineDateFromMediaItem(MediaItem mediaItem)
     {
         if (TimelineType.Equals(TimelineType.ImportDate))
-            return MainWindow.GetLocalDateFromMedia(mediaItem, mediaItem.ImportDate);
+            return GetLocalDateFromMedia(mediaItem, mediaItem.ImportDate);
 
-        return MainWindow.GetLocalDateFromMedia(mediaItem, mediaItem.OriginalMediaDate);
+        return GetLocalDateFromMedia(mediaItem, mediaItem.OriginalMediaDate);
+    }
+
+    public void SetDirtyState(bool dirty)
+    {
+        IsDirty = dirty;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

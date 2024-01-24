@@ -82,6 +82,8 @@ public class Catalog : ICatalog
         {
             stacks.PushPendingChanges();
         }
+
+        App.State.SetCollectionDirtyState(false);
     }
 
     private async Task<ServiceCatalog> GetFullCatalogAsync()

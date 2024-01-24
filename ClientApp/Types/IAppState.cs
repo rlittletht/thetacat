@@ -32,4 +32,6 @@ public interface IAppState
     public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work);
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate);
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate);
+    public SetDirtyStateDelegate SetCollectionDirtyState { get; set; }
+    public SetDirtyStateDelegate SetSchemaDirtyState { get; set; }
 }

@@ -488,6 +488,9 @@ public class MediaItem : INotifyPropertyChanged
         if (!identicalExisting)
             VectorClock++;
 
+        if (!identicalExisting)
+            App.State.SetCollectionDirtyState(true);
+
         return !identicalExisting;
     }
 
