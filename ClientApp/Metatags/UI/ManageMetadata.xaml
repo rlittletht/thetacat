@@ -51,16 +51,24 @@
                         <TextBlock>ID</TextBlock>
                         <TextBox Text="{Binding Path=SelectedMetatag.ID}" />
                         <TextBlock>Parent</TextBlock>
-                        <ComboBox ItemsSource="{Binding Path=AvailableParents}"
-                                  SelectedItem="{Binding Path=CurrentParent}" Name="ParentTag">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Path=DropdownName}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <Popup Name="ParentPickerPopup" PlacementTarget="{Binding ElementName=SelectParentButton}">
+                            <controls:MetatagTreeView Checkable="False"
+                                                      x:Name="ParentMetatagsTree"
+                                                      SelectedItemChanged="DoSelectedParentChanged" />
+                        </Popup>
+                        <DockPanel>
+                            <Button Content="Select" Click="SelectParent" DockPanel.Dock="Right" Name="SelectParentButton"/>
+                            <ComboBox Name="ParentTag" ItemsSource="{Binding Path=AvailableParents}"
+                                      SelectedItem="{Binding Path=CurrentParent}" DockPanel.Dock="Left">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Path=DropdownName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </DockPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1">
                         <Button Content="New" Width="96" Click="CreateNew"/>

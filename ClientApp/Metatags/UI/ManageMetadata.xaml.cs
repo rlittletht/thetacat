@@ -11,6 +11,7 @@ using Thetacat.Filtering.UI;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Expression = TCore.PostfixText.Expression;
@@ -52,7 +53,7 @@ public partial class ManageMetadata : Window
         App.State.RegisterWindowPlace(this, "ManageMetadata");
         DataContext = Model;
 
-        MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking, MetatagStandards.Standard.User);
         InitializeAvailableParents();
     }
 
@@ -60,7 +61,8 @@ public partial class ManageMetadata : Window
     private void LoadMetatags(object sender, RoutedEventArgs e)
     {
         App.State.RefreshMetatagSchema();
-        MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking);
+        MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking, MetatagStandards.Standard.User);
+        m_metatagLineageMap = null;
         InitializeAvailableParents();
     }
 
@@ -132,6 +134,30 @@ public partial class ManageMetadata : Window
         }
     }
 
+    private void SelectParentMetatag(Guid parentId)
+    {
+        foreach (FilterModelMetatagItem parent in Model.AvailableParents)
+        {
+            if (parent.Metatag.ID == parentId)
+            {
+                ParentTag.SelectedItem = parent;
+                break;
+            }
+        }
+    }
+
+    private void DoSelectedParentChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is MetatagTreeItem newItem)
+        {
+            ParentTag.Text = newItem.Name;
+            SelectParentMetatag(newItem.ItemId);
+        }
+
+        ParentPickerPopup.IsOpen = false;
+    }
+
+
     private void DoSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         if (e.NewValue is MetatagTreeItem newItem)
@@ -145,18 +171,16 @@ public partial class ManageMetadata : Window
             }
             else
             {
-                foreach (FilterModelMetatagItem parent in Model.AvailableParents)
-                {
-                    if (parent.Metatag.ID == Model.SelectedMetatag.Parent)
-                    {
-                        ParentTag.SelectedItem = parent;
-                        break;
-                    }
-                }
+                SelectParentMetatag(Model.SelectedMetatag.Parent.Value);
             }
 
             Model.SelectedTreeItem = newItem;
         }
+    }
+
+    private void SelectParent(object sender, RoutedEventArgs e)
+    {
+        ParentPickerPopup.IsOpen = true;
     }
 
     void InitializeAvailableParents()
@@ -172,6 +196,11 @@ public partial class ManageMetadata : Window
         {
             Model.AvailableParents.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
         }
+
+        ParentMetatagsTree.Initialize(
+            App.State.MetatagSchema.WorkingTree.Children, 
+            App.State.MetatagSchema.SchemaVersionWorking,
+            MetatagStandards.Standard.User);
     }
 
     private Dictionary<Guid, string>? m_metatagLineageMap;
@@ -236,6 +265,10 @@ public partial class ManageMetadata : Window
         if (needNewTree)
         {
             App.State.MetatagSchema.RebuildWorkingTree();
+            MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking, MetatagStandards.Standard.User);
+            m_metatagLineageMap = null;
+            InitializeAvailableParents();
         }
     }
+
 }
