@@ -29,7 +29,7 @@ namespace Thetacat.Model;
     The collections can only be added or removed from a single thread.
     Other threads can *update* items
 ----------------------------------------------------------------------------*/
-public class MediaExplorerCollection: INotifyPropertyChanged
+public class MediaExplorerCollection : INotifyPropertyChanged
 {
     public bool IsDirty
     {
@@ -61,6 +61,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
             }
         }
     }
+
     public TimelineType TimelineType
     {
         get => m_timelineType;
@@ -85,7 +86,11 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
     private FilterDefinition? m_filterDefinition;
 
-    public FilterDefinition? Filter => m_filterDefinition;
+    public FilterDefinition? Filter
+    {
+        get => m_filterDefinition;
+        set => SetField(ref m_filterDefinition, value);
+    }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
@@ -130,7 +135,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public void Close()
     {
-       // PreviewImageCache.Close is now handled in MainWindow
+        // PreviewImageCache.Close is now handled in MainWindow
     }
 
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
@@ -205,7 +210,10 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         // we have a new top item. calculate the segments visible
 
         MediaExplorerLineModel lineTop = m_collection.GetNearestLineLessOrEqualMatching(row, (line) => !string.IsNullOrWhiteSpace(line.LineLabel)).line;
-        MediaExplorerLineModel lineBottom = m_collection.GetNearestLineLessOrEqualMatching(row + RowsPerExplorer, (line) => !string.IsNullOrWhiteSpace(line.LineLabel)).line;
+        MediaExplorerLineModel lineBottom = m_collection.GetNearestLineLessOrEqualMatching(
+                row + RowsPerExplorer,
+                (line) => !string.IsNullOrWhiteSpace(line.LineLabel))
+           .line;
 
         string first = lineTop.LineLabel;
         string last = lineBottom.LineLabel;
@@ -265,7 +273,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         m_explorerItems.Clear();
         m_mapLineItemOffsets.Clear();
     }
-    
+
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
         string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
@@ -273,7 +281,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath, item.ID);
 
         m_explorerItems.Add(item.ID, explorerItem);
-        
+
         if (path != null)
         {
             ImageCacheItem? cacheItem = App.State.PreviewImageCache.GetAnyExistingItem(item.ID);
@@ -398,39 +406,40 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 #endif
     }
 
-    public FilterDefinition? GetCurrentFilter()
-    {
-        return m_filterDefinition;
-    }
-
     public void BuildTimelineFromMediaCatalog()
     {
         MicroTimer timer = new MicroTimer();
         MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");
 
         // build a group by date
-        Dictionary<DateTime, List<Guid>> dateGrouping = new();
+        Dictionary<DateTime, ICollection<KeyValuePair<DateTime, Guid>>> dateGrouping = new();
 
         IEnumerable<MediaItem> collection =
             m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
 
         foreach (MediaItem item in collection)
         {
-            DateTime date = GetTimelineDateFromMediaItem(item);
+            DateTime dateTime = GetTimelineDateFromMediaItem(item);
+            DateTime date = dateTime.Date;
 
-            if (!dateGrouping.TryGetValue(date, out List<Guid>? items))
+            if (!dateGrouping.TryGetValue(date, out ICollection<KeyValuePair<DateTime, Guid>>? items))
             {
-                items = new List<Guid>();
+                items = new List<KeyValuePair<DateTime, Guid>>();
                 dateGrouping.Add(date, items);
             }
 
-            items.Add(item.ID);
+            ((List<KeyValuePair<DateTime, Guid>>)items).Add(KeyValuePair.Create(dateTime, item.ID));
         }
 
         IComparer<DateTime> comparer =
             TimelineOrder.Equals(TimelineOrder.Descending)
-                ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x))
-                : Comparer<DateTime>.Create((y, x) => y.CompareTo(x));
+                ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1)
+                : Comparer<DateTime>.Create((y, x) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
+
+        IComparer<KeyValuePair<DateTime, Guid>> comparerKvp =
+            TimelineOrder.Equals(TimelineOrder.Descending)
+                ? Comparer<KeyValuePair<DateTime, Guid>>.Create((x, y) => y.Key.CompareTo(x.Key) < 0 ? y.Key.CompareTo(x.Key) : y.Key.CompareTo(x.Key) + 1)
+                : Comparer<KeyValuePair<DateTime, Guid>>.Create((y, x) => y.Key.CompareTo(x.Key) < 0 ? y.Key.CompareTo(x.Key) : y.Key.CompareTo(x.Key) + 1);
 
         ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet(comparer);
 
@@ -440,10 +449,11 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         {
             bool newSegment = true;
 
-            List<Guid> items = dateGrouping[date];
-            foreach (Guid id in items)
+            ICollection<KeyValuePair<DateTime, Guid>> items = dateGrouping[date].ToImmutableSortedSet(comparerKvp);
+
+            foreach (KeyValuePair<DateTime, Guid> pair in items)
             {
-                MediaItem item = App.State.Catalog.GetMediaFromId(id);
+                MediaItem item = App.State.Catalog.GetMediaFromId(pair.Value);
                 AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
                 newSegment = false;
             }
@@ -481,7 +491,6 @@ public class MediaExplorerCollection: INotifyPropertyChanged
         }
 
         BuildTimelineFromMediaCatalog();
-
     }
 
     public void SetTimelineType(TimelineType type)
@@ -510,7 +519,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
 
     public void SetFilter(FilterDefinition filter)
     {
-        m_filterDefinition = filter;
+        Filter = filter;
         BuildTimelineFromMediaCatalog();
     }
 
@@ -524,7 +533,7 @@ public class MediaExplorerCollection: INotifyPropertyChanged
     public static DateTime GetLocalDateFromMedia(MediaItem item, DateTime? mediaDate)
     {
         if (mediaDate != null)
-            return mediaDate.Value.ToLocalTime().Date;
+            return mediaDate.Value.ToLocalTime();
 
         string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 

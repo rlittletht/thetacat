@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
         xmlns:local="clr-namespace:Thetacat.Filtering"
         mc:Ignorable="d"
         Title="EditFilter" Height="450" Width="800">
@@ -26,19 +27,33 @@
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="60*" />
-                            <ColumnDefinition Width="20*" />
-                            <ColumnDefinition Width="20*" />
+                            <ColumnDefinition Width="7*" />
+                            <ColumnDefinition Width="33*" />
                         </Grid.ColumnDefinitions>
-                        <ComboBox ItemsSource="{Binding Path=AvailableTags}" Grid.Column="0" SelectedItem="{Binding Path=SelectedTagForClause}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Path=DropdownName}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <ComboBox ItemsSource="{Binding Path=ComparisonOperators}" Grid.Column="1" SelectedItem="{Binding Path=ComparisonOpForClause}">
+                        <Grid Grid.Column="0" Margin="2 0 4 0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Popup Name="TagPickerPopup" PlacementTarget="{Binding ElementName=ChooseTagButton}">
+                                <controls:MetatagTreeView Checkable="False"
+                                                          x:Name="TagMetatagsTree"
+                                                          SelectedItemChanged="DoSelectedTagChanged" />
+                            </Popup>
+                            <ComboBox ItemsSource="{Binding Path=AvailableTags}"
+                                      SelectedItem="{Binding Path=SelectedTagForClause}" Grid.Column="0">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Path=DropdownName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Name="ChooseTagButton" Content="..." Grid.Column="1" Width="18" Margin="2 0 0 0" Click="ChooseTag" />
+                        </Grid>
+                        <ComboBox ItemsSource="{Binding Path=ComparisonOperators}" Grid.Column="1"
+                                  SelectedItem="{Binding Path=ComparisonOpForClause}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
@@ -47,7 +62,8 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <ComboBox ItemsSource="{Binding Path=ValuesForClause}" Grid.Column="2" IsEditable="True" SelectedItem="{Binding Path=ValueForClause}">
+                        <ComboBox ItemsSource="{Binding Path=ValuesForClause}" Grid.Column="2" IsEditable="True"
+                                  SelectedItem="{Binding Path=ValueForClause}" Text="{Binding Path=ValueTextForClause}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
@@ -59,22 +75,25 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="145*" />
+                            <ColumnDefinition Width="62*" />
+                            <ColumnDefinition Width="203*" />
                             <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="3">
                             <TextBlock Text="Tag description" />
                             <TextBox Text="{Binding Path=SelectedTagForClause.Metatag.Description}" />
                         </StackPanel>
-                        <Button Content="Pop Clause" Click="PopClause" Grid.Column="1" Margin="2 0 2 0"/>
-                        <Button Content="Push Clause" Click="AddClause" Grid.Column="2" Margin="2 0 2 0" />
+                        <Button Content="Pop Clause" Click="PopClause" Grid.Column="3" Margin="2,0,2,0" />
+                        <Button Content="Push Clause" Click="AddClause" Grid.Column="4" Margin="2,0,2,0" />
                     </Grid>
                 </Grid>
             </GroupBox>
             <GroupBox Header="Postfix Op" Grid.Column="1">
                 <StackPanel>
-                    <ComboBox ItemsSource="{Binding Path=PostfixOperators}" SelectedItem="{Binding Path=PostfixOpForClause}">
+                    <ComboBox ItemsSource="{Binding Path=PostfixOperators}"
+                              SelectedItem="{Binding Path=PostfixOpForClause}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
@@ -92,7 +111,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
-                            <TextBlock Text="{Binding}"/>
+                            <TextBlock Text="{Binding}" />
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -100,21 +119,21 @@
         </GroupBox>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="7*" />
-                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                    <TextBlock Text="Filter Name"/>
-                    <TextBox Text="{Binding FilterName}"/>
+                <TextBlock Text="Filter Name" />
+                <TextBox Text="{Binding FilterName}" />
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Text="Description" />
                 <TextBox Text="{Binding Description}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="2">
-                <Button Content="Cancel" Height="24" Width="48" Click="DoCancel"/>
-                <Button Content="Save" Height="24" Width="48" IsDefault="True" Click="DoSave"/>
+                <Button Content="Cancel" Height="24" Width="48" Click="DoCancel" />
+                <Button Content="Save" Height="24" Width="48" IsDefault="True" Click="DoSave" />
             </StackPanel>
         </Grid>
     </Grid>

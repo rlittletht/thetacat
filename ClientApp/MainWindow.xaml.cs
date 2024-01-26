@@ -463,7 +463,7 @@ public partial class MainWindow : Window
 
     private void DoChooseFilter(object sender, RoutedEventArgs e)
     {
-        ChooseFilter filter = new ChooseFilter(m_model.ExplorerCollection.GetCurrentFilter());
+        ChooseFilter filter = new ChooseFilter(m_model.ExplorerCollection.Filter);
 
         filter.Owner = this;
 

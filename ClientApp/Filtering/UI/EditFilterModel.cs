@@ -12,18 +12,25 @@ public class EditFilterModel: INotifyPropertyChanged
     public ObservableCollection<FilterModelMetatagItem> AvailableTags { get; set; } = new ObservableCollection<FilterModelMetatagItem>();
     public ObservableCollection<ComparisonOperator> ComparisonOperators { get; set; } = new();
     public ObservableCollection<PostfixOperator> PostfixOperators { get; set; } = new();
-    public ObservableCollection<string> ValuesForClause { get; set; } = new ObservableCollection<string>() { "$true", "$false" };
+    public ObservableCollection<string> ValuesForClause { get; set; } = new ObservableCollection<string>();
 
     public ObservableCollection<string> ExpressionClauses { get; set; } = new();
 
     private FilterModelMetatagItem? m_selectedTagForClause;
-    private ComparisonOperator m_comparisonOpForClause;
+    private ComparisonOperator? m_comparisonOpForClause;
     private string m_valueForClause = string.Empty;
     private PostfixOperator m_postfixOpForClause;
     private string m_filterName = string.Empty;
     private string m_description = string.Empty;
+    private string m_valueTextForClause;
 
     public PostfixText Expression { get; set; } = new PostfixText();
+
+    public string ValueTextForClause
+    {
+        get => m_valueTextForClause;
+        set => SetField(ref m_valueTextForClause, value);
+    }
 
     public FilterModelMetatagItem? SelectedTagForClause
     {
@@ -31,7 +38,7 @@ public class EditFilterModel: INotifyPropertyChanged
         set => SetField(ref m_selectedTagForClause, value);
     }
 
-    public ComparisonOperator ComparisonOpForClause
+    public ComparisonOperator? ComparisonOpForClause
     {
         get => m_comparisonOpForClause;
         set => SetField(ref m_comparisonOpForClause, value);
@@ -78,11 +85,8 @@ public class EditFilterModel: INotifyPropertyChanged
 
     public EditFilterModel()
     {
-        m_comparisonOpForClause = new ComparisonOperator(ComparisonOperator.Op.Eq);
-        ComparisonOperators.Add(m_comparisonOpForClause);
-        ComparisonOperators.Add(new ComparisonOperator(ComparisonOperator.Op.Ne));
-
         m_postfixOpForClause = new PostfixOperator(PostfixOperator.Op.And);
+        m_valueTextForClause = string.Empty;
 
         PostfixOperators.Add(m_postfixOpForClause);
         PostfixOperators.Add(new PostfixOperator(PostfixOperator.Op.Or));

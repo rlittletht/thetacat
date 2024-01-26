@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using System.Windows.Shapes;
 using TCore.PostfixText;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using Thetacat.Standards;
 using Thetacat.Util;
 using Expression = TCore.PostfixText.Expression;
@@ -38,13 +40,13 @@ namespace Thetacat.Filtering.UI
 
             if (standardRoot != null)
             {
-                standardRoot.Preorder(
+                App.State.MetatagSchema.WorkingTree.Preorder(
                     null,
                     (treeItem, parent, depth) =>
                     {
                         string dropdownName;
 
-                        if (parent != null)
+                        if (parent != null && !string.IsNullOrEmpty(parent.ID))
                         {
                             Guid parentID = Guid.Parse(parent.ID);
 
@@ -56,7 +58,8 @@ namespace Thetacat.Filtering.UI
                             dropdownName = treeItem.Name;
                         }
 
-                        lineage.Add(Guid.Parse(treeItem.ID), dropdownName);
+                        if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
+                            lineage.Add(treeItemID, dropdownName);
                     },
                     0);
             }
@@ -76,6 +79,11 @@ namespace Thetacat.Filtering.UI
             {
                 m_model.AvailableTags.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
             }
+
+            TagMetatagsTree.Initialize(
+                App.State.MetatagSchema.WorkingTree.Children,
+                App.State.MetatagSchema.SchemaVersionWorking);
+
         }
 
         public EditFilter(FilterDefinition? definition = null, Dictionary<Guid, string>? lineageMap = null)
@@ -97,6 +105,103 @@ namespace Thetacat.Filtering.UI
 
             InitializeAvailableTags();
             UpdateQueryClauses();
+            m_model.PropertyChanged += OnModelPropertyChanged;
+        }
+
+        private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "SelectedTagForClause")
+                UpdateClauseOperatorAndValues();
+        }
+
+        void UpdateMapCount<T>(Dictionary<T, int> mapCount, T key) where T : notnull
+        {
+            if (mapCount.TryAdd(key, 1))
+                return;
+            mapCount[key]++;
+        }
+
+        private void UpdateClauseOperatorAndValues()
+        {
+            m_model.ValuesForClause.Clear();
+            m_model.ComparisonOperators.Clear();
+
+            if (m_model.SelectedTagForClause == null)
+                return;
+
+            // figure out all the possible values for the tag they just selected
+
+            // get the metatag selected
+            Metatag metatag = m_model.SelectedTagForClause.Metatag;
+            Dictionary<string, int> valueCounts = new();
+            
+            HashSet<ComparisonOperator.Op> ops = new HashSet<ComparisonOperator.Op>();
+
+            foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
+            {
+                if (item.Tags.TryGetValue(metatag.ID, out MediaTag? mediaTag))
+                {
+                    if (mediaTag.Value == null)
+                    {
+                        UpdateMapCount(valueCounts, "$false");
+                        UpdateMapCount(valueCounts, "$true");
+
+                        ops.Add(ComparisonOperator.Op.Eq);
+                        ops.Add(ComparisonOperator.Op.Ne);
+                    }
+                    else
+                    {
+                        // don't add more than 20 different values
+                        UpdateMapCount(valueCounts, mediaTag.Value);
+                        ops.Add(ComparisonOperator.Op.Eq);
+                        ops.Add(ComparisonOperator.Op.Ne);
+                        ops.Add(ComparisonOperator.Op.Gt);
+                        ops.Add(ComparisonOperator.Op.Gte);
+                        ops.Add(ComparisonOperator.Op.Lt);
+                        ops.Add(ComparisonOperator.Op.Lte);
+                        ops.Add(ComparisonOperator.Op.SEq);
+                        ops.Add(ComparisonOperator.Op.SNe);
+                        ops.Add(ComparisonOperator.Op.SGt);
+                        ops.Add(ComparisonOperator.Op.SGte);
+                        ops.Add(ComparisonOperator.Op.SLt);
+                        ops.Add(ComparisonOperator.Op.SLte);
+                    }
+                }
+            }
+
+            IComparer<KeyValuePair<string, int>> comparer =
+                Comparer<KeyValuePair<string, int>>.Create((x, y) =>
+                                                           {
+                                                               return x.Value - y.Value < 0
+                                                                   ? x.Value - y.Value
+                                                                   : x.Value - y.Value + 1;
+                                                           });
+            ImmutableSortedSet<KeyValuePair<string, int>> sorted = valueCounts.ToImmutableSortedSet(comparer);
+
+            // add the top 15 items and the bottom 5 items
+            int groupCount = Math.Min(15, sorted.Count);
+            if (groupCount > 0)
+            {
+                for (int i = 0; i < groupCount; i++)
+                {
+                    m_model.ValuesForClause.Add(sorted[i].Key);
+                }
+            }
+
+            groupCount = Math.Min(5, groupCount - 15);
+
+            if (groupCount > 0)
+            {
+                for (int i = sorted.Count - groupCount; i < sorted.Count; i++)
+                {
+                    m_model.ValuesForClause.Add(sorted[i].Key);
+                }
+            }
+
+            foreach(ComparisonOperator.Op op in ops)
+            {
+                m_model.ComparisonOperators.Add(new ComparisonOperator(op));
+            }
         }
 
         void UpdateQueryClauses()
@@ -136,10 +241,21 @@ namespace Thetacat.Filtering.UI
                 return;
             }
 
+            string valueText = m_model.ValueTextForClause;
+            Value value;
+
+            // see if this might be a date
+            if (DateTime.TryParse(valueText, out DateTime date))
+                value = Value.Create(date);
+            else if (Int32.TryParse(valueText, out int intValue))
+                value = Value.Create(intValue);
+            else
+                value = Value.Create(valueText);
+
             m_model.Expression.AddExpression(
                 Expression.Create(
                     Value.CreateForField(m_model.SelectedTagForClause.Metatag.ID.ToString("B")),
-                    Value.Create(m_model.ValueForClause),
+                    value,
                     m_model.ComparisonOpForClause));
 
             UpdateQueryClauses();
@@ -187,5 +303,33 @@ namespace Thetacat.Filtering.UI
             m_model.Expression.Pop();
             UpdateQueryClauses();
         }
+
+        private void ChooseTag(object sender, RoutedEventArgs e)
+        {
+            TagPickerPopup.IsOpen = true;
+        }
+
+        private void SelectMetatag(Guid parentId)
+        {
+            foreach (FilterModelMetatagItem tag in m_model.AvailableTags)
+            {
+                if (tag.Metatag.ID == parentId)
+                {
+                    m_model.SelectedTagForClause = tag;
+                    break;
+                }
+            }
+        }
+
+        private void DoSelectedTagChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is MetatagTreeItem newItem)
+            {
+                SelectMetatag(newItem.ItemId);
+            }
+
+            TagPickerPopup.IsOpen = false;
+        }
+
     }
 }

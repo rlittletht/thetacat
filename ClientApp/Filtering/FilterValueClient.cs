@@ -101,6 +101,9 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!DateTime.TryParse(mediaTag.Value, out DateTime date))
             throw new CatExceptionInternalFailure($"couldn't coerce value '{mediaTag.Value}' to DateTime");
 
+        if (mediaTag.Value.EndsWith('Z'))
+            return date.ToLocalTime();
+
         return date;
     }
 
@@ -109,7 +112,19 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!field.StartsWith('{') || !field.EndsWith('}'))
             return Value.ValueType.Field;
 
-        // otherwise just a string?
+        if (!Guid.TryParse(field, out Guid metatagID))
+            return Value.ValueType.String;
+
+        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
+            return Value.ValueType.String;
+
+        // check if this is datetime
+        if (DateTime.TryParse(mediaTag.Value, out DateTime date))
+            return Value.ValueType.DateTime;
+
+        if (Int32.TryParse(mediaTag.Value, out Int32 nValue))
+            return Value.ValueType.Number;
+
         return Value.ValueType.String;
     }
 }
