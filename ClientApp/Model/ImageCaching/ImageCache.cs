@@ -136,13 +136,19 @@ public class ImageCache
     public static readonly HashSet<string> SkipExtensions =
         new HashSet<string>()
         {
-            ".pssd", ".mov", ".mp4"
+            ".mov", ".mp4"
+        };
+
+    public static readonly HashSet<string> ComingSoonExtensions =
+        new HashSet<string>()
+        {
+            ".psd", ".jp2"
         };
 
     public static readonly HashSet<string> ReformatExtensions =
         new HashSet<string>()
         {
-            ".nef", ".psd"
+            ".nef", ".psd", ".jp2"
         };
 
     private BitmapImage LoadBitmapFromPath(string path, int? scaleWidth)
@@ -201,14 +207,13 @@ public class ImageCache
 //        //                img.Source = new CachedBitmap()
     }
 
-    private BitmapSource LoadThroughPsd(string filename, int? scaleWidth)
+    private BitmapSource CreatePlaceholderImage(string text)
     {
         DrawingVisual visual = new DrawingVisual();
         DrawingContext context = visual.RenderOpen();
 
         Point pt = new Point(10, 10);
         double size = 36;
-        string text = "PSD FILE";
         Brush brush = Brushes.Blue;
         DpiScale dpi = App.State.DpiScale;
 
@@ -236,6 +241,7 @@ public class ImageCache
     private BitmapImage LoadBitmapThroughDecoder(string path, int? scaleWidth)
     {
         bool ignoreColorProfile = false;
+        string extension = Path.GetExtension(path.ToLowerInvariant());
 
         while (true)
         {
@@ -245,10 +251,18 @@ public class ImageCache
 
                 try
                 {
-                    if (Path.GetExtension(path.ToLowerInvariant()) == ".psd")
-                        source = LoadThroughPsd(path, scaleWidth);
+                    if (SkipExtensions.Contains(extension))
+                    {
+                        source = CreatePlaceholderImage($"{extension.ToUpperInvariant()} FILE");
+                    }
+                    else if (ComingSoonExtensions.Contains(extension))
+                    {
+                        source = CreatePlaceholderImage($"{extension.ToUpperInvariant()} FILE");
+                    }
                     else
+                    {
                         source = LoadBitmapFromPath(path, scaleWidth);
+                    }
 
                     // this will fail with some (all?) NEF files trying to copy the metadata, even if we specify to ignore the color
                     // profile. LoadBitmapFromPath seems to recover from this.
@@ -343,12 +357,6 @@ public class ImageCache
             string lowerPath = item.PathToImage.ToLowerInvariant();
             string extension = Path.GetExtension(lowerPath);
 
-            if (SkipExtensions.Contains(extension))
-            {
-                MainWindow.LogForApp(EventType.Warning, $"skipping {lowerPath} due to extension");
-                continue;
-            }
-
             DerivativeItem? formatDerivative = null;
             BitmapImage? fullImage = null;
             string? pathToFullImage = null;
@@ -358,7 +366,7 @@ public class ImageCache
             try
             {
                 // first get a readable source for this image
-                if (ReformatExtensions.Contains(extension))
+                if (ReformatExtensions.Contains(extension) || ComingSoonExtensions.Contains(extension) || SkipExtensions.Contains(extension))
                 {
                     if (!App.State.Derivatives.TryGetFormatDerivative(item.MediaKey, s_formatPriorities, out formatDerivative))
                     {
