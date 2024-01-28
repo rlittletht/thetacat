@@ -45,6 +45,8 @@ public class FilterDefinition: INotifyPropertyChanged
         m_description = description;
     }
 
+    public override string ToString() => m_filterName;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

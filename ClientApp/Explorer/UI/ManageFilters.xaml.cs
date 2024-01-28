@@ -21,6 +21,7 @@ using Thetacat.Filtering.UI;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Standards;
+using Thetacat.Types;
 using Thetacat.Util;
 
 namespace Thetacat.Explorer;
@@ -28,7 +29,7 @@ namespace Thetacat.Explorer;
 /// <summary>
 /// Interaction logic for Filter.xaml
 /// </summary>
-public partial class ChooseFilter : Window
+public partial class ManageFilters : Window
 {
     private ChooseFilterModel m_model = new();
     private Dictionary<Guid, string>? m_metatagLineageMap;
@@ -42,7 +43,7 @@ public partial class ChooseFilter : Window
         }
     }
 
-    public ChooseFilter(FilterDefinition? currentFilter)
+    public ManageFilters(FilterDefinition? currentFilter)
     {
         InitializeComponent();
         DataContext = m_model;
@@ -98,7 +99,7 @@ public partial class ChooseFilter : Window
             return;
         }
 
-        FilterDefinition def = GetFilterDefinition();
+        FilterDefinition def = m_model.SelectedFilterDefinition ?? throw new CatExceptionInternalFailure("no selected filter definition on save?");
 
         if (App.State.Settings.Filters.TryGetValue(def.FilterName, out FilterDefinition? filter))
         {
@@ -113,9 +114,9 @@ public partial class ChooseFilter : Window
         App.State.Settings.WriteSettings();
     }
 
-    public FilterDefinition GetFilterDefinition()
+    public string? GetFilterName()
     {
-        return m_model.SelectedFilterDefinition ?? new FilterDefinition("", "", "");
+        return m_model.SelectedFilterDefinition?.FilterName;
     }
 
     private void DoEditFilter(object sender, RoutedEventArgs e)

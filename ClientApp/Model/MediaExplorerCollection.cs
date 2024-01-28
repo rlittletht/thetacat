@@ -86,10 +86,16 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
     private FilterDefinition? m_filterDefinition;
 
+    public bool DontRebuildTimelineOnFilterChange { get; set; } = false;
     public FilterDefinition? Filter
     {
         get => m_filterDefinition;
-        set => SetField(ref m_filterDefinition, value);
+        set
+        {
+            SetField(ref m_filterDefinition, value);
+            if (!DontRebuildTimelineOnFilterChange)
+                BuildTimelineFromMediaCatalog();
+        }
     }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;

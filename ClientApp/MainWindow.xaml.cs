@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -64,13 +65,23 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(App.State.Settings.DefaultFilterName))
         {
             if (App.State.Settings.Filters.TryGetValue(App.State.Settings.DefaultFilterName, out FilterDefinition? filter))
-                m_model.ExplorerCollection.SetFilter(filter);
+                m_model.ExplorerCollection.Filter = filter;
         }
 
         m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
         App.State.SetCollectionDirtyState = SetCollectionDirtyState;
         App.State.SetSchemaDirtyState = SetSchemaDirtyState;
+        RebuildFilterList();
+    }
+
+    void RebuildFilterList()
+    {
+        m_model.AvailableFilters.Clear();
+        foreach (string filterName in App.State.Settings.Filters.Keys.ToImmutableSortedSet())
+        {
+            m_model.AvailableFilters.Add(App.State.Settings.Filters[filterName]);
+        }
     }
 
     void InitializeThetacat()
@@ -463,16 +474,29 @@ public partial class MainWindow : Window
 
     private void DoChooseFilter(object sender, RoutedEventArgs e)
     {
-        ChooseFilter filter = new ChooseFilter(m_model.ExplorerCollection.Filter);
+        ManageFilters filter = new ManageFilters(m_model.ExplorerCollection.Filter);
 
         filter.Owner = this;
+        string? filterName = null;
 
         if (filter.ShowDialog() is true)
         {
-            FilterDefinition filterDef = filter.GetFilterDefinition();
-
-            m_model.ExplorerCollection.SetFilter(filterDef);
+            filterName = filter.GetFilterName() ?? m_model.ExplorerCollection.Filter?.FilterName;
         }
+
+        if (filterName == null)
+        {
+            filterName = m_model.ExplorerCollection.Filter?.FilterName;
+            m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = true; // we are just going to set it to the same filter
+        }
+        // regardless, rebuild from the settings (they might night be applying a new filter, but they
+        // might have redefined some filters)
+        RebuildFilterList();
+
+        if (filterName != null)
+            m_model.ExplorerCollection.Filter = App.State.Settings.Filters[filterName];
+
+        m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = false; // reset it (regardless of whether we set it)
     }
 
     private void TestRenderImage(object sender, RoutedEventArgs e)

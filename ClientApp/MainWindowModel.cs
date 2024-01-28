@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Filtering;
 using Thetacat.Model;
 
 namespace Thetacat;
@@ -10,6 +12,7 @@ public class MainWindowModel: INotifyPropertyChanged
     private bool m_isExplorerCollectionDirty;
     private bool m_isSchemaDirty;
     public MediaExplorerCollection ExplorerCollection { get; } = new(14.0);
+    public ObservableCollection<FilterDefinition> AvailableFilters { get; } = new ();
 
     public bool IsExplorerCollectionDirty
     {

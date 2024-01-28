@@ -60,18 +60,15 @@
                 <RowDefinition Height="0" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Jump to date:" Grid.Column="0" />
-                <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Grid.Column="1" />
-                <Button Content="Jump" Click="JumpToDate" Grid.Column="2" />
-                <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Grid.Column="3" HorizontalAlignment="Right" />
-            </Grid>
+            <StackPanel Orientation="Horizontal" Margin="5" >
+                <TextBlock Text="Filter: " Margin="0 2 0 0"/>
+                <ComboBox ItemsSource="{Binding Path=AvailableFilters}" SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="96"/>
+                <TextBlock Text="Jump to date:" Margin="10 2 0 0" />
+                <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Margin="5 0 0 0"/>
+                <Button Content="Show" Click="JumpToDate" Margin="5 0 5 0" Width="64"/>
+                <TextBlock Margin="5 2 0 0">Showing:</TextBlock>
+                <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Margin="5 2 0 0"/>
+            </StackPanel>
             <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
@@ -86,8 +83,6 @@
                             <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
                                                    VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
                         </StackPanel>
-                        <TextBlock Text="Filter: "/>
-                        <TextBlock Text="{Binding Path=ExplorerCollection.Filter.FilterName}"/>
                     </StackPanel>
                 </Grid>
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
