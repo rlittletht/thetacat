@@ -25,6 +25,7 @@ using Thetacat.Explorer;
 using System.Windows.Media.Imaging;
 using System.Globalization;
 using Microsoft.Windows.EventTracing.Power;
+using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
 
@@ -561,5 +562,12 @@ public partial class MainWindow : Window
     public void SetSchemaDirtyState(bool fDirty)
     {
         m_model.IsSchemaDirty = fDirty;
+    }
+
+    private void DoBackupDatabase(object sender, RoutedEventArgs e)
+    {
+        BackupDatabase backup = new BackupDatabase("c:\\temp\\backup.xml");
+
+        App.State.AddBackgroundWork("Backing up database", (progress) => backup.DoBackup(progress));
     }
 }

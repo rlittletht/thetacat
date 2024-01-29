@@ -13,6 +13,8 @@ public class MetatagSchema
 
     public MetatagTree WorkingTree => m_schemaWorking.Tree;
     public IEnumerable<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
+    public int MetatagCount => m_schemaWorking.Count;
+
     public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
 
     void EnsureBaseAndVersion()

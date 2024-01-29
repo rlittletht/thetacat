@@ -70,6 +70,59 @@ public class Import
         }
     }
 
+    private static readonly string s_baseQueryAll = $@"
+        SELECT 
+            $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
+            $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
+        FROM $$#tcat_import$$";
+
+    public static List<ServiceImportItem> GetAllImports()
+    {
+        Guid crid = Guid.NewGuid();
+        Sql sql = LocalServiceClient.GetConnection();
+
+        SqlSelect selectTags = new SqlSelect();
+
+        selectTags.AddBase(s_baseQueryAll);
+        selectTags.AddAliases(s_aliases);
+
+        string sQuery = selectTags.ToString();
+
+        try
+        {
+            List<ServiceImportItem> importItems =
+                SqlReader.DoGenericQueryDelegateRead(
+                    sql,
+                    crid,
+                    sQuery,
+                    (SqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+                    {
+                        ServiceImportItem item =
+                            new()
+                            {
+                                ID = reader.Reader.GetGuid(0),
+                                State = reader.Reader.GetString(1),
+                                SourcePath = reader.Reader.GetString(2),
+                                SourceServer = reader.Reader.GetString(3),
+                                UploadDate = !reader.Reader.IsDBNull(4) ? reader.Reader.GetDateTime(4) : null,
+                                Source = !reader.Reader.IsDBNull(5) ? reader.Reader.GetString(5) : null
+                            };
+
+                        building.Add(item);
+                    });
+
+            return importItems;
+        }
+        catch (TcSqlExceptionNoResults)
+        {
+            return new List<ServiceImportItem>();
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
+
     private static readonly string s_queryUpdateState = @"
         UPDATE tcat_import SET state=@NewState WHERE id=@MediaID";
 

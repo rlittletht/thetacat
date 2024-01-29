@@ -17,6 +17,8 @@ public class MetatagSchemaDefinition
     private List<Metatag> m_metatags = new List<Metatag>();
 
     public IEnumerable<Metatag> Metatags => m_metatags;
+    public int Count => m_metatags.Count;
+
     public int SchemaVersion { get; set; } = 0;
 
     private MetatagTree? m_tree;

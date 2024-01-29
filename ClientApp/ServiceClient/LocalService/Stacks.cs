@@ -20,7 +20,7 @@ public class Stacks
                 $$tcat_stacks$$.stackType, $$tcat_stacks$$.description
         FROM $$#tcat_stackmedia$$
         INNER JOIN $$#tcat_stacks$$
-            ON $$tcat_stacks$$.id = $$tcat_stacks$$.id";
+            ON $$tcat_stacks$$.id = $$tcat_stackmedia$$.id";
 
     public static List<ServiceStack> GetAllStacks()
     {

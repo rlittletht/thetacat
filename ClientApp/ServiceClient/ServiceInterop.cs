@@ -27,6 +27,11 @@ public class ServiceInterop
         return LocalService.Import.GetPendingImportsForClient(sourceClient);
     }
 
+    public static List<ServiceImportItem> GetAllImports()
+    {
+        return LocalService.Import.GetAllImports();
+    }
+
     public static void InsertImportItems(IEnumerable<ImportItem> items)
     {
         LocalService.Import.InsertImportItems(items);

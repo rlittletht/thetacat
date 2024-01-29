@@ -33,6 +33,7 @@ public class Catalog : ICatalog
 
     // BE CAREFUL WITH THIS! It will create a snapshot of the underlying data, which could be SLOW
     public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public int GetMediaCount => m_media.Items.Count;
 
     public MediaStacks VersionStacks => m_mediaStacks[MediaStackType.Version];
     public MediaStacks MediaStacks => m_mediaStacks[MediaStackType.Media];
