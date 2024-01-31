@@ -564,6 +564,11 @@ public partial class MainWindow : Window
         m_model.IsSchemaDirty = fDirty;
     }
 
+    void DoRestoreDatabase(object sender, RoutedEventArgs e)
+    {
+        RestoreDatabase restore = new("c:\\temp\\backup.xml");
+        restore.DoRestore(null);
+    }
     private void DoBackupDatabase(object sender, RoutedEventArgs e)
     {
         BackupDatabase backup = new BackupDatabase("c:\\temp\\backup.xml");

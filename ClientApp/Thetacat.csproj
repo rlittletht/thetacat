@@ -26,6 +26,7 @@
     <PackageReference Include="TCore.Pipeline" Version="1.2.0" />
     <PackageReference Include="TCore.PostfixText" Version="1.3.0" />
     <PackageReference Include="TCore.Sql" Version="2.2.3" />
+    <PackageReference Include="TCore.XMLIO" Version="1.3.0" />
     <PackageReference Include="TCore.XmlSettings" Version="1.6.0" />
   </ItemGroup>
 

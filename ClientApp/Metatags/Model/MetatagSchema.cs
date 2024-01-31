@@ -16,6 +16,7 @@ public class MetatagSchema
     public int MetatagCount => m_schemaWorking.Count;
 
     public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
+    public bool DontBuildTree = false;
 
     void EnsureBaseAndVersion()
     {
@@ -109,18 +110,21 @@ public class MetatagSchema
 
         IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
 
-        if (metatag.Parent == null)
+        if (!DontBuildTree)
         {
-            m_schemaWorking.Tree.Children.Add(newItem);
-        }
-        else
-        {
-            IMetatagTreeItem? parent = m_schemaWorking.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatag.Parent.Value.ToString()), -1);
+            if (metatag.Parent == null)
+            {
+                m_schemaWorking.Tree.Children.Add(newItem);
+            }
+            else
+            {
+                IMetatagTreeItem? parent = m_schemaWorking.Tree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatag.Parent.Value.ToString()), -1);
 
-            if (parent == null)
-                throw new Exception($"must provide an existing parent ID when adding a metatag: ${metatag}");
+                if (parent == null)
+                    throw new Exception($"must provide an existing parent ID when adding a metatag: ${metatag}");
 
-            parent.Children.Add(newItem);
+                parent.Children.Add(newItem);
+            }
         }
     }
 
@@ -133,7 +137,7 @@ public class MetatagSchema
     ----------------------------------------------------------------------------*/
     public void AddMetatag(Metatag metatag)
     {
-        if (metatag.Parent == null)
+        if (metatag.Parent == null && metatag.Name.ToLowerInvariant() != metatag.Standard.ToLowerInvariant())
             throw new ArgumentException("must specify parent for metatag");
 
         AddMetatagNoValidation(metatag);

@@ -24,6 +24,7 @@
                 <MenuItem Header="Meta_tags" Click="ManageMetatags" />
                 <MenuItem Header="Options" Click="LaunchOptions" />
                 <MenuItem Header="_Backup Database" Click="DoBackupDatabase"/>
+                <MenuItem Header="_Restore Database" Click="DoRestoreDatabase" />
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Filter" Click="DoChooseFilter" />
