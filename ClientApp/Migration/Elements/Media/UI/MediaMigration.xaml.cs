@@ -123,7 +123,7 @@ public partial class MediaMigration : UserControl
     ----------------------------------------------------------------------------*/
     public void SetSubstitutionsFromSettings()
     {
-        foreach(TcSettings.TcSettings.MapPair subst in App.State.Settings.ElementsSubstitutions)
+        foreach(TcSettings.TcSettings.MapPair subst in App.State.ActiveProfile.ElementsSubstitutions)
 //        foreach (string s in _AppState.Settings.Settings.RgsValue("LastElementsSubstitutions"))
         {
 //            string[] pair = s.Split(",");
@@ -242,10 +242,10 @@ public partial class MediaMigration : UserControl
 
         List<string> regValues = new();
 
-        App.State.Settings.ElementsSubstitutions.Clear();
+        App.State.ActiveProfile.ElementsSubstitutions.Clear();
         foreach (PathSubstitution sub in _Migrate.MediaMigrate.PathSubstitutions)
         {
-            App.State.Settings.ElementsSubstitutions.Add(
+            App.State.ActiveProfile.ElementsSubstitutions.Add(
                 new TcSettings.TcSettings.MapPair()
                 {
                     From = sub.From,
@@ -254,7 +254,7 @@ public partial class MediaMigration : UserControl
             pathSubst.Add(sub.From, sub.To);
         }
 
-        App.State._Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 

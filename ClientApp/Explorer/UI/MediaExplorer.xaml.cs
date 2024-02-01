@@ -158,7 +158,7 @@ public partial class MediaExplorer : UserControl
     {
         m_itemSize = itemSize;
         SetModelFromExplorerItemSize(m_itemSize);
-        App.State.Settings.ExplorerItemSize = itemSize;
+        App.State.ActiveProfile.ExplorerItemSize = itemSize;
     }
 
     private ApplyMetatag? m_applyMetatagPanel = null;
@@ -261,13 +261,13 @@ public partial class MediaExplorer : UserControl
 
         if (mruClock != App.State.MetatagMRU.VectorClock)
         {
-            App.State.Settings.MetatagMru.Clear();
+            App.State.ActiveProfile.MetatagMru.Clear();
             foreach (Metatag tag in App.State.MetatagMRU.RecentTags)
             {
-                App.State.Settings.MetatagMru.Add(tag.ID.ToString());
+                App.State.ActiveProfile.MetatagMru.Add(tag.ID.ToString());
             }
 
-            App.State._Settings.WriteSettings();
+            App.State.Settings.WriteSettings();
         }
 
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);

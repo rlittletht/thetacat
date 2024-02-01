@@ -188,7 +188,7 @@ public class Catalog : ICatalog
         }
 
         // good time to refresh the MRU now that we loaded the catalog and the schema
-        App.State.MetatagMRU.Set(App.State.Settings.MetatagMru);
+        App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
         MainWindow.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
     }
 

@@ -17,16 +17,16 @@ namespace Thetacat.UI.Options
 
         public void LoadFromSettings()
         {
-            _Model.StorageAccount = App.State.Settings.AzureStorageAccount  ?? string.Empty;
-            _Model.Container = App.State.Settings.StorageContainer ?? string.Empty;
-            _Model.SqlConnection = App.State.Settings.SqlConnection ?? string.Empty;
+            _Model.StorageAccount = App.State.ActiveProfile.AzureStorageAccount  ?? string.Empty;
+            _Model.Container = App.State.ActiveProfile.StorageContainer ?? string.Empty;
+            _Model.SqlConnection = App.State.ActiveProfile.SqlConnection ?? string.Empty;
         }
 
         public bool FSaveSettings()
         {
-            App.State.Settings.AzureStorageAccount = _Model.StorageAccount;
-            App.State.Settings.StorageContainer = _Model.Container;
-            App.State.Settings.SqlConnection = _Model.SqlConnection;
+            App.State.ActiveProfile.AzureStorageAccount = _Model.StorageAccount;
+            App.State.ActiveProfile.StorageContainer = _Model.Container;
+            App.State.ActiveProfile.SqlConnection = _Model.SqlConnection;
 
             return true;
         }

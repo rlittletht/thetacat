@@ -27,8 +27,8 @@ public class AppState : IAppState
     private SetDirtyStateDelegate? m_setCollectionDirtyState;
     private SetDirtyStateDelegate? m_setSchemaDirtyState;
 
-    public TcSettings.TcSettings _Settings { get; }
-    public TcSettings.Profile Settings { get; }
+    public TcSettings.TcSettings Settings { get; }
+    public TcSettings.Profile ActiveProfile { get; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
     public ImageCache PreviewImageCache { get; private set; }
@@ -36,8 +36,8 @@ public class AppState : IAppState
     public ICatalog Catalog { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
-    public string AzureStorageAccount => App.State.Settings.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
-    public string StorageContainer => App.State.Settings.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
+    public string AzureStorageAccount => App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
+    public string StorageContainer => App.State.ActiveProfile.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
     public ClientDatabase ClientDatabase { get; init; }
     public Md5Cache Md5Cache { get; init; }
     public Derivatives Derivatives { get; init; }
@@ -77,7 +77,7 @@ public class AppState : IAppState
     public void RefreshMetatagSchema()
     {
         MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
-        MetatagMRU.Set(App.State.Settings.MetatagMru);
+        MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
     }
 
     public void OverrideCache(ICache cache)
@@ -92,45 +92,45 @@ public class AppState : IAppState
 
     public AppState()
     {
-        _Settings = new TcSettings.TcSettings();
+        Settings = new TcSettings.TcSettings();
 
         bool fSetProfile = false;
 
-        foreach (Profile profile in _Settings.Profiles.Values)
+        foreach (Profile profile in Settings.Profiles.Values)
         {
             if (profile.Default)
             {
-                Settings = profile;
+                ActiveProfile = profile;
                 break;
             }
 
             if (!fSetProfile)
             {
-                Settings = profile;
+                ActiveProfile = profile;
                 fSetProfile = true; // so we at least have a profile if there is no default specified
             }
         }
 
-        if (Settings == null)
+        if (ActiveProfile == null)
         {
             // this means there wasn't a profile to set at all. Make a default one
-            Settings = new Profile()
+            ActiveProfile = new Profile()
                        {
                            Name = "Default",
                            Default = true
                        };
 
-            _Settings.Profiles.Add(Settings.Name, Settings);
+            Settings.Profiles.Add(ActiveProfile.Name, ActiveProfile);
         }
 
         // make the assumed default profile the real default
-        Settings.Default = true;
+        ActiveProfile.Default = true;
 
-        AppSecrets.MasterSqlConnectionString = Settings.SqlConnection ?? String.Empty;
+        AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
 
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
-        Cache = new Cache(Settings);
+        Cache = new Cache(ActiveProfile);
         m_closeAsyncLog = null;
         m_closeAppLog = null;
         m_addBackgroundWork = null;

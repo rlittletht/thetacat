@@ -22,7 +22,7 @@ public partial class CatOptions : Window
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
 
-        App.State._Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
     }
 
     private void DoSave(object sender, RoutedEventArgs e)

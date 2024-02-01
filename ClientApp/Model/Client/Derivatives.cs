@@ -313,10 +313,10 @@ public class Derivatives
                 continue;
             }
 
-            if (App.State.Settings.DerivativeCache == null)
+            if (App.State.ActiveProfile.DerivativeCache == null)
                 throw new CatExceptionInternalFailure("no derivative cache root set");
 
-            PathSegment? cacheRoot = new PathSegment(App.State.Settings.DerivativeCache);
+            PathSegment? cacheRoot = new PathSegment(App.State.ActiveProfile.DerivativeCache);
 
             // take the bitmapimage and write a jpg for it
             PathSegment destinationDir =

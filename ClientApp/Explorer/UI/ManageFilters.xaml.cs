@@ -37,7 +37,7 @@ public partial class ManageFilters : Window
     void FillAvailableFilters()
     {
         m_model.AvailableFilters.Clear();
-        foreach (KeyValuePair<string, FilterDefinition> def in App.State.Settings.Filters)
+        foreach (KeyValuePair<string, FilterDefinition> def in App.State.ActiveProfile.Filters)
         {
             m_model.AvailableFilters.Add(def.Value);
         }
@@ -101,17 +101,17 @@ public partial class ManageFilters : Window
 
         FilterDefinition def = m_model.SelectedFilterDefinition ?? throw new CatExceptionInternalFailure("no selected filter definition on save?");
 
-        if (App.State.Settings.Filters.TryGetValue(def.FilterName, out FilterDefinition? filter))
+        if (App.State.ActiveProfile.Filters.TryGetValue(def.FilterName, out FilterDefinition? filter))
         {
             filter.Description = def.Description;
             filter.Expression = def.Expression;
         }
         else
         {
-            App.State.Settings.Filters.Add(def.FilterName, def);
+            App.State.ActiveProfile.Filters.Add(def.FilterName, def);
         }
 
-        App.State._Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
     }
 
     public string? GetFilterName()
@@ -129,8 +129,8 @@ public partial class ManageFilters : Window
         {
             FilterDefinition def = editFilter.GetDefinition();
 
-            App.State.Settings.Filters[def.FilterName] = def;
-            App.State._Settings.WriteSettings();
+            App.State.ActiveProfile.Filters[def.FilterName] = def;
+            App.State.Settings.WriteSettings();
             FillAvailableFilters();
         }
     }
@@ -145,8 +145,8 @@ public partial class ManageFilters : Window
         {
             FilterDefinition def = editFilter.GetDefinition();
 
-            App.State.Settings.Filters[def.FilterName] = def;
-            App.State._Settings.WriteSettings();
+            App.State.ActiveProfile.Filters[def.FilterName] = def;
+            App.State.Settings.WriteSettings();
             FillAvailableFilters();
         }
     }
@@ -159,7 +159,7 @@ public partial class ManageFilters : Window
             return;
         }
 
-        App.State.Settings.DefaultFilterName = m_model.SelectedFilterDefinition.FilterName;
-        App.State._Settings.WriteSettings();
+        App.State.ActiveProfile.DefaultFilterName = m_model.SelectedFilterDefinition.FilterName;
+        App.State.Settings.WriteSettings();
     }
 }

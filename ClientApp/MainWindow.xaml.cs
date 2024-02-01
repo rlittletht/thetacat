@@ -51,7 +51,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeThetacat();
 
-        Explorer.SetExplorerItemSize(App.State.Settings.ExplorerItemSize ?? ExplorerItemSize.Medium);
+        Explorer.SetExplorerItemSize(App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium);
 
         // we have to load the catalog AND the pending upload list
         // we also have to confirm that all the items int he pending
@@ -63,9 +63,9 @@ public partial class MainWindow : Window
         App.State.RegisterWindowPlace(this, "MainWindow");
         LocalServiceClient.LogService = LogForApp;
         DataContext = m_model;
-        if (!string.IsNullOrWhiteSpace(App.State.Settings.DefaultFilterName))
+        if (!string.IsNullOrWhiteSpace(App.State.ActiveProfile.DefaultFilterName))
         {
-            if (App.State.Settings.Filters.TryGetValue(App.State.Settings.DefaultFilterName, out FilterDefinition? filter))
+            if (App.State.ActiveProfile.Filters.TryGetValue(App.State.ActiveProfile.DefaultFilterName, out FilterDefinition? filter))
                 m_model.ExplorerCollection.Filter = filter;
         }
 
@@ -79,9 +79,9 @@ public partial class MainWindow : Window
     void RebuildFilterList()
     {
         m_model.AvailableFilters.Clear();
-        foreach (string filterName in App.State.Settings.Filters.Keys.ToImmutableSortedSet())
+        foreach (string filterName in App.State.ActiveProfile.Filters.Keys.ToImmutableSortedSet())
         {
-            m_model.AvailableFilters.Add(App.State.Settings.Filters[filterName]);
+            m_model.AvailableFilters.Add(App.State.ActiveProfile.Filters[filterName]);
         }
     }
 
@@ -98,8 +98,8 @@ public partial class MainWindow : Window
     {
         App.State.Derivatives.CommitDerivatives();
         App.State.Derivatives.Close();
-        App.State.Settings.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
-        App.State.Settings.ShowAppLogOnStart = m_appLogMonitor != null;
+        App.State.ActiveProfile.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
+        App.State.ActiveProfile.ShowAppLogOnStart = m_appLogMonitor != null;
 
         // close all of our windows and collections (includes terminating background listeners)
         m_model.ExplorerCollection.Close();
@@ -115,7 +115,7 @@ public partial class MainWindow : Window
         if (m_appLogMonitor != null)
             CloseAppLog(false);
 
-        App.State._Settings.WriteSettings();
+        App.State.Settings.WriteSettings();
     }
 
 #region Logging
@@ -183,8 +183,8 @@ public partial class MainWindow : Window
         TimelineType timelineType = m_model.ExplorerCollection.TimelineType;
         if (timelineType.Equals(TimelineType.None))
         {
-            if (App.State.Settings.TimelineType != null)
-                timelineType = App.State.Settings.TimelineType;
+            if (App.State.ActiveProfile.TimelineType != null)
+                timelineType = App.State.ActiveProfile.TimelineType;
 
             if (timelineType.Equals(TimelineType.None))
                 timelineType = TimelineType.MediaDate;
@@ -193,8 +193,8 @@ public partial class MainWindow : Window
         TimelineOrder timelineOrder = m_model.ExplorerCollection.TimelineOrder;
         if (timelineOrder.Equals(TimelineOrder.None))
         {
-            if (App.State.Settings.TimelineOrder != null)
-                timelineOrder = App.State.Settings.TimelineOrder;
+            if (App.State.ActiveProfile.TimelineOrder != null)
+                timelineOrder = App.State.ActiveProfile.TimelineOrder;
 
             if (timelineOrder.Equals(TimelineOrder.None))
                 timelineOrder = TimelineOrder.Ascending;
@@ -220,7 +220,7 @@ public partial class MainWindow : Window
         if (options.ShowDialog() ?? false)
         {
             options.SaveToSettings();
-            App.State._Settings.WriteSettings();
+            App.State.Settings.WriteSettings();
         }
     }
 
@@ -434,9 +434,9 @@ public partial class MainWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (App.State.Settings.ShowAsyncLogOnStart ?? false)
+        if (App.State.ActiveProfile.ShowAsyncLogOnStart ?? false)
             ShowAsyncLog();
-        if (App.State.Settings.ShowAppLogOnStart ?? false)
+        if (App.State.ActiveProfile.ShowAppLogOnStart ?? false)
             ShowAppLog();
     }
 
@@ -495,7 +495,7 @@ public partial class MainWindow : Window
         RebuildFilterList();
 
         if (filterName != null)
-            m_model.ExplorerCollection.Filter = App.State.Settings.Filters[filterName];
+            m_model.ExplorerCollection.Filter = App.State.ActiveProfile.Filters[filterName];
 
         m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = false; // reset it (regardless of whether we set it)
     }

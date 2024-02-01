@@ -42,7 +42,7 @@ public partial class Migration : Window, INotifyPropertyChanged
 
         InitializeComponent();
         DataContext = this;
-        ElementsDb = App.State.Settings.ElementsDatabase ?? string.Empty;
+        ElementsDb = App.State.ActiveProfile.ElementsDatabase ?? string.Empty;
 
         App.State.RegisterWindowPlace(this, "Migration");
     }
@@ -60,10 +60,10 @@ public partial class Migration : Window, INotifyPropertyChanged
     {
         PathSegment path = new PathSegment(ElementsDb);
 
-        if (App.State.Settings.ElementsDatabase != path)
+        if (App.State.ActiveProfile.ElementsDatabase != path)
         {
-            App.State.Settings.ElementsDatabase = path;
-            App.State._Settings.WriteSettings();
+            App.State.ActiveProfile.ElementsDatabase = path;
+            App.State.Settings.WriteSettings();
         }
     }
 }

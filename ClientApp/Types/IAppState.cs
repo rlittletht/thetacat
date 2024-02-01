@@ -14,8 +14,8 @@ public interface IAppState
     ImageCache PreviewImageCache { get; }
     ImageCache ImageCache { get; }
     ICatalog Catalog { get; }
-    TcSettings.TcSettings _Settings { get; }
-    TcSettings.Profile Settings { get; }
+    TcSettings.TcSettings Settings { get; }
+    TcSettings.Profile ActiveProfile { get; }
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
     ClientDatabase ClientDatabase { get; }
