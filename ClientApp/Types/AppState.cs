@@ -9,6 +9,7 @@ using Thetacat.Model.ImageCaching;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
+using Thetacat.TcSettings;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -26,7 +27,8 @@ public class AppState : IAppState
     private SetDirtyStateDelegate? m_setCollectionDirtyState;
     private SetDirtyStateDelegate? m_setSchemaDirtyState;
 
-    public TcSettings.TcSettings Settings { get; }
+    public TcSettings.TcSettings _Settings { get; }
+    public TcSettings.Profile Settings { get; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
     public ImageCache PreviewImageCache { get; private set; }
@@ -90,7 +92,40 @@ public class AppState : IAppState
 
     public AppState()
     {
-        Settings = new TcSettings.TcSettings();
+        _Settings = new TcSettings.TcSettings();
+
+        bool fSetProfile = false;
+
+        foreach (Profile profile in _Settings.Profiles.Values)
+        {
+            if (profile.Default)
+            {
+                Settings = profile;
+                break;
+            }
+
+            if (!fSetProfile)
+            {
+                Settings = profile;
+                fSetProfile = true; // so we at least have a profile if there is no default specified
+            }
+        }
+
+        if (Settings == null)
+        {
+            // this means there wasn't a profile to set at all. Make a default one
+            Settings = new Profile()
+                       {
+                           Name = "Default",
+                           Default = true
+                       };
+
+            _Settings.Profiles.Add(Settings.Name, Settings);
+        }
+
+        // make the assumed default profile the real default
+        Settings.Default = true;
+
         AppSecrets.MasterSqlConnectionString = Settings.SqlConnection ?? String.Empty;
 
         Catalog = new Catalog();

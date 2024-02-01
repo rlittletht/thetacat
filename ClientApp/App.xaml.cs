@@ -43,14 +43,14 @@ namespace Thetacat
         {
             Dictionary<string, Rectangle> placements = new Dictionary<string, Rectangle>();
 
-            ReplacePlacements(App.State.Settings.Placements, placements);
+            ReplacePlacements(App.State._Settings.Placements, placements);
             return placements;
         }
 
         void SavePlacements(Dictionary<string, Rectangle> placements)
         {
-            ReplacePlacements(placements, App.State.Settings.Placements);
-            App.State.Settings.WriteSettings();
+            ReplacePlacements(placements, App.State._Settings.Placements);
+            App.State._Settings.WriteSettings();
         }
 
         public App()

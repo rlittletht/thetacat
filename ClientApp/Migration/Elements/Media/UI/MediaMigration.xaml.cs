@@ -254,7 +254,7 @@ public partial class MediaMigration : UserControl
             pathSubst.Add(sub.From, sub.To);
         }
 
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
 
         ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Begin();
 

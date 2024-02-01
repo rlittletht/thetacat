@@ -115,7 +115,7 @@ public partial class MainWindow : Window
         if (m_appLogMonitor != null)
             CloseAppLog(false);
 
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
     }
 
 #region Logging
@@ -220,7 +220,7 @@ public partial class MainWindow : Window
         if (options.ShowDialog() ?? false)
         {
             options.SaveToSettings();
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
         }
     }
 

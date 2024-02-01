@@ -11,7 +11,7 @@ public class StacksRestore
 {
     public MediaStackType StackType;
     public List<ServiceStack> Stacks = new();
-    private ServiceStack StackBuilding;
+    private ServiceStack StackBuilding = new();
 
 
     static bool FParseStackItem(XmlReader reader, string element, StacksRestore stacksRestore)
@@ -21,7 +21,7 @@ public class StacksRestore
 
         StackItemRestore item = new StackItemRestore(reader);
 
-        stacksRestore.StackBuilding.StackItems.Add(
+        stacksRestore.StackBuilding.StackItems!.Add(
             new ServiceStackItem()
             {
                 MediaId = item.MediaId,

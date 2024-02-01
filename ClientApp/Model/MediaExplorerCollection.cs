@@ -483,7 +483,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         if (!type.Equals(TimelineType))
         {
             App.State.Settings.TimelineType = type;
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
 
             TimelineType = type;
         }
@@ -491,7 +491,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         if (!order.Equals(TimelineOrder))
         {
             App.State.Settings.TimelineOrder = order;
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
 
             TimelineOrder = order;
         }
@@ -505,7 +505,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             return;
 
         App.State.Settings.TimelineType = type;
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
 
         TimelineType = type;
         BuildTimelineFromMediaCatalog();
@@ -517,7 +517,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             return;
 
         App.State.Settings.TimelineOrder = order;
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
 
         TimelineOrder = order;
         BuildTimelineFromMediaCatalog();

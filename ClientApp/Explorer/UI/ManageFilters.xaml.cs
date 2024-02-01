@@ -111,7 +111,7 @@ public partial class ManageFilters : Window
             App.State.Settings.Filters.Add(def.FilterName, def);
         }
 
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
     }
 
     public string? GetFilterName()
@@ -130,7 +130,7 @@ public partial class ManageFilters : Window
             FilterDefinition def = editFilter.GetDefinition();
 
             App.State.Settings.Filters[def.FilterName] = def;
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
             FillAvailableFilters();
         }
     }
@@ -146,7 +146,7 @@ public partial class ManageFilters : Window
             FilterDefinition def = editFilter.GetDefinition();
 
             App.State.Settings.Filters[def.FilterName] = def;
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
             FillAvailableFilters();
         }
     }
@@ -160,6 +160,6 @@ public partial class ManageFilters : Window
         }
 
         App.State.Settings.DefaultFilterName = m_model.SelectedFilterDefinition.FilterName;
-        App.State.Settings.WriteSettings();
+        App.State._Settings.WriteSettings();
     }
 }

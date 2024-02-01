@@ -72,7 +72,7 @@ public class Cache: ICache
         throw new ArgumentException("bad cache type argument");
     }
 
-    void ConnectToWorkgroupCache(TcSettings.TcSettings settings)
+    void ConnectToWorkgroupCache(TcSettings.Profile settings)
     {
         if (Type != CacheType.Workgroup)
             throw new InvalidOperationException("intializing a non-workgroup");
@@ -119,7 +119,7 @@ public class Cache: ICache
 
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
-    public Cache(TcSettings.TcSettings settings)
+    public Cache(TcSettings.Profile settings)
     {
         CacheType cacheType = CacheTypeFromString(settings.CacheType);
 

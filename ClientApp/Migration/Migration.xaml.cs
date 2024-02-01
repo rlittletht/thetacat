@@ -63,7 +63,7 @@ public partial class Migration : Window, INotifyPropertyChanged
         if (App.State.Settings.ElementsDatabase != path)
         {
             App.State.Settings.ElementsDatabase = path;
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
         }
     }
 }

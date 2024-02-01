@@ -20,7 +20,7 @@ public class FullExportRestore
 
         if (element == "catalog")
         {
-            fullExport.CatalogRestore = new CatalogRestore(reader, fullExport.SchemaRestore.Schema);
+            fullExport.CatalogRestore = new CatalogRestore(reader, fullExport.SchemaRestore!.Schema);
             return true;
         }
 

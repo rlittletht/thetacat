@@ -267,7 +267,7 @@ public partial class MediaExplorer : UserControl
                 App.State.Settings.MetatagMru.Add(tag.ID.ToString());
             }
 
-            App.State.Settings.WriteSettings();
+            App.State._Settings.WriteSettings();
         }
 
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
