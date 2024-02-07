@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using Thetacat.Explorer;
@@ -149,6 +150,21 @@ public class AppState : IAppState
     public void ChangeProfile(string profileName)
     {
         ActiveProfile = Settings.Profiles[profileName];
+        AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
+    }
+
+    private readonly List<string> m_stashedSqConnections = new();
+
+    public void PushTemporarySqlConnection(string sqlConnection)
+    {
+        m_stashedSqConnections.Add(AppSecrets.MasterSqlConnectionString);
+        AppSecrets.MasterSqlConnectionString = sqlConnection;
+    }
+
+    public void PopTemporarySqlConnection()
+    {
+        AppSecrets.MasterSqlConnectionString = m_stashedSqConnections[m_stashedSqConnections.Count - 1];
+        m_stashedSqConnections.RemoveAt(m_stashedSqConnections.Count - 1);
     }
 
     public void RegisterWindowPlace(Window window, string key)

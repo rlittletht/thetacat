@@ -36,4 +36,6 @@ public interface IAppState
     public SetDirtyStateDelegate SetCollectionDirtyState { get; set; }
     public SetDirtyStateDelegate SetSchemaDirtyState { get; set; }
     public void ChangeProfile(string profileName);
+    public void PushTemporarySqlConnection(string connectionString);
+    public void PopTemporarySqlConnection();
 }

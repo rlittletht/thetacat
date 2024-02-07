@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using Thetacat.Secrets;
 using Thetacat.TcSettings;
 using Thetacat.UI.Input;
 
@@ -29,7 +30,7 @@ public partial class CatOptions : Window
         m_model.PropertyChanged += ModelPropertyChanged;
 
         DataContext = m_model;
-        CacheConfigTab.LoadFromSettings(m_model);
+        CacheConfigTab.LoadFromSettings(m_model, AppSecrets.MasterSqlConnectionString);
         AccountTab.LoadFromSettings(m_model);
 
         AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
@@ -41,7 +42,7 @@ public partial class CatOptions : Window
         if (e.PropertyName == "SqlConnection")
         {
             // if the SqlConnection changed, then we need to reload cache (for workgroups)
-            CacheConfigTab.LoadFromSettings(m_model);
+            CacheConfigTab.LoadFromSettings(m_model, AccountTab._Model.SqlConnection);
         }
     }
 
@@ -50,7 +51,7 @@ public partial class CatOptions : Window
         if (m_model.CurrentProfile == null)
             return;
 
-        if (!CacheConfigTab.FSaveSettings())
+        if (!CacheConfigTab.FSaveSettings(m_model.CurrentProfile.Profile.SqlConnection ?? ""))
             MessageBox.Show("Failed to save Cache options");
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
@@ -67,8 +68,8 @@ public partial class CatOptions : Window
     {
         if (e.PropertyName == "CurrentProfile")
         {
-            CacheConfigTab.LoadFromSettings(m_model);
             AccountTab.LoadFromSettings(m_model);
+            CacheConfigTab.LoadFromSettings(m_model, AccountTab._Model.SqlConnection);
         }
     }
 

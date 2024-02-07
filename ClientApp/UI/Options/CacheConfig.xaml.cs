@@ -26,13 +26,16 @@ public partial class CacheConfig : UserControl
         _Model.PropertyChanged += ModelPropertyChanged;
     }
 
-    public void LoadFromSettings(CatOptionsModel catOptionsModel)
+    public void LoadFromSettings(CatOptionsModel catOptionsModel, string sqlConnection)
     {
         _Model.ProfileOptions = catOptionsModel.CurrentProfile;
 
         _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
         _Model.DerivativeLocation = _Model.ProfileOptions?.Profile.DerivativeCache ?? string.Empty;
         _Model.SetCacheTypeFromString(_Model.ProfileOptions?.Profile.CacheType ?? string.Empty);
+
+        // we might have changed the sql server connection string, so use that string
+        App.State.PushTemporarySqlConnection(sqlConnection);
         if (_Model.ProfileOptions?.Profile.WorkgroupId != null)
         {
             string workgroupId = _Model.ProfileOptions?.Profile.WorkgroupId!;
@@ -53,6 +56,9 @@ public partial class CacheConfig : UserControl
                 _Model.WorkgroupServerPath = _Model.ProfileOptions?.Profile.WorkgroupCacheServer ?? String.Empty;
             }
         }
+
+        App.State.PopTemporarySqlConnection();
+
     }
 
 
@@ -121,7 +127,7 @@ public partial class CacheConfig : UserControl
         return true;
     }
 
-    public bool FSaveSettings()
+    public bool FSaveSettings(string sqlConnection)
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
@@ -171,6 +177,7 @@ public partial class CacheConfig : UserControl
                     CacheRoot = PathSegment.CreateFromString(_Model.WorkgroupCacheRoot)
                 };
 
+            App.State.PushTemporarySqlConnection(sqlConnection);
             if (string.IsNullOrEmpty(_Model.WorkgroupID))
             {
                 workgroup.ID = Guid.NewGuid();
@@ -189,6 +196,8 @@ public partial class CacheConfig : UserControl
                 workgroup.ID = id;
                 ServiceInterop.UpdateWorkgroup(workgroup);
             }
+
+            App.State.PopTemporarySqlConnection();
 
             _Model.ProfileOptions.Profile.WorkgroupId = workgroup.ID.ToString();
         }
