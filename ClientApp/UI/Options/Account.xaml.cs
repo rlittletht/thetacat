@@ -1,4 +1,6 @@
-﻿using System.Windows.Controls;
+﻿using System;
+using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace Thetacat.UI.Options
 {
@@ -7,7 +9,7 @@ namespace Thetacat.UI.Options
     /// </summary>
     public partial class Account : UserControl
     {
-        readonly AccountModel _Model = new AccountModel();
+        public readonly AccountModel _Model = new AccountModel();
 
         public Account()
         {
@@ -15,18 +17,22 @@ namespace Thetacat.UI.Options
             DataContext = _Model;
         }
 
-        public void LoadFromSettings()
+        public void LoadFromSettings(CatOptionsModel optionsModel)
         {
-            _Model.StorageAccount = App.State.ActiveProfile.AzureStorageAccount  ?? string.Empty;
-            _Model.Container = App.State.ActiveProfile.StorageContainer ?? string.Empty;
-            _Model.SqlConnection = App.State.ActiveProfile.SqlConnection ?? string.Empty;
+            _Model.CurrentProfile = optionsModel.CurrentProfile;
+            _Model.StorageAccount = _Model.CurrentProfile?.Profile.AzureStorageAccount  ?? string.Empty;
+            _Model.Container = _Model.CurrentProfile?.Profile.StorageContainer ?? string.Empty;
+            _Model.SqlConnection = _Model.CurrentProfile?.Profile.SqlConnection ?? string.Empty;
         }
 
         public bool FSaveSettings()
         {
-            App.State.ActiveProfile.AzureStorageAccount = _Model.StorageAccount;
-            App.State.ActiveProfile.StorageContainer = _Model.Container;
-            App.State.ActiveProfile.SqlConnection = _Model.SqlConnection;
+            if (_Model.CurrentProfile != null)
+            {
+                _Model.CurrentProfile.Profile.AzureStorageAccount = _Model.StorageAccount;
+                _Model.CurrentProfile.Profile.StorageContainer = _Model.Container;
+                _Model.CurrentProfile.Profile.SqlConnection = _Model.SqlConnection;
+            }
 
             return true;
         }

@@ -26,16 +26,18 @@ public partial class CacheConfig : UserControl
         _Model.PropertyChanged += ModelPropertyChanged;
     }
 
-    public void LoadFromSettings()
+    public void LoadFromSettings(CatOptionsModel catOptionsModel)
     {
-        _Model.CacheLocation = App.State.ActiveProfile.CacheLocation ?? string.Empty;
-        _Model.DerivativeLocation = App.State.ActiveProfile.DerivativeCache ?? string.Empty;
-        _Model.SetCacheTypeFromString(App.State.ActiveProfile.CacheType ?? string.Empty);
-        if (App.State.ActiveProfile.WorkgroupId != null)
+        _Model.ProfileOptions = catOptionsModel.CurrentProfile;
+
+        _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
+        _Model.DerivativeLocation = _Model.ProfileOptions?.Profile.DerivativeCache ?? string.Empty;
+        _Model.SetCacheTypeFromString(_Model.ProfileOptions?.Profile.CacheType ?? string.Empty);
+        if (_Model.ProfileOptions?.Profile.WorkgroupId != null)
         {
-            _Model.WorkgroupID = App.State.ActiveProfile.WorkgroupId;
+            string workgroupId = _Model.ProfileOptions?.Profile.WorkgroupId!;
             _Model.PopulateWorkgroups();
-            _Model.SetWorkgroup(Guid.Parse(_Model.WorkgroupID));
+            _Model.SetWorkgroup(Guid.Parse(workgroupId));
             try
             {
                 ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(Guid.Parse(_Model.WorkgroupID));
@@ -46,9 +48,9 @@ public partial class CacheConfig : UserControl
             }
             catch (Exception)
             {
-                _Model.WorkgroupName = App.State.ActiveProfile.WorkgroupName ?? String.Empty;
-                _Model.WorkgroupCacheRoot = App.State.ActiveProfile.WorkgroupCacheRoot ?? String.Empty;
-                _Model.WorkgroupServerPath = App.State.ActiveProfile.WorkgroupCacheServer ?? String.Empty;
+                _Model.WorkgroupName = _Model.ProfileOptions?.Profile.WorkgroupName ?? String.Empty;
+                _Model.WorkgroupCacheRoot = _Model.ProfileOptions?.Profile.WorkgroupCacheRoot ?? String.Empty;
+                _Model.WorkgroupServerPath = _Model.ProfileOptions?.Profile.WorkgroupCacheServer ?? String.Empty;
             }
         }
     }
@@ -144,14 +146,14 @@ public partial class CacheConfig : UserControl
             return false;
         }
 
-        App.State.ActiveProfile.DerivativeCache = derivativeLocation;
-        App.State.ActiveProfile.CacheLocation = _Model.CacheLocation;
+        _Model.ProfileOptions!.Profile.DerivativeCache = derivativeLocation;
+        _Model.ProfileOptions.Profile.CacheLocation = _Model.CacheLocation;
 
-        App.State.ActiveProfile.CacheType = Cache.StringFromCacheType(cacheType);
+        _Model.ProfileOptions.Profile.CacheType = Cache.StringFromCacheType(cacheType);
 
         if (cacheType == Cache.CacheType.Private)
         {
-            App.State.ActiveProfile.WorkgroupId = null;
+            _Model.ProfileOptions.Profile.WorkgroupId = null;
         }
         else
         {
@@ -188,7 +190,7 @@ public partial class CacheConfig : UserControl
                 ServiceInterop.UpdateWorkgroup(workgroup);
             }
 
-            App.State.ActiveProfile.WorkgroupId = workgroup.ID.ToString();
+            _Model.ProfileOptions.Profile.WorkgroupId = workgroup.ID.ToString();
         }
         return true;
     }

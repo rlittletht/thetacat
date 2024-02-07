@@ -8,10 +8,10 @@
              d:DesignHeight="450" d:DesignWidth="800" DataContext="{Binding Path=_Model}">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="22*"/>
+            <RowDefinition Height="20*"/>
             <RowDefinition Height="auto" />
-            <RowDefinition Height="22*" />
-            <RowDefinition Height="56*"/>
+            <RowDefinition Height="20*" />
+            <RowDefinition Height="60*"/>
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <GroupBox Grid.Row="0" Margin="5" Name="ClientOptions">

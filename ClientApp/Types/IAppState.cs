@@ -35,4 +35,5 @@ public interface IAppState
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate);
     public SetDirtyStateDelegate SetCollectionDirtyState { get; set; }
     public SetDirtyStateDelegate SetSchemaDirtyState { get; set; }
+    public void ChangeProfile(string profileName);
 }

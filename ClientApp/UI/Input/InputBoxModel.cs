@@ -1,20 +1,24 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Thetacat.TcSettings;
 
-namespace Thetacat.UI.Options;
+namespace Thetacat.UI.Input;
 
-public class CatOptionsModel: INotifyPropertyChanged
+public class InputBoxModel: INotifyPropertyChanged
 {
-    private ProfileOptions? m_currentProfile;
-    public ObservableCollection<ProfileOptions> ProfileOptions { get; set; } = new();
+    private string m_inputText = string.Empty;
+    private string m_prompt = string.Empty;
 
-    public ProfileOptions? CurrentProfile
+    public string Prompt
     {
-        get => m_currentProfile;
-        set => SetField(ref m_currentProfile, value);
+        get => m_prompt;
+        set => SetField(ref m_prompt, value);
+    }
+
+    public string InputText
+    {
+        get => m_inputText;
+        set => SetField(ref m_inputText, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

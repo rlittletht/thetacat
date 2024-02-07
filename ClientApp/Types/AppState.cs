@@ -28,7 +28,7 @@ public class AppState : IAppState
     private SetDirtyStateDelegate? m_setSchemaDirtyState;
 
     public TcSettings.TcSettings Settings { get; }
-    public TcSettings.Profile ActiveProfile { get; }
+    public TcSettings.Profile ActiveProfile { get; private set; }
     public MetatagSchema MetatagSchema { get; }
     public ICache Cache { get; private set; }
     public ImageCache PreviewImageCache { get; private set; }
@@ -123,6 +123,9 @@ public class AppState : IAppState
             Settings.Profiles.Add(ActiveProfile.Name, ActiveProfile);
         }
 
+        if (string.IsNullOrEmpty(ActiveProfile.ClientDatabaseName))
+            ActiveProfile.ClientDatabaseName = "client.db";
+
         // make the assumed default profile the real default
         ActiveProfile.Default = true;
 
@@ -137,10 +140,15 @@ public class AppState : IAppState
         // this will start the caching pipelines
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(true);
-        ClientDatabase = new ClientDatabase(App.ClientDatabasePath);
+        ClientDatabase = new ClientDatabase(App.ClientDatabasePath(ActiveProfile.ClientDatabaseName));
         Md5Cache = new Md5Cache(ClientDatabase);
         Derivatives = new Derivatives(ClientDatabase);
         MetatagMRU = new MetatagMRU();
+    }
+
+    public void ChangeProfile(string profileName)
+    {
+        ActiveProfile = Settings.Profiles[profileName];
     }
 
     public void RegisterWindowPlace(Window window, string key)

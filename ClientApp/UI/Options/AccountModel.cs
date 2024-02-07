@@ -6,9 +6,16 @@ namespace Thetacat.UI.Options;
 
 public class AccountModel : INotifyPropertyChanged
 {
+    public ProfileOptions? CurrentProfile
+    {
+        get => m_currentProfile;
+        set => SetField(ref m_currentProfile, value);
+    }
+
     private string m_storageAccount = string.Empty;
     private string m_container = string.Empty;
     private string m_sqlConnection = string.Empty;
+    private ProfileOptions? m_currentProfile;
 
     public string SqlConnection
     {

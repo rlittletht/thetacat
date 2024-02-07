@@ -113,6 +113,7 @@ public class TcSettings
                    .AddElement("CacheOptions")
                       .AddChildElement("Client")
                         .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache = value)
+                        .AddElement("ClientDatabase", (_, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName = value ?? "")
                         .Pop()
                       .Pop()
                       .AddChildElement("CacheType")
@@ -588,6 +589,9 @@ public class TcSettings
 
     public static void CommitPlacementsItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
     {
+        if (itemContext == null)
+            throw new CatExceptionInternalFailure("no context for commit placements");
+
         KeyValuePair<string, Rectangle> pair = ((KeyValuePair<string, Rectangle>)itemContext.RepeatKey);
 
         // where can we store the name away? its not part of the rectangle...have to squirrel it away somewhere...

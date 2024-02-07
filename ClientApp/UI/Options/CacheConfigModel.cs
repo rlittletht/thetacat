@@ -12,6 +12,12 @@ namespace Thetacat.UI.Options;
 
 public class CacheConfigModel: INotifyPropertyChanged
 {
+    public ProfileOptions? ProfileOptions
+    {
+        get => m_profileOptions;
+        set => SetField(ref m_profileOptions, value);
+    }
+
     public string DerivativeLocation
     {
         get => m_derivativeLocation;
@@ -82,6 +88,7 @@ public class CacheConfigModel: INotifyPropertyChanged
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
     private string m_derivativeLocation = string.Empty;
+    private ProfileOptions? m_profileOptions;
 
     public string WorkgroupCacheRoot
     {
@@ -136,9 +143,10 @@ public class CacheConfigModel: INotifyPropertyChanged
 
     public void PopulateWorkgroups()
     {
+        Workgroups.Clear();
+
         foreach (ServiceWorkgroup workgroup in ServiceInterop.GetAvailableWorkgroups())
         {
-            Workgroups.Clear();
             Workgroups.Add(new WorkgroupItem(workgroup));
         }
     }

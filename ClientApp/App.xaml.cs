@@ -62,7 +62,7 @@ namespace Thetacat
             if (directory != null)
                 Directory.CreateDirectory(directory);
 
-            directory = Path.GetDirectoryName(ClientDatabasePath);
+            directory = Path.GetDirectoryName(ClientDatabasePath(m_appState.ActiveProfile.ClientDatabaseName));
             if (directory != null)
                 Directory.CreateDirectory(directory);
 
@@ -78,7 +78,10 @@ namespace Thetacat
         public static string SettingsPath => 
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
 
-        public static string ClientDatabasePath => 
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\client.db");
+        public static string ClientDatabasePath(string ClientDatabaseName)
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $"thetacat\\{ClientDatabaseName}");
+        }
+        
     }
 }

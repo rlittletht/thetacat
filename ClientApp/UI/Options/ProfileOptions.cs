@@ -1,20 +1,26 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.TcSettings;
 
 namespace Thetacat.UI.Options;
 
-public class CatOptionsModel: INotifyPropertyChanged
+public class ProfileOptions: INotifyPropertyChanged
 {
-    private ProfileOptions? m_currentProfile;
-    public ObservableCollection<ProfileOptions> ProfileOptions { get; set; } = new();
+    private string m_profileName = string.Empty;
+    private bool m_default = false;
 
-    public ProfileOptions? CurrentProfile
+    public Profile Profile { get; set; }
+    public string ProfileName
     {
-        get => m_currentProfile;
-        set => SetField(ref m_currentProfile, value);
+        get => m_profileName;
+        set => SetField(ref m_profileName, value);
+    }
+
+    public bool Default
+    {
+        get => m_default;
+        set => SetField(ref m_default, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -30,5 +36,12 @@ public class CatOptionsModel: INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+
+    public ProfileOptions(Profile profile)
+    {
+        m_default = profile.Default;
+        m_profileName = profile.Name ?? "";
+        Profile = profile;
     }
 }
