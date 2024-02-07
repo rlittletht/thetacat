@@ -22,35 +22,8 @@ public class TcSettings
     // Public Settings. Use LoadSettings
 
     public static string s_uri = "http://schemas.thetasoft.com/Thetacat/settings/2023";
-//    public string? ElementsDatabase;
-//    public string? CacheLocation;
-//    public string? CacheType;
-//    public string? WorkgroupId;
-//    public string? WorkgroupCacheServer;
-//    public string? WorkgroupCacheRoot;
-//    public string? WorkgroupName;
-//
-//    public string? AzureStorageAccount;
-//    public string? StorageContainer;
-//    public string? SqlConnection;
-//
-//    public bool? ShowAsyncLogOnStart;
-//    public bool? ShowAppLogOnStart;
-//    public string? ExplorerItemSize;
-//
-//    public string? TimelineType;
-//    public string? TimelineOrder;
-//
-//    public string? DerivativeCache;
-//
-//    public List<string> MetatagMru = new();
-//    public List<MapPair> ElementsSubstitutions = new();
     public Dictionary<string, Rectangle> Placements { get; private set; } = new();
-    private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
-
-//    public string? DefaultFilterName;
-
-//    public Dictionary<string, FilterDefinition> Filters = new();
+    public string LastExportPath = string.Empty;
     public Dictionary<string, Profile> Profiles = new();
 
     public TcSettings()
@@ -130,18 +103,19 @@ public class TcSettings
                           .AddAttribute("Name", (_, context) => context!.GetDictionaryValue<string, Profile>().WorkgroupName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().WorkgroupName = value)
                       .Pop()
                    .Pop()
-                 .Pop() //////// LEFT OFF HERE...
+                 .Pop()
+               .AddElement("LastExportPath", (settings, _) => settings.LastExportPath, (settings, value, _) => settings.LastExportPath = value ?? "")
                .AddElement("WindowPlacements")
                   .AddChildElement("Placement")
                    .SetRepeating(
-                        TcSettings.CreatePlacementRepeatItem,
-                        TcSettings.AreRemainingPlacementItems,
-                        TcSettings.CommitPlacementsItem)
-                   .AddAttribute("Name", TcSettings.GetPlacementName, TcSettings.SetPlacementName)
-                   .AddAttribute("X", TcSettings.GetPlacementX, TcSettings.SetPlacementX)
-                   .AddAttribute("Y", TcSettings.GetPlacementY, TcSettings.SetPlacementY)
-                   .AddAttribute("Width", TcSettings.GetPlacementWidth, TcSettings.SetPlacementWidth)
-                   .AddAttribute("Height", TcSettings.GetPlacementHeight, TcSettings.SetPlacementHeight)
+                        CreatePlacementRepeatItem,
+                        AreRemainingPlacementItems,
+                        CommitPlacementsItem)
+                   .AddAttribute("Name", GetPlacementName, SetPlacementName)
+                   .AddAttribute("X", GetPlacementX, SetPlacementX)
+                   .AddAttribute("Y", GetPlacementY, SetPlacementY)
+                   .AddAttribute("Width", GetPlacementWidth, SetPlacementWidth)
+                   .AddAttribute("Height", GetPlacementHeight, SetPlacementHeight)
                .Pop();
         #endregion
 #pragma warning restore format // @formatter: on
@@ -175,45 +149,6 @@ public class TcSettings
     #region Xml Option Reading/Writing Support
 
     private readonly XmlDescription<TcSettings> XmlSettingsDescription;
-
-//    private static void SetShowAsyncLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart = bool.Parse(value ?? bool.FalseString);
-//    private static string? GetShowAsyncLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAsyncLogOnStart.ToString();
-//
-//    private static void SetStorageAccountNameValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.AzureStorageAccount = value;
-//    private static string? GetStorageAccountNameValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.AzureStorageAccount;
-//
-//    private static void SetStorageContainerValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.StorageContainer = value;
-//    private static string? GetStorageContainerValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.StorageContainer;
-
-//    private static void SetSqlConnection(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.SqlConnection = value;
-//    private static string? GetSqlConnection(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.SqlConnection;
-//
-//    private static void SetShowAppLogOnStart(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart = bool.Parse(value ?? bool.FalseString);
-//    private static string? GetShowAppLogOnStart(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ShowAppLogOnStart.ToString();
-//
-//    private static void SetExplorerItemSize(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ExplorerItemSize = value;
-//    private static string? GetExplorerItemSize(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ExplorerItemSize;
-//
-//    private static void SetElementsDatabaseValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase = value;
-//    private static string? GetElementsDatabaseValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.ElementsDatabase;
-//
-//    private static void SetCacheLocationValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheLocation = value;
-//    private static string? GetCacheLocationValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheLocation;
-//
-//    private static void SetCacheTypeValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheType = value;
-//    private static string? GetCacheTypeValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.CacheType;
-//
-//    private static void   SetWorkgroupIDValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupId = value;
-//    private static string? GetWorkgroupIDValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupId;
-//
-//    private static void   SetWorkgroupCacheServerValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheServer = value;
-//    private static string? GetWorkgroupCacheServerValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheServer;
-//
-//    private static void   SetWorkgroupCacheRootValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheRoot = value;
-//    private static string? GetWorkgroupCacheRootValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupCacheRoot;
-//
-//    private static void   SetWorkgroupNameValue(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName = value;
-//    private static string? GetWorkgroupNameValue(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) => settings.WorkgroupName;
 
     #region MetatagMru
     private IEnumerator<string>? MetatagMruEnumerator;
@@ -256,15 +191,6 @@ public class TcSettings
 
         itemContext.Parent.GetDictionaryValue<string, Profile>().MetatagMru.Add(nested);
     }
-
-//    private static string GetMetatagMruItem(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((string?)context?.RepeatKey) ?? throw new ArgumentNullException(nameof(context));
-//    private static void SetMetatagMruItem(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
-//    {
-//        if (context?.RepeatKey == null) 
-//            throw new ArgumentNullException(nameof(context));
-//
-//        (context.RepeatKey) = value ?? "";
-//    }
 
     #endregion
 
@@ -309,20 +235,6 @@ public class TcSettings
         KeyValuePair<string, Profile> pair = (KeyValuePair<string, Profile>)itemContext.RepeatKey;
 
         settings.Profiles.Add(pair.Key, pair.Value);
-    }
-
-    private static string GetProfileName(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
-       ((KeyValuePair<string, Profile>?)context?.RepeatKey)?.Key ?? "";
-
-    private static void SetProfileName(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context?.RepeatKey == null)
-            throw new ArgumentNullException(nameof(context));
-
-        // have to make a new KVP since we are going to reset the key
-        KeyValuePair<string, Profile> pair = (KeyValuePair<string, Profile>)context.RepeatKey;
-
-        context.RepeatKey = new KeyValuePair<string, Profile>(value, pair.Value);
     }
 
     #endregion
@@ -373,44 +285,6 @@ public class TcSettings
         itemContext.Parent.GetDictionaryValue<string, Profile>().Filters.Add(pair.Value.FilterName, pair.Value);
     }
 
-    private static string GetFilterName(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
-       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.FilterName ?? "";
-
-    private static void SetFilterName(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context?.RepeatKey == null)
-            throw new ArgumentNullException(nameof(context));
-
-        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
-
-        pair.Value.FilterName = value;
-    }
-
-    private static string GetFilterDescription(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
-       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.Description ?? "";
-
-    private static void SetFilterDescription(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context?.RepeatKey == null)
-            throw new ArgumentNullException(nameof(context));
-
-        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
-
-        pair.Value.Description = value ?? "";
-    }
-
-    private static string GetFilterExpressionText(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) =>
-       ((KeyValuePair<string, FilterDefinition>?)context?.RepeatKey)?.Value.ExpressionText ?? "";
-
-    private static void SetFilterExpressionText(TcSettings settings, string? value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context?.RepeatKey == null)
-            throw new ArgumentNullException(nameof(context));
-
-        KeyValuePair<string, FilterDefinition> pair = (KeyValuePair<string, FilterDefinition>)context.RepeatKey;
-
-        pair.Value.ExpressionText = value ?? "";
-    }
     #endregion
     
     #region Substitutions
@@ -455,27 +329,10 @@ public class TcSettings
         itemContext.Parent.GetDictionaryValue<string, Profile>().ElementsSubstitutions.Add(nested);
     }
 
-    private static string GetSubstitutionFrom(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((MapPair?)context?.RepeatKey)?.From ?? throw new ArgumentNullException(nameof(context));
-    private static void SetSubstitutionFrom(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context?.RepeatKey == null) 
-            throw new ArgumentNullException(nameof(context));
-
-        ((MapPair)context.RepeatKey).From = value;
-    }
-
-    private static string GetSubstitutionTo(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? context) => ((MapPair?)context?.RepeatKey)?.To ?? throw new ArgumentNullException(nameof(context));
-
-    private static void SetSubstitutionTo(TcSettings settings, string value, RepeatContext<TcSettings>.RepeatItemContext? context)
-    {
-        if (context == null) 
-            throw new ArgumentNullException(nameof(context));
-
-        ((MapPair)context.RepeatKey).To = value;
-    }
     #endregion
 
     #region Placements
+    private IEnumerator<KeyValuePair<string, Rectangle>>? PlacementsEnumerator { get; set; }
 
     public static string? GetPlacementX(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? repeatItemContext) =>
         ((KeyValuePair<string, Rectangle>?)repeatItemContext?.RepeatKey)?.Value.X.ToString();
@@ -578,7 +435,6 @@ public class TcSettings
 
         return new RepeatContext<TcSettings>.RepeatItemContext(element, parent, new KeyValuePair<string, Rectangle>());
     }
-
 
     public static bool AreRemainingPlacementItems(TcSettings settings, RepeatContext<TcSettings>.RepeatItemContext? itemContext)
     {
