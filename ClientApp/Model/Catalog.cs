@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Filtering;
@@ -24,6 +25,8 @@ namespace Thetacat.Model;
 // the true state of the catalog. its only a view)
 public class Catalog : ICatalog
 {
+    public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
+
     private readonly Dictionary<MediaStackType, MediaStacks> m_mediaStacks;
     private readonly Media m_media;
 
@@ -51,15 +54,30 @@ public class Catalog : ICatalog
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => m_mediaStacks[stackType];
 
+    private void TriggerItemDirtied(bool fDirty)
+    {
+        if (OnItemDirtied != null)
+            OnItemDirtied(this, new DirtyItemEventArgs<bool>(fDirty));
+    }
+
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;
+        item.OnItemDirtied += OnMediaItemDirtied;
+
+        TriggerItemDirtied(true);
         m_media.AddNewMediaItem(item);
 
         if (m_virtualLookupTable.Count != 0)
             AddToVirtualLookup(m_virtualLookupTable, item);
 
         ThreadContext.InvokeOnUiThread(() => AddToObservableCollection(item));
+    }
+
+    void OnMediaItemDirtied(object? sender, DirtyItemEventArgs<Guid> e)
+    {
+        if (OnItemDirtied != null)
+            OnItemDirtied(this, new DirtyItemEventArgs<bool>(true));
     }
 
     public bool HasMediaItem(Guid mediaId)
@@ -84,7 +102,7 @@ public class Catalog : ICatalog
             stacks.PushPendingChanges();
         }
 
-        App.State.SetCollectionDirtyState(false);
+        TriggerItemDirtied(false);
     }
 
     private async Task<ServiceCatalog> GetFullCatalogAsync()
@@ -130,6 +148,7 @@ public class Catalog : ICatalog
         foreach (ServiceMediaItem item in catalog.MediaItems)
         {
             MediaItem mediaItem = new MediaItem(item);
+            mediaItem.OnItemDirtied += OnMediaItemDirtied;
             dict.TryAdd(mediaItem.ID, mediaItem);
         }
 
@@ -187,8 +206,6 @@ public class Catalog : ICatalog
             m_observableView.ReplaceCollection(GetMediaCollection());
         }
 
-        // good time to refresh the MRU now that we loaded the catalog and the schema
-        App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
         MainWindow.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
     }
 
@@ -336,10 +353,10 @@ public class Catalog : ICatalog
                 switch ((int)stackType)
                 {
                     case MediaStackType.s_MediaType:
-                        mediaItem.MediaStack = stack.StackId;
+                        mediaItem.SetMediaStackVerify(this, stack.StackId);
                         break;
                     case MediaStackType.s_VersionType:
-                        mediaItem.VersionStack = stack.StackId;
+                        mediaItem.SetVersionStackVerify(this, stack.StackId);
                         break;
                     default:
                         throw new CatExceptionInternalFailure($"unknown stack type {stackType}");
@@ -401,9 +418,9 @@ public class Catalog : ICatalog
                 stack.PushItem(new MediaStackItem(mediaId, index));
 
             if (stackType.Equals(MediaStackType.Media))
-                mediaItem.SetMediaStackSafe(this, stackId);
+                mediaItem.SetMediaStackVerify(this, stackId);
             else if (stackType.Equals(MediaStackType.Version))
-                mediaItem.SetVersionStackSafe(this, stackId);
+                mediaItem.SetVersionStackVerify(this, stackId);
             else
                 throw new CatExceptionInternalFailure("unknown stack type");
 
@@ -439,9 +456,9 @@ public class Catalog : ICatalog
             stack.PushItem(new MediaStackItem(mediaId, index));
 
         if (stackType.Equals(MediaStackType.Media))
-            mediaItem.SetMediaStackSafe(this, stackId);
+            mediaItem.SetMediaStackVerify(this, stackId);
         else if (stackType.Equals(MediaStackType.Version))
-            mediaItem.SetVersionStackSafe(this, stackId);
+            mediaItem.SetVersionStackVerify(this, stackId);
         else
             throw new CatExceptionInternalFailure("unknown stack type");
     }

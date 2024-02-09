@@ -19,14 +19,11 @@ public class AppState : IAppState
 {
     public delegate void CloseLogMonitorDelegate(bool skipClose);
     public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork<bool> work);
-    public delegate void SetDirtyStateDelegate(bool isDirty);
 
     public DpiScale DpiScale { get; set; }
     private CloseLogMonitorDelegate? m_closeAsyncLog;
     private CloseLogMonitorDelegate? m_closeAppLog;
     private AddBackgroundWorkDelegate? m_addBackgroundWork;
-    private SetDirtyStateDelegate? m_setCollectionDirtyState;
-    private SetDirtyStateDelegate? m_setSchemaDirtyState;
 
     public TcSettings.TcSettings Settings { get; }
     public TcSettings.Profile ActiveProfile { get; private set; }
@@ -43,18 +40,6 @@ public class AppState : IAppState
     public Md5Cache Md5Cache { get; init; }
     public Derivatives Derivatives { get; init; }
     public MetatagMRU MetatagMRU { get; init; }
-
-    public SetDirtyStateDelegate SetCollectionDirtyState
-    {
-        get => m_setCollectionDirtyState ?? new SetDirtyStateDelegate((_) => { });
-        set => m_setCollectionDirtyState = value;
-    }
-
-    public SetDirtyStateDelegate SetSchemaDirtyState
-    {
-        get => m_setSchemaDirtyState ?? new SetDirtyStateDelegate((_) => { });
-        set => m_setSchemaDirtyState = value;
-    }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {

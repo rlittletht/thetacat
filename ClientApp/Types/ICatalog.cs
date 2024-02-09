@@ -11,6 +11,7 @@ namespace Thetacat.Types;
 
 public interface ICatalog
 {
+    public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
     public void AddNewMediaItem(MediaItem item);
     public MediaItem GetMediaFromId(Guid id);
     public MediaItem GetMediaFromId(string id);

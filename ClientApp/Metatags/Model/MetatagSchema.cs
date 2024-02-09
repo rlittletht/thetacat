@@ -8,6 +8,7 @@ namespace Thetacat.Metatags.Model;
 
 public class MetatagSchema
 {
+    public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
     private readonly MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
 
@@ -87,10 +88,16 @@ public class MetatagSchema
         return FindByNameInSchemaDefinition(m_schemaWorking, parent, name);
     }
 
+    private void TriggerItemDirtied(bool fDirty)
+    {
+        if (OnItemDirtied != null)
+            OnItemDirtied(this, new DirtyItemEventArgs<bool>(fDirty));
+    }
+
     public void NotifyChanging()
     {
         EnsureBaseAndVersion();
-        App.State.SetSchemaDirtyState(true);
+        TriggerItemDirtied(true);
     }
 
     public void RebuildWorkingTree()
@@ -106,7 +113,7 @@ public class MetatagSchema
         NotifyChanging();
 
         m_schemaWorking.AddMetatag(metatag);
-        App.State.SetSchemaDirtyState(true);
+        TriggerItemDirtied(true);
 
         IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
 
@@ -309,7 +316,7 @@ public class MetatagSchema
         EnsureBuiltinMetatagsDefined();
 
         m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
-        App.State.SetSchemaDirtyState(false);
+        TriggerItemDirtied(false);
     }
 
     public MetatagSchemaDiff BuildDiffForSchemas()
@@ -330,6 +337,6 @@ public class MetatagSchema
             ServiceInterop.UpdateMetatagSchema(diff);
             m_schemaBase = null; // working is now the base
         }
-        App.State.SetSchemaDirtyState(false);
+        TriggerItemDirtied(false);
     }
 }

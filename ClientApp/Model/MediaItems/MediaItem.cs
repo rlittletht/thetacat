@@ -15,6 +15,7 @@ using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
 using Thetacat.Metatags.Model;
+using Thetacat.Model.ImageCaching;
 
 namespace Thetacat.Model;
 
@@ -26,6 +27,8 @@ public class MediaItem : INotifyPropertyChanged
         Delete,
         MaybeUpdate
     };
+
+    public event EventHandler<DirtyItemEventArgs<Guid>>? OnItemDirtied;
 
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
@@ -54,7 +57,13 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(item);
     }
 
-#region Public Data / Accessors
+    private void TriggerItemDirtied()
+    {
+        if (OnItemDirtied != null)
+            OnItemDirtied(this, new DirtyItemEventArgs<Guid>(ID));
+    }
+
+    #region Public Data / Accessors
 
     // the vector clock changes whenever a change is made to the data. we use this
     // clock to determine if a diffitem (when committed) should clear any changes to
@@ -92,7 +101,7 @@ public class MediaItem : INotifyPropertyChanged
         null
     };
 
-    public void SetVersionStackSafe(ICatalog catalog, Guid? stackId)
+    public void SetVersionStackVerify(ICatalog catalog, Guid? stackId)
     {
         if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Version], stackId)) return;
         Stacks[MediaStackType.Version] = stackId;
@@ -101,7 +110,7 @@ public class MediaItem : INotifyPropertyChanged
             VerifyMediaInMediaStack(catalog.VersionStacks, stackId.Value);
     }
 
-    public void SetMediaStackSafe(ICatalog catalog, Guid? stackId)
+    public void SetMediaStackVerify(ICatalog catalog, Guid? stackId)
     {
         if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Media], stackId)) return;
         Stacks[MediaStackType.Media] = stackId;
@@ -113,23 +122,13 @@ public class MediaItem : INotifyPropertyChanged
     public Guid? VersionStack
     {
         get => Stacks[MediaStackType.Version];
-        set
-        {
-            SetField(ref Stacks[MediaStackType.Version], value);
-            if (value != null)
-                VerifyMediaInMediaStack(App.State.Catalog.VersionStacks, value.Value);
-        }
+        set => SetField(ref Stacks[MediaStackType.Version], value);
     }
 
     public Guid? MediaStack
     {
         get => Stacks[MediaStackType.Media];
-        set
-        {
-            SetField(ref Stacks[MediaStackType.Media], value);
-            if (value != null)
-                VerifyMediaInMediaStack(App.State.Catalog.MediaStacks, value.Value);
-        }
+        set => SetField(ref Stacks[MediaStackType.Media], value);
     }
 
     // this means we are waiting for this item to be cached. maybe by this client,
@@ -489,7 +488,8 @@ public class MediaItem : INotifyPropertyChanged
             VectorClock++;
 
         if (!identicalExisting)
-            App.State.SetCollectionDirtyState(true);
+            TriggerItemDirtied();
+//            App.State.SetCollectionDirtyState(true);
 
         return !identicalExisting;
     }

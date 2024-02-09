@@ -25,6 +25,7 @@ using Thetacat.Explorer;
 using System.Windows.Media.Imaging;
 using System.Globalization;
 using Microsoft.Windows.EventTracing.Power;
+using Thetacat.BackupRestore.Backup;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
@@ -71,8 +72,8 @@ public partial class MainWindow : Window
 
         m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
-        App.State.SetCollectionDirtyState = SetCollectionDirtyState;
-        App.State.SetSchemaDirtyState = SetSchemaDirtyState;
+        App.State.Catalog.OnItemDirtied += SetCollectionDirtyState;
+        App.State.MetatagSchema.OnItemDirtied += SetSchemaDirtyState;
         RebuildFilterList();
     }
 
@@ -162,7 +163,9 @@ public partial class MainWindow : Window
         MicroTimer timer = new MicroTimer();
 
         await App.State.Catalog.ReadFullCatalogFromServer(App.State.MetatagSchema);
-        App.State.SetCollectionDirtyState(false);
+        // good time to refresh the MRU now that we loaded the catalog and the schema
+        App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
+        SetCollectionDirtyState(null, new DirtyItemEventArgs<bool>(false));
 
         LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
         timer.Reset();
@@ -554,14 +557,14 @@ public partial class MainWindow : Window
         m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
     }
 
-    public void SetCollectionDirtyState(bool fDirty)
+    public void SetCollectionDirtyState(object? sender,DirtyItemEventArgs<bool> e)
     {
-        m_model.IsExplorerCollectionDirty = fDirty;
+        m_model.IsExplorerCollectionDirty = e.Item;
     }
 
-    public void SetSchemaDirtyState(bool fDirty)
+    public void SetSchemaDirtyState(object? sender, DirtyItemEventArgs<bool> e)
     {
-        m_model.IsSchemaDirty = fDirty;
+        m_model.IsSchemaDirty = e.Item;
     }
 
     void DoRestoreDatabase(object sender, RoutedEventArgs e)
@@ -571,8 +574,9 @@ public partial class MainWindow : Window
     }
     private void DoBackupDatabase(object sender, RoutedEventArgs e)
     {
-        BackupDatabase backup = new BackupDatabase("c:\\temp\\backup.xml");
+        ExportData exportData = new();
 
-        App.State.AddBackgroundWork("Backing up database", (progress) => backup.DoBackup(progress));
+        exportData.Owner = this;
+        exportData.ShowDialog();
     }
 }

@@ -34,6 +34,8 @@ public class CatalogMock : ICatalog
 
     public Media Media => m_media;
 
+    public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
+
     public void AddNewMediaItem(MediaItem item)
     {
         throw new NotImplementedException();
@@ -76,4 +78,9 @@ public class CatalogMock : ICatalog
     }
 
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
+
+    protected virtual void OnOnItemDirtied(DirtyItemEventArgs<bool> e)
+    {
+        OnItemDirtied?.Invoke(this, e);
+    }
 }
