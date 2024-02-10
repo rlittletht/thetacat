@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using System.Xml;
 using Thetacat.BackupRestore.Restore;
 using Thetacat.Metatags.Model;
@@ -10,6 +11,7 @@ namespace Thetacat.Export;
 public class RestoreDatabase
 {
     private string m_backupSource;
+    public FullExportRestore? FullExportRestore;
 
     public RestoreDatabase(string backupSource)
     {
@@ -22,7 +24,7 @@ public class RestoreDatabase
     {
         m_progress = progress;
 
-        Stream stm = File.Open("c:\\temp\\backup.xml", FileMode.Open);
+        Stream stm = File.Open(m_backupSource, FileMode.Open);
         XmlReader reader = XmlReader.Create(stm);
 
         if (!XmlIO.Read(reader))
@@ -30,7 +32,7 @@ public class RestoreDatabase
 
         XmlIO.SkipNonContent(reader);
 
-        FullExportRestore fullExport = new FullExportRestore(reader);
+        FullExportRestore = new FullExportRestore(reader);
 
         m_progress?.WorkCompleted();
         return true;

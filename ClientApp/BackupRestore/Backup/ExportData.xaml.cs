@@ -61,7 +61,14 @@ namespace Thetacat.BackupRestore.Backup
 
         private void DoExport(object sender, RoutedEventArgs e)
         {
-            BackupDatabase backup = new BackupDatabase(m_model.ExportPath);
+            BackupDatabase backup = new BackupDatabase(
+                m_model.ExportPath, 
+                m_model.ExportMediaItems, 
+                m_model.ExportMediaStacks, 
+                m_model.ExportVersionStacks, 
+                m_model.ExportSchema, 
+                m_model.ExportImports, 
+                m_model.ExportWorkgroups);
 
             App.State.AddBackgroundWork("Backing up database", (progress) => backup.DoBackup(progress));
             Close();

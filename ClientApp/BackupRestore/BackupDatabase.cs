@@ -16,14 +16,33 @@ public class BackupDatabase
     private readonly Catalog m_catalog;
     private readonly MetatagSchema m_schema;
     private readonly string m_filename;
+    private readonly bool m_exportMediaItems = false;
+    private readonly bool m_exportMediaStacks = false;
+    private readonly bool m_exportVersionStacks = false;
+    private readonly bool m_exportSchema = false;
+    private readonly bool m_exportImports = false;
+    private readonly bool m_exportWorkgroups = false;
 
     public static string s_uri = "https://schemas.thetasoft.com/thetacat/backup/2024";
 
-    public BackupDatabase(string backupPath)
+    public BackupDatabase(
+        string backupPath,
+        bool exportMediaItems,
+        bool exportMediaStacks,
+        bool exportVersionStacks,
+        bool exportSchema,
+        bool exportImports,
+        bool exportWorkgroups)
     {
         m_schema = new MetatagSchema();
         m_catalog = new Catalog();
         m_filename = backupPath;
+        m_exportMediaItems = exportMediaItems;
+        m_exportMediaStacks = exportMediaStacks;
+        m_exportVersionStacks = exportVersionStacks;
+        m_exportSchema = exportSchema;
+        m_exportImports = exportImports;
+        m_exportWorkgroups = exportWorkgroups;
     }
 
     public delegate void WriteChildrenDelegate(XmlWriter writer);
@@ -233,11 +252,14 @@ public class BackupDatabase
             (_writer) =>
             {
                 StartNextBlock(85.0);
-                WriteElement(_writer, "media", (__writer) => WriteMediaItems(__writer, catalog));
+                if (m_exportMediaItems)
+                    WriteElement(_writer, "media", (__writer) => WriteMediaItems(__writer, catalog));
                 StartNextBlock(87.0);
-                WriteElement(_writer, "versionStacks", (__writer) => WriteMediaStacks(__writer, catalog.VersionStacks));
+                if (m_exportVersionStacks)
+                    WriteElement(_writer, "versionStacks", (__writer) => WriteMediaStacks(__writer, catalog.VersionStacks));
                 StartNextBlock(89.0);
-                WriteElement(_writer, "mediaStacks", (__writer) => WriteMediaStacks(__writer, catalog.MediaStacks));
+                if (m_exportMediaStacks)
+                    WriteElement(_writer, "mediaStacks", (__writer) => WriteMediaStacks(__writer, catalog.MediaStacks));
             });
     }
 
@@ -281,12 +303,40 @@ public class BackupDatabase
     ----------------------------------------------------------------------------*/
     public void WriteImports(XmlWriter writer)
     {
-        StartNextBlock(100.0);
+        StartNextBlock(99.0);
         List<ServiceImportItem> importItems = ServiceInterop.GetAllImports();
 
         WriteElement(writer, "imports", (_writer) => WriteImportItems(_writer, importItems));
     }
 
+    public void WriteWorkgroupItem(XmlWriter writer, ServiceWorkgroup item)
+    {
+        writer.WriteAttributeString("id", item.ID.ToString());
+        WriteElement(writer, "name", (_writer) => _writer.WriteString(item.Name));
+        WriteElement(writer, "serverPath", (_writer) => _writer.WriteString(item.ServerPath));
+        WriteElement(writer, "cacheRoot", (_writer) => _writer.WriteString(item.CacheRoot));
+    }
+
+    public void WriteWorkgroupItems(XmlWriter writer, List<ServiceWorkgroup> items)
+    {
+        int count = items.Count;
+        int i = 0;
+
+        foreach (ServiceWorkgroup item in items)
+        {
+            UpdateProgress(i, count);
+
+            WriteElement(writer, "workgroup", (_writer) => WriteWorkgroupItem(_writer, item));
+        }
+    }
+
+    public void WriteWorkgroups(XmlWriter writer)
+    {
+        StartNextBlock(100.0);
+        List<ServiceWorkgroup> workgroups = ServiceInterop.GetAvailableWorkgroups();
+
+        WriteElement(writer, "workgroups", (_writer) => WriteWorkgroupItems(_writer, workgroups));
+    }
     public bool DoBackup(IProgressReport progress)
     {
         m_progress = progress;
@@ -306,9 +356,13 @@ public class BackupDatabase
             "fullExport",
             (_writer) =>
             {
-                WriteSchema(_writer, m_schema);
+                if (m_progress != null)
+                    WriteSchema(_writer, m_schema);
                 WriteCatalog(_writer, m_catalog);
-                WriteImports(_writer);
+                if (m_exportImports)
+                    WriteImports(_writer);
+                if (m_exportWorkgroups)
+                    WriteWorkgroups(_writer);
             });
 
         m_progress.WorkCompleted();

@@ -7,7 +7,7 @@ namespace Thetacat.BackupRestore.Restore;
 
 public class ImportsRestore
 {
-    private List<ServiceImportItem> ImportItems = new();
+    public List<ServiceImportItem> ImportItems = new();
 
     static bool FParseImportsElement(XmlReader reader, string element, ImportsRestore importsRestore)
     {

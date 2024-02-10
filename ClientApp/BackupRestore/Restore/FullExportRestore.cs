@@ -9,6 +9,7 @@ public class FullExportRestore
     public MetatagSchemaRestore? SchemaRestore;
     public CatalogRestore? CatalogRestore;
     public ImportsRestore? ImportsRestore;
+    public WorkgroupsRestore? WorkgroupsRestore;
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)
     {
@@ -29,6 +30,13 @@ public class FullExportRestore
             fullExport.ImportsRestore = new ImportsRestore(reader);
             return true;
         }
+
+        if (element == "workgroups")
+        {
+            fullExport.WorkgroupsRestore = new WorkgroupsRestore(reader);
+            return true;
+        }
+
         throw new XmlSchemaException($"unknown element {element}");
     }
 

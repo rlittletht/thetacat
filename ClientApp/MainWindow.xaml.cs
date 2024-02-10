@@ -26,6 +26,7 @@ using System.Windows.Media.Imaging;
 using System.Globalization;
 using Microsoft.Windows.EventTracing.Power;
 using Thetacat.BackupRestore.Backup;
+using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
@@ -569,9 +570,12 @@ public partial class MainWindow : Window
 
     void DoRestoreDatabase(object sender, RoutedEventArgs e)
     {
-        RestoreDatabase restore = new("c:\\temp\\backup.xml");
-        restore.DoRestore(null);
+        RestoreData restoreData = new RestoreData();
+        restoreData.Owner = this;
+
+        restoreData.ShowDialog();
     }
+
     private void DoBackupDatabase(object sender, RoutedEventArgs e)
     {
         ExportData exportData = new();
