@@ -361,12 +361,13 @@ public partial class MainWindow : Window
 
     private bool BackgroundTestTask(IProgressReport progressReport, int totalMsec)
     {
-        bool fIndeterminate = true;
+        bool fIndeterminate = false;
 
         if (totalMsec < 0)
         {
             progressReport.SetIndeterminate();
             totalMsec = -totalMsec;
+            fIndeterminate = true;
         }
 
         int interval = Math.Max(1, totalMsec / 50); // we want 50 updates
@@ -391,6 +392,15 @@ public partial class MainWindow : Window
             (progress) => BackgroundTestTask(progress, 5000));
     }
 
+    private void StartBackground5sWithDoneDialog(object sender, RoutedEventArgs e)
+    {
+        App.State.AddBackgroundWork(
+            "background 5s test task",
+            (progress) => BackgroundTestTask(progress, 5000),
+            (worker) => MessageBox.Show($"Task done: {worker.Description}")
+            );
+    }
+
     private void StartBackground1m(object sender, RoutedEventArgs e)
     {
         App.State.AddBackgroundWork(
@@ -405,9 +415,9 @@ public partial class MainWindow : Window
             (progress) => BackgroundTestTask(progress, -10000));
     }
 
-    public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work)
+    public void AddBackgroundWork<T>(string description, BackgroundWorkerWork<T> work, OnWorkCompletedDelegate? onWorkCompleted = null)
     {
-        m_mainBackgroundWorkers.AddWork(description, work);
+        m_mainBackgroundWorkers.AddWork(description, work, null, onWorkCompleted);
     }
 
     private ProgressListDialog? m_backgroundProgressDialog;

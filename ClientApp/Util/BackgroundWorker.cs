@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Model.ImageCaching;
 using Thetacat.UI;
 
 namespace Thetacat.Util;
@@ -16,6 +17,7 @@ public class BackgroundWorker<T>: INotifyPropertyChanged, IProgressReport, IBack
     private int m_tenthPercentComplete;
     private string m_description;
 
+    public event EventHandler<BackgroundWorkCompletedEventArgs>? BackgroundWorkCompleted;
     public string Description
     {
         get => m_description;
@@ -35,13 +37,17 @@ public class BackgroundWorker<T>: INotifyPropertyChanged, IProgressReport, IBack
     }
 
     private readonly BackgroundWorkerWork<T> m_work;
-    private readonly OnWorkCompletedDelegate? m_onWorkCompleted;
 
-    public BackgroundWorker(string description, BackgroundWorkerWork<T> work, OnWorkCompletedDelegate? onWorkComplete)
+    public BackgroundWorker(string description, BackgroundWorkerWork<T> work)
     {
         m_description = description;
         m_work = work;
-        m_onWorkCompleted = onWorkComplete;
+    }
+
+    private void TriggerBackgroundWorkCompleted()
+    {
+        if (BackgroundWorkCompleted != null)
+            BackgroundWorkCompleted(this, new BackgroundWorkCompletedEventArgs());
     }
 
     private IProgressReport? m_progressInner;
@@ -51,7 +57,7 @@ public class BackgroundWorker<T>: INotifyPropertyChanged, IProgressReport, IBack
     {
         m_progressInner = progress;
         T t = m_work(this);
-        m_onWorkCompleted?.Invoke(this);
+        TriggerBackgroundWorkCompleted();
 
         return t;
     }

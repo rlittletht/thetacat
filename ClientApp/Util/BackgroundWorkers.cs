@@ -24,9 +24,18 @@ public class BackgroundWorkers
     }
 
     // you don't have to provide a progress report if you want this collection to be the only tracker
-    public void AddWork<T>(string description, BackgroundWorkerWork<T> work, IProgressReport? progress = null)
+    public void AddWork<T>(
+        string description, 
+        BackgroundWorkerWork<T> work, 
+        IProgressReport? progress = null, 
+        OnWorkCompletedDelegate? onWorkCompleted = null)
     {
-        BackgroundWorker<T> worker = new BackgroundWorker<T>(description, work, OnWorkCompleted);
+        BackgroundWorker<T> worker = new(description, work);
+
+        if (onWorkCompleted != null)
+            worker.BackgroundWorkCompleted += (sender, _) => onWorkCompleted((IBackgroundWorker)sender!);
+
+        worker.BackgroundWorkCompleted += (sender, _) => OnWorkCompleted((IBackgroundWorker)sender!);
 
         if (Workers.Count == 0)
             m_startFirst?.Invoke();
@@ -37,7 +46,9 @@ public class BackgroundWorkers
 
     public async Task<T> DoWorkAsync<T>(string description, BackgroundWorkerWork<T> work, IProgressReport? progress = null)
     {
-        BackgroundWorker<T> worker = new BackgroundWorker<T>(description, work, OnWorkCompleted);
+        BackgroundWorker<T> worker = new BackgroundWorker<T>(description, work);
+
+        worker.BackgroundWorkCompleted += (sender, _) => OnWorkCompleted((IBackgroundWorker)sender!);
 
         if (Workers.Count == 0)
             m_startFirst?.Invoke();
