@@ -24,8 +24,8 @@ public class RestoreDatabase
     {
         m_progress = progress;
 
-        Stream stm = File.Open(m_backupSource, FileMode.Open);
-        XmlReader reader = XmlReader.Create(stm);
+        using Stream stm = File.Open(m_backupSource, FileMode.Open);
+        using XmlReader reader = XmlReader.Create(stm);
 
         if (!XmlIO.Read(reader))
             return true;

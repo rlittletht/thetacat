@@ -2,6 +2,7 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
+using System.DirectoryServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,12 +10,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Export;
+using Thetacat.Metatags.Model;
+using Thetacat.Model;
+using Thetacat.ServiceClient;
+using Thetacat.Types;
 using Thetacat.Util;
+using MessageBox = System.Windows.MessageBox;
 
 namespace Thetacat.BackupRestore.Restore
 {
@@ -60,9 +67,141 @@ namespace Thetacat.BackupRestore.Restore
             Close();
         }
 
-        private void DoImport(object sender, RoutedEventArgs e)
+        private async void DoImport(object sender, RoutedEventArgs e)
         {
+            if (m_fullRestoreData == null)
+            {
+                MessageBox.Show("Cannot restore empty dataset");
+                return;
+            }
+
+            string destination = $"{Secrets.AppSecrets.MasterSqlConnectionString}";
+            bool fClearBeforeRestore = false;
+
+            if (m_model.CurrentRestoreBehavior == "Append")
+            {
+                if (MessageBox.Show(
+                        $"This will APPEND the restored data to {destination}\n\nContinue with restore?",
+                        "Restore data",
+                        MessageBoxButton.OKCancel)
+                    == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if (MessageBox.Show(
+                        $"This will DELETE ALL DATA in the database '{destination}' before restoring the data. THIS CANNOT BE UNDONE.\n\nContinue with restore?",
+                        "Restore data",
+                        MessageBoxButton.OKCancel)
+                    == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+
+                fClearBeforeRestore = true;
+            }
+
+            // now (maybe clear) and restore all the items they selected
+            if (m_model.ImportSchema)
+            {
+                // clear if request
+                if (m_fullRestoreData.CatalogRestore == null || m_fullRestoreData.CatalogRestore.Schema.MetatagCount == 0)
+                {
+                    MessageBox.Show("Can't restore from empty catalog or schema");
+                }
+                else
+                {
+                    if (fClearBeforeRestore)
+                        ServiceInterop.ResetMetatagSchema();
+
+                    // load the base schema
+                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema();
+                    m_fullRestoreData.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
+
+                    m_fullRestoreData.CatalogRestore.Schema.UpdateServer(
+                        (count) => MessageBox.Show(
+                                $"Updating {count} schema items. Proceed?",
+                                "Restore Data",
+                                MessageBoxButton.OKCancel)
+                            == MessageBoxResult.OK);
+                }
+            }
+
+            if (m_model.ImportWorkgroups)
+            {
+                if ((m_fullRestoreData.WorkgroupsRestore?.Workgroups.Count ?? 0) == 0)
+                {
+                    MessageBox.Show("Can't restore an empty set of workgroups");
+                }
+                else if (MessageBox.Show(
+                             $"Updating {m_fullRestoreData.WorkgroupsRestore!.Workgroups.Count} workgroups. Proceed?",
+                             "Restore Data",
+                             MessageBoxButton.OKCancel)
+                         == MessageBoxResult.OK)
+                {
+//                    if (fClearBeforeRestore)
+//                        ServiceInterop.DeleteAllWorkgroups();
+
+                    foreach (ServiceWorkgroup workgroup in m_fullRestoreData.WorkgroupsRestore!.Workgroups)
+                    {
+                        try
+                        {
+                            ServiceInterop.CreateWorkgroup(workgroup);
+                        }
+                        catch (Exception exc)
+                        {
+                            MessageBox.Show($"caught exception trying to add workgroup: {exc}");
+                        }
+                    }
+                }
+            }
+
+            if (!m_model.ImportMediaItems)
+            {
+                if (m_model.ImportMediaStacks || m_model.ImportVersionStacks)
+                {
+                    MessageBox.Show("It makes no sense to restore version or media stacks when not restoring media");
+                }
+            }
+            else
+            {
+                if ((m_fullRestoreData.CatalogRestore?.Catalog.GetMediaCount ?? 0) == 0)
+                {
+                    MessageBox.Show("Can't restore an empty catalog");
+                }
+                else
+                {
+                    if (!m_model.ImportMediaStacks)
+                        m_fullRestoreData.CatalogRestore!.Catalog.MediaStacks.Clear();
+
+                    if (!m_model.ImportVersionStacks)
+                        m_fullRestoreData.CatalogRestore!.Catalog.VersionStacks.Clear();
+
+                    if (fClearBeforeRestore)
+                        ServiceInterop.DeleteAllMediaAndMediaTags();
+
+                    Catalog catalogCurrent = new Catalog();
+                    MetatagSchema schema = new MetatagSchema();
+                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema();
+
+                    schema.ReplaceFromService(serviceSchema);
+                    await catalogCurrent.ReadFullCatalogFromServer(schema);
+                        
+                    // and now we have to diff
+                    m_fullRestoreData.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
+                    m_fullRestoreData.CatalogRestore!.Catalog.PushPendingChanges(
+                        (count, itemType) => MessageBox.Show(
+                                $"Updating {count} {itemType} items. Proceed?",
+                                "Restore Data",
+                                MessageBoxButton.OKCancel)
+                            == MessageBoxResult.OK);
+                }
+            }
         }
+
+        private FullExportRestore? m_fullRestoreData;
 
         void OnExportDataLoaded(IBackgroundWorker worker, RestoreDatabase restore)
         {
@@ -75,6 +214,8 @@ namespace Thetacat.BackupRestore.Restore
 
             if (restore.FullExportRestore == null)
                 return;
+
+            m_fullRestoreData = restore.FullExportRestore;
 
             if (restore.FullExportRestore.CatalogRestore?.Catalog.GetMediaCount > 0)
                 m_model.ImportMediaItems = true;
@@ -100,9 +241,9 @@ namespace Thetacat.BackupRestore.Restore
             RestoreDatabase restore = new RestoreDatabase(m_model.RestorePath);
 
             App.State.AddBackgroundWork(
-                "Restoring database", 
-                (progress) => restore.DoRestore(progress));
-            // ,(worker) => OnExportDataLoaded(worker, restore)
+                "Restoring database",
+                (progress) => restore.DoRestore(progress),
+                (worker) => OnExportDataLoaded(worker, restore));
         }
     }
 }

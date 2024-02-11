@@ -8,11 +8,17 @@ namespace Thetacat.ServiceClient.LocalService;
 
 public class Metatags
 {
-    private static Dictionary<string, string> s_aliases =
+    private static readonly Dictionary<string, string> s_aliases =
         new()
         {
             { "tcat_metatags", "META" },
+            { "tcat_schemaversions", "SV" }
         };
+
+    private static readonly string s_resetMetatagSchema = @"
+        DELETE FROM tcat_schemaversions
+        DELETE FROM tcat_metatags
+        INSERT INTO tcat_schemaversions (metatag_schema_version) VALUES (0)";
 
     public static ServiceMetatagSchema GetMetatagSchema()
     {
@@ -201,5 +207,10 @@ public class Metatags
         {
             sql.Close();
         }
+    }
+
+    public static void ResetMetatagSchema()
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(s_resetMetatagSchema, null, null);
     }
 }

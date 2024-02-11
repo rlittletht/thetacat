@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Permissions;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Filtering;
@@ -94,12 +95,17 @@ public class Catalog : ICatalog
         This currently does not deal with any kind of coherency failure. Whoever
         is committing last wins.
     ----------------------------------------------------------------------------*/
-    public void PushPendingChanges()
+    public void PushPendingChanges(Func<int, string, bool>? verify = null)
     {
-        m_media.PushPendingChanges();
-        foreach (MediaStacks stacks in m_mediaStacks.Values)
+        m_media.PushPendingChanges(verify);
+        foreach (KeyValuePair<MediaStackType, MediaStacks> item in m_mediaStacks)
         {
-            stacks.PushPendingChanges();
+            string itemType = item.Key.ToString();
+
+            item.Value.PushPendingChanges(
+                verify == null
+                ? null
+                : (count, _) => verify(count, itemType));
         }
 
         TriggerItemDirtied(false);
@@ -228,6 +234,13 @@ public class Catalog : ICatalog
         }
 
         return matched;
+    }
+
+    public void SetBaseFromBaseCatalog(Catalog other)
+    {
+        m_media.SetBaseFromOtherMedia(other.m_media);
+        VersionStacks.SetPendingChangesFromBase(other.VersionStacks);
+        MediaStacks.SetPendingChangesFromBase(other.MediaStacks);
     }
 
     #region Observable Collection Support
@@ -464,4 +477,5 @@ public class Catalog : ICatalog
     }
 
 #endregion
+
 }

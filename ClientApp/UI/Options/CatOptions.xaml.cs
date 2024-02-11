@@ -56,6 +56,18 @@ public partial class CatOptions : Window
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
 
+
+        if (m_model.CurrentProfile.Default)
+        {
+            // unset other profiles' defaultness
+            foreach (Profile profile in App.State.Settings.Profiles.Values)
+            {
+                profile.Default = false;
+            }
+        }
+
+        m_model.CurrentProfile.Profile.Default = m_model.CurrentProfile.Default;
+
         // now write the profile back to the settings
         if (!App.State.Settings.Profiles.TryAdd(m_model.CurrentProfile.ProfileName, m_model.CurrentProfile.Profile))
             App.State.Settings.Profiles[m_model.CurrentProfile.ProfileName] = m_model.CurrentProfile.Profile;

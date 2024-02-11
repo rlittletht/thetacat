@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Emgu.CV.Reg;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Model;
@@ -88,8 +89,26 @@ public class MediaStacks : INotifyPropertyChanged
     {
         return new MediaStackEnumerator(m_items, (item) => item.PendingOp != MediaStack.Op.None);
     }
-    
-    public void PushPendingChanges()
+
+    /*----------------------------------------------------------------------------
+        %%Function: SetPendingChangesFromBase
+        %%Qualified: Thetacat.Model.MediaStacks.SetPendingChangesFromBase
+
+        using baseStacks as reference, determine how these stacks differ and
+        mark them accordingly. does not delete stacks, only creates or updates
+
+        suitable for restore data
+    ----------------------------------------------------------------------------*/
+    public void SetPendingChangesFromBase(MediaStacks baseStacks)
+    {
+        foreach (KeyValuePair<Guid, MediaStack> stacksItem in m_items)
+        {
+            baseStacks.m_items.TryGetValue(stacksItem.Key, out MediaStack? otherStack);
+            stacksItem.Value.PendingOp = stacksItem.Value.CompareTo(otherStack);
+        }
+    }
+
+    public void PushPendingChanges(Func<int, string, bool>? verify = null)
     {
         List<MediaStackDiff> stackDiffs = new();
 
@@ -97,6 +116,9 @@ public class MediaStacks : INotifyPropertyChanged
         {
             stackDiffs.Add(new MediaStackDiff(stack, stack.PendingOp));
         }
+
+        if (verify != null && !verify(stackDiffs.Count, "stack"))
+            return;
 
         ServiceInterop.UpdateMediaStacks(stackDiffs);
 

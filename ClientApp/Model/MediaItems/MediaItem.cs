@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -284,6 +285,41 @@ public class MediaItem : INotifyPropertyChanged
     {
         PendingOp = Op.MaybeUpdate;
         m_base = null;
+    }
+
+    public bool Equals(MediaItemData other)
+    {
+        if (other.State != State)
+            return false;
+        if (other.ID != ID)
+            return false;
+        if (other.VirtualPath.Equals(VirtualPath))
+            return false;
+        if (other.MD5 != MD5) 
+            return false;
+        if (other.MimeType != MimeType) 
+            return false;
+
+        foreach (MediaTag tag in Tags.Values)
+        {
+            if (!other.Tags.TryGetValue(tag.Metatag.ID, out MediaTag? otherTag))
+                return false;
+
+            if (!tag.Equals(otherTag))
+                return false;
+        }
+
+        return true;
+    }
+
+    public void SetPendingStateFromOther(MediaItem? other)
+    {
+        m_base = other?.Data;
+
+        if (m_base == null)
+             PendingOp = Op.Create;
+        else
+            PendingOp = Op.MaybeUpdate;
     }
 
 #endregion

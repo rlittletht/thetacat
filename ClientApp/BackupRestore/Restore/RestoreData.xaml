@@ -5,33 +5,46 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.BackupRestore.Restore"
         mc:Ignorable="d"
-        Title="RestoreData" Height="450" Width="800">
+        Title="RestoreData" Height="200" Width="400">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
         <StackPanel Orientation="Vertical">
             <TextBlock Text="Import data from" />
             <StackPanel Orientation="Horizontal">
                 <TextBox Text="{Binding Path=RestorePath}" Width="164" />
                 <Button Content="..." Click="BrowseForPath" />
-                <Button Content="Load Export" Click="LoadExportedData"/>
+                <Button Content="Load Export" Click="LoadExportedData" />
             </StackPanel>
             <GroupBox Header="Restore what data">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Vertical" Grid.Column="0">
-                        <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ExportMediaItems}" />
-                        <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ExportMediaStacks}" />
-                        <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ExportVersionStacks}" />
-                        <CheckBox Content="Import Details" IsChecked="{Binding Path=ExportImports}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Vertical" Grid.Column="1">
-                        <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ExportSchema}" />
-                        <CheckBox Content="Workgroups" IsChecked="{Binding Path=ExportWorkgroups}" />
-                    </StackPanel>
-                </Grid>
+                <StackPanel Orientation="Vertical">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Vertical" Grid.Column="0">
+                            <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ImportMediaItems}" />
+                            <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ImportMediaStacks}" />
+                            <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ImportVersionStacks}" />
+                            <CheckBox Content="Import Details" IsChecked="{Binding Path=ImportImports}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Grid.Column="1">
+                            <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ImportSchema}" />
+                            <CheckBox Content="Workgroups" IsChecked="{Binding Path=ImportWorkgroups}" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="Restore Behavior" />
+                    <ComboBox ItemsSource="{Binding Path=RestoreBehaviors}"
+                              SelectedItem="{Binding Path=CurrentRestoreBehavior}" />
+                </StackPanel>
             </GroupBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="2">
+            <Button Content="Cancel" Width="96" Click="DoCancel" />
+            <Button Content="Restore" Width="96" Click="DoImport" />
         </StackPanel>
     </Grid>
 </Window>

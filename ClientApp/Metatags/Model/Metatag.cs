@@ -67,7 +67,6 @@ public class Metatag : IMetatag
         if (left.Description != right.Description) return false;
         if (left.Parent != right.Parent && left.Parent != IdMatchAny && right.Parent != IdMatchAny) return false;
         if (left.Standard != right.Standard) return false;
-        if (left.LocalOnly != right.LocalOnly) return false;
 
         return true;
     }

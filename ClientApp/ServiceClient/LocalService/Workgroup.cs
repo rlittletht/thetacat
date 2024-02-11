@@ -37,6 +37,14 @@ public class Workgroup
     private static readonly string s_updateWorkgroup = @"
             UPDATE tcat_workgroups SET name=@Name, serverPath=@ServerPath, cacheRoot=@CacheRoot WHERE id=@Id";
 
+    private static readonly string s_deleteWorkgroups = @"
+            DELETE from tcat_workgroups";
+
+    public static void DeleteAllWorkgroups()
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteWorkgroups, null, null);
+    }
+
     public static List<ServiceWorkgroup> ReadWorkgroups()
     {
         return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceWorkgroup>>(

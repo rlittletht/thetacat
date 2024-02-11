@@ -17,6 +17,7 @@ public class MetatagSchemaDiff
     private readonly List<MetatagSchemaDiffOp> m_ops = new();
     private readonly int m_baseSchemaVersion;
 
+    public int GetDiffCount => m_ops.Count;
     public IEnumerable<MetatagSchemaDiffOp> Ops => m_ops;
     public int BaseSchemaVersion => m_baseSchemaVersion;
 
@@ -83,7 +84,7 @@ public class MetatagSchemaDiff
             Metatag baseTag = baseDictionary[key];
             Metatag workingTag = workingDictionary[key];
 
-            if (baseTag == workingTag)
+            if (baseTag.Equals(workingTag))
                 continue;
 
             // we have a difference

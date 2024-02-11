@@ -51,6 +51,10 @@ public class CatalogMock : ICatalog
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
+    public void PushPendingChanges(Func<int, string, bool>? verify = null)
+    {
+        throw new NotImplementedException();
+    }
 
     public void PushPendingChanges()
     {

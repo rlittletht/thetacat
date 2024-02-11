@@ -36,4 +36,12 @@ public class MediaTag
 
         return new MediaTag(tag, value);
     }
+
+    public bool Equals(MediaTag other)
+    {
+        if (other.Value != Value) return false;
+        if (other.Metatag.ID != Metatag.ID) return false;
+
+        return true;
+    }
 }

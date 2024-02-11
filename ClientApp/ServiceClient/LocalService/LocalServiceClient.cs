@@ -129,7 +129,7 @@ public class LocalServiceClient
         }
     }
 
-    public static void DoGenericCommandWithAliases(string query, Dictionary<string, string> aliases, CustomizeCommandDelegate? custDelegate)
+    public static void DoGenericCommandWithAliases(string query, Dictionary<string, string>? aliases, CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
         Sql sql = LocalServiceClient.GetConnection();
@@ -137,7 +137,8 @@ public class LocalServiceClient
         SqlSelect selectTags = new SqlSelect();
 
         selectTags.AddBase(query);
-        selectTags.AddAliases(aliases);
+        if (aliases != null)
+            selectTags.AddAliases(aliases);
 
         string sQuery = selectTags.ToString();
 

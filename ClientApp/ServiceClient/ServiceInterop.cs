@@ -18,10 +18,15 @@ public class ServiceInterop
         LocalService.Metatags.UpdateMetatagSchema(schemaDiff);
     }
 
+    public static void ResetMetatagSchema() => LocalService.Metatags.ResetMetatagSchema();
+
     public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
     {
         LocalService.Media.UpdateMediaItems(diffs);
     }
+
+    public static void DeleteAllMediaAndMediaTags() => LocalService.Media.DeleteAllMediaAndMediaTags();
+
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
         return LocalService.Import.GetPendingImportsForClient(sourceClient);
@@ -64,6 +69,8 @@ public class ServiceInterop
     {
         return LocalService.Workgroup.ReadWorkgroups();
     }
+
+    public static void DeleteAllWorkgroups() => LocalService.Workgroup.DeleteAllWorkgroups();
 
     public static void CreateWorkgroup(ServiceWorkgroup workgroup)
     {

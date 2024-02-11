@@ -22,9 +22,21 @@ public class Media
         m_items.TryAdd(item.ID, item);
     }
 
-    public void PushPendingChanges()
+    public void SetBaseFromOtherMedia(Media mediaBase)
+    {
+        foreach (MediaItem item in m_items.Values)
+        {
+            mediaBase.Items.TryGetValue(item.ID, out MediaItem? other);
+            item.SetPendingStateFromOther(other);
+        }
+    }
+
+    public void PushPendingChanges(Func<int, string, bool>? verify = null)
     {
         List<MediaItemDiff> diffs = BuildUpdates();
+
+        if (verify != null && !verify(diffs.Count, "mediaItem"))
+            return;
 
         ServiceInterop.UpdateMediaItems(diffs);
 
@@ -46,7 +58,7 @@ public class Media
 
         foreach (KeyValuePair<Guid, MediaItem> item in m_items)
         {
-            if (item.Value.MaybeHasChanges)
+            if (item.Value.MaybeHasChanges || item.Value.PendingOp == MediaItem.Op.Create)
             {
                 if (item.Value.PendingOp == MediaItem.Op.Create)
                     diffs.Add(MediaItemDiff.CreateInsert(item.Value));

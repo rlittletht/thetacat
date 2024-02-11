@@ -101,6 +101,30 @@ public class MediaStack: INotifyPropertyChanged
         return newStackItem;
     }
 
+    public Op CompareTo(MediaStack? right)
+    {
+        if (right == null)
+            return Op.Create;
+
+        Dictionary<Guid, MediaStackItem> mapItems = new();
+
+        foreach (MediaStackItem item in right.Items)
+        {
+            mapItems.Add(item.MediaId, item);
+        }
+
+        foreach (MediaStackItem item in m_items)
+        {
+            if (!mapItems.TryGetValue(item.MediaId, out MediaStackItem? otherItem))
+                return Op.Update;
+
+            if (otherItem != item)
+                return Op.Update;
+        }
+
+        return Op.None;
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

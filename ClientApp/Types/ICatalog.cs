@@ -22,7 +22,7 @@ public interface ICatalog
     public ObservableCollection<MediaItem> GetObservableCollection();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);
-    public void PushPendingChanges();
+    public void PushPendingChanges(Func<int, string, bool>? verify = null);
     /* async */ public Task ReadFullCatalogFromServer(MetatagSchema schema);
     public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath, bool verifyMd5);
     public MediaItem? FindMatchingMediaByMD5(string md5);

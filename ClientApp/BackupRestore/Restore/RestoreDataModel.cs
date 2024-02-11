@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Security.RightsManagement;
 
 namespace Thetacat.BackupRestore.Restore;
 
 public class RestoreDataModel: INotifyPropertyChanged
 {
-
     private string m_restorePath = "catback.xml";
     private bool m_importMediaItems = true;
     private bool m_importMediaStacks = true;
@@ -14,6 +15,15 @@ public class RestoreDataModel: INotifyPropertyChanged
     private bool m_importImports = true;
     private bool m_importSchema = true;
     private bool m_importWorkgroups = false;
+
+    public ObservableCollection<string> RestoreBehaviors { get; set; } = new ObservableCollection<string>() { "Append", "Replace" };
+    private string m_currentRestoreBehavior = "Replace";
+
+    public string CurrentRestoreBehavior
+    {
+        get => m_currentRestoreBehavior;
+        set => SetField(ref m_currentRestoreBehavior, value);
+    }
 
     public string RestorePath
     {

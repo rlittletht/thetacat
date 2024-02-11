@@ -27,6 +27,10 @@ public class Media
             (id, metatag, value)
         VALUES ";
 
+    private static readonly string s_deleteAllMediaAndMediaTags = @"
+        DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id)
+        DELETE FROM tcat_media";
+
     public static void ExecutePartedCommands<T>(Sql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
     {
         StringBuilder sb = new StringBuilder();
@@ -418,5 +422,10 @@ public class Media
         {
             sql.Close();
         }
+    }
+
+    public static void DeleteAllMediaAndMediaTags()
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTags, s_aliases, null);
     }
 }

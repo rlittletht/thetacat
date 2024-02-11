@@ -299,6 +299,27 @@ public class MetatagSchema
         ReplaceFromService(ServiceInterop.GetMetatagSchema());
     }
 
+    public void ReadNewBaseFromService(ServiceMetatagSchema serviceMetatagSchema)
+    {
+        m_schemaBase =
+            new MetatagSchemaDefinition
+            {
+                SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0
+            };
+
+        if (serviceMetatagSchema.Metatags != null)
+        {
+            foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
+            {
+                Metatag metatag = Metatag.CreateFromService(serviceMetatag);
+                m_schemaBase.AddMetatag(metatag);
+            }
+        }
+
+        // and bump the schemaversion in versionworking
+        m_schemaWorking.SchemaVersion = m_schemaBase.SchemaVersion + 1;
+    }
+
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
         m_schemaBase = null;
@@ -328,12 +349,15 @@ public class MetatagSchema
         return MetatagSchemaDiff.CreateFromSchemas(m_schemaBase, m_schemaWorking);
     }
 
-    public void UpdateServer()
+    public void UpdateServer(Func<int, bool>? verify = null)
     {
         // need to handle 3WM here if we get an exception (because schema changed)
         MetatagSchemaDiff diff = BuildDiffForSchemas();
         if (!diff.IsEmpty)
         {
+            if (verify != null && verify(diff.GetDiffCount) == false)
+                return;
+
             ServiceInterop.UpdateMetatagSchema(diff);
             m_schemaBase = null; // working is now the base
         }
