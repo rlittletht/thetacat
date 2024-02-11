@@ -31,4 +31,5 @@ public interface ICatalog
     public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index);
 
     public bool HasMediaItem(Guid mediaId);
+    public void Reset();
 }

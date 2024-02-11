@@ -9,6 +9,7 @@ using TCore;
 using Thetacat.Azure;
 using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
+using Thetacat.TcSettings;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
@@ -24,7 +25,7 @@ public class Cache: ICache
         Unknown
     }
 
-    public virtual CacheType Type { get; }
+    public virtual CacheType Type { get; private set; }
 
     public virtual IWorkgroup _Workgroup
     {
@@ -37,7 +38,7 @@ public class Cache: ICache
         }
     }
 
-    public PathSegment LocalPathToCacheRoot { get; }
+    public PathSegment LocalPathToCacheRoot { get; private set; }
 
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; } = new ConcurrentDictionary<Guid, ICacheEntry>();
 
@@ -119,8 +120,17 @@ public class Cache: ICache
 
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
+#pragma warning disable CS8618 // we set these in a method
     public Cache(TcSettings.Profile settings)
     {
+        ResetCache(settings);
+    }
+#pragma warning restore CS8618
+
+    public void ResetCache(Profile settings)
+    {
+        Entries.Clear();
+
         CacheType cacheType = CacheTypeFromString(settings.CacheType);
 
         Type = cacheType;

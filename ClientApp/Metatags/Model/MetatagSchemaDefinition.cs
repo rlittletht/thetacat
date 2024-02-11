@@ -40,6 +40,14 @@ public class MetatagSchemaDefinition
         return null;
     }
 
+    public void Reset()
+    {
+        m_metatags.Clear();
+        m_tree = null;
+        SchemaVersion = 0;
+        m_metatagLookup.Clear();
+    }
+
     public void AddMetatag(Metatag metatag)
     {
         m_metatags.Add(metatag);

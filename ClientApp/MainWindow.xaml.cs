@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
         App.State.Catalog.OnItemDirtied += SetCollectionDirtyState;
         App.State.MetatagSchema.OnItemDirtied += SetSchemaDirtyState;
+        App.State.ProfileChanged += OnProfileChanged;
         RebuildFilterList();
     }
 
@@ -512,6 +513,15 @@ public partial class MainWindow : Window
             m_model.ExplorerCollection.Filter = App.State.ActiveProfile.Filters[filterName];
 
         m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = false; // reset it (regardless of whether we set it)
+    }
+
+    private void OnProfileChanged(object? sender, ProfileChangedEventArgs e)
+    {
+        App.State.Cache.ResetCache(App.State.ActiveProfile);
+        RebuildFilterList();
+        m_model.ExplorerCollection.Clear();
+        App.State.Catalog.Reset();
+        App.State.MetatagSchema.Reset();
     }
 
     private void TestRenderImage(object sender, RoutedEventArgs e)

@@ -82,6 +82,10 @@ public class CatalogMock : ICatalog
     }
 
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
+    public void Reset()
+    {
+        throw new NotImplementedException();
+    }
 
     protected virtual void OnOnItemDirtied(DirtyItemEventArgs<bool> e)
     {

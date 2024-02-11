@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.Client;
@@ -11,6 +12,7 @@ namespace Thetacat.Types;
 
 public interface IAppState
 {
+    public event EventHandler<ProfileChangedEventArgs>? ProfileChanged;
     ImageCache PreviewImageCache { get; }
     ImageCache ImageCache { get; }
     ICatalog Catalog { get; }

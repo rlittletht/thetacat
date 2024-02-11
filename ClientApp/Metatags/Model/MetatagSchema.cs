@@ -363,4 +363,11 @@ public class MetatagSchema
         }
         TriggerItemDirtied(false);
     }
+
+    public void Reset()
+    {
+        m_schemaBase = null;
+        m_schemaWorking.Reset();
+        TriggerItemDirtied(false);
+    }
 }

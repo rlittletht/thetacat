@@ -16,6 +16,11 @@ public class Media
         m_items = new ConcurrentDictionary<Guid, MediaItem>();
     }
 
+    public void Reset()
+    {
+        m_items.Clear();
+    }
+
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;

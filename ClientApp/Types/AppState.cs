@@ -17,6 +17,7 @@ namespace Thetacat.Types;
 
 public class AppState : IAppState
 {
+    public event EventHandler<ProfileChangedEventArgs>? ProfileChanged;
     public delegate void CloseLogMonitorDelegate(bool skipClose);
     public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork<bool> work, OnWorkCompletedDelegate? onWorkCompleted = null);
 
@@ -136,6 +137,8 @@ public class AppState : IAppState
     {
         ActiveProfile = Settings.Profiles[profileName];
         AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
+        if (ProfileChanged != null)
+            ProfileChanged(this, new ProfileChangedEventArgs(ActiveProfile));
     }
 
     private readonly List<string> m_stashedSqConnections = new();

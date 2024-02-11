@@ -55,6 +55,13 @@ public class Catalog : ICatalog
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => m_mediaStacks[stackType];
 
+    public void Reset()
+    {
+        m_media.Reset();
+        VersionStacks.Clear();
+        MediaStacks.Clear();
+        TriggerItemDirtied(false);
+    }
     private void TriggerItemDirtied(bool fDirty)
     {
         if (OnItemDirtied != null)

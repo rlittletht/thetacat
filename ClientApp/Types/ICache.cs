@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System;
+using Microsoft.Identity.Client;
 using Thetacat.Model;
+using Thetacat.TcSettings;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -9,6 +11,7 @@ namespace Thetacat.Types;
 public interface ICache
 {
     public Cache.CacheType Type { get; }
+    public void ResetCache(Profile profile);
     public IWorkgroup _Workgroup { get; }
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
