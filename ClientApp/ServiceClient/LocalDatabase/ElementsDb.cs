@@ -4,11 +4,13 @@ using System.Data.SQLite;
 using System.Globalization;
 using System.Windows;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
+using TCore.SQLiteClient;
 using Thetacat.Migration.Elements;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Migration.Elements.Versions;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalDatabase;
@@ -89,18 +91,19 @@ public class ElementsDb
 
     private ISql _Connection => m_connection ?? throw new CatExceptionInitializationFailure("ElementsDb not properly created");
 
-    private static Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "version_stack_to_media_table", "VS" },
-            { "media_stack_to_media_table", "MS" },
-            { "tag_to_metadata_table", "TMD" },
-            { "tag_table", "TT" },
-            { "metadata_description_table", "MDT" },
-            { "metadata_string_table", "MST" },
-            { "tag_to_media_table", "TMT" },
-            { "media_table", "MT" }
-        };
+    private static TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "version_stack_to_media_table", "VS" },
+                { "media_stack_to_media_table", "MS" },
+                { "tag_to_metadata_table", "TMD" },
+                { "tag_table", "TT" },
+                { "metadata_description_table", "MDT" },
+                { "metadata_string_table", "MST" },
+                { "tag_to_media_table", "TMT" },
+                { "media_table", "MT" }
+            });
 
     private static readonly string s_queryMediaStacks = @"
         SELECT 
@@ -157,7 +160,6 @@ public class ElementsDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryMetadataDefinitions,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref List<PseMetadata> building) =>
                     {
                         building.Add(
@@ -167,10 +169,11 @@ public class ElementsDb
                                .SetPseIdentifier(reader.GetString(1))
                                .SetPseDatatype(reader.GetString(2))
                                .Build());
-                    });
+                    },
+                    s_aliases);
             return new PseMetadataSchema(tags);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new PseMetadataSchema(new List<PseMetadata>());
         }
@@ -184,7 +187,6 @@ public class ElementsDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryMetatagDefinitions,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMetatag> building) =>
                     {
                         int pseId = reader.GetInt32(0);
@@ -199,9 +201,10 @@ public class ElementsDb
                                .SetElementsTypeName(reader.GetString(3))
                                .SetParentName(reader.GetString(4))
                                .Build());
-                    });
+                    },
+                    s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new Dictionary<int, PseMetatag>();
         }
@@ -324,15 +327,15 @@ public class ElementsDb
             {
                 string value;
 
-                if (sqlr.GetFieldAffinity(1) == TypeAffinity.Text)
+                if (sqlr.GetFieldAffinity(1) == typeof(string))
                 {
                     value = sqlr.GetString(1);
                 }
-                else if (sqlr.GetFieldAffinity(1) == TypeAffinity.Int64)
+                else if (sqlr.GetFieldAffinity(1) == typeof(Int64))
                 {
                     value = sqlr.GetInt32(1).ToString();
                 }
-                else if (sqlr.GetFieldAffinity(1) == TypeAffinity.Double)
+                else if (sqlr.GetFieldAffinity(1) == typeof(double))
                 {
                     value = sqlr.GetDouble(1).ToString(CultureInfo.InvariantCulture);
                 }
@@ -377,7 +380,6 @@ public class ElementsDb
             imports = _Connection.DoGenericQueryDelegateRead(
                 Guid.NewGuid(),
                 s_queryMediaImportDates,
-                s_aliases,
                 (ISqlReader reader, Guid crid, ref List<PseMediaImportItem> building) =>
                 {
                     building.Add(
@@ -386,9 +388,10 @@ public class ElementsDb
                             ID = reader.GetInt32(0),
                             Name = reader.GetString(1)
                         });
-                });
+                },
+                s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             imports = new List<PseMediaImportItem>();
         }
@@ -478,7 +481,6 @@ public class ElementsDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryMediaDictionary,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMediaItem> building) =>
                     {
                         int pseId = reader.GetInt32(0);
@@ -495,9 +497,10 @@ public class ElementsDb
                                .SetVolumeId(reader.GetInt32(5).ToString())
                                .SetVolumeName(reader.GetString(6))
                                .Build());
-                    });
+                    },
+                    s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new Dictionary<int, PseMediaItem>();
         }
@@ -520,15 +523,15 @@ public class ElementsDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryVersionStacks,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
                     {
                         building.Add(
                             new PseStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
 
-                    });
+                    },
+                    s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<PseStackItem>();
         }
@@ -542,14 +545,14 @@ public class ElementsDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryMediaStacks,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
                     {
                         building.Add(
                             new PseStackItem(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
-                    });
+                    },
+                    s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<PseStackItem>();
         }

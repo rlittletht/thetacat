@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
 using Thetacat.Model;
 using Thetacat.Types;
 
@@ -8,12 +10,13 @@ namespace Thetacat.ServiceClient.LocalService;
 
 public class Stacks
 {
-    private static readonly Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_stackmedia", "SM" },
-            { "tcat_stacks", "ST" },
-        };
+    private static readonly TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_stackmedia", "SM" },
+                { "tcat_stacks", "ST" },
+            });
 
     private static readonly string s_queryAllStacks = @"
         SELECT $$tcat_stackmedia$$.id, $$tcat_stackmedia$$.media_id, $$tcat_stackmedia$$.orderHint,
@@ -38,13 +41,12 @@ public class Stacks
         try
         {
             List<ServiceStack> stacks =
-                SqlReader.DoGenericQueryDelegateRead(
-                    sql,
+                sql.DoGenericQueryDelegateRead(
                     crid,
                     sQuery,
-                    (SqlReader reader, Guid correlationId, ref List<ServiceStack> building) =>
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceStack> building) =>
                     {
-                        Guid id = reader.Reader.GetGuid(0);
+                        Guid id = reader.GetGuid(0);
 
                         if (!mapStack.TryGetValue(id, out ServiceStack? existing))
                         {
@@ -52,8 +54,8 @@ public class Stacks
                                 new ServiceStack()
                                 {
                                     Id = id,
-                                    StackType = reader.Reader.GetString(3),
-                                    Description = reader.Reader.GetString(4),
+                                    StackType = reader.GetString(3),
+                                    Description = reader.GetString(4),
                                     StackItems = new List<ServiceStackItem>()
                                 };
                             mapStack.Add(id, existing);
@@ -63,8 +65,8 @@ public class Stacks
                         ServiceStackItem item =
                             new()
                             {
-                                MediaId = reader.Reader.GetGuid(1),
-                                OrderHint = reader.Reader.GetInt32(2)
+                                MediaId = reader.GetGuid(1),
+                                OrderHint = reader.GetInt32(2)
                             };
 
                         if (existing.StackItems == null)
@@ -75,7 +77,7 @@ public class Stacks
 
             return stacks;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<ServiceStack>();
         }
@@ -99,7 +101,7 @@ public class Stacks
         switch (diff.PendingOp)
         {
             case MediaStack.Op.Create:
-                updates.Add($"INSERT INTO tcat_stacks (id, stackType, description) VALUES ('{diff.Stack.StackId.ToString()}', '{Sql.Sqlify(diff.Stack.Type)}', '{Sql.Sqlify(diff.Stack.Description)}')");
+                updates.Add($"INSERT INTO tcat_stacks (id, stackType, description) VALUES ('{diff.Stack.StackId.ToString()}', {SqlText.SqlifyQuoted(diff.Stack.Type)}, {SqlText.SqlifyQuoted(diff.Stack.Description)})");
                 AddInsertStackMediaToCommands(diff, updates);
                 return updates;
             case MediaStack.Op.Delete:
@@ -107,7 +109,7 @@ public class Stacks
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
                 return updates;
             case MediaStack.Op.Update:
-                updates.Add($"UPDATE tcat_stacks SET description='{Sql.Sqlify(diff.Stack.Description)}' WHERE id='{diff.Stack.StackId.ToString()}'");
+                updates.Add($"UPDATE tcat_stacks SET description={SqlText.SqlifyQuoted(diff.Stack.Description)} WHERE id='{diff.Stack.StackId.ToString()}'");
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId.ToString()}");
                 AddInsertStackMediaToCommands(diff, updates);
                 return updates;

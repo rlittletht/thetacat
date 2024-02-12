@@ -4,8 +4,10 @@ using System.Data.SQLite;
 using System.IO;
 using System.Text;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
+using TCore.SQLiteClient;
 using Thetacat.Model.Workgroups;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -13,12 +15,13 @@ namespace Thetacat.ServiceClient.LocalDatabase;
 
 public class WorkgroupDb
 {
-    private static Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_workgroup_media", "TWM" },
-            { "tcat_workgroup_clients", "TWC" }
-        };
+    private static TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_workgroup_media", "TWM" },
+                { "tcat_workgroup_clients", "TWC" }
+            });
 
     private readonly PathSegment m_database;
     private readonly ISql? m_connection;
@@ -149,21 +152,22 @@ public class WorkgroupDb
                 _Connection.DoGenericQueryDelegateRead(
                     Guid.NewGuid(),
                     s_queryWorkgroupClientDetailsByName,
-                    s_aliases,
                     (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                     {
                         _client.ClientId = reader.GetGuid(0);
                         _client.ClientName = reader.GetString(1);
                         _client.VectorClock = reader.GetInt32(2);
                     },
-                    cmd => { cmd.AddParameterWithValue("@Name", clientName); });
+                    s_aliases,
+                    cmd => { cmd.AddParameterWithValue("@Name", clientName); }
+                    );
 
             if (client.ClientId == null)
                 return null;
 
             return client;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return null;
         }
@@ -182,7 +186,6 @@ public class WorkgroupDb
                         _Connection.DoGenericQueryDelegateRead(
                             Guid.NewGuid(),
                             s_queryWorkgroupMediaClock,
-                            s_aliases,
                             (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
                             {
                                 ServiceWorkgroupItem item =
@@ -197,12 +200,13 @@ public class WorkgroupDb
 
                                 building.Media ??= new List<ServiceWorkgroupItem>();
                                 building.Media.Add(item);
-                            });
+                            },
+                            s_aliases);
 
                     mediaWithClock.VectorClock = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock));
                     return mediaWithClock;
                 }
-                catch (TcSqlExceptionNoResults)
+                catch (SqlExceptionNoResults)
                 {
                     return new ServiceWorkgroupMediaClock()
                     {
@@ -253,7 +257,7 @@ public class WorkgroupDb
         }
     }
 
-    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases = null)
+    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases = null)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -329,7 +333,7 @@ public class WorkgroupDb
         DoExclusiveDatabaseWork(
             () =>
             {
-                int currectVector = _Connection.NExecuteScalar(s_queryWorkgroupClock);
+                int currectVector = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock));
 
                 if (currectVector != baseClock)
                     throw new CatExceptionDataCoherencyFailure();
@@ -348,7 +352,7 @@ public class WorkgroupDb
                     "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock) VALUES ",
                     inserts,
                     (entry) =>
-                        $"('{entry.ID.ToString()}', '{Sql.Sqlify(entry.Path.ToString())}', '{entry.CachedBy.ToString()}', {Sql.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {Sql.Nullable(entry.VectorClock)}) ",
+                        $"('{entry.ID.ToString()}', {SqlText.SqlifyQuoted(entry.Path.ToString())}, '{entry.CachedBy.ToString()}', {SqlText.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {SqlText.Nullable(entry.VectorClock)}) ",
                     100,
                     ",",
                     null);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
 using TCore;
+using TCore.SqlCore;
 using Thetacat.Azure;
 using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
@@ -85,7 +86,7 @@ public class Cache: ICache
         {
             m_workgroup = new Workgroup(id);
         }
-        catch (TcSqlExceptionNoResults e)
+        catch (SqlExceptionNoResults e)
         {
             throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
         }

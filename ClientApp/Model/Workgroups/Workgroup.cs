@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using TCore.SqlCore;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;
 

@@ -1,4 +1,4 @@
-﻿using Thetacat.TCore.TcSqlLite;
+﻿using TCore.SqlCore;
 
 namespace Tests.Model.Sql;
 

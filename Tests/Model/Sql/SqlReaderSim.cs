@@ -1,7 +1,7 @@
 ﻿using System.Data.SQLite;
 using TCore;
-using Thetacat.TCore.TcSqlLite;
-using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
+using TCore.SqlCore;
+using CustomizeCommandDelegate = TCore.SqlCore.CustomizeCommandDelegate;
 
 namespace Tests.Model.Sql;
 
@@ -14,12 +14,17 @@ public class SqlReaderSim: ISqlReader
         m_dataSource = queryDataItem;
     }
 
-    public void ExecuteQuery(SqlCommandTextInit cmdText, string sResourceConnString, CustomizeCommandDelegate? customizeDelegate = null)
+    public void ExecuteQuery(string sQuery, string? sResourceConnString, CustomizeCommandDelegate? customizeDelegate = null, Dictionary<string, string>? aliases = null)
     {
         throw new NotImplementedException();
     }
 
-    public void ExecuteQuery(string sQuery, string? sResourceConnString, CustomizeCommandDelegate? customizeDelegate = null, Dictionary<string, string>? aliases = null)
+    public void ExecuteQuery(SqlCommandTextInit cmdText, string sResourceConnString, TCore.SqlCore.CustomizeCommandDelegate? customizeDelegate = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ExecuteQuery(string sQuery, string? sResourceConnString, TCore.SqlCore.CustomizeCommandDelegate? customizeDelegate = null, TableAliases? aliases = null)
     {
         throw new NotImplementedException();
     }
@@ -51,6 +56,18 @@ public class SqlReaderSim: ISqlReader
     public long? GetNullableInt64(int index) => throw new NotImplementedException();
 
     public DateTime? GetNullableDateTime(int index) => throw new NotImplementedException();
+    public bool IsDBNull(int index) => throw new NotImplementedException();
+
+    Type ISqlReader.GetFieldAffinity(int index) => throw new NotImplementedException();
+
+    public Type GetFieldType(int index) => throw new NotImplementedException();
+
+    public int GetFieldCount() => throw new NotImplementedException();
+
+    public string GetFieldName(int index) => throw new NotImplementedException();
+
+    public object GetNativeValue(int index) => throw new NotImplementedException();
+
     public TypeAffinity GetFieldAffinity(int index) => throw new NotImplementedException();
 
     public bool NextResult() => throw new NotImplementedException();

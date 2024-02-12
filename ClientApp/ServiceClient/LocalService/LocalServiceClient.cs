@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
 using Thetacat.Logging;
 using Thetacat.Secrets;
 using Thetacat.Types;
@@ -45,7 +47,7 @@ public class LocalServiceClient
             if (delegateReader == null)
             {
                 // just execute as a command
-                Sql.ExecuteNonQuery(lsh, sCmd, AppSecrets.MasterSqlConnectionString);
+                lsh.Sql.ExecuteNonQuery(sCmd);
                 return default;
             }
             else
@@ -67,7 +69,7 @@ public class LocalServiceClient
                     }
 
                     if (!fOnce)
-                        throw new TcSqlExceptionNoResults(crid);
+                        throw new SqlExceptionNoResults(crid);
 
                     return t;
 
@@ -87,8 +89,8 @@ public class LocalServiceClient
 
     public static T DoGenericQueryWithAliases<T>(
         string query, 
-        Dictionary<string, string> aliases, 
-        SqlReader.DelegateReader<T> delegateReader, 
+        TCore.SqlCore.ISqlReader.DelegateReader<T> delegateReader,
+        TableAliases aliases,
         CustomizeCommandDelegate? custDelegate = null) where T : new()
     {
         Guid crid = Guid.NewGuid();
@@ -106,16 +108,16 @@ public class LocalServiceClient
             sql = LocalServiceClient.GetConnection();
 
             T t =
-                SqlReader.DoGenericQueryDelegateRead(
-                    sql,
+                sql.DoGenericQueryDelegateRead<T>(
                     crid,
                     sQuery,
                     delegateReader,
+                    null,
                     custDelegate);
 
             return t;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new T();
         }
@@ -129,7 +131,7 @@ public class LocalServiceClient
         }
     }
 
-    public static void DoGenericCommandWithAliases(string query, Dictionary<string, string>? aliases, CustomizeCommandDelegate? custDelegate)
+    public static void DoGenericCommandWithAliases(string query, TableAliases? aliases, CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
         Sql sql = LocalServiceClient.GetConnection();
@@ -150,7 +152,7 @@ public class LocalServiceClient
 
             return;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return;
         }

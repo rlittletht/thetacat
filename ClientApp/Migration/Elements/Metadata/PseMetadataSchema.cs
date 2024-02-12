@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using TCore.SQLiteClient;
 using Thetacat.Migration.Elements.Media;
 using Thetacat.Standards;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;

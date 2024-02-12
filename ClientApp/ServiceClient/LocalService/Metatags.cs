@@ -2,18 +2,21 @@
 using System.Collections.Generic;
 using System.Windows;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
 using Thetacat.Metatags.Model;
 
 namespace Thetacat.ServiceClient.LocalService;
 
 public class Metatags
 {
-    private static readonly Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_metatags", "META" },
-            { "tcat_schemaversions", "SV" }
-        };
+    private static readonly TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_metatags", "META" },
+                { "tcat_schemaversions", "SV" }
+            });
 
     private static readonly string s_resetMetatagSchema = @"
         DELETE FROM tcat_schemaversions
@@ -40,23 +43,20 @@ public class Metatags
         try
         {
             ServiceMetatagSchema schema =
-                SqlReader.DoGenericMultiSetQueryDelegateRead<ServiceMetatagSchema>(
-                    sql,
+                sql.DoGenericMultiSetQueryDelegateRead<ServiceMetatagSchema>(
                     crid,
                     sQuery,
-                    (SqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
+                    (ISqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
                     {
                         if (recordset == 0)
                         {
                             ServiceMetatag metatag = new()
                                                      {
-                                                         ID = reader.Reader.GetGuid(0),
-                                                         Parent = reader.Reader.IsDBNull(1)
-                                                             ? null
-                                                             : reader.Reader.GetGuid(1),
-                                                         Name = reader.Reader.GetString(2),
-                                                         Description = reader.Reader.GetString(3),
-                                                         Standard = reader.Reader.GetString(4)
+                                                         ID = reader.GetGuid(0),
+                                                         Parent = reader.GetNullableGuid(1),
+                                                         Name = reader.GetString(2),
+                                                         Description = reader.GetString(3),
+                                                         Standard = reader.GetString(4)
                                                      };
 
                             if (schemaBuilding.Metatags == null)
@@ -66,14 +66,14 @@ public class Metatags
                         }
                         else if (recordset == 1)
                         {
-                            schemaBuilding.SchemaVersion = reader.Reader.GetInt32(0);
+                            schemaBuilding.SchemaVersion = reader.GetInt32(0);
                         }
                     }
                 );
 
             return schema;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new ServiceMetatagSchema()
                    {
@@ -88,10 +88,10 @@ public class Metatags
 
     static string BuildInsertSql(MetatagSchemaDiffOp diffOp)
     {
-        string description = Sql.Sqlify(diffOp.Metatag.Description);
-        string name = Sql.Sqlify(diffOp.Metatag.Name);
-        string parent = Sql.Nullable(diffOp.Metatag.Parent);
-        string standard = Sql.Sqlify(diffOp.Metatag.Standard);
+        string description = SqlText.Sqlify(diffOp.Metatag.Description);
+        string name = SqlText.Sqlify(diffOp.Metatag.Name);
+        string parent = SqlText.Nullable(diffOp.Metatag.Parent);
+        string standard = SqlText.Sqlify(diffOp.Metatag.Standard);
 
         return "INSERT INTO tcat_metatags (Description, ID, Name, Parent, Standard) "
             + $"VALUES ('{description}', '{diffOp.ID.ToString()}', '{name}', {parent}, '{standard}') ";
@@ -107,13 +107,13 @@ public class Metatags
         List<string> sets = new();
 
         if (diffOp.IsNameChanged)
-            sets.Add($"Name='{Sql.Sqlify(diffOp.Metatag.Name)}'");
+            sets.Add($"Name={SqlText.SqlifyQuoted(diffOp.Metatag.Name)}");
         if (diffOp.IsDescriptionChanged)
-            sets.Add($"Description='{Sql.Sqlify(diffOp.Metatag.Description)}'");
+            sets.Add($"Description={SqlText.SqlifyQuoted(diffOp.Metatag.Description)}");
         if (diffOp.IsParentChanged)
-            sets.Add($"Parent={Sql.Nullable(diffOp.Metatag.Parent)}");
+            sets.Add($"Parent={SqlText.Nullable(diffOp.Metatag.Parent)}");
         if (diffOp.IsStandardChanged)
-            sets.Add($"Standard={Sql.Nullable(diffOp.Metatag.Standard)}");
+            sets.Add($"Standard={SqlText.Nullable(diffOp.Metatag.Standard)}");
 
         if (sets.Count == 0)
             return "";

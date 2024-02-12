@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using TCore.SqlCore;
 using TCore;
+using TCore.SqlClient;
+using TCore.SQLiteClient;
 using Thetacat.Model.Client;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -18,12 +20,13 @@ namespace Thetacat.ServiceClient.LocalDatabase;
 ----------------------------------------------------------------------------*/
 public class ClientDatabase
 {
-    private static Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_md5cache", "MDC" },
-            { "tcat_derivatives", "DER" },
-        };
+    private static TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_md5cache", "MDC" },
+                { "tcat_derivatives", "DER" },
+            });
 
     private readonly string m_database;
     private readonly ISql? m_connection;
@@ -59,9 +62,9 @@ public class ClientDatabase
     }
 
     /*----------------------------------------------------------------------------
-    %%Function: OpenDatabase
-    %%Qualified: Thetacat.Model.WorkgroupDb.OpenDatabase
-----------------------------------------------------------------------------*/
+        %%Function: OpenDatabase
+        %%Qualified: Thetacat.Model.WorkgroupDb.OpenDatabase
+    ----------------------------------------------------------------------------*/
     private SQLite OpenDatabase()
     {
         SQLite connection = SQLite.OpenConnection($"Data Source={m_database}");
@@ -118,7 +121,6 @@ public class ClientDatabase
             return _Connection.DoGenericQueryDelegateRead(
                 Guid.NewGuid(),
                 s_queryDerivatives,
-                s_aliases,
                 (ISqlReader reader, Guid crid, ref List<DerivativeDbItem> building) =>
                 {
                     building.Add(
@@ -127,9 +129,11 @@ public class ClientDatabase
                             reader.GetString(1),
                             reader.GetDouble(2),
                             reader.GetString(3)));
-                });
+                },
+                s_aliases
+                );
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<DerivativeDbItem>();
         }
@@ -139,12 +143,12 @@ public class ClientDatabase
     string BuildDerivativeInsertCommand(DerivativeItem item)
     {
         return
-            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, path) VALUES ('{Sql.Sqlify(item.MediaId.ToString())}', '{Sql.Sqlify(item.MimeType)}', {item.ScaleFactor}, '{Sql.Sqlify(item.Path)}') ";
+            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, path) VALUES ({SqlText.SqlifyQuoted(item.MediaId.ToString())}, {SqlText.SqlifyQuoted(item.MimeType)}, {item.ScaleFactor}, {SqlText.SqlifyQuoted(item.Path)}) ";
     }
 
     string BuildDerivativeDeleteCommand(DerivativeItem item)
     {
-        return $"DELETE FROM tcat_derivatives WHERE media='{Sql.Sqlify(item.MediaId.ToString())}' AND mimeType='{Sql.Sqlify(item.MimeType)}' AND scaleFactor={item.ScaleFactor}";
+        return $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor}";
     }
 
     List<string> BuildDerivativeInsertCommands(IEnumerable<DerivativeItem> items)
@@ -213,7 +217,6 @@ public class ClientDatabase
             return _Connection.DoGenericQueryDelegateRead(
                 Guid.NewGuid(),
                 s_queryAllMd5Cache,
-                s_aliases,
                 (ISqlReader reader, Guid crid, ref List<Md5CacheDbItem> building) =>
                 {
                     building.Add(
@@ -222,9 +225,10 @@ public class ClientDatabase
                             reader.GetString(3),
                             reader.GetDateTime(1),
                             reader.GetInt64(2)));
-                });
+                },
+                s_aliases);
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<Md5CacheDbItem>();
         }
@@ -232,12 +236,12 @@ public class ClientDatabase
 
     string BuildMd5InsertCommand(Md5CacheItem item)
     {
-        return $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ('{Sql.Sqlify(item.Path)}', '{Sql.Sqlify(item.MD5)}', '{item.LastModified.ToUniversalTime().ToString("u")}', {item.Size}) ";
+        return $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ({SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}, '{item.LastModified.ToUniversalTime():u}', {item.Size}) ";
     }
 
     string BuildMd5DeleteCommand(Md5CacheItem item)
     {
-        return $"DELETE FROM tcat_md5cache WHERE path='{Sql.Sqlify(item.Path)}'";
+        return $"DELETE FROM tcat_md5cache WHERE path={SqlText.SqlifyQuoted(item.Path)}";
     }
 
     List<string> BuildMd5InsertCommands(IEnumerable<Md5CacheItem> items)

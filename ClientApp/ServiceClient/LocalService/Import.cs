@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
 using Thetacat.Import;
 using Thetacat.Model;
 
@@ -9,11 +11,12 @@ namespace Thetacat.ServiceClient.LocalService;
 
 public class Import
 {
-    private static Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_import", "IMP" },
-        };
+    private static TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_import", "IMP" },
+            });
 
     private static readonly string s_baseQuery = $@"
         SELECT 
@@ -37,30 +40,30 @@ public class Import
         try
         {
             List<ServiceImportItem> importItems =
-                SqlReader.DoGenericQueryDelegateRead(
-                    sql,
+                sql.DoGenericQueryDelegateRead(
                     crid,
                     sQuery,
-                    (SqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
                     {
                         ServiceImportItem item =
                             new()
                             {
-                                ID = reader.Reader.GetGuid(0),
-                                State = reader.Reader.GetString(1),
-                                SourcePath = reader.Reader.GetString(2),
-                                SourceServer = reader.Reader.GetString(3),
-                                UploadDate = !reader.Reader.IsDBNull(4) ? reader.Reader.GetDateTime(4) : null,
-                                Source = !reader.Reader.IsDBNull(5) ? reader.Reader.GetString(5) : null
+                                ID = reader.GetGuid(0),
+                                State = reader.GetString(1),
+                                SourcePath = reader.GetString(2),
+                                SourceServer = reader.GetString(3),
+                                UploadDate = reader.GetNullableDateTime(4),
+                                Source = reader.GetNullableString(5)
                             };
 
                         building.Add(item);
                     },
-                    (cmd) => cmd.Parameters.AddWithValue("@SourceClient", sourceClient));
+                    null,
+                    (cmd) => cmd.AddParameterWithValue("@SourceClient", sourceClient));
 
             return importItems;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<ServiceImportItem>();
         }
@@ -91,21 +94,20 @@ public class Import
         try
         {
             List<ServiceImportItem> importItems =
-                SqlReader.DoGenericQueryDelegateRead(
-                    sql,
+                sql.DoGenericQueryDelegateRead(
                     crid,
                     sQuery,
-                    (SqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
                     {
                         ServiceImportItem item =
                             new()
                             {
-                                ID = reader.Reader.GetGuid(0),
-                                State = reader.Reader.GetString(1),
-                                SourcePath = reader.Reader.GetString(2),
-                                SourceServer = reader.Reader.GetString(3),
-                                UploadDate = !reader.Reader.IsDBNull(4) ? reader.Reader.GetDateTime(4) : null,
-                                Source = !reader.Reader.IsDBNull(5) ? reader.Reader.GetString(5) : null
+                                ID = reader.GetGuid(0),
+                                State = reader.GetString(1),
+                                SourcePath = reader.GetString(2),
+                                SourceServer = reader.GetString(3),
+                                UploadDate = reader.GetNullableDateTime(4),
+                                Source = reader.GetNullableString(5)
                             };
 
                         building.Add(item);
@@ -113,7 +115,7 @@ public class Import
 
             return importItems;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new List<ServiceImportItem>();
         }
@@ -146,16 +148,16 @@ public class Import
                 new SqlCommandTextInit(s_queryUpdateState, s_aliases),
                 (cmd) =>
                 {
-                    cmd.Parameters.AddWithValue("@MediaID", id);
-                    cmd.Parameters.AddWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.Complete));
+                    cmd.AddParameterWithValue("@MediaID", id);
+                    cmd.AddParameterWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.Complete));
                 });
 
             sql.ExecuteNonQuery(
                 new SqlCommandTextInit(s_updateMediaState, s_aliases),
                 (cmd) =>
                 {
-                    cmd.Parameters.AddWithValue("@MediaID", id);
-                    cmd.Parameters.AddWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
+                    cmd.AddParameterWithValue("@MediaID", id);
+                    cmd.AddParameterWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
                 });
 
             sql.Commit();
@@ -184,7 +186,7 @@ public class Import
                 new SqlCommandTextInit(s_deleteImportItem, s_aliases),
                 (cmd) =>
                 {
-                    cmd.Parameters.AddWithValue("@MediaID", id);
+                    cmd.AddParameterWithValue("@MediaID", id);
                 });
 
             sql.Commit();
@@ -234,7 +236,7 @@ public class Import
                     sb.Append(",");
 
                 sb.Append(
-                    $"('{Sql.Sqlify(item.ID.ToString())}', '{ImportItem.StringFromState(item.State)}', '{Sql.Sqlify(item.SourcePath)}', '{Sql.Sqlify(item.SourceServer)}', {Sql.Nullable(item.Source)}) ");
+                    $"({SqlText.SqlifyQuoted(item.ID.ToString())}, '{ImportItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.SourcePath)}, {SqlText.SqlifyQuoted(item.SourceServer)}, {SqlText.Nullable(item.Source)}) ");
 
                 current++;
             }

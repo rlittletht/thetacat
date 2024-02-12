@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using TCore.SqlCore;
 using Thetacat.Model;
 using Thetacat.Model.Workgroups;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 
 namespace Tests.Model.Workgroups;

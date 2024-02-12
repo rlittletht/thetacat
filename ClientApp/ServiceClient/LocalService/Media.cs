@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
 using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Types;
@@ -10,12 +12,13 @@ namespace Thetacat.ServiceClient.LocalService;
 
 public class Media
 {
-    private static Dictionary<string, string> s_aliases =
-        new()
-        {
-            { "tcat_media", "MT" },
-            { "tcat_mediatags", "TMT" }
-        };
+    private static TableAliases s_aliases =
+        new(
+            new()
+            {
+                { "tcat_media", "MT" },
+                { "tcat_mediatags", "TMT" }
+            });
 
     private static readonly string s_queryInsertMedia = @"
         INSERT INTO tcat_media
@@ -31,7 +34,7 @@ public class Media
         DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id)
         DELETE FROM tcat_media";
 
-    public static void ExecutePartedCommands<T>(Sql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, Dictionary<string, string>? aliases)
+    public static void ExecutePartedCommands<T>(Sql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -116,7 +119,7 @@ public class Media
                     }
 
                     return
-                        $"('{Sql.Sqlify(item.ID.ToString())}', '{Sql.Sqlify(item.VirtualPath)}', '{Sql.Sqlify(item.MimeType)}', '{MediaItem.StringFromState(item.State)}', '{Sql.Sqlify(item.MD5)}') ";
+                        $"({SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.VirtualPath)}, {SqlText.SqlifyQuoted(item.MimeType)}, '{MediaItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.MD5)}) ";
                 },
                 1000,
                 ", ",
@@ -127,7 +130,7 @@ public class Media
                 s_queryInsertMediaTag,
                 tagsToInsert,
                 item =>
-                    $"('{Sql.Sqlify(item.MediaId.ToString())}', '{item.Id}', '{Sql.Sqlify(item.Value)}') ",
+                    $"({SqlText.SqlifyQuoted(item.MediaId.ToString())}, '{item.Id}', {SqlText.Nullable(item.Value)}) ",
                 1000,
                 ", ",
                 s_aliases);
@@ -152,20 +155,20 @@ public class Media
     {
         return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaItem>>(
             s_queryFullCatalog,
-            s_aliases,
-            (SqlReader reader, Guid correlationId, ref List<ServiceMediaItem> building) =>
+            (ISqlReader reader, Guid correlationId, ref List<ServiceMediaItem> building) =>
             {
-                Guid mediaId = reader.Reader.GetGuid(0);
+                Guid mediaId = reader.GetGuid(0);
                     building.Add(
                         new ServiceMediaItem()
                         {
                             Id = mediaId,
-                            VirtualPath = reader.Reader.GetString(1),
-                            MimeType = reader.Reader.GetString(2),
-                            State = reader.Reader.GetString(3),
-                            MD5 = reader.Reader.GetString(4)
+                            VirtualPath = reader.GetString(1),
+                            MimeType = reader.GetString(2),
+                            State = reader.GetString(3),
+                            MD5 = reader.GetString(4)
                         });
-            });
+            },
+            s_aliases);
     }
 
     static readonly string s_queryFullMediaTags = @"
@@ -178,18 +181,18 @@ public class Media
 
         return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaTag>>(
             s_queryFullMediaTags,
-            s_aliases,
-            (SqlReader reader, Guid correlationId, ref List<ServiceMediaTag> building) =>
+            (ISqlReader reader, Guid correlationId, ref List<ServiceMediaTag> building) =>
             {
-                Guid mediaId = reader.Reader.GetGuid(0);
+                Guid mediaId = reader.GetGuid(0);
                 building.Add(
                     new ServiceMediaTag()
                     {
-                        Id = reader.Reader.GetGuid(1),
+                        Id = reader.GetGuid(1),
                         MediaId = mediaId,
-                        Value = reader.Reader.IsDBNull(2) ? null : reader.Reader.GetString(2)
+                        Value = reader.GetNullableString(2)
                     });
-            });
+            },
+            s_aliases);
     }
 
     static readonly string s_queryFullCatalogWithTags = @"
@@ -203,8 +206,7 @@ public class Media
 
         return LocalServiceClient.DoGenericQueryWithAliases<ServiceCatalog>(
             s_queryFullCatalogWithTags,
-            s_aliases,
-            (SqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
+            (ISqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
             {
                 if (building.MediaItems == null || building.MediaTags == null)
                 {
@@ -212,32 +214,33 @@ public class Media
                     building.MediaTags = new List<ServiceMediaTag>();
                 }
 
-                Guid mediaId = reader.Reader.GetGuid(0);
+                Guid mediaId = reader.GetGuid(0);
                 if (!mediaAdded.Contains(mediaId))
                 {
                     building.MediaItems.Add(
                         new ServiceMediaItem()
                         {
                             Id = mediaId,
-                            VirtualPath = reader.Reader.GetString(1),
-                            MimeType = reader.Reader.GetString(2),
-                            State = reader.Reader.GetString(3),
-                            MD5 = reader.Reader.GetString(6)
+                            VirtualPath = reader.GetString(1),
+                            MimeType = reader.GetString(2),
+                            State = reader.GetString(3),
+                            MD5 = reader.GetString(6)
                         });
                     mediaAdded.Add(mediaId);
                 }
 
-                if (!reader.Reader.IsDBNull(4))
+                if (!reader.IsDBNull(4))
                 {
                     building.MediaTags.Add(
                         new ServiceMediaTag()
                         {
                             MediaId = mediaId,
-                            Id = reader.Reader.GetGuid(4),
-                            Value = reader.Reader.IsDBNull(5) ? null : reader.Reader.GetString(5)
+                            Id = reader.GetGuid(4),
+                            Value = reader.GetNullableString(5)
                         });
                 }
-            });
+            },
+            s_aliases);
     }
 
     static string BuildInsertItemSql(MediaItemDiff diffOp)
@@ -249,10 +252,10 @@ public class Media
             throw new CatExceptionInternalFailure($"insert mediaitem not Op.Insert: {diffOp.DiffOp}");
         
         string id = diffOp.ID.ToString();
-        string virtualPath = Sql.Sqlify(diffOp.ItemData.VirtualPath);
-        string mimeType = Sql.Sqlify(diffOp.ItemData.MimeType);
+        string virtualPath = SqlText.Sqlify(diffOp.ItemData.VirtualPath);
+        string mimeType = SqlText.Sqlify(diffOp.ItemData.MimeType);
         string state = MediaItem.StringFromState(diffOp.ItemData.State);
-        string md5 = Sql.Sqlify(diffOp.ItemData.MD5);
+        string md5 = SqlText.Sqlify(diffOp.ItemData.MD5);
 
         return "INSERT INTO tcat_media (id, virtualPath, mimeType, state, md5) "
             + $"VALUES ('{id}', '{virtualPath}', '{mimeType}', '{state}', '{md5}') ";
@@ -286,9 +289,9 @@ public class Media
         List<string> sets = new();
 
         if (diffOp.IsMimeTypeChanged)
-            sets.Add($"MimeType='{Sql.Sqlify(diffOp.ItemData.MimeType)}'");
+            sets.Add($"MimeType={SqlText.SqlifyQuoted(diffOp.ItemData.MimeType)}");
         if (diffOp.IsMD5Changed)
-            sets.Add($"MD5='{Sql.Sqlify(diffOp.ItemData.MD5)}'");
+            sets.Add($"MD5={SqlText.SqlifyQuoted(diffOp.ItemData.MD5)}");
         if (diffOp.IsPathChanged)
             sets.Add($"VirtualPath={MediaItem.StringFromState(diffOp.ItemData.State)}");
 
@@ -306,16 +309,16 @@ public class Media
 
     static string BuildMediaTagInsert(Guid mediaId, MediaTag mediaTag)
     {
-        string? value = mediaTag.Value == null ? null : Sql.Sqlify(mediaTag.Value);
+        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
-        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {Sql.Nullable(value)}) ";
+        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {SqlText.Nullable(value)}) ";
     }
 
     static string BuildMediaTagUpdate(Guid mediaId, MediaTag mediaTag)
     {
-        string? value = mediaTag.Value == null ? null : Sql.Sqlify(mediaTag.Value);
+        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
-        return $"UPDATE tcat_mediatags SET value = {Sql.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ";
+        return $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ";
     }
 
     static List<string> BuildUpdateItemTagsSql(MediaItemDiff diffOp)

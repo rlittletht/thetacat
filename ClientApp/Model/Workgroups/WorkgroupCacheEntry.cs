@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using TCore.SqlCore;
 using TCore;
+using TCore.SqlClient;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -80,16 +82,16 @@ public class WorkgroupCacheEntry : ICacheEntry
             return updates;
 
         if (string.Compare(m_baseEntry!.Path, m_currentEntry.Path, StringComparison.CurrentCultureIgnoreCase) != 0)
-            updates.Add(new KeyValuePair<string, string>("path", $"'{Sql.Sqlify(m_currentEntry.Path)}'"));
+            updates.Add(new KeyValuePair<string, string>("path", $"{SqlText.SqlifyQuoted(m_currentEntry.Path)}"));
 
         if (m_baseEntry!.CachedBy != m_currentEntry.CachedBy)
             updates.Add(new KeyValuePair<string, string>("cachedBy", $"'{m_currentEntry.CachedBy.ToString()}'"));
 
         if (m_baseEntry!.CacheDate != m_currentEntry.CacheDate)
-            updates.Add(new KeyValuePair<string, string>("cachedDate", Sql.Nullable(m_currentEntry.CacheDate?.ToUniversalTime().ToString("u"))));
+            updates.Add(new KeyValuePair<string, string>("cachedDate", SqlText.Nullable(m_currentEntry.CacheDate?.ToUniversalTime().ToString("u"))));
 
         if (m_baseEntry!.VectorClock != m_currentEntry.VectorClock)
-            updates.Add(new KeyValuePair<string, string>("vectorClock", Sql.Nullable(m_currentEntry.VectorClock)));
+            updates.Add(new KeyValuePair<string, string>("vectorClock", SqlText.Nullable(m_currentEntry.VectorClock)));
 
         return updates;
     }

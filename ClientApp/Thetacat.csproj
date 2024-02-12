@@ -20,12 +20,13 @@
     <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
     <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
     <PackageReference Include="TCore.Pipeline" Version="1.2.0" />
     <PackageReference Include="TCore.PostfixText" Version="1.3.0" />
-    <PackageReference Include="TCore.Sql" Version="2.2.4" />
+    <PackageReference Include="TCore.SqlClient" Version="1.1.0" />
+    <PackageReference Include="TCore.SqlCore" Version="1.1.0" />
+    <PackageReference Include="TCore.SQLiteClient" Version="1.1.0" />
     <PackageReference Include="TCore.XMLIO" Version="1.3.0" />
     <PackageReference Include="TCore.XmlSettings" Version="1.7.0" />
   </ItemGroup>
