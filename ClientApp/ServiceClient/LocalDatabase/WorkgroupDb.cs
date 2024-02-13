@@ -123,7 +123,7 @@ public class WorkgroupDb
     {
         SQLiteConnection.CreateFile(m_database);
 
-        SQLite connection = OpenDatabase();
+        ISql connection = OpenDatabase();
 
         connection.ExecuteNonQuery(s_createWorkgroupMedia);
         connection.ExecuteNonQuery(s_createWorkgroupClients);

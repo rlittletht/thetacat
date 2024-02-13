@@ -95,7 +95,7 @@ public class ClientDatabase
     {
         SQLiteConnection.CreateFile(m_database);
 
-        SQLite connection = OpenDatabase();
+        ISql connection = OpenDatabase();
 
         connection.ExecuteNonQuery(s_createMd5Cache);
         connection.ExecuteNonQuery(s_createDerivatives);
