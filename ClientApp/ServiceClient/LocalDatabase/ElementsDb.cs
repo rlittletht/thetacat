@@ -157,7 +157,7 @@ public class ElementsDb
         try
         {
             List<PseMetadata> tags =
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryMetadataDefinitions,
                     (ISqlReader reader, Guid crids, ref List<PseMetadata> building) =>
@@ -184,7 +184,7 @@ public class ElementsDb
         try
         {
             return
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryMetatagDefinitions,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMetatag> building) =>
@@ -377,7 +377,7 @@ public class ElementsDb
 
         try
         {
-            imports = _Connection.DoGenericQueryDelegateRead(
+            imports = _Connection.ExecuteDelegatedQuery(
                 Guid.NewGuid(),
                 s_queryMediaImportDates,
                 (ISqlReader reader, Guid crid, ref List<PseMediaImportItem> building) =>
@@ -478,7 +478,7 @@ public class ElementsDb
         try
         {
             return
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryMediaDictionary,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMediaItem> building) =>
@@ -520,7 +520,7 @@ public class ElementsDb
         try
         {
             return
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryVersionStacks,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
@@ -542,7 +542,7 @@ public class ElementsDb
         try
         {
             return
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryMediaStacks,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>

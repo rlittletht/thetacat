@@ -149,7 +149,7 @@ public class WorkgroupDb
         try
         {
             ServiceWorkgroupClient client =
-                _Connection.DoGenericQueryDelegateRead(
+                _Connection.ExecuteDelegatedQuery(
                     Guid.NewGuid(),
                     s_queryWorkgroupClientDetailsByName,
                     (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
@@ -183,7 +183,7 @@ public class WorkgroupDb
                 try
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
-                        _Connection.DoGenericQueryDelegateRead(
+                        _Connection.ExecuteDelegatedQuery(
                             Guid.NewGuid(),
                             s_queryWorkgroupMediaClock,
                             (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>

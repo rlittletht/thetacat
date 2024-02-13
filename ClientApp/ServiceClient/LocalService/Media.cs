@@ -34,7 +34,7 @@ public class Media
         DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id)
         DELETE FROM tcat_media";
 
-    public static void ExecutePartedCommands<T>(Sql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
+    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -89,7 +89,7 @@ public class Media
     public static void InsertNewMediaItems(IEnumerable<MediaItem> items)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
 
@@ -380,7 +380,7 @@ public class Media
     public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
 

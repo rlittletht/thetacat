@@ -118,7 +118,7 @@ public class ClientDatabase
     {
         try
         {
-            return _Connection.DoGenericQueryDelegateRead(
+            return _Connection.ExecuteDelegatedQuery(
                 Guid.NewGuid(),
                 s_queryDerivatives,
                 (ISqlReader reader, Guid crid, ref List<DerivativeDbItem> building) =>
@@ -214,7 +214,7 @@ public class ClientDatabase
     {
         try
         {
-            return _Connection.DoGenericQueryDelegateRead(
+            return _Connection.ExecuteDelegatedQuery(
                 Guid.NewGuid(),
                 s_queryAllMd5Cache,
                 (ISqlReader reader, Guid crid, ref List<Md5CacheDbItem> building) =>

@@ -26,7 +26,7 @@ public class Metatags
     public static ServiceMetatagSchema GetMetatagSchema()
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -43,7 +43,7 @@ public class Metatags
         try
         {
             ServiceMetatagSchema schema =
-                sql.DoGenericMultiSetQueryDelegateRead<ServiceMetatagSchema>(
+                sql.ExecuteMultiSetDelegatedQuery<ServiceMetatagSchema>(
                     crid,
                     sQuery,
                     (ISqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
@@ -191,7 +191,7 @@ public class Metatags
                 string.Join("\n ", updates)),
             "select 0");
 
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         try
         {

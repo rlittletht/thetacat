@@ -28,7 +28,7 @@ public class Import
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -40,7 +40,7 @@ public class Import
         try
         {
             List<ServiceImportItem> importItems =
-                sql.DoGenericQueryDelegateRead(
+                sql.ExecuteDelegatedQuery(
                     crid,
                     sQuery,
                     (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
@@ -82,7 +82,7 @@ public class Import
     public static List<ServiceImportItem> GetAllImports()
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -94,7 +94,7 @@ public class Import
         try
         {
             List<ServiceImportItem> importItems =
-                sql.DoGenericQueryDelegateRead(
+                sql.ExecuteDelegatedQuery(
                     crid,
                     sQuery,
                     (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
@@ -138,7 +138,7 @@ public class Import
     public static void CompleteImportForItem(Guid id)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
 
@@ -176,7 +176,7 @@ public class Import
     public static void DeleteImportItem(Guid id)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
 
@@ -210,7 +210,7 @@ public class Import
     public static void InsertImportItems(IEnumerable<ImportItem> items)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
         StringBuilder sb = new StringBuilder();
 
         sql.BeginTransaction();

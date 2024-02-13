@@ -28,7 +28,7 @@ public class Stacks
     public static List<ServiceStack> GetAllStacks()
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -41,7 +41,7 @@ public class Stacks
         try
         {
             List<ServiceStack> stacks =
-                sql.DoGenericQueryDelegateRead(
+                sql.ExecuteDelegatedQuery(
                     crid,
                     sQuery,
                     (ISqlReader reader, Guid correlationId, ref List<ServiceStack> building) =>
@@ -121,7 +121,7 @@ public class Stacks
     public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         List<string> commands = new();
 

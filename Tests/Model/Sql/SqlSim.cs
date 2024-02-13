@@ -9,6 +9,7 @@ public class SqlSim: ISql
     public bool InTransaction { get; }
     public ISqlTransaction? Transaction { get; }
     public ISqlCommand CreateCommand() => throw new NotImplementedException();
+    public ISqlReader CreateReader() => throw new NotImplementedException();
 
     private SqlSimQueryDataItem[]? m_data;
     private SqlSimNonQueryDataItem[]? m_nonQueryValidation;
@@ -49,11 +50,12 @@ public class SqlSim: ISql
         ExecuteNonQuery(cmdText.CommandText, customizeParams, cmdText.Aliases);
     }
 
-    public T DoGenericMultiSetQueryDelegateRead<T>(Guid crids, string sQuery, ISqlReader.DelegateMultiSetReader<T> delegateReader, CustomizeCommandDelegate? customizeDelegate = null) where T : new() => throw new NotImplementedException();
+    public T ExecuteMultiSetDelegatedQuery<T>(Guid crids, string sQuery, ISqlReader.DelegateMultiSetReader<T> delegateReader, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) where T : new() => throw new NotImplementedException();
+    public ISqlReader ExecuteQuery(Guid crids, string query, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) => throw new NotImplementedException();
 
     public string SExecuteScalar(SqlCommandTextInit cmdText) => throw new NotImplementedException();
 
-    public T DoGenericQueryDelegateRead<T>(
+    public T ExecuteDelegatedQuery<T>(
         Guid crids, string query, ISqlReader.DelegateReader<T> delegateReader,
         TableAliases? aliases = null,
         CustomizeCommandDelegate? customizeDelegate = null) where T : new()

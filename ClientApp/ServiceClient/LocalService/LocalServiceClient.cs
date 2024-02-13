@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Data.SqlClient;
 using TCore;
 using TCore.SqlCore;
 using TCore.SqlClient;
@@ -15,7 +16,7 @@ public class LocalServiceClient
 {
     public static LogDelegate? LogService { get; set; }
 
-    public static Sql GetConnection()
+    public static ISql GetConnection()
     {
         if (String.IsNullOrWhiteSpace(AppSecrets.MasterSqlConnectionString))
             throw new CatExceptionNoSqlConnection();
@@ -31,9 +32,9 @@ public class LocalServiceClient
         }
     }
 
-    public delegate void DelegateReader<T>(SqlReader sqlr, Guid crid, ref T t);
+    // public delegate void DelegateReader<T>(ISqlReader sqlr, Guid crid, ref T t);
 
-    public static T? DoGenericQueryDelegateRead<T>(string sQuery, DelegateReader<T>? delegateReader)
+    public static T? DoGenericQueryDelegateRead<T>(string sQuery, ISqlReader.DelegateReader<T>? delegateReader) where T : new()
     {
         Guid crid = Guid.NewGuid();
         LocalSqlHolder? lsh = null;
@@ -42,44 +43,14 @@ public class LocalServiceClient
         try
         {
             lsh = new LocalSqlHolder(null, crid, AppSecrets.MasterSqlConnectionString);
-            string sCmd = sQuery;
 
             if (delegateReader == null)
             {
-                // just execute as a command
-                lsh.Sql.ExecuteNonQuery(sCmd);
+                lsh.Sql.ExecuteNonQuery(sQuery);
                 return default;
             }
-            else
-            {
-                SqlReader sqlr = new SqlReader(lsh);
-                try
-                {
-                    sqlr.ExecuteQuery(sQuery, AppSecrets.MasterSqlConnectionString);
-                    sr.CorrelationID = crid;
-                    T? t = default;
-                    if (t == null)
-                        throw new Exception("failed to create return class");
-                    bool fOnce = false;
 
-                    while (sqlr.Reader.Read())
-                    {
-                        delegateReader(sqlr, crid, ref t);
-                        fOnce = true;
-                    }
-
-                    if (!fOnce)
-                        throw new SqlExceptionNoResults(crid);
-
-                    return t;
-
-                }
-                catch (Exception)
-                {
-                    sqlr.Close();
-                    throw;
-                }
-            }
+            return lsh.Sql.ExecuteDelegatedQuery(crid, sQuery, delegateReader);
         }
         finally
         {
@@ -101,14 +72,14 @@ public class LocalServiceClient
         selectTags.AddAliases(aliases);
 
         string sQuery = selectTags.ToString();
-        Sql? sql = null;
+        ISql? sql = null;
 
         try
         {
             sql = LocalServiceClient.GetConnection();
 
             T t =
-                sql.DoGenericQueryDelegateRead<T>(
+                sql.ExecuteDelegatedQuery<T>(
                     crid,
                     sQuery,
                     delegateReader,
@@ -134,7 +105,7 @@ public class LocalServiceClient
     public static void DoGenericCommandWithAliases(string query, TableAliases? aliases, CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
-        Sql sql = LocalServiceClient.GetConnection();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
