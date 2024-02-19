@@ -17,7 +17,9 @@ public class Media
             new()
             {
                 { "tcat_media", "MT" },
-                { "tcat_mediatags", "TMT" }
+                { "tcat_mediatags", "TMT" },
+                { "tcat_stackmedia", "SM" },
+                { "tcat_stacks", "ST" }
             });
 
     private static readonly string s_queryInsertMedia = @"
@@ -30,54 +32,11 @@ public class Media
             (id, metatag, value)
         VALUES ";
 
-    private static readonly string s_deleteAllMediaAndMediaTags = @"
+    private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
+        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id)
+        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id)
         DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id)
         DELETE FROM tcat_media";
-
-    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
-    {
-        StringBuilder sb = new StringBuilder();
-        int current = 0;
-
-        sb.Clear();
-        sb.Append(commandBase);
-
-        foreach (T item in items)
-        {
-            if (current == partLimit)
-            {
-                string command = sb.ToString();
-
-                if (!string.IsNullOrWhiteSpace(command))
-                {
-                    LocalServiceClient.LogService?.Invoke(EventType.Verbose, command);
-                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
-                    current = 0;
-                }
-
-                sb.Clear();
-                sb.Append(commandBase);
-            }
-
-            if (current > 0)
-                sb.Append(joinString);
-
-            sb.Append(buildLine(item));
-
-            current++;
-        }
-
-        if (current > 0)
-        {
-            string sCmd = sb.ToString();
-
-            if (!string.IsNullOrWhiteSpace(sCmd))
-            {
-                LocalServiceClient.LogService?.Invoke(EventType.Verbose, sCmd);
-                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
-            }
-        }
-    }
 
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems
@@ -101,7 +60,7 @@ public class Media
             // take advantage of the enumeration we are going to do across all the
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
-            ExecutePartedCommands(
+            LocalServiceClient.ExecutePartedCommands(
                 sql,
                 s_queryInsertMedia,
                 items,
@@ -125,7 +84,7 @@ public class Media
                 ", ",
                 s_aliases);
 
-            ExecutePartedCommands(
+            LocalServiceClient.ExecutePartedCommands(
                 sql,
                 s_queryInsertMediaTag,
                 tagsToInsert,
@@ -392,7 +351,7 @@ public class Media
             // take advantage of the enumeration we are going to do across all the
             // items. when we are asked to build the string for each line, we can
             // also build the list of tags we have to insert for these items
-            ExecutePartedCommands(
+            LocalServiceClient.ExecutePartedCommands(
                 sql,
                 string.Empty,
                 diffs,
@@ -405,7 +364,7 @@ public class Media
                 " ",
                 s_aliases);
 
-            ExecutePartedCommands(
+            LocalServiceClient.ExecutePartedCommands(
                 sql,
                 string.Empty,
                 updateTags,
@@ -427,8 +386,8 @@ public class Media
         }
     }
 
-    public static void DeleteAllMediaAndMediaTags()
+    public static void DeleteAllMediaAndMediaTagsAndStacks()
     {
-        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTags, s_aliases, null);
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTagsAndStacks, s_aliases, null);
     }
 }

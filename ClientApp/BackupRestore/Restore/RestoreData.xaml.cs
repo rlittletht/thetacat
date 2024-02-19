@@ -19,6 +19,7 @@ using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 using Thetacat.Util;
 using MessageBox = System.Windows.MessageBox;
@@ -180,7 +181,7 @@ namespace Thetacat.BackupRestore.Restore
                         m_fullRestoreData.CatalogRestore!.Catalog.VersionStacks.Clear();
 
                     if (fClearBeforeRestore)
-                        ServiceInterop.DeleteAllMediaAndMediaTags();
+                        ServiceInterop.DeleteAllMediaAndMediaTagsAndStacks();
 
                     Catalog catalogCurrent = new Catalog();
                     MetatagSchema schema = new MetatagSchema();
@@ -197,6 +198,22 @@ namespace Thetacat.BackupRestore.Restore
                                 "Restore Data",
                                 MessageBoxButton.OKCancel)
                             == MessageBoxResult.OK);
+                }
+            }
+
+            if (m_model.ImportImports)
+            {
+                if ((m_fullRestoreData.ImportsRestore?.ImportItems.Count ?? 0) == 0)
+                {
+                    MessageBox.Show("Can't restore an empty imports collection");
+                }
+                else if (MessageBox.Show(
+                             $"Inserting {m_fullRestoreData.ImportsRestore!.ImportItems.Count} import records. Proceed?",
+                             "Restore Data",
+                             MessageBoxButton.OKCancel)
+                         == MessageBoxResult.OK)
+                {
+                    ServiceInterop.InsertAllServiceImportItems(m_fullRestoreData.ImportsRestore!.ImportItems);
                 }
             }
         }

@@ -25,6 +25,15 @@ public class Stacks
         INNER JOIN $$#tcat_stacks$$
             ON $$tcat_stacks$$.id = $$tcat_stackmedia$$.id";
 
+    private static readonly string s_deleteAllStacksWithMedia = @"
+        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id)
+        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.id=$$tcat_media$$.id)";
+
+    public static void DeleteAllStacksAssociatedWithMedia()
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllStacksWithMedia, s_aliases, null);
+    }
+
     public static List<ServiceStack> GetAllStacks()
     {
         Guid crid = Guid.NewGuid();
@@ -120,44 +129,19 @@ public class Stacks
 
     public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
     {
-        Guid crid = Guid.NewGuid();
-        ISql sql = LocalServiceClient.GetConnection();
-
         List<string> commands = new();
 
         foreach (MediaStackDiff diff in diffs)
         {
             AddUpdatesForDiff(diff, commands);
         }
-        sql.BeginTransaction();
 
-        try
-        {
-            // build a list of tags to insert as well
-            List<string> updateTags = new();
-
-            // take advantage of the enumeration we are going to do across all the
-            // items. when we are asked to build the string for each line, we can
-            // also build the list of tags we have to insert for these items
-            Media.ExecutePartedCommands(
-                sql,
-                string.Empty,
-                commands,
-                (command) => command,
-                1000,
-                " ",
-                s_aliases);
-
-            sql.Commit();
-        }
-        catch (Exception)
-        {
-            sql.Rollback();
-            throw;
-        }
-        finally
-        {
-            sql.Close();
-        }
+        LocalServiceClient.DoGenericPartedCommands(
+            string.Empty,
+            commands,
+            command => command,
+            1000,
+            " ",
+            s_aliases);
     }
 }

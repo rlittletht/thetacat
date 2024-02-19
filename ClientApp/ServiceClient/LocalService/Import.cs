@@ -207,7 +207,37 @@ public class Import
             (id, state, sourcePath, sourceServer, source)
         VALUES ";
 
+    // same as insertImportItem but includes uploadDate
+    private static readonly string s_queryInsertServiceImportItem = @"
+        INSERT INTO tcat_import
+            (id, state, sourcePath, sourceServer, source, uploadDate)
+        VALUES ";
+
     public static void InsertImportItems(IEnumerable<ImportItem> items)
+    {
+        LocalServiceClient.DoGenericPartedCommands(
+            s_queryInsertImportItem,
+            items,
+            (item) =>
+                $"({SqlText.SqlifyQuoted(item.ID.ToString())}, '{ImportItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.SourcePath)}, {SqlText.SqlifyQuoted(item.SourceServer)}, {SqlText.Nullable(item.Source)}) ",
+            1000,
+            ",",
+            s_aliases);
+    }
+
+    public static void InsertServiceImportItems(IEnumerable<ServiceImportItem> items)
+    {
+        LocalServiceClient.DoGenericPartedCommands(
+            s_queryInsertServiceImportItem,
+            items,
+            (item) =>
+                $"({SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.State ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourcePath ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourceServer ?? string.Empty)}, {SqlText.Nullable(item.Source)}, {SqlText.Nullable(item.UploadDate)}) ",
+            1000,
+            ",",
+            s_aliases);
+    }
+
+    public static void InsertImportItemsOld(IEnumerable<ImportItem> items)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();

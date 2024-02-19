@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Microsoft.Data.SqlClient;
 using TCore;
 using TCore.SqlCore;
@@ -126,6 +127,88 @@ public class LocalServiceClient
         catch (SqlExceptionNoResults)
         {
             return;
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
+
+    public static void ExecutePartedCommands<T>(
+        ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
+    {
+        StringBuilder sb = new StringBuilder();
+        int current = 0;
+
+        sb.Clear();
+        sb.Append(commandBase);
+
+        foreach (T item in items)
+        {
+            if (current == partLimit)
+            {
+                string command = sb.ToString();
+
+                if (!string.IsNullOrWhiteSpace(command))
+                {
+                    LocalServiceClient.LogService?.Invoke(EventType.Verbose, command);
+                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+                    current = 0;
+                }
+
+                sb.Clear();
+                sb.Append(commandBase);
+            }
+
+            if (current > 0)
+                sb.Append(joinString);
+
+            sb.Append(buildLine(item));
+
+            current++;
+        }
+
+        if (current > 0)
+        {
+            string sCmd = sb.ToString();
+
+            if (!string.IsNullOrWhiteSpace(sCmd))
+            {
+                LocalServiceClient.LogService?.Invoke(EventType.Verbose, sCmd);
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+            }
+        }
+    }
+
+    public static void DoGenericPartedCommands<T>(
+        string commandBase, 
+        IEnumerable<T> items, 
+        Func<T, string> buildLine, 
+        int partLimit, 
+        string joinString, 
+        TableAliases? aliases)
+    {
+        ISql sql = GetConnection();
+
+        sql.BeginTransaction();
+
+        try
+        {
+            ExecutePartedCommands(
+                sql,
+                commandBase,
+                items,
+                buildLine,
+                partLimit,
+                joinString,
+                aliases);
+
+            sql.Commit();
+        }
+        catch (Exception)
+        {
+            sql.Rollback();
+            throw;
         }
         finally
         {

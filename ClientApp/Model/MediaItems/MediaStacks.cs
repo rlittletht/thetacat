@@ -117,6 +117,9 @@ public class MediaStacks : INotifyPropertyChanged
             stackDiffs.Add(new MediaStackDiff(stack, stack.PendingOp));
         }
 
+        if (stackDiffs.Count == 0)
+            return;
+
         if (verify != null && !verify(stackDiffs.Count, "stack"))
             return;
 

@@ -1,0 +1,1 @@
+select * from tcat_mediatags order by id, metatag

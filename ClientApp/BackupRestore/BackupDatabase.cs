@@ -149,7 +149,12 @@ public class BackupDatabase
         writer.WriteAttributeString("metatagId", mediaTag.Metatag.ID.ToString());
 
         if (mediaTag.Value != null)
+        {
+            if (string.IsNullOrWhiteSpace(mediaTag.Value))
+                writer.WriteAttributeString("xml", "space", null, "preserve");
+
             writer.WriteString(mediaTag.Value);
+        }
     }
 
     /*----------------------------------------------------------------------------
@@ -263,6 +268,7 @@ public class BackupDatabase
             });
     }
 
+    #region Imports
 
     /*----------------------------------------------------------------------------
         %%Function: WriteImportItem
@@ -308,6 +314,9 @@ public class BackupDatabase
 
         WriteElement(writer, "imports", (_writer) => WriteImportItems(_writer, importItems));
     }
+    #endregion Imports
+
+    #region Workgroups
 
     public void WriteWorkgroupItem(XmlWriter writer, ServiceWorkgroup item)
     {
@@ -337,6 +346,8 @@ public class BackupDatabase
 
         WriteElement(writer, "workgroups", (_writer) => WriteWorkgroupItems(_writer, workgroups));
     }
+    #endregion
+
     public bool DoBackup(IProgressReport progress)
     {
         m_progress = progress;

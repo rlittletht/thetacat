@@ -25,7 +25,8 @@ public class ServiceInterop
         LocalService.Media.UpdateMediaItems(diffs);
     }
 
-    public static void DeleteAllMediaAndMediaTags() => LocalService.Media.DeleteAllMediaAndMediaTags();
+    public static void DeleteAllMediaAndMediaTagsAndStacks() => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks();
+    public static void DeleteAllStacksAssociatedWithMedia() => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia();
 
     public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
     {
@@ -36,6 +37,8 @@ public class ServiceInterop
     {
         return LocalService.Import.GetAllImports();
     }
+
+    public static void InsertAllServiceImportItems(IEnumerable<ServiceImportItem> items) => LocalService.Import.InsertServiceImportItems(items);
 
     public static void InsertImportItems(IEnumerable<ImportItem> items)
     {
