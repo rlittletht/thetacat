@@ -60,7 +60,7 @@ public partial class ManageMetadata : Window
 
     private void LoadMetatags(object sender, RoutedEventArgs e)
     {
-        App.State.RefreshMetatagSchema();
+        App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
         MetatagsTree.Initialize(App.State.MetatagSchema.WorkingTree.Children, App.State.MetatagSchema.SchemaVersionWorking, MetatagStandards.Standard.User);
         m_metatagLineageMap = null;
         InitializeAvailableParents();

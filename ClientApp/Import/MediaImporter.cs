@@ -88,7 +88,7 @@ public class MediaImporter
 
     public MediaImporter(string clientSource)
     {
-        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(clientSource);
+        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
         bool skippedItems = false;
 
         foreach (ServiceImportItem item in items)
@@ -131,7 +131,7 @@ public class MediaImporter
         }
     }
 
-    private void CreateCatalogAndUpdateImportTableWork(IProgressReport report, ICatalog catalog, MetatagSchema metatagSchema)
+    private void CreateCatalogAndUpdateImportTableWork(Guid catalogID, IProgressReport report, ICatalog catalog, MetatagSchema metatagSchema)
     {
         int total = ImportItems.Count;
         int current = 0;
@@ -160,21 +160,21 @@ public class MediaImporter
             current++;
         }
 
-        metatagSchema.UpdateServer();
+        metatagSchema.UpdateServer(catalogID);
 
         // at this point, we have an ID created for the media. Go ahead and insert the
         // new media items and commit the import to the database
-        catalog.PushPendingChanges();
+        catalog.PushPendingChanges(catalogID);
         // also flush any pending schema changes now
 
-        ServiceInterop.InsertImportItems(ImportItems);
+        ServiceInterop.InsertImportItems(catalogID, ImportItems);
         report.WorkCompleted();
     }
 
-    public void CreateCatalogItemsAndUpdateImportTable(ICatalog catalog, MetatagSchema metatagSchema)
+    public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema)
     {
         ProgressDialog.DoWorkWithProgress(
-            (report) => CreateCatalogAndUpdateImportTableWork(report, catalog, metatagSchema));
+            (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema));
     }
 
     private bool UploadPendingMediaWork(IProgressReport progress)
@@ -214,13 +214,13 @@ public class MediaImporter
                     media.State = MediaItemState.Active;
                     item.UploadDate = DateTime.Now;
 
-                    ServiceInterop.CompleteImportForItem(item.ID);
+                    ServiceInterop.CompleteImportForItem(App.State.ActiveProfile.CatalogID, item.ID);
                     MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
                 }
 
                 if (item.State == ImportItem.ImportState.MissingFromCatalog)
                 {
-                    ServiceInterop.DeleteImportItem(item.ID);
+                    ServiceInterop.DeleteImportItem(App.State.ActiveProfile.CatalogID, item.ID);
                     MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
                 }
             }

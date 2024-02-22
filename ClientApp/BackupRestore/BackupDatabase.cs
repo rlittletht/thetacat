@@ -310,7 +310,7 @@ public class BackupDatabase
     public void WriteImports(XmlWriter writer)
     {
         StartNextBlock(99.0);
-        List<ServiceImportItem> importItems = ServiceInterop.GetAllImports();
+        List<ServiceImportItem> importItems = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
 
         WriteElement(writer, "imports", (_writer) => WriteImportItems(_writer, importItems));
     }
@@ -342,7 +342,7 @@ public class BackupDatabase
     public void WriteWorkgroups(XmlWriter writer)
     {
         StartNextBlock(100.0);
-        List<ServiceWorkgroup> workgroups = ServiceInterop.GetAvailableWorkgroups();
+        List<ServiceWorkgroup> workgroups = ServiceInterop.GetAvailableWorkgroups(App.State.ActiveProfile.CatalogID);
 
         WriteElement(writer, "workgroups", (_writer) => WriteWorkgroupItems(_writer, workgroups));
     }
@@ -350,10 +350,11 @@ public class BackupDatabase
 
     public bool DoBackup(IProgressReport progress)
     {
+        Guid catalogID = App.State.ActiveProfile.CatalogID;
         m_progress = progress;
 
         StartNextBlock(5.0);
-        Task task = m_catalog.ReadFullCatalogFromServer(m_schema);
+        Task task = m_catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, m_schema);
         
         task.Wait();
 
@@ -367,6 +368,8 @@ public class BackupDatabase
             "fullExport",
             (_writer) =>
             {
+                _writer.WriteAttributeString("CatalogID", catalogID.ToString());
+
                 if (m_progress != null)
                     WriteSchema(_writer, m_schema);
                 WriteCatalog(_writer, m_catalog);

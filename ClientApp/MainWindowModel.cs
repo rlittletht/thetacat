@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Filtering;
 using Thetacat.Model;
+using Thetacat.TcSettings;
 
 namespace Thetacat;
 
@@ -11,8 +12,16 @@ public class MainWindowModel: INotifyPropertyChanged
 {
     private bool m_isExplorerCollectionDirty;
     private bool m_isSchemaDirty;
+    private Profile? m_currentProfile;
     public MediaExplorerCollection ExplorerCollection { get; } = new(14.0);
     public ObservableCollection<FilterDefinition> AvailableFilters { get; } = new ();
+    public ObservableCollection<Profile> AvailableProfiles { get; } = new ();
+
+    public Profile? CurrentProfile
+    {
+        get => m_currentProfile;
+        set => SetField(ref m_currentProfile, value);
+    }
 
     public bool IsExplorerCollectionDirty
     {

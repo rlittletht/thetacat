@@ -1,4 +1,5 @@
-﻿using static Thetacat.TcSettings.TcSettings;
+﻿using System;
+using static Thetacat.TcSettings.TcSettings;
 using System.Collections.Generic;
 using System.Drawing;
 using Thetacat.Filtering;
@@ -14,6 +15,7 @@ public class Profile
     public string? CacheLocation;
     public string ClientDatabaseName = string.Empty;
 
+    public Guid CatalogID;
     public string? CacheType;
     public string? WorkgroupId;
     public string? WorkgroupCacheServer;
@@ -45,6 +47,7 @@ public class Profile
 
     public Profile(Profile basedOn)
     {
+        CatalogID = basedOn.CatalogID;
         Name = basedOn.Name;
         ElementsDatabase = basedOn.ElementsDatabase;
         CacheLocation = basedOn.CacheLocation;
@@ -64,4 +67,6 @@ public class Profile
         TimelineOrder = basedOn.TimelineOrder;
         DerivativeCache = basedOn.DerivativeCache;
     }
+
+    public override string ToString() => Name ?? string.Empty;
 }

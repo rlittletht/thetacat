@@ -99,7 +99,7 @@ public partial class StandardMetadataMigration : UserControl
         metadataListView.ItemsSource = _Migrate.MetatagMigrate.MetadataSchema.MetadataItems;
 
         if (App.State.MetatagSchema.SchemaVersionWorking == 0)
-            App.State.RefreshMetatagSchema();
+            App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
     }
 
     private void EditSelected(object sender, RoutedEventArgs e)

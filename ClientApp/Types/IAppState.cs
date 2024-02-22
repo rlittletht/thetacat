@@ -20,7 +20,7 @@ public interface IAppState
     TcSettings.Profile ActiveProfile { get; }
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
-    ClientDatabase ClientDatabase { get; }
+    ClientDatabase? ClientDatabase { get; }
     Md5Cache Md5Cache { get; }
     Derivatives Derivatives { get; }
     MetatagMRU MetatagMRU { get; }
@@ -29,7 +29,7 @@ public interface IAppState
     public DpiScale DpiScale { get; set; }
 
     void RegisterWindowPlace(Window window, string key);
-    void RefreshMetatagSchema();
+    void RefreshMetatagSchema(Guid catalogID);
     void CloseAsyncLogMonitor(bool skipClose);
     void CloseAppLogMonitor(bool skipClose);
     public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work, OnWorkCompletedDelegate? onWorkCompleted = null);

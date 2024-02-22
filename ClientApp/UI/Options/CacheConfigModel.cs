@@ -141,11 +141,11 @@ public class CacheConfigModel: INotifyPropertyChanged
         return true;
     }
 
-    public void PopulateWorkgroups()
+    public void PopulateWorkgroups(Guid catalogID)
     {
         Workgroups.Clear();
 
-        foreach (ServiceWorkgroup workgroup in ServiceInterop.GetAvailableWorkgroups())
+        foreach (ServiceWorkgroup workgroup in ServiceInterop.GetAvailableWorkgroups(catalogID))
         {
             Workgroups.Add(new WorkgroupItem(workgroup));
         }
@@ -185,7 +185,7 @@ public class CacheConfigModel: INotifyPropertyChanged
             WorkgroupName = string.Empty;
             WorkgroupServerPath = string.Empty;
             return;
-        }
+        } 
 
         if (string.IsNullOrWhiteSpace(App.State.ActiveProfile.SqlConnection))
             return;

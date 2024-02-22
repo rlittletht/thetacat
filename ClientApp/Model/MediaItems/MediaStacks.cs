@@ -108,7 +108,7 @@ public class MediaStacks : INotifyPropertyChanged
         }
     }
 
-    public void PushPendingChanges(Func<int, string, bool>? verify = null)
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
         List<MediaStackDiff> stackDiffs = new();
 
@@ -123,7 +123,7 @@ public class MediaStacks : INotifyPropertyChanged
         if (verify != null && !verify(stackDiffs.Count, "stack"))
             return;
 
-        ServiceInterop.UpdateMediaStacks(stackDiffs);
+        ServiceInterop.UpdateMediaStacks(catalogID, stackDiffs);
 
         foreach (MediaStackDiff diff in stackDiffs)
         {

@@ -2,6 +2,7 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.DirectoryServices;
 using System.Linq;
 using System.Text;
@@ -36,8 +37,36 @@ namespace Thetacat.BackupRestore.Restore
         public RestoreData()
         {
             InitializeComponent();
+            m_model.CatalogDefinitions.AddRange(ServiceInterop.GetCatalogDefinitions());
             DataContext = m_model;
+            m_model.PropertyChanged += ModelPropertyChanged;
             App.State.RegisterWindowPlace(this, "import-data");
+        }
+
+        private void ModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "CreateNewCatalog")
+            {
+                if (m_model.CreateNewCatalog)
+                    m_model.CatalogID = Guid.NewGuid().ToString();
+                else
+                    m_model.CatalogID = m_model.CatalogDefinition?.ID.ToString() ?? string.Empty;
+            }
+            else if (e.PropertyName == "CurrentRestoreBehavior")
+            {
+                m_model.CreateNewCatalog = m_model.CurrentRestoreBehavior == "Create New";
+            }
+            else if (e.PropertyName == "CatalogDefinition")
+            {
+                if (m_model.CatalogDefinition != null)
+                {
+                    m_model.CatalogName = m_model.CatalogDefinition.Name;
+                    m_model.CatalogDescription = m_model.CatalogDefinition.Description;
+                    m_model.CurrentRestoreBehavior = "Replace";
+                    m_model.CreateNewCatalog = false;
+                }
+            }
+
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -77,7 +106,45 @@ namespace Thetacat.BackupRestore.Restore
             }
 
             string destination = $"{Secrets.AppSecrets.MasterSqlConnectionString}";
+            Guid catalogID;
+
             bool fClearBeforeRestore = false;
+
+            // first figure out what we're restoring to
+            if (m_model.CurrentRestoreBehavior == "Create New")
+            {
+                // make sure we have all the info we need
+                if (!Guid.TryParse(m_model.CatalogID, out catalogID))
+                {
+                    MessageBox.Show("Must provide a valid GUID for the catalog ID");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(m_model.CatalogName))
+                {
+                    MessageBox.Show($"Catalog name '{m_model.CatalogName}' is not valid.");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(m_model.CatalogDescription))
+                {
+                    MessageBox.Show($"Catalog description '{m_model.CatalogDescription}' is not valid.");
+                    return;
+                }
+
+                ServiceCatalogDefinition def = new(catalogID, m_model.CatalogName, m_model.CatalogDescription);
+                ServiceInterop.AddCatalogDefinition(def);
+            }
+            else
+            {
+                if (m_model.CatalogDefinition == null)
+                {
+                    MessageBox.Show("Must specify a catalog to append or replace to");
+                    return;
+                }
+
+                catalogID = m_model.CatalogDefinition.ID;
+            }
 
             if (m_model.CurrentRestoreBehavior == "Append")
             {
@@ -93,7 +160,7 @@ namespace Thetacat.BackupRestore.Restore
             else
             {
                 if (MessageBox.Show(
-                        $"This will DELETE ALL DATA in the database '{destination}' before restoring the data. THIS CANNOT BE UNDONE.\n\nContinue with restore?",
+                        $"This will DELETE ALL DATA in the database '{destination}', catalog '{catalogID}' before restoring the data. THIS CANNOT BE UNDONE.\n\nContinue with restore?",
                         "Restore data",
                         MessageBoxButton.OKCancel)
                     == MessageBoxResult.Cancel)
@@ -115,13 +182,14 @@ namespace Thetacat.BackupRestore.Restore
                 else
                 {
                     if (fClearBeforeRestore)
-                        ServiceInterop.ResetMetatagSchema();
+                        ServiceInterop.ResetMetatagSchema(catalogID);
 
                     // load the base schema
-                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema();
+                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
                     m_fullRestoreData.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
 
                     m_fullRestoreData.CatalogRestore.Schema.UpdateServer(
+                        catalogID,
                         (count) => MessageBox.Show(
                                 $"Updating {count} schema items. Proceed?",
                                 "Restore Data",
@@ -149,7 +217,7 @@ namespace Thetacat.BackupRestore.Restore
                     {
                         try
                         {
-                            ServiceInterop.CreateWorkgroup(workgroup);
+                            ServiceInterop.CreateWorkgroup(catalogID, workgroup);
                         }
                         catch (Exception exc)
                         {
@@ -181,18 +249,19 @@ namespace Thetacat.BackupRestore.Restore
                         m_fullRestoreData.CatalogRestore!.Catalog.VersionStacks.Clear();
 
                     if (fClearBeforeRestore)
-                        ServiceInterop.DeleteAllMediaAndMediaTagsAndStacks();
+                        ServiceInterop.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
 
                     Catalog catalogCurrent = new Catalog();
                     MetatagSchema schema = new MetatagSchema();
-                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema();
+                    ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
 
                     schema.ReplaceFromService(serviceSchema);
-                    await catalogCurrent.ReadFullCatalogFromServer(schema);
+                    await catalogCurrent.ReadFullCatalogFromServer(catalogID, schema);
                         
                     // and now we have to diff
                     m_fullRestoreData.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
                     m_fullRestoreData.CatalogRestore!.Catalog.PushPendingChanges(
+                        catalogID,
                         (count, itemType) => MessageBox.Show(
                                 $"Updating {count} {itemType} items. Proceed?",
                                 "Restore Data",
@@ -213,7 +282,7 @@ namespace Thetacat.BackupRestore.Restore
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
                 {
-                    ServiceInterop.InsertAllServiceImportItems(m_fullRestoreData.ImportsRestore!.ImportItems);
+                    ServiceInterop.InsertAllServiceImportItems(catalogID, m_fullRestoreData.ImportsRestore!.ImportItems);
                 }
             }
         }
@@ -251,6 +320,32 @@ namespace Thetacat.BackupRestore.Restore
 
             if (restore.FullExportRestore.WorkgroupsRestore?.Workgroups.Count > 0)
                 m_model.ImportWorkgroups = true;
+
+            UpdateCurrentCatalogFromID(m_fullRestoreData.CatalogID);
+        }
+
+        void UpdateCurrentCatalogFromID(Guid? id)
+        {
+            if (id == null || m_model.CurrentRestoreBehavior == "Create New")
+            {
+                // no id, so we have to create a new one
+                m_model.CatalogDefinition = null;
+                m_model.CurrentRestoreBehavior = "Create New";
+            }
+            else 
+            {
+                foreach (ServiceCatalogDefinition def in m_model.CatalogDefinitions)
+                {
+                    if (def.ID == id)
+                    {
+                        m_model.CatalogDefinition = def;
+                        return;
+                    }
+                }
+
+                // otherwise couldn't find it, so its a create new...
+                UpdateCurrentCatalogFromID(null);
+            }
         }
 
         private void LoadExportedData(object sender, RoutedEventArgs e)

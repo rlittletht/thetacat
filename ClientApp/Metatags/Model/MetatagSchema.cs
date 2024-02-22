@@ -294,9 +294,9 @@ public class MetatagSchema
             AddMetatag(BuiltinTags.s_ImportDate);
     }
 
-    public void ReplaceFromService()
+    public void ReplaceFromService(Guid catalogID)
     {
-        ReplaceFromService(ServiceInterop.GetMetatagSchema());
+        ReplaceFromService(ServiceInterop.GetMetatagSchema(catalogID));
     }
 
     public void ReadNewBaseFromService(ServiceMetatagSchema serviceMetatagSchema)
@@ -349,7 +349,7 @@ public class MetatagSchema
         return MetatagSchemaDiff.CreateFromSchemas(m_schemaBase, m_schemaWorking);
     }
 
-    public void UpdateServer(Func<int, bool>? verify = null)
+    public void UpdateServer(Guid catalogID, Func<int, bool>? verify = null)
     {
         // need to handle 3WM here if we get an exception (because schema changed)
         MetatagSchemaDiff diff = BuildDiffForSchemas();
@@ -358,7 +358,7 @@ public class MetatagSchema
             if (verify != null && verify(diff.GetDiffCount) == false)
                 return;
 
-            ServiceInterop.UpdateMetatagSchema(diff);
+            ServiceInterop.UpdateMetatagSchema(catalogID, diff);
             m_schemaBase = null; // working is now the base
         }
         TriggerItemDirtied(false);

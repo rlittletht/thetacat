@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Thetacat.Explorer;
@@ -37,7 +38,7 @@ public class AppState : IAppState
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
     public string AzureStorageAccount => App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
     public string StorageContainer => App.State.ActiveProfile.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
-    public ClientDatabase ClientDatabase { get; init; }
+    public ClientDatabase? ClientDatabase { get; private set; }
     public Md5Cache Md5Cache { get; init; }
     public Derivatives Derivatives { get; init; }
     public MetatagMRU MetatagMRU { get; init; }
@@ -61,9 +62,9 @@ public class AppState : IAppState
         m_addBackgroundWork(description, work, onWorkCompleted);
     }
 
-    public void RefreshMetatagSchema()
+    public void RefreshMetatagSchema(Guid catalogID)
     {
-        MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+        MetatagSchema.ReplaceFromService(ServiceInterop.GetMetatagSchema(catalogID));
         MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
     }
 
@@ -77,10 +78,8 @@ public class AppState : IAppState
         Catalog = catalog;
     }
 
-    public AppState()
+    public void LoadProfiles()
     {
-        Settings = new TcSettings.TcSettings();
-
         bool fSetProfile = false;
 
         foreach (Profile profile in Settings.Profiles.Values)
@@ -98,14 +97,14 @@ public class AppState : IAppState
             }
         }
 
-        if (ActiveProfile == null)
+        if (!fSetProfile)
         {
             // this means there wasn't a profile to set at all. Make a default one
             ActiveProfile = new Profile()
-                       {
-                           Name = "Default",
-                           Default = true
-                       };
+                            {
+                                Name = "Default",
+                                Default = true
+                            };
 
             Settings.Profiles.Add(ActiveProfile.Name, ActiveProfile);
         }
@@ -115,28 +114,62 @@ public class AppState : IAppState
 
         // make the assumed default profile the real default
         ActiveProfile.Default = true;
+    }
 
-        AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
+    public AppState()
+    {
+        Settings = new TcSettings.TcSettings();
+
+        ActiveProfile = new Profile()
+                        {
+                            Name = "Default",
+                            Default = true
+                        };
 
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
-        Cache = new Cache(ActiveProfile);
+        Cache = new Cache(null);
         m_closeAsyncLog = null;
         m_closeAppLog = null;
         m_addBackgroundWork = null;
         // this will start the caching pipelines
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(true);
-        ClientDatabase = new ClientDatabase(App.ClientDatabasePath(ActiveProfile.ClientDatabaseName));
+        ClientDatabase = null;
         Md5Cache = new Md5Cache(ClientDatabase);
         Derivatives = new Derivatives(ClientDatabase);
         MetatagMRU = new MetatagMRU();
+        ProfileChanged += OnProfileChanged;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: OnProfileChanged
+        %%Qualified: Thetacat.Types.AppState.OnProfileChanged
+
+        This is our own private OnProfileChanged. Resets our AppSecrets
+        and the 
+    ----------------------------------------------------------------------------*/
+    private void OnProfileChanged(object? sender, ProfileChangedEventArgs e)
+    {
+        string clientDatabasePath = App.ClientDatabasePath(ActiveProfile.ClientDatabaseName);
+
+        string? directory = Path.GetDirectoryName(clientDatabasePath);
+        if (directory != null)
+            Directory.CreateDirectory(directory);
+
+        AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
+        ClientDatabase = new ClientDatabase(clientDatabasePath);
+
+        Cache.ResetCache(ActiveProfile);
+        Catalog.Reset();
+        MetatagSchema.Reset();
+        Derivatives.ResetDerivatives(ClientDatabase);
+        Md5Cache.ResetMd5Cache(ClientDatabase);
     }
 
     public void ChangeProfile(string profileName)
     {
         ActiveProfile = Settings.Profiles[profileName];
-        AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
         if (ProfileChanged != null)
             ProfileChanged(this, new ProfileChangedEventArgs(ActiveProfile));
     }

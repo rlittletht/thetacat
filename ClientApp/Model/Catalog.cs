@@ -102,14 +102,15 @@ public class Catalog : ICatalog
         This currently does not deal with any kind of coherency failure. Whoever
         is committing last wins.
     ----------------------------------------------------------------------------*/
-    public void PushPendingChanges(Func<int, string, bool>? verify = null)
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
-        m_media.PushPendingChanges(verify);
+        m_media.PushPendingChanges(catalogID, verify);
         foreach (KeyValuePair<MediaStackType, MediaStacks> item in m_mediaStacks)
         {
             string itemType = item.Key.ToString();
 
             item.Value.PushPendingChanges(
+                catalogID,
                 verify == null
                 ? null
                 : (count, _) => verify(count, itemType));
@@ -118,13 +119,13 @@ public class Catalog : ICatalog
         TriggerItemDirtied(false);
     }
 
-    private async Task<ServiceCatalog> GetFullCatalogAsync()
+    private async Task<ServiceCatalog> GetFullCatalogAsync(Guid catalogID)
     {
         Task<List<ServiceMediaItem>> taskGetMedia =
-            Task.Run(ServiceInterop.ReadFullCatalogMedia);
+            Task.Run(()=>ServiceInterop.ReadFullCatalogMedia(catalogID));
 
         Task<List<ServiceMediaTag>> taskGetMediaTags =
-            Task.Run(ServiceInterop.ReadFullCatalogMediaTags);
+            Task.Run(()=>ServiceInterop.ReadFullCatalogMediaTags(catalogID));
 
         List<Task> tasks = new List<Task>() { taskGetMedia, taskGetMediaTags };
 
@@ -137,13 +138,13 @@ public class Catalog : ICatalog
                };
     }
 
-    public async Task ReadFullCatalogFromServer(MetatagSchema schema)
+    public async Task ReadFullCatalogFromServer(Guid catalogID, MetatagSchema schema)
     {
         MicroTimer timer = new MicroTimer();
         timer.Reset();
         timer.Start();
 
-        ServiceCatalog catalog = await GetFullCatalogAsync();
+        ServiceCatalog catalog = await GetFullCatalogAsync(catalogID);
 
         MainWindow.LogForApp(EventType.Warning, $"ServiceInterop.ReadFullCatalog: {timer.Elapsed()}");
 
@@ -178,7 +179,7 @@ public class Catalog : ICatalog
             {
                 if (!refreshedSchema)
                 {
-                    schema.ReplaceFromService(ServiceInterop.GetMetatagSchema());
+                    schema.ReplaceFromService(ServiceInterop.GetMetatagSchema(catalogID));
                     metatag = schema.GetMetatagFromId(tag.Id);
                 }
 
@@ -197,7 +198,7 @@ public class Catalog : ICatalog
         MediaStacks.Clear();
         VersionStacks.Clear();
 
-        List<ServiceStack> serviceStacks = ServiceInterop.GetAllStacks();
+        List<ServiceStack> serviceStacks = ServiceInterop.GetAllStacks(catalogID);
         foreach (ServiceStack stack in serviceStacks)
         {
             MediaStack mediaStack = new MediaStack(stack);

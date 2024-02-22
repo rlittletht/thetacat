@@ -84,7 +84,7 @@ public class Cache: ICache
 
         try
         {
-            m_workgroup = new Workgroup(id);
+            m_workgroup = new Workgroup(settings.CatalogID, id);
         }
         catch (SqlExceptionNoResults e)
         {
@@ -122,15 +122,23 @@ public class Cache: ICache
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
 #pragma warning disable CS8618 // we set these in a method
-    public Cache(TcSettings.Profile settings)
+    public Cache(TcSettings.Profile? settings)
     {
         ResetCache(settings);
     }
 #pragma warning restore CS8618
 
-    public void ResetCache(Profile settings)
+    public void ResetCache(Profile? settings)
     {
         Entries.Clear();
+
+        if (settings == null)
+        {
+            Type = CacheType.Unknown;
+            LocalPathToCacheRoot = PathSegment.Empty;
+            m_workgroup = null;
+            return;
+        }
 
         CacheType cacheType = CacheTypeFromString(settings.CacheType);
 
@@ -145,12 +153,12 @@ public class Cache: ICache
             }
             catch (CatExceptionWorkgroupNotFound)
             {
-                MessageBox.Show("Workgroup id not found. Reconnect to workgroup");
+                MessageBox.Show($"Failed to connect to workgroup {settings.WorkgroupName}.");
                 LocalPathToCacheRoot = new PathSegment();
             }
             catch (CatExceptionNoSqlConnection)
             {
-                MessageBox.Show("Trying to connect to a workgroup, but no SQL connection string set");
+                MessageBox.Show($"Failed to connect to workgroup. No SQL connection available.");
                 LocalPathToCacheRoot = new PathSegment();
             }
         }

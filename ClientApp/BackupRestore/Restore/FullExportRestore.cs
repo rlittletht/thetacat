@@ -1,6 +1,8 @@
-﻿using System.Windows.Documents;
+﻿using System;
+using System.Windows.Documents;
 using System.Xml;
 using System.Xml.Schema;
+using XMLIO;
 
 namespace Thetacat.BackupRestore.Restore;
 
@@ -10,6 +12,7 @@ public class FullExportRestore
     public CatalogRestore? CatalogRestore;
     public ImportsRestore? ImportsRestore;
     public WorkgroupsRestore? WorkgroupsRestore;
+    public Guid? CatalogID;
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)
     {
@@ -42,6 +45,20 @@ public class FullExportRestore
 
     public FullExportRestore(XmlReader reader)
     {
-        XMLIO.XmlIO.FReadElement(reader, this, "fullExport", null, FParseFullExport);
+        XMLIO.XmlIO.FReadElement(reader, this, "fullExport", FParseFullExportAttribute, FParseFullExport);
+    }
+
+    private bool FParseFullExportAttribute(string attribute, string value, FullExportRestore fullExport)
+    {
+        if (attribute == "catalogId")
+        {
+            if (Guid.TryParse(value, out Guid id))
+            {
+                fullExport.CatalogID = id;
+                return true;
+            }
+        }
+
+        throw new XmlioExceptionSchemaFailure($"unknown attribute {attribute}: {value}");
     }
 }

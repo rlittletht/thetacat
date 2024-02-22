@@ -20,8 +20,20 @@ public class Md5Cache
 {
     private readonly ConcurrentDictionary<PathSegment, Md5CacheItem> m_cache = new();
 
-    public Md5Cache(ClientDatabase client)
+    public Md5Cache(ClientDatabase? client)
     {
+        ResetMd5Cache(client);
+    }
+
+    public void ResetMd5Cache(ClientDatabase? client)
+    {
+        m_cache.Clear();
+
+        if (client == null)
+        {
+            return;
+        }
+
         List<Md5CacheDbItem> dbItems = client.ReadFullMd5Cache();
 
         foreach (Md5CacheDbItem dbItem in dbItems)
@@ -45,7 +57,7 @@ public class Md5Cache
                 deletes.Add(dbItem.Value);
         }
 
-        App.State.ClientDatabase.ExecuteMd5CacheUpdates(deletes, inserts);
+        App.State.ClientDatabase?.ExecuteMd5CacheUpdates(deletes, inserts);
 
         foreach (Md5CacheItem item in inserts)
         {

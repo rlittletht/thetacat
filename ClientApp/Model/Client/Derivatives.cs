@@ -24,7 +24,7 @@ namespace Thetacat.Model.Client;
 ----------------------------------------------------------------------------*/
 public class Derivatives
 {
-    private readonly ProducerConsumer<DerivativeWork>? m_derivativeWorkPipeline;
+    private ProducerConsumer<DerivativeWork>? m_derivativeWorkPipeline;
 
     // all of the derivatives we know about for each mediaitem. this is the master list
     private readonly Dictionary<Guid, List<DerivativeItem>> m_mediaDerivatives = new();
@@ -61,19 +61,31 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, reformattedImage, true));
     }
 
-    public Derivatives(ClientDatabase client)
+    public void ResetDerivatives(ClientDatabase? client)
     {
+        // clear all the derivatives we have, but leave the pipeline running
+        m_mediaDerivatives.Clear();
+        m_mediaFormatDerivatives.Clear();
+        m_scaledMediaDerivatives.Clear();
+
+        if (client == null)
+            return;
+
         List<DerivativeDbItem> dbItems = client.ReadDerivatives();
 
         foreach (DerivativeDbItem dbItem in dbItems)
         {
-            DerivativeItem item = new DerivativeItem(dbItem);
+            DerivativeItem item = new(dbItem);
             AddDerivative(item);
         }
+    }
+
+    public Derivatives(ClientDatabase? client)
+    {
+        ResetDerivatives(client);
 
         if (!MainWindow.InUnitTest)
         {
-            // this will start the thread which will just wait for work to do...
             m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(null, DoDerivativeWork);
             m_derivativeWorkPipeline.Start();
         }
@@ -100,7 +112,7 @@ public class Derivatives
             }
         }
 
-        App.State.ClientDatabase.ExecuteDerivativeUpdates(deletes, inserts);
+        App.State.ClientDatabase?.ExecuteDerivativeUpdates(deletes, inserts);
 
         foreach (DerivativeItem item in inserts)
         {

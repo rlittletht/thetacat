@@ -55,7 +55,7 @@ public partial class UserMetatagMigration : UserControl
         m_migrate = migrate;
 
         if (App.State.MetatagSchema.SchemaVersionWorking == 0)
-            App.State.RefreshMetatagSchema();
+            App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
 
         m_migrate.MetatagMigrate.SetUserMetatags(db.ReadMetadataTags());
         MarkExistingMetatags();

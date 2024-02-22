@@ -64,6 +64,9 @@
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <StackPanel Orientation="Horizontal" Margin="5" >
+                <TextBlock Text="Profile: " Margin="0 2 0 0" />
+                <ComboBox ItemsSource="{Binding Path=AvailableProfiles}"
+                          SelectedItem="{Binding Path=CurrentProfile}" Width="96" />
                 <TextBlock Text="Filter: " Margin="0 2 0 0"/>
                 <ComboBox ItemsSource="{Binding Path=AvailableFilters}" SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="96"/>
                 <TextBlock Text="Jump to date:" Margin="10 2 0 0" />

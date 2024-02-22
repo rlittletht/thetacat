@@ -36,14 +36,14 @@ public class Media
         }
     }
 
-    public void PushPendingChanges(Func<int, string, bool>? verify = null)
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
         List<MediaItemDiff> diffs = BuildUpdates();
 
         if (verify != null && !verify(diffs.Count, "mediaItem"))
             return;
 
-        ServiceInterop.UpdateMediaItems(diffs);
+        ServiceInterop.UpdateMediaItems(catalogID, diffs);
 
         foreach (MediaItemDiff diff in diffs)
         {

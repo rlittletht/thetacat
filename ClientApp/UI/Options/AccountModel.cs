@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.ServiceClient;
 
 namespace Thetacat.UI.Options;
 
@@ -16,7 +18,16 @@ public class AccountModel : INotifyPropertyChanged
     private string m_container = string.Empty;
     private string m_sqlConnection = string.Empty;
     private ProfileOptions? m_currentProfile;
+    private ServiceCatalogDefinition? m_catalogDefinition;
 
+    public ObservableCollection<ServiceCatalogDefinition> CatalogDefinitions { get; set; } = new();
+
+    public ServiceCatalogDefinition? CatalogDefinition
+    {
+        get => m_catalogDefinition;
+        set => SetField(ref m_catalogDefinition, value);
+    }
+    
     public string SqlConnection
     {
         get => m_sqlConnection;

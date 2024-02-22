@@ -38,7 +38,7 @@ public partial class Migration : Window, INotifyPropertyChanged
     public Migration()
     {
         if (App.State.MetatagSchema.SchemaVersionWorking == 0)
-            App.State.RefreshMetatagSchema();
+            App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
 
         InitializeComponent();
         DataContext = this;

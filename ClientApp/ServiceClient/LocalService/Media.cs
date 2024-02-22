@@ -24,19 +24,19 @@ public class Media
 
     private static readonly string s_queryInsertMedia = @"
         INSERT INTO tcat_media
-            (id, virtualPath, mimeType, state, md5)
+            (catalog_id, id, virtualPath, mimeType, state, md5)
         VALUES ";
 
     private static readonly string s_queryInsertMediaTag = @"
         INSERT INTO tcat_mediatags
-            (id, metatag, value)
+            (catalog_id, id, metatag, value)
         VALUES ";
 
     private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
-        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id)
-        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id)
-        DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id)
-        DELETE FROM tcat_media";
+        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id) AND tcat_stacks.catalog_id=@CatalogID
+        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id) AND tcat_stackmedia.catalog_id=@CatalogID
+        DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id) AND tcat_mediatags.catalog_id=@CatalogID
+        DELETE FROM tcat_media WHERE catalog_id=@CatalogID";
 
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems
@@ -45,7 +45,7 @@ public class Media
         Currently unused. This takes advantage of the multiple values insert
         syntax
     ----------------------------------------------------------------------------*/
-    public static void InsertNewMediaItems(IEnumerable<MediaItem> items)
+    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> items)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
@@ -78,7 +78,7 @@ public class Media
                     }
 
                     return
-                        $"({SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.VirtualPath)}, {SqlText.SqlifyQuoted(item.MimeType)}, '{MediaItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.MD5)}) ";
+                        $"('{catalogID}', {SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.VirtualPath)}, {SqlText.SqlifyQuoted(item.MimeType)}, '{MediaItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.MD5)}) ";
                 },
                 1000,
                 ", ",
@@ -89,7 +89,7 @@ public class Media
                 s_queryInsertMediaTag,
                 tagsToInsert,
                 item =>
-                    $"({SqlText.SqlifyQuoted(item.MediaId.ToString())}, '{item.Id}', {SqlText.Nullable(item.Value)}) ",
+                    $"('{catalogID}', {SqlText.SqlifyQuoted(item.MediaId.ToString())}, '{item.Id}', {SqlText.Nullable(item.Value)}) ",
                 1000,
                 ", ",
                 s_aliases);
@@ -108,9 +108,10 @@ public class Media
 
     static readonly string s_queryFullCatalog = @"
             SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_media$$.md5
-            FROM $$#tcat_media$$";
+            FROM $$#tcat_media$$
+            WHERE $$tcat_media$$.catalog_id=@CatalogID";
 
-    public static List<ServiceMediaItem> ReadFullCatalogMedia()
+    public static List<ServiceMediaItem> ReadFullCatalogMedia(Guid catalogID)
     {
         return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaItem>>(
             s_queryFullCatalog,
@@ -127,14 +128,16 @@ public class Media
                             MD5 = reader.GetString(4)
                         });
             },
-            s_aliases);
+            s_aliases,
+            cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
     static readonly string s_queryFullMediaTags = @"
             SELECT $$tcat_mediatags$$.id, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value
-            FROM $$#tcat_mediatags$$";
+            FROM $$#tcat_mediatags$$
+            WHERE $$tcat_mediatags$$.catalog_id=@CatalogID";
 
-    public static List<ServiceMediaTag> ReadFullCatalogMediaTags()
+    public static List<ServiceMediaTag> ReadFullCatalogMediaTags(Guid catalogID)
     {
         HashSet<Guid> mediaAdded = new();
 
@@ -151,15 +154,17 @@ public class Media
                         Value = reader.GetNullableString(2)
                     });
             },
-            s_aliases);
+            s_aliases,
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
     static readonly string s_queryFullCatalogWithTags = @"
             SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value, $$tcat_media$$.md5
             FROM $$#tcat_media$$
-            FULL OUTER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id";
+            FULL OUTER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id
+            WHERE $$tcat_media$$.catalog_id=@CatalogID";
 
-    public static ServiceCatalog ReadFullCatalog_OldWithJoin()
+    public static ServiceCatalog ReadFullCatalog_OldWithJoin(Guid catalogID)
     {
         HashSet<Guid> mediaAdded = new();
 
@@ -199,10 +204,11 @@ public class Media
                         });
                 }
             },
-            s_aliases);
+            s_aliases,
+            cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
-    static string BuildInsertItemSql(MediaItemDiff diffOp)
+    static string BuildInsertItemSql(Guid catalogID, MediaItemDiff diffOp)
     {
         if (diffOp.ItemData == null)
             throw new CatExceptionInternalFailure("itemdata not set for insert");
@@ -216,31 +222,31 @@ public class Media
         string state = MediaItem.StringFromState(diffOp.ItemData.State);
         string md5 = SqlText.Sqlify(diffOp.ItemData.MD5);
 
-        return "INSERT INTO tcat_media (id, virtualPath, mimeType, state, md5) "
-            + $"VALUES ('{id}', '{virtualPath}', '{mimeType}', '{state}', '{md5}') ";
+        return "INSERT INTO tcat_media (catalog_id, id, virtualPath, mimeType, state, md5) "
+            + $"VALUES ('{catalogID}', '{id}', '{virtualPath}', '{mimeType}', '{state}', '{md5}') ";
     }
 
-    static string BuildDeleteSql(MediaItemDiff diffOp)
+    static string BuildDeleteSql(Guid catalogID, MediaItemDiff diffOp)
     {
-        return $"DELETE FROM tcat_media WHERE ID = '{diffOp.ID}'";
+        return $"DELETE FROM tcat_media WHERE ID = '{diffOp.ID}' AND catalog_id='{catalogID}'";
     }
 
-    static string BuildUpdateItemSql(MediaItemDiff diffOp)
+    static string BuildUpdateItemSql(Guid catalogID, MediaItemDiff diffOp)
     {
         switch (diffOp.DiffOp)
         {
             case MediaItemDiff.Op.Insert:
-                return BuildInsertItemSql(diffOp);
+                return BuildInsertItemSql(catalogID, diffOp);
             case MediaItemDiff.Op.Update:
-                return BuildChangeItemSql(diffOp);
+                return BuildChangeItemSql(catalogID, diffOp);
             case MediaItemDiff.Op.Delete:
-                return BuildDeleteSql(diffOp);
+                return BuildDeleteSql(catalogID, diffOp);
             default:
                 throw new CatExceptionInternalFailure($"unknown diffOp op: {diffOp.DiffOp}");
         }
     }
 
-    static string BuildChangeItemSql(MediaItemDiff diffOp)
+    static string BuildChangeItemSql(Guid catalogID, MediaItemDiff diffOp)
     {
         if (diffOp.ItemData == null)
             throw new CatExceptionInternalFailure("itemdata not set for update");
@@ -258,29 +264,29 @@ public class Media
             return "";
 
         string setsSql = string.Join(", ", sets.ToArray());
-        return $"UPDATE tcat_media SET {setsSql} WHERE ID='{diffOp.ID.ToString()}'";
+        return $"UPDATE tcat_media SET {setsSql} WHERE ID='{diffOp.ID.ToString()}' AND catalog_id='{catalogID}'";
     }
 
-    static string BuildMediaTagDelete(Guid mediaId, Guid metatagId)
+    static string BuildMediaTagDelete(Guid catalogID, Guid mediaId, Guid metatagId)
     {
-        return $"DELETE FROM tcat_mediatags WHERE id='{mediaId.ToString()}' AND metatag='{metatagId.ToString()}' ";
+        return $"DELETE FROM tcat_mediatags WHERE id='{mediaId}' AND metatag='{metatagId}' AND catalog_id='{catalogID}' ";
     }
 
-    static string BuildMediaTagInsert(Guid mediaId, MediaTag mediaTag)
-    {
-        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
-
-        return $"INSERT INTO tcat_mediatags (id, metatag, value) VALUES ('{mediaId.ToString()}', '{mediaTag.Metatag.ID.ToString()}', {SqlText.Nullable(value)}) ";
-    }
-
-    static string BuildMediaTagUpdate(Guid mediaId, MediaTag mediaTag)
+    static string BuildMediaTagInsert(Guid catalogID, Guid mediaId, MediaTag mediaTag)
     {
         string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
-        return $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId.ToString()}' AND metatag='{mediaTag.Metatag.ID.ToString()}' ";
+        return $"INSERT INTO tcat_mediatags (catalog_id, id, metatag, value) VALUES ('{catalogID}', '{mediaId}', '{mediaTag.Metatag.ID}', {SqlText.Nullable(value)}) ";
     }
 
-    static List<string> BuildUpdateItemTagsSql(MediaItemDiff diffOp)
+    static string BuildMediaTagUpdate(Guid catalogID, Guid mediaId, MediaTag mediaTag)
+    {
+        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
+
+        return $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
+    }
+
+    static List<string> BuildUpdateItemTagsSql(Guid catalogID, MediaItemDiff diffOp)
     {
         List<string> sets = new();
 
@@ -293,14 +299,14 @@ public class Media
                 // all the tags get inserted
                 foreach (KeyValuePair<Guid, MediaTag> tag in diffOp.ItemData.Tags)
                 {
-                    sets.Add(BuildMediaTagInsert(diffOp.ID, tag.Value));
+                    sets.Add(BuildMediaTagInsert(catalogID, diffOp.ID, tag.Value));
                 }
 
                 return sets;
             }
             case MediaItemDiff.Op.Delete:
                 // all the media tags associated with this media ID gets deleted
-                sets.Add($"DELETE FROM tcat_mediatags WHERE id='{diffOp.ID.ToString()}' ");
+                sets.Add($"DELETE FROM tcat_mediatags WHERE id='{diffOp.ID}' AND catalog_id='{catalogID}' ");
                 return sets;
             case MediaItemDiff.Op.Update:
                 if (!diffOp.IsTagsChanged
@@ -317,13 +323,13 @@ public class Media
                     switch (tagDiff.DiffOp)
                     {
                         case MediaTagDiff.Op.Delete:
-                            sets.Add(BuildMediaTagDelete(diffOp.ID, tagDiff.ID));
+                            sets.Add(BuildMediaTagDelete(catalogID, diffOp.ID, tagDiff.ID));
                             break;
                         case MediaTagDiff.Op.Insert:
-                            sets.Add(BuildMediaTagInsert(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            sets.Add(BuildMediaTagInsert(catalogID, diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
                             break;
                         case MediaTagDiff.Op.Update:
-                            sets.Add(BuildMediaTagUpdate(diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            sets.Add(BuildMediaTagUpdate(catalogID, diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
                             break;
                         default:
                             throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
@@ -336,7 +342,7 @@ public class Media
         }
     }
 
-    public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
+    public static void UpdateMediaItems(Guid catalogID, IEnumerable<MediaItemDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
@@ -357,8 +363,8 @@ public class Media
                 diffs,
                 diff =>
                 {
-                    updateTags.AddRange(BuildUpdateItemTagsSql(diff));
-                    return BuildUpdateItemSql(diff);
+                    updateTags.AddRange(BuildUpdateItemTagsSql(catalogID, diff));
+                    return BuildUpdateItemSql(catalogID, diff);
                 },
                 1000,
                 " ",
@@ -386,8 +392,8 @@ public class Media
         }
     }
 
-    public static void DeleteAllMediaAndMediaTagsAndStacks()
+    public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID)
     {
-        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTagsAndStacks, s_aliases, null);
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTagsAndStacks, s_aliases, cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 }

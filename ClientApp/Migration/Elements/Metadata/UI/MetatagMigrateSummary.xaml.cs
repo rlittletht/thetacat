@@ -61,9 +61,9 @@ public partial class MetadataMigrateSummary : UserControl
             return;
 
         // commit all the diff ops
-        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
+        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(App.State.ActiveProfile.CatalogID, m_diff);
 
-        App.State.RefreshMetatagSchema();
+        App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
         _Migrate.ReloadSchemas();
         RebuildSchemaDiff();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");

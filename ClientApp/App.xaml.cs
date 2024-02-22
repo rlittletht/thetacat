@@ -26,6 +26,11 @@ namespace Thetacat
             }
         }
 
+        public static void OnMainWindowCreated()
+        {
+            ((App)Current).m_appState?.LoadProfiles();
+        }
+
         private readonly AppState? m_appState;
 
         public WindowPlace WindowPlace { get; }
@@ -55,14 +60,24 @@ namespace Thetacat
 
         public App()
         {
-            m_appState = new AppState();
+            // NOTE: YOU CANNOT BRING UP ANY UI until we have created the main window
+            // (if you bring up UI like a messagebox, this dispatcher will run the pending
+            // items in the dispatch queue, which includes creating the main window, but
+            // that will fail if we haven't finished initializing the App here (namely, the
+            // StartupUri has to get setup).
+
+            try
+            {
+                m_appState = new AppState();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not create app state: {ex}");
+                Shutdown(-1);
+            }
 
             string? directory = Path.GetDirectoryName(SettingsPath);
 
-            if (directory != null)
-                Directory.CreateDirectory(directory);
-
-            directory = Path.GetDirectoryName(ClientDatabasePath(m_appState.ActiveProfile.ClientDatabaseName));
             if (directory != null)
                 Directory.CreateDirectory(directory);
 

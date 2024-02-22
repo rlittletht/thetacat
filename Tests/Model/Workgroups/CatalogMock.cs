@@ -51,12 +51,7 @@ public class CatalogMock : ICatalog
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
-    public void PushPendingChanges(Func<int, string, bool>? verify = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void PushPendingChanges()
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
         throw new NotImplementedException();
     }
@@ -66,7 +61,7 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
-    public Task ReadFullCatalogFromServer(MetatagSchema schema)
+    public Task ReadFullCatalogFromServer(Guid catalogID, MetatagSchema schema)
     {
         throw new NotImplementedException();
     }

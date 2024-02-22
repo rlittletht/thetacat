@@ -30,6 +30,7 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
+using Thetacat.TcSettings;
 
 namespace Thetacat;
 
@@ -53,6 +54,14 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeThetacat();
 
+        // adding our listener here so we setup our filters, etc., for the active profile correctly
+
+        App.State.ProfileChanged += OnProfileChanged;
+        App.OnMainWindowCreated();
+        App.State.RegisterWindowPlace(this, "MainWindow");
+        m_model.PropertyChanged += MainWindowPropertyChanged;
+        RebuildProfileList();
+
         Explorer.SetExplorerItemSize(App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium);
 
         // we have to load the catalog AND the pending upload list
@@ -62,21 +71,33 @@ public partial class MainWindow : Window
         // they are already uploaded), then remove them from the import
         // list
 
-        App.State.RegisterWindowPlace(this, "MainWindow");
         LocalServiceClient.LogService = LogForApp;
         DataContext = m_model;
-        if (!string.IsNullOrWhiteSpace(App.State.ActiveProfile.DefaultFilterName))
-        {
-            if (App.State.ActiveProfile.Filters.TryGetValue(App.State.ActiveProfile.DefaultFilterName, out FilterDefinition? filter))
-                m_model.ExplorerCollection.Filter = filter;
-        }
 
         m_mainBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
+
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
         App.State.Catalog.OnItemDirtied += SetCollectionDirtyState;
         App.State.MetatagSchema.OnItemDirtied += SetSchemaDirtyState;
-        App.State.ProfileChanged += OnProfileChanged;
-        RebuildFilterList();
+    }
+
+    private void MainWindowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "CurrentProfile" && m_model.CurrentProfile?.Name != null)
+        {
+            App.State.ChangeProfile(m_model.CurrentProfile.Name);
+        }
+    }
+
+    void RebuildProfileList()
+    {
+        m_model.AvailableProfiles.Clear();
+        foreach (Profile profile in App.State.Settings.Profiles.Values)
+        {
+            m_model.AvailableProfiles.Add(profile);
+        }
+
+        m_model.CurrentProfile = App.State.ActiveProfile;
     }
 
     void RebuildFilterList()
@@ -110,7 +131,7 @@ public partial class MainWindow : Window
         App.State.PreviewImageCache.Close();
         App.State.ImageCache.Close();
         App.State.Md5Cache.Close();
-        App.State.ClientDatabase.Close();
+        App.State.ClientDatabase?.Close();
 
         if (m_asyncLogMonitor != null)
             CloseAsyncLog(false);
@@ -164,7 +185,7 @@ public partial class MainWindow : Window
         LogForApp(EventType.Information, "Beginning read catalog");
         MicroTimer timer = new MicroTimer();
 
-        await App.State.Catalog.ReadFullCatalogFromServer(App.State.MetatagSchema);
+        await App.State.Catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, App.State.MetatagSchema);
         // good time to refresh the MRU now that we loaded the catalog and the schema
         App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
         SetCollectionDirtyState(null, new DirtyItemEventArgs<bool>(false));
@@ -227,6 +248,8 @@ public partial class MainWindow : Window
             options.SaveToSettings();
             App.State.Settings.WriteSettings();
         }
+
+        RebuildProfileList();
     }
 
     private void DoCacheItems(object sender, RoutedEventArgs e)
@@ -325,8 +348,8 @@ public partial class MainWindow : Window
 
     private void CommitPendingChanges(object sender, RoutedEventArgs e)
     {
-        App.State.Catalog.PushPendingChanges();
-        App.State.MetatagSchema.UpdateServer();
+        App.State.Catalog.PushPendingChanges(App.State.ActiveProfile.CatalogID);
+        App.State.MetatagSchema.UpdateServer(App.State.ActiveProfile.CatalogID);
     }
 
     private void SelectLargePreview(object sender, RoutedEventArgs e)
@@ -517,11 +540,13 @@ public partial class MainWindow : Window
 
     private void OnProfileChanged(object? sender, ProfileChangedEventArgs e)
     {
-        App.State.Cache.ResetCache(App.State.ActiveProfile);
         RebuildFilterList();
         m_model.ExplorerCollection.Clear();
-        App.State.Catalog.Reset();
-        App.State.MetatagSchema.Reset();
+        if (App.State?.ActiveProfile?.DefaultFilterName != null)
+        {
+            if (App.State.ActiveProfile.Filters.TryGetValue(App.State.ActiveProfile.DefaultFilterName, out FilterDefinition? filter))
+                m_model.ExplorerCollection.SetFilter(filter);
+        }
     }
 
     private void TestRenderImage(object sender, RoutedEventArgs e)

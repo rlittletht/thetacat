@@ -19,34 +19,38 @@ public class Metatags
             });
 
     private static readonly string s_resetMetatagSchema = @"
-        DELETE FROM tcat_schemaversions
-        DELETE FROM tcat_metatags
-        INSERT INTO tcat_schemaversions (metatag_schema_version) VALUES (0)";
+        DELETE FROM tcat_schemaversions WHERE catalog_id = @CatalogID
+        DELETE FROM tcat_metatags WHERE catalog_id = @CatalogID
+        INSERT INTO tcat_schemaversions (catalog_id, metatag_schema_version) VALUES (@CatalogID, 0)";
 
-    public static ServiceMetatagSchema GetMetatagSchema()
+    private static readonly string s_getMetatagSchema = @"
+        SELECT 
+            $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, 
+            $$tcat_metatags$$.description, $$tcat_metatags$$.standard 
+        FROM $$#tcat_metatags$$
+        WHERE $$tcat_metatags$$.catalog_id=@CatalogID";
+
+    private static readonly string s_selectSchemaVersionBase = @"
+        SELECT $$tcat_schemaversions$$.metatag_schema_version 
+        FROM $$#tcat_schemaversions$$";
+
+    public static ServiceMetatagSchema GetMetatagSchema(Guid catalogID)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
 
-        SqlSelect selectTags = new SqlSelect();
-
-        selectTags.AddBase(
-            "SELECT $$tcat_metatags$$.id, $$tcat_metatags$$.parent, $$tcat_metatags$$.name, $$tcat_metatags$$.description, $$tcat_metatags$$.standard FROM $$#tcat_metatags$$");
-        selectTags.AddAliases(s_aliases);
-
-        string selectSchemaVersion = "select metatag_schema_version from tcat_schemaversions";
-
-        string sQuery = $"{selectTags.ToString()} {selectSchemaVersion}";
+        string sSelectSchemaVersion = $"{s_selectSchemaVersionBase} WHERE $$tcat_schemaversions$$.catalog_id='{catalogID}'";
+        string sQuery = $"{s_getMetatagSchema} {sSelectSchemaVersion}";
 
         // we do both queries in the same command in order to get the matching schema version
 
         try
         {
             ServiceMetatagSchema schema =
-                sql.ExecuteMultiSetDelegatedQuery<ServiceMetatagSchema>(
+                sql.ExecuteMultiSetDelegatedQuery(
                     crid,
                     sQuery,
-                    (ISqlReader reader, Guid correlationId, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
+                    (ISqlReader reader, Guid _, int recordset, ref ServiceMetatagSchema schemaBuilding) =>
                     {
                         if (recordset == 0)
                         {
@@ -68,8 +72,9 @@ public class Metatags
                         {
                             schemaBuilding.SchemaVersion = reader.GetInt32(0);
                         }
-                    }
-                );
+                    },
+                    s_aliases,
+                    cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
 
             return schema;
         }
@@ -77,7 +82,9 @@ public class Metatags
         {
             return new ServiceMetatagSchema()
                    {
-                       SchemaVersion = sql.NExecuteScalar(new SqlCommandTextInit(selectSchemaVersion)),
+                       SchemaVersion = 
+                           sql.NExecuteScalar(
+                               new SqlCommandTextInit(sSelectSchemaVersion, s_aliases)),
                    };
         }
         finally
@@ -86,23 +93,23 @@ public class Metatags
         }
     }
 
-    static string BuildInsertSql(MetatagSchemaDiffOp diffOp)
+    static string BuildInsertSql(Guid catalogID, MetatagSchemaDiffOp diffOp)
     {
         string description = SqlText.Sqlify(diffOp.Metatag.Description);
         string name = SqlText.Sqlify(diffOp.Metatag.Name);
         string parent = SqlText.Nullable(diffOp.Metatag.Parent);
         string standard = SqlText.Sqlify(diffOp.Metatag.Standard);
 
-        return "INSERT INTO tcat_metatags (Description, ID, Name, Parent, Standard) "
-            + $"VALUES ('{description}', '{diffOp.ID.ToString()}', '{name}', {parent}, '{standard}') ";
+        return "INSERT INTO tcat_metatags (catalog_id, Description, ID, Name, Parent, Standard) "
+            + $"VALUES ('{catalogID}', '{description}', '{diffOp.ID.ToString()}', '{name}', {parent}, '{standard}') ";
     }
 
-    static string BuildDeleteSql(MetatagSchemaDiffOp diffOp)
+    static string BuildDeleteSql(Guid catalogID, MetatagSchemaDiffOp diffOp)
     {
-        return $"DELETE FROM tcat_metatags WHERE ID = '{diffOp.ID}'";
+        return $"DELETE FROM tcat_metatags WHERE ID = '{diffOp.ID}' AND catalog_id='{catalogID}'";
     }
 
-    static string BuildUpdateSql(MetatagSchemaDiffOp diffOp)
+    static string BuildUpdateSql(Guid catalogID, MetatagSchemaDiffOp diffOp)
     {
         List<string> sets = new();
 
@@ -119,7 +126,7 @@ public class Metatags
             return "";
 
         string setsSql = string.Join(", ", sets.ToArray());
-        return $"UPDATE tcat_metatags SET {setsSql} WHERE ID='{diffOp.ID.ToString()}'";
+        return $"UPDATE tcat_metatags SET {setsSql} WHERE ID='{diffOp.ID}' AND catalog_id='{catalogID}'";
     }
 
     static string WrapSqlTransactionTryCatch(string tryBlock, string catchBlock)
@@ -139,18 +146,18 @@ public class Metatags
         return sql;
     }
 
-    static string BuildWrapSqlVersionCheckUpdate(int requiredSchemaVersion, string block)
+    static string BuildWrapSqlVersionCheckUpdate(Guid catalogID, int requiredSchemaVersion, string block)
     {
         string sql =
             $@"
                 IF EXISTS 
                   ( SELECT 1
                       FROM tcat_schemaversions WITH (UPDLOCK, HOLDLOCK)
-                      WHERE metatag_schema_version = {requiredSchemaVersion}
+                      WHERE metatag_schema_version = {requiredSchemaVersion} AND catalog_id = '{catalogID}'
                   )
                 BEGIN
                     {block}
-                    UPDATE tcat_schemaversions SET metatag_schema_version={requiredSchemaVersion + 1}
+                    UPDATE tcat_schemaversions SET metatag_schema_version={requiredSchemaVersion + 1} WHERE catalog_id='{catalogID}'
                     SELECT 1
                 END
                 ELSE
@@ -168,18 +175,18 @@ public class Metatags
         We have to craft a query that will update all the rows ONLY if the schema
         version is what we expect it to be.
     ----------------------------------------------------------------------------*/
-    public static void UpdateMetatagSchema(MetatagSchemaDiff schemaDiff)
+    public static void UpdateMetatagSchema(Guid catalogID, MetatagSchemaDiff schemaDiff)
     {
         List<string> updates = new();
 
         foreach (MetatagSchemaDiffOp op in schemaDiff.Ops)
         {
             if (op.Action == MetatagSchemaDiffOp.ActionType.Insert)
-                updates.Add(BuildInsertSql(op));
+                updates.Add(BuildInsertSql(catalogID, op));
             else if (op.Action == MetatagSchemaDiffOp.ActionType.Delete)
-                updates.Add(BuildDeleteSql(op));
+                updates.Add(BuildDeleteSql(catalogID, op));
             else if (op.Action == MetatagSchemaDiffOp.ActionType.Update)
-                updates.Add(BuildUpdateSql(op));
+                updates.Add(BuildUpdateSql(catalogID, op));
         }
 
         // now build the boilerlate around the updates
@@ -187,6 +194,7 @@ public class Metatags
         // automatically
         string cmd = WrapSqlTransactionTryCatch(
             BuildWrapSqlVersionCheckUpdate(
+                catalogID,
                 schemaDiff.BaseSchemaVersion,
                 string.Join("\n ", updates)),
             "select 0");
@@ -209,8 +217,11 @@ public class Metatags
         }
     }
 
-    public static void ResetMetatagSchema()
+    public static void ResetMetatagSchema(Guid catalogID)
     {
-        LocalServiceClient.DoGenericCommandWithAliases(s_resetMetatagSchema, null, null);
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_resetMetatagSchema,
+            null,
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 }

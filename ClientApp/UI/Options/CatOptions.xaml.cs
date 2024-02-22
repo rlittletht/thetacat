@@ -30,8 +30,8 @@ public partial class CatOptions : Window
         m_model.PropertyChanged += ModelPropertyChanged;
 
         DataContext = m_model;
-        CacheConfigTab.LoadFromSettings(m_model, AppSecrets.MasterSqlConnectionString);
         AccountTab.LoadFromSettings(m_model);
+        CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AppSecrets.MasterSqlConnectionString, AccountTab.CatalogID);
 
         AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
 
@@ -42,7 +42,7 @@ public partial class CatOptions : Window
         if (e.PropertyName == "SqlConnection")
         {
             // if the SqlConnection changed, then we need to reload cache (for workgroups)
-            CacheConfigTab.LoadFromSettings(m_model, AccountTab._Model.SqlConnection);
+            CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AccountTab._Model.SqlConnection, AccountTab.CatalogID);
         }
     }
 
@@ -51,7 +51,7 @@ public partial class CatOptions : Window
         if (m_model.CurrentProfile == null)
             return;
 
-        if (!CacheConfigTab.FSaveSettings(m_model.CurrentProfile.Profile.SqlConnection ?? ""))
+        if (!CacheConfigTab.FSaveSettings(m_model.CurrentProfile.Profile.SqlConnection ?? "", AccountTab.CatalogID))
             MessageBox.Show("Failed to save Cache options");
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
@@ -81,7 +81,7 @@ public partial class CatOptions : Window
         if (e.PropertyName == "CurrentProfile")
         {
             AccountTab.LoadFromSettings(m_model);
-            CacheConfigTab.LoadFromSettings(m_model, AccountTab._Model.SqlConnection);
+            CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AccountTab._Model.SqlConnection, AccountTab.CatalogID);
         }
     }
 

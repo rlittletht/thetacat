@@ -23,119 +23,76 @@ public class Import
             $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
             $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
         FROM $$#tcat_import$$
-        WHERE $$tcat_import$$.source = @SourceClient";
+        WHERE $$tcat_import$$.source = @SourceClient AND $$tcat_import$$.catalog_id = @CatalogID";
 
-    public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
+    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
     {
-        Guid crid = Guid.NewGuid();
-        ISql sql = LocalServiceClient.GetConnection();
+        return LocalServiceClient.DoGenericQueryWithAliases(
+                s_baseQuery,
+                (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+                {
+                    ServiceImportItem item =
+                        new()
+                        {
+                            ID = reader.GetGuid(0),
+                            State = reader.GetString(1),
+                            SourcePath = reader.GetString(2),
+                            SourceServer = reader.GetString(3),
+                            UploadDate = reader.GetNullableDateTime(4),
+                            Source = reader.GetNullableString(5)
+                        };
 
-        SqlSelect selectTags = new SqlSelect();
-
-        selectTags.AddBase(s_baseQuery);
-        selectTags.AddAliases(s_aliases);
-
-        string sQuery = selectTags.ToString();
-
-        try
-        {
-            List<ServiceImportItem> importItems =
-                sql.ExecuteDelegatedQuery(
-                    crid,
-                    sQuery,
-                    (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
-                    {
-                        ServiceImportItem item =
-                            new()
-                            {
-                                ID = reader.GetGuid(0),
-                                State = reader.GetString(1),
-                                SourcePath = reader.GetString(2),
-                                SourceServer = reader.GetString(3),
-                                UploadDate = reader.GetNullableDateTime(4),
-                                Source = reader.GetNullableString(5)
-                            };
-
-                        building.Add(item);
-                    },
-                    null,
-                    (cmd) => cmd.AddParameterWithValue("@SourceClient", sourceClient));
-
-            return importItems;
-        }
-        catch (SqlExceptionNoResults)
-        {
-            return new List<ServiceImportItem>();
-        }
-        finally
-        {
-            sql.Close();
-        }
+                    building.Add(item);
+                },
+                s_aliases,
+                (cmd) =>
+                {
+                    cmd.AddParameterWithValue("@SourceClient", sourceClient);
+                    cmd.AddParameterWithValue("@CatalogID", catalogID);
+                });
     }
 
     private static readonly string s_baseQueryAll = $@"
         SELECT 
             $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
             $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
-        FROM $$#tcat_import$$";
+        FROM $$#tcat_import$$
+        WHERE $$tcat_import$$.catalog_id = @CatalogID";
 
-    public static List<ServiceImportItem> GetAllImports()
+    public static List<ServiceImportItem> GetAllImports(Guid catalogID)
     {
-        Guid crid = Guid.NewGuid();
-        ISql sql = LocalServiceClient.GetConnection();
-
-        SqlSelect selectTags = new SqlSelect();
-
-        selectTags.AddBase(s_baseQueryAll);
-        selectTags.AddAliases(s_aliases);
-
-        string sQuery = selectTags.ToString();
-
-        try
-        {
-            List<ServiceImportItem> importItems =
-                sql.ExecuteDelegatedQuery(
-                    crid,
-                    sQuery,
-                    (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+        return LocalServiceClient.DoGenericQueryWithAliases(
+            s_baseQueryAll,
+            (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+            {
+                ServiceImportItem item =
+                    new()
                     {
-                        ServiceImportItem item =
-                            new()
-                            {
-                                ID = reader.GetGuid(0),
-                                State = reader.GetString(1),
-                                SourcePath = reader.GetString(2),
-                                SourceServer = reader.GetString(3),
-                                UploadDate = reader.GetNullableDateTime(4),
-                                Source = reader.GetNullableString(5)
-                            };
+                        ID = reader.GetGuid(0),
+                        State = reader.GetString(1),
+                        SourcePath = reader.GetString(2),
+                        SourceServer = reader.GetString(3),
+                        UploadDate = reader.GetNullableDateTime(4),
+                        Source = reader.GetNullableString(5)
+                    };
 
-                        building.Add(item);
-                    });
-
-            return importItems;
-        }
-        catch (SqlExceptionNoResults)
-        {
-            return new List<ServiceImportItem>();
-        }
-        finally
-        {
-            sql.Close();
-        }
+                building.Add(item);
+            },
+            s_aliases,
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
     private static readonly string s_queryUpdateState = @"
-        UPDATE tcat_import SET state=@NewState WHERE id=@MediaID";
+        UPDATE tcat_import SET state=@NewState WHERE id=@MediaID AND catalog_id=@CatalogID";
 
     private static readonly string s_deleteImportItem = @"
-        DELETE FROM tcat_import WHERE id=@MediaID";
+        DELETE FROM tcat_import WHERE id=@MediaID AND catalog_id=@CatalogID";
 
     private static readonly string s_updateMediaState = @"
-        UPDATE tcat_media SET state=@NewState WHERE id=@MediaID";
+        UPDATE tcat_media SET state=@NewState WHERE id=@MediaID AND catalog_id=@CatalogID";
 
 
-    public static void CompleteImportForItem(Guid id)
+    public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
@@ -150,6 +107,7 @@ public class Import
                 {
                     cmd.AddParameterWithValue("@MediaID", id);
                     cmd.AddParameterWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.Complete));
+                    cmd.AddParameterWithValue("@CatalogID", catalogID);
                 });
 
             sql.ExecuteNonQuery(
@@ -158,6 +116,7 @@ public class Import
                 {
                     cmd.AddParameterWithValue("@MediaID", id);
                     cmd.AddParameterWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
+                    cmd.AddParameterWithValue("@CatalogID", catalogID);
                 });
 
             sql.Commit();
@@ -173,7 +132,7 @@ public class Import
         }
     }
 
-    public static void DeleteImportItem(Guid id)
+    public static void DeleteImportItem(Guid catalogID, Guid id)
     {
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
@@ -187,6 +146,7 @@ public class Import
                 (cmd) =>
                 {
                     cmd.AddParameterWithValue("@MediaID", id);
+                    cmd.AddParameterWithValue("@CatalogID", catalogID);
                 });
 
             sql.Commit();
@@ -204,86 +164,36 @@ public class Import
 
     private static readonly string s_queryInsertImportItem = @"
         INSERT INTO tcat_import
-            (id, state, sourcePath, sourceServer, source)
+            (catalog_id, id, state, sourcePath, sourceServer, source)
         VALUES ";
 
     // same as insertImportItem but includes uploadDate
     private static readonly string s_queryInsertServiceImportItem = @"
         INSERT INTO tcat_import
-            (id, state, sourcePath, sourceServer, source, uploadDate)
+            (catalog_id, id, state, sourcePath, sourceServer, source, uploadDate)
         VALUES ";
 
-    public static void InsertImportItems(IEnumerable<ImportItem> items)
+    public static void InsertImportItems(Guid catalogID, IEnumerable<ImportItem> items)
     {
         LocalServiceClient.DoGenericPartedCommands(
             s_queryInsertImportItem,
             items,
             (item) =>
-                $"({SqlText.SqlifyQuoted(item.ID.ToString())}, '{ImportItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.SourcePath)}, {SqlText.SqlifyQuoted(item.SourceServer)}, {SqlText.Nullable(item.Source)}) ",
+                $"('{catalogID}', {SqlText.SqlifyQuoted(item.ID.ToString())}, '{ImportItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.SourcePath)}, {SqlText.SqlifyQuoted(item.SourceServer)}, {SqlText.Nullable(item.Source)}) ",
             1000,
             ",",
             s_aliases);
     }
 
-    public static void InsertServiceImportItems(IEnumerable<ServiceImportItem> items)
+    public static void InsertServiceImportItems(Guid catalogID, IEnumerable<ServiceImportItem> items)
     {
         LocalServiceClient.DoGenericPartedCommands(
             s_queryInsertServiceImportItem,
             items,
             (item) =>
-                $"({SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.State ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourcePath ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourceServer ?? string.Empty)}, {SqlText.Nullable(item.Source)}, {SqlText.Nullable(item.UploadDate)}) ",
+                $"('{catalogID}', {SqlText.SqlifyQuoted(item.ID.ToString())}, {SqlText.SqlifyQuoted(item.State ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourcePath ?? string.Empty)}, {SqlText.SqlifyQuoted(item.SourceServer ?? string.Empty)}, {SqlText.Nullable(item.Source)}, {SqlText.Nullable(item.UploadDate)}) ",
             1000,
             ",",
             s_aliases);
-    }
-
-    public static void InsertImportItemsOld(IEnumerable<ImportItem> items)
-    {
-        Guid crid = Guid.NewGuid();
-        ISql sql = LocalServiceClient.GetConnection();
-        StringBuilder sb = new StringBuilder();
-
-        sql.BeginTransaction();
-
-        try
-        {
-            int current = 0;
-
-            sb.Clear();
-            sb.Append(s_queryInsertImportItem);
-
-            foreach (ImportItem item in items)
-            {
-                if (current == 1000)
-                {
-                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
-                    current = 0;
-                    sb.Clear();
-                    sb.Append(s_queryInsertImportItem);
-                }
-
-                if (current > 0)
-                    sb.Append(",");
-
-                sb.Append(
-                    $"({SqlText.SqlifyQuoted(item.ID.ToString())}, '{ImportItem.StringFromState(item.State)}', {SqlText.SqlifyQuoted(item.SourcePath)}, {SqlText.SqlifyQuoted(item.SourceServer)}, {SqlText.Nullable(item.Source)}) ");
-
-                current++;
-            }
-
-            if (current > 0)
-                sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), s_aliases));
-
-            sql.Commit();
-        }
-        catch (Exception)
-        {
-            sql.Rollback();
-            throw;
-        }
-        finally
-        {
-            sql.Close();
-        }
     }
 }

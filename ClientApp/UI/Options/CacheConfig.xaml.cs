@@ -17,6 +17,7 @@ namespace Thetacat.UI.Options;
 public partial class CacheConfig : UserControl
 {
     readonly CacheConfigModel _Model = new CacheConfigModel();
+    AccountModel? _AccountModel;
 
     public CacheConfig()
     {
@@ -26,8 +27,9 @@ public partial class CacheConfig : UserControl
         _Model.PropertyChanged += ModelPropertyChanged;
     }
 
-    public void LoadFromSettings(CatOptionsModel catOptionsModel, string sqlConnection)
+    public void LoadFromSettings(AccountModel accountModel, CatOptionsModel catOptionsModel, string sqlConnection, Guid catalogID)
     {
+        _AccountModel = accountModel;
         _Model.ProfileOptions = catOptionsModel.CurrentProfile;
 
         _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
@@ -39,11 +41,11 @@ public partial class CacheConfig : UserControl
         if (_Model.ProfileOptions?.Profile.WorkgroupId != null)
         {
             string workgroupId = _Model.ProfileOptions?.Profile.WorkgroupId!;
-            _Model.PopulateWorkgroups();
+            _Model.PopulateWorkgroups(catalogID);
             _Model.SetWorkgroup(Guid.Parse(workgroupId));
             try
             {
-                ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(Guid.Parse(_Model.WorkgroupID));
+                ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(catalogID, Guid.Parse(_Model.WorkgroupID));
                 
                 _Model.WorkgroupName = workgroup.Name ?? string.Empty;
                 _Model.WorkgroupCacheRoot = workgroup.CacheRoot ?? string.Empty;
@@ -73,7 +75,11 @@ public partial class CacheConfig : UserControl
             if (LocalOptions != null)
                 LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
             if (cacheType != Cache.CacheType.Private)
-                _Model.PopulateWorkgroups();
+            {
+                App.State.PushTemporarySqlConnection(_AccountModel?.SqlConnection ?? "");
+                _Model.PopulateWorkgroups(_AccountModel?.CatalogDefinition?.ID ?? Guid.Empty);
+                App.State.PopTemporarySqlConnection();
+            }
 
             return;
         }
@@ -127,7 +133,7 @@ public partial class CacheConfig : UserControl
         return true;
     }
 
-    public bool FSaveSettings(string sqlConnection)
+    public bool FSaveSettings(string sqlConnection, Guid catalogID)
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
@@ -181,7 +187,7 @@ public partial class CacheConfig : UserControl
             if (string.IsNullOrEmpty(_Model.WorkgroupID))
             {
                 workgroup.ID = Guid.NewGuid();
-                ServiceInterop.CreateWorkgroup(workgroup);
+                ServiceInterop.CreateWorkgroup(catalogID, workgroup);
             }
             else
             {
@@ -194,7 +200,7 @@ public partial class CacheConfig : UserControl
                 }
 
                 workgroup.ID = id;
-                ServiceInterop.UpdateWorkgroup(workgroup);
+                ServiceInterop.UpdateWorkgroup(catalogID, workgroup);
             }
 
             App.State.PopTemporarySqlConnection();
@@ -226,7 +232,11 @@ public partial class CacheConfig : UserControl
             if (LocalOptions != null)
                 LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
             if (cacheType != Cache.CacheType.Private)
-                _Model.PopulateWorkgroups();
+            {
+                App.State.PushTemporarySqlConnection(_AccountModel?.SqlConnection ?? "");
+                _Model.PopulateWorkgroups(_AccountModel?.CatalogDefinition?.ID ?? Guid.Empty);
+                App.State.PopTemporarySqlConnection();
+            }
         }
     }
 }

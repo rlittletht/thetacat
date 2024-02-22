@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.BackupRestore.Restore"
         mc:Ignorable="d"
-        Title="RestoreData" Height="200" Width="400">
+        Title="RestoreData" Height="400" Width="400">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -39,6 +39,28 @@
                     <TextBlock Text="Restore Behavior" />
                     <ComboBox ItemsSource="{Binding Path=RestoreBehaviors}"
                               SelectedItem="{Binding Path=CurrentRestoreBehavior}" />
+                    <TextBlock Text="Existing Catalog" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox ItemsSource="{Binding Path=CatalogDefinitions}"
+                                  SelectedItem="{Binding Path=CatalogDefinition}" >
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <CheckBox Content="Create New Catalog" IsChecked="{Binding Path=CreateNewCatalog}" Grid.Column="1" />
+                    </Grid>
+                    <TextBlock Text="Catalog ID" />
+                    <TextBox Text="{Binding Path=CatalogID}"/>
+                    <TextBlock Text="Catalog Name" IsEnabled="{Binding Path=CreateNewCatalog}" />
+                    <TextBox Text="{Binding Path=CatalogName}" IsEnabled="{Binding Path=CreateNewCatalog}" />
+                    <TextBlock Text="Catalog Description" IsEnabled="{Binding Path=CreateNewCatalog}" />
+                    <TextBox Text="{Binding Path=CatalogDescription}" IsEnabled="{Binding Path=CreateNewCatalog}" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>

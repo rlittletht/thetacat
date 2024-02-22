@@ -123,16 +123,16 @@ public class Workgroup: IWorkgroup
         Name = "mock-workgroup";
     }
 
-    public Workgroup(Guid id)
+    public Workgroup(Guid catalogID, Guid id)
     {
         m_id = id;
 
         // FUTURE: consider using cached workgroup details from settings if the
         // connection fails to the server?
-        ServiceWorkgroup serviceWorkgroup = ServiceInterop.GetWorkgroupDetails(id);
+        ServiceWorkgroup serviceWorkgroup = ServiceInterop.GetWorkgroupDetails(catalogID, id);
         if (serviceWorkgroup.ID == null)
             // couldn't get workgroup from server
-            throw new CatExceptionNoSqlConnection();
+            throw new CatExceptionWorkgroupNotFound();
 
         Name = serviceWorkgroup.Name ?? throw new InvalidOperationException("no name from server");
         Server = PathSegment.CreateFromString(serviceWorkgroup.ServerPath) ?? throw new InvalidOperationException("no servername from server");
