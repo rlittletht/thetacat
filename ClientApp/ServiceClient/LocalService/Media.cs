@@ -394,6 +394,13 @@ public class Media
 
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID)
     {
-        LocalServiceClient.DoGenericCommandWithAliases(s_deleteAllMediaAndMediaTagsAndStacks, s_aliases, cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllMediaAndMediaTagsAndStacks, 
+            s_aliases, 
+            cmd=>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+                cmd.CommandTimeout = 0;
+            });
     }
 }
