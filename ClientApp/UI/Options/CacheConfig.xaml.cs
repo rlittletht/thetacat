@@ -80,12 +80,23 @@ public partial class CacheConfig : UserControl
                 _Model.PopulateWorkgroups(_AccountModel?.CatalogDefinition?.ID ?? Guid.Empty);
                 App.State.PopTemporarySqlConnection();
             }
-
             return;
         }
 
         if (e.PropertyName == "CurrentWorkgroup")
             _Model.SetWorkgroup(_Model.CurrentWorkgroup?.Workgroup?.ID);
+
+        if (e.PropertyName == "CreateNewWorkgroup")
+        {
+            if (_Model.CreateNewWorkgroup)
+            {
+                _Model.WorkgroupID = Guid.NewGuid().ToString();
+            }
+            else
+            {
+                _Model.WorkgroupID = _Model.CurrentWorkgroup?.Workgroup?.ID.ToString() ?? Guid.Empty.ToString();
+            }
+        }
     }
 
     bool IsValidWorkgroupSettings()
@@ -184,7 +195,7 @@ public partial class CacheConfig : UserControl
                 };
 
             App.State.PushTemporarySqlConnection(sqlConnection);
-            if (string.IsNullOrEmpty(_Model.WorkgroupID))
+            if (_Model.CreateNewWorkgroup)
             {
                 workgroup.ID = Guid.NewGuid();
                 ServiceInterop.CreateWorkgroup(catalogID, workgroup);

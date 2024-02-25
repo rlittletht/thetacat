@@ -87,6 +87,7 @@ public class AppState : IAppState
             if (profile.Default)
             {
                 ActiveProfile = profile;
+                fSetProfile = true;
                 break;
             }
 

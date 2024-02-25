@@ -25,37 +25,23 @@ namespace Thetacat.UI.Options
         {
             _Model.CatalogDefinitions.Clear();
             App.State.PushTemporarySqlConnection(_Model.SqlConnection);
-            Guid? catalogID = _Model.CatalogDefinition?.ID;
+            Guid catalogID = _Model.CurrentCatalogID;
 
             _Model.CatalogDefinitions.AddRange(ServiceInterop.GetCatalogDefinitions());
-            MatchCatalogDefinition(catalogID);
+            _Model.CurrentCatalogID = catalogID;
 
             App.State.PopTemporarySqlConnection();
         }
 
-        private void MatchCatalogDefinition(Guid? catalogID)
-        {
-            _Model.CatalogDefinition = null;
-            foreach (ServiceCatalogDefinition item in _Model.CatalogDefinitions)
-            {
-                if (item.ID == catalogID)
-                {
-                    _Model.CatalogDefinition = item;
-                    return;
-                }
-            }
-        }
-
-        public Guid CatalogID => _Model.CatalogDefinition?.ID ?? Guid.Empty;
+        public Guid CatalogID => _Model.CurrentCatalogID;
 
         public void LoadFromSettings(CatOptionsModel optionsModel)
         {
             _Model.CurrentProfile = optionsModel.CurrentProfile;
             _Model.StorageAccount = _Model.CurrentProfile?.Profile.AzureStorageAccount  ?? string.Empty;
             _Model.Container = _Model.CurrentProfile?.Profile.StorageContainer ?? string.Empty;
+            _Model.CurrentCatalogID = _Model.CurrentProfile?.Profile.CatalogID ?? Guid.Empty;
             _Model.SqlConnection = _Model.CurrentProfile?.Profile.SqlConnection ?? string.Empty;
-            LoadCatalogDefinitions();
-            MatchCatalogDefinition(_Model.CurrentProfile?.Profile.CatalogID);
         }
 
         public bool FSaveSettings()
@@ -65,6 +51,18 @@ namespace Thetacat.UI.Options
                 _Model.CurrentProfile.Profile.AzureStorageAccount = _Model.StorageAccount;
                 _Model.CurrentProfile.Profile.StorageContainer = _Model.Container;
                 _Model.CurrentProfile.Profile.SqlConnection = _Model.SqlConnection;
+
+                if (_Model.CreateNewCatalog)
+                {
+                    ServiceCatalogDefinition newCatalog = new ServiceCatalogDefinition(_Model.CurrentCatalogID, _Model.CatalogName, _Model.CatalogDescription);
+
+                    App.State.PushTemporarySqlConnection(_Model.SqlConnection);
+                    ServiceInterop.AddCatalogDefinition(newCatalog);
+                    App.State.PopTemporarySqlConnection();
+                    _Model.CatalogDefinition = newCatalog;
+                    _Model.CatalogDefinitions.Add(newCatalog);
+                }
+
                 _Model.CurrentProfile.Profile.CatalogID = _Model.CatalogDefinition?.ID ?? Guid.Empty;
             }
 

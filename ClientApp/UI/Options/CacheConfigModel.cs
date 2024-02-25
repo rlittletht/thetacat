@@ -12,6 +12,12 @@ namespace Thetacat.UI.Options;
 
 public class CacheConfigModel: INotifyPropertyChanged
 {
+    public bool CreateNewWorkgroup
+    {
+        get => m_createNewWorkgroup;
+        set => SetField(ref m_createNewWorkgroup, value);
+    }
+
     public ProfileOptions? ProfileOptions
     {
         get => m_profileOptions;
@@ -89,6 +95,7 @@ public class CacheConfigModel: INotifyPropertyChanged
     private string m_workgroupItemName = string.Empty;
     private string m_derivativeLocation = string.Empty;
     private ProfileOptions? m_profileOptions;
+    private bool m_createNewWorkgroup;
 
     public string WorkgroupCacheRoot
     {

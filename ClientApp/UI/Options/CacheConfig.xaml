@@ -44,15 +44,25 @@
             </GroupBox.Header>
             <StackPanel Margin="8 0 8 0">
                 <TextBlock Width="auto" Name="WorkgroupLabel">Workgroup</TextBlock>
-                <ComboBox Name="Workgroup" Width="auto" IsEditable="True" SelectedItem="{Binding CurrentWorkgroup}" ItemsSource="{Binding Workbooks}" Text="{Binding WorkgroupItemName}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Name="Workgroup" Width="auto" IsEditable="True" SelectedItem="{Binding CurrentWorkgroup}" ItemsSource="{Binding Workbooks}" Text="{Binding WorkgroupItemName}"/>
+                    <CheckBox Content="Create New Workgroup" IsChecked="{Binding Path=CreateNewWorkgroup}" Grid.Column="1" />
+                </Grid>
                 <TextBlock>ID</TextBlock>
-                <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}"/>
+                <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}" IsEnabled="{Binding Path=CreateNewWorkgroup}"/>
                 <TextBlock>Name</TextBlock>
-                <TextBox Name="WorkgroupName" Text="{Binding Path=WorkgroupName}" />
+                <TextBox Name="WorkgroupName" Text="{Binding Path=WorkgroupName}"
+                         IsEnabled="{Binding Path=CreateNewWorkgroup}" />
                 <TextBlock>Server path</TextBlock>
-                <TextBox Name="WorkgroupServerPath" Text="{Binding Path=WorkgroupServerPath}" />
+                <TextBox Name="WorkgroupServerPath" Text="{Binding Path=WorkgroupServerPath}"
+                         IsEnabled="{Binding Path=CreateNewWorkgroup}" />
                 <TextBlock>Cache root</TextBlock>
-                <TextBox Name="WorkgroupCacheRoot" Text="{Binding Path=WorkgroupCacheRoot}" />
+                <TextBox Name="WorkgroupCacheRoot" Text="{Binding Path=WorkgroupCacheRoot}"
+                         IsEnabled="{Binding Path=CreateNewWorkgroup}" />
             </StackPanel>
         </GroupBox>
     </Grid>

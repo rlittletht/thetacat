@@ -368,7 +368,7 @@ public class BackupDatabase
             "fullExport",
             (_writer) =>
             {
-                _writer.WriteAttributeString("CatalogID", catalogID.ToString());
+                _writer.WriteAttributeString("catalogID", catalogID.ToString());
 
                 if (m_progress != null)
                     WriteSchema(_writer, m_schema);

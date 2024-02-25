@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using Thetacat.Secrets;
@@ -30,10 +31,10 @@ public partial class CatOptions : Window
         m_model.PropertyChanged += ModelPropertyChanged;
 
         DataContext = m_model;
+        AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
         AccountTab.LoadFromSettings(m_model);
         CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AppSecrets.MasterSqlConnectionString, AccountTab.CatalogID);
 
-        AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
 
     }
 
@@ -42,7 +43,28 @@ public partial class CatOptions : Window
         if (e.PropertyName == "SqlConnection")
         {
             // if the SqlConnection changed, then we need to reload cache (for workgroups)
+            // but first we have to update the list of valid catalogs
+            AccountTab.LoadCatalogDefinitions();
             CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AccountTab._Model.SqlConnection, AccountTab.CatalogID);
+        }
+
+        if (e.PropertyName == "CreateNewCatalog")
+        {
+            if (AccountTab._Model.CreateNewCatalog)
+                AccountTab._Model.CurrentCatalogID = Guid.NewGuid();
+            else
+                AccountTab._Model.CurrentCatalogID = AccountTab._Model.CatalogDefinition?.ID ?? Guid.Empty;
+        }
+        else if (e.PropertyName == "CatalogDefinition")
+        {
+            if (AccountTab._Model.CatalogDefinition != null)
+            {
+                AccountTab._Model.CatalogName = AccountTab._Model.CatalogDefinition.Name;
+                AccountTab._Model.CatalogDescription = AccountTab._Model.CatalogDefinition.Description;
+                AccountTab._Model.CreateNewCatalog = false;
+
+                CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AccountTab._Model.SqlConnection, AccountTab.CatalogID);
+            }
         }
     }
 

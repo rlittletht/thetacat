@@ -57,7 +57,7 @@
                         <RowDefinition Height="8*" />
                         <RowDefinition Height="2*" />
                     </Grid.RowDefinitions>
-                    <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items">
+                    <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items" SelectedItemChanged="ImportItemSelectionChanged">
                         <TreeView.ItemTemplate>
                             <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
                                                       ItemsSource="{Binding Children}">
@@ -71,11 +71,11 @@
                     </TreeView>
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="112" />
-                            <ColumnDefinition Width="192" />
-                            <ColumnDefinition Width="112" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
@@ -95,12 +95,26 @@
                                 <Button Content="Check" Click="CheckSelectedExtensions" Grid.Row="2" Width="56"/>
                             </StackPanel>
                         </Grid>
+                        <Popup Name="VirtualRootPickerPopup"
+                               PlacementTarget="{Binding ElementName=SelectVirtualRootButton}">
+                            <controls:BackedTreeView Checkable="False"
+                                                     x:Name="VirtualRootTree"
+                                                     SelectedItemChanged="DoSelectedVirtualRootChanged" />
+                        </Popup>
                         <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
-                            <TextBlock>Virtual path prefix</TextBlock>
-                            <TextBox Text="{Binding Path=VirtualPathPrefix}"/>
-                            <CheckBox Content="Include subdirectories?" IsChecked="{Binding Path=IncludeSubdirInVirtualPath}"/>
+                            <TextBlock>Virtual path root</TextBlock>
+                            <Button Content="Select Root" Click="SelectVirtualRoot" Name="SelectVirtualRootButton" />
+                            <ComboBox ItemsSource="{Binding Path=VirtualPathRoots}" SelectedItem="{Binding Path=VirtualPathRoot}" Name="VirtualPathRootsComboBox"/>
+                            <TextBlock>Virtual path root suffix</TextBlock>
+                           <TextBox Text="{Binding Path=VirtualPathSuffix}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <TextBlock>Preview VirtualPath:</TextBlock>
+                            <TextBox Text="{Binding Path=VirtualPathPreview}" />
+                            <CheckBox Content="Include subdirectories in virtual path?"
+                                      IsChecked="{Binding Path=IncludeSubdirInVirtualPath}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
                             <Button Content="Check Existing" Click="SearchForImportedItems" />
                             <Button Content="Import" Click="DoImport"/>
                         </StackPanel>

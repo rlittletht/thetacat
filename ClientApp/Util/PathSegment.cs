@@ -44,7 +44,11 @@ public class PathSegment
     {
         foreach (PathSegment path in paths)
         {
-            a = new PathSegment(Path.Join(a.Local, path.Local));
+            string pathLocal = path.Local;
+            if (pathLocal.StartsWith(".\\"))
+                pathLocal = pathLocal.Substring(2);
+
+            a = new PathSegment(Path.Join(a.Local, pathLocal));
         }
 
         return a;
@@ -56,6 +60,9 @@ public class PathSegment
 
         foreach (string path in paths)
         {
+            if (path == "." || path == ".\\")
+                continue;  // meaningless join
+
             segment = new PathSegment(Path.Join(segment.Local, path));
         }
 
@@ -100,6 +107,16 @@ public class PathSegment
     public static PathSegment GetPathRoot(string path)
     {
         return CreateFromString(Path.GetPathRoot(path));
+    }
+
+    public static PathSegment GetPathDirectory(PathSegment path)
+    {
+        return CreateFromString(Path.GetDirectoryName(path));
+    }
+
+    public PathSegment GetPathDirectory()
+    {
+        return GetPathDirectory(this);
     }
 
     public static implicit operator string(PathSegment path) => path.ToString();

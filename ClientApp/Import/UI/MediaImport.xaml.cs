@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using System;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
@@ -29,6 +30,57 @@ namespace Thetacat.Import.UI
             Sources.ItemsSource = m_model.Nodes;
             m_importBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
             App.State.RegisterWindowPlace(this, "media-import");
+            InitializeVirtualRoots();
+        }
+
+        static KeyValuePair<string?, VirtualRootNameItem>[] VirtualRootSplitter(VirtualRootNameItem data)
+        {
+            // simple string splitter
+            string[] split = data.FullName.Split("/");
+            List<KeyValuePair<string?, VirtualRootNameItem>> newData = new();
+
+            int i = 0;
+            PathSegment segment = PathSegment.Empty;
+            for (; i < split.Length - 1; i++)
+            {
+                string s = split[i];
+                segment = PathSegment.Join(segment, s);
+                newData.Add(new KeyValuePair<string?, VirtualRootNameItem>(s, new VirtualRootNameItem(s, segment)));
+            }
+
+            if (i == split.Length - 1)
+                newData.Add(new KeyValuePair<string?, VirtualRootNameItem>(null, new VirtualRootNameItem(split[i], data.FullName)));
+
+            return newData.ToArray();
+        }
+
+        void InitializeVirtualRoots()
+        {
+            VirtualRootTree.Clear();
+
+            HashSet<string> roots = new();
+
+            foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
+            {
+                roots.Add(item.VirtualPath.GetPathDirectory());
+            }
+
+            List<VirtualRootNameItem> items = new();
+
+            foreach (string root in roots)
+            {
+                items.Add(new VirtualRootNameItem(root));
+            }
+
+            items.Sort(VirtualRootNameItemComparer);
+            BackingTree tree = BackingTree.CreateFromList<VirtualRootNameItem, string>(items, VirtualRootSplitter, new VirtualRootNameItem(""));
+            VirtualRootTree.Initialize(tree.Children);
+            m_model.VirtualPathRoots.AddRange(items);
+        }
+
+        private int VirtualRootNameItemComparer(VirtualRootNameItem x, VirtualRootNameItem y)
+        {
+            return string.Compare(x.FullName, y.FullName, StringComparison.CurrentCultureIgnoreCase);
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -352,6 +404,27 @@ namespace Thetacat.Import.UI
             report.WorkCompleted();
         }
 
+        private PathSegment MakeVirtualPathForImportItem(ImportNode item)
+        {
+            if (item.IsDirectory)
+                return PathSegment.Empty;
+
+            PathSegment relativePath = new PathSegment(Path.GetRelativePath(m_model.SourcePath, item.Path));
+
+            PathSegment virtualPath = PathSegment.CreateFromString(m_model.VirtualPathRoot?.FullName);
+
+            virtualPath = PathSegment.Join(
+                virtualPath,
+                m_model.IncludeSubdirInVirtualPath
+                    ? PathSegment.Join(m_model.VirtualPathSuffix ?? string.Empty, relativePath, item.Name)
+                    : new PathSegment(m_model.VirtualPathSuffix ?? string.Empty, item.Name));
+
+            if (virtualPath.GetPathRoot() == PathSegment.Empty)
+                virtualPath = PathSegment.Join("/", virtualPath);
+
+            return virtualPath;
+        }
+
         private void DoImport(object sender, RoutedEventArgs e)
         {
             List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(
@@ -363,14 +436,7 @@ namespace Thetacat.Import.UI
                 if (item.IsDirectory)
                     continue;
 
-                PathSegment relativePath = new PathSegment(Path.GetRelativePath(m_model.SourcePath, item.Path));
-
-                PathSegment virtualPath =
-                    m_model.IncludeSubdirInVirtualPath
-                        ? PathSegment.Join(m_model.VirtualPathPrefix ?? string.Empty, relativePath, item.Name)
-                        : new PathSegment(m_model.VirtualPathPrefix ?? string.Empty, item.Name);
-
-                item.VirtualPath = virtualPath;
+                item.VirtualPath = MakeVirtualPathForImportItem(item);
             }
 
             m_importer.ClearItems();
@@ -390,6 +456,27 @@ namespace Thetacat.Import.UI
             // and lastly we have to add the items we just manually added to our cache
             // (we don't have any items we are tracking. these should all be adds)
             App.State.Cache.PushChangesToDatabase(null);
+        }
+
+        private void ImportItemSelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is ImportNode node)
+                m_model.VirtualPathPreview = $"{MakeVirtualPathForImportItem(node)}";
+        }
+
+        private void DoSelectedVirtualRootChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is BackingTreeItem<VirtualRootNameItem> newItem)
+            {
+                VirtualPathRootsComboBox.Text = newItem.Data.FullName;
+            }
+
+            VirtualRootPickerPopup.IsOpen = false;
+        }
+
+        private void SelectVirtualRoot(object sender, RoutedEventArgs e)
+        {
+            VirtualRootPickerPopup.IsOpen = !VirtualRootPickerPopup.IsOpen;
         }
     }
 }

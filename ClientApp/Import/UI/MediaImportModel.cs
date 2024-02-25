@@ -10,10 +10,26 @@ public class MediaImportModel: INotifyPropertyChanged
 {
     private string m_sourcePath = String.Empty;
     private bool m_includeSubdirInVirtualPath = true;
-    private string m_virtualPathPrefix = string.Empty;
+    private string m_virtualPathSuffix = string.Empty;
+    private string m_virtualPathPreview = string.Empty;
     public ObservableCollection<ImportNode> Nodes { get; set; } = new();
     public ObservableCollection<ImportNode> ImportItems { get; set; } = new();
     public ObservableCollection<string> FileExtensions { get; set; } = new();
+
+    public ObservableCollection<VirtualRootNameItem> VirtualPathRoots { get; }= new();
+    private VirtualRootNameItem? m_virtualPathRoot;
+
+    public VirtualRootNameItem? VirtualPathRoot
+    {
+        get => m_virtualPathRoot;
+        set => SetField(ref m_virtualPathRoot, value);
+    }
+
+    public string VirtualPathPreview
+    {
+        get => m_virtualPathPreview;
+        set => SetField(ref m_virtualPathPreview, value);
+    }
 
     public bool IncludeSubdirInVirtualPath
     {
@@ -21,10 +37,10 @@ public class MediaImportModel: INotifyPropertyChanged
         set => SetField(ref m_includeSubdirInVirtualPath, value);
     }
 
-    public string VirtualPathPrefix
+    public string VirtualPathSuffix
     {
-        get => m_virtualPathPrefix;
-        set => SetField(ref m_virtualPathPrefix, value);
+        get => m_virtualPathSuffix;
+        set => SetField(ref m_virtualPathSuffix, value);
     }
 
     public string SourcePath

@@ -109,20 +109,24 @@ public class FilterValueClient: PostfixText.IValueClient
 
     public Value.ValueType GetFieldValueType(string field)
     {
-        if (!field.StartsWith('{') || !field.EndsWith('}'))
-            return Value.ValueType.Field;
+        string value = field;
 
-        if (!Guid.TryParse(field, out Guid metatagID))
-            return Value.ValueType.String;
+        if (field.StartsWith('{') && field.EndsWith('}'))
+        {
+            if (!Guid.TryParse(field, out Guid metatagID))
+                return Value.ValueType.String;
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
-            return Value.ValueType.String;
+            if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
+                return Value.ValueType.String;
+
+            value = mediaTag.Value;
+        }
 
         // check if this is datetime
-        if (DateTime.TryParse(mediaTag.Value, out DateTime date))
+        if (DateTime.TryParse(value, out DateTime date))
             return Value.ValueType.DateTime;
 
-        if (Int32.TryParse(mediaTag.Value, out Int32 nValue))
+        if (Int32.TryParse(value, out Int32 nValue))
             return Value.ValueType.Number;
 
         return Value.ValueType.String;
