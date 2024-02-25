@@ -123,7 +123,7 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_4
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag4_1
             }
         );
 
@@ -134,7 +134,7 @@ public class TestMetatagTree
 
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, initialCheckedState);
 
-        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag1_3(2)[ ]:metatag1_4(2)[ ]:", treeClone);
+        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag3_1(2)[ ]:metatag4_1(2)[ ]:", treeClone);
     }
 
     [Test]
@@ -143,7 +143,7 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_4
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag4_1
             }
         );
 
@@ -158,7 +158,7 @@ public class TestMetatagTree
 
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, initialCheckedState);
 
-        AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag1_3(2)[ ]:metatag1_4(2)[X]:", treeClone);
+        AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag3_1(2)[ ]:metatag4_1(2)[X]:", treeClone);
     }
 
     [Test]
@@ -262,8 +262,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_4,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag4_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -271,7 +271,7 @@ public class TestMetatagTree
         List<Metatag> metatagsInclude = new(
             new[]
             {
-                TestMetatags.metatag1_4
+                TestMetatags.metatag4_1
             }
         );
 
@@ -280,7 +280,7 @@ public class TestMetatagTree
 
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, null);
 
-        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag1_4(2)[ ]:", treeClone);
+        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag4_1(2)[ ]:", treeClone);
     }
 
     [Test]
@@ -289,8 +289,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -298,7 +298,7 @@ public class TestMetatagTree
         List<Metatag> metatagsInclude = new(
             new[]
             {
-                TestMetatags.metatag1_3
+                TestMetatags.metatag3_1
             }
         );
 
@@ -307,7 +307,7 @@ public class TestMetatagTree
 
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, null);
 
-        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag1_3(2)[ ]:", treeClone);
+        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag3_1(2)[ ]:", treeClone);
     }
 
     [Test]
@@ -316,8 +316,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -325,7 +325,7 @@ public class TestMetatagTree
         List<Metatag> metatagsInclude = new(
             new[]
             {
-                TestMetatags.metatag1_3_5
+                TestMetatags.metatag5_3_1
             }
         );
 
@@ -334,7 +334,7 @@ public class TestMetatagTree
 
         MetatagTree.CloneAndSetCheckedItems(tree.Children, treeClone.Children, null);
 
-        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag1_3(2)[ ]:metatag1_3_5(3)[ ]:", treeClone);
+        AssertTree("___Root(0)[#]:metatag1(1)[ ]:metatag3_1(2)[ ]:metatag5_3_1(3)[ ]:", treeClone);
     }
 
     [Test]
@@ -343,8 +343,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -362,8 +362,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -381,8 +381,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -391,7 +391,7 @@ public class TestMetatagTree
 
         IMetatagTreeItem? parent = tree.FindParentOfChild(MetatagTreeItemMatcher.CreateIdMatch(TestMetatags.metatagId5));
 
-        Assert.AreEqual("metatag1_3", parent!.Name);
+        Assert.AreEqual("metatag3_1", parent!.Name);
     }
 
     [Test]
@@ -400,8 +400,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -419,8 +419,8 @@ public class TestMetatagTree
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );

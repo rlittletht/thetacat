@@ -32,6 +32,28 @@ public class MetatagSchemaDiffOp
     private Metatag? m_metatag;
     private UpdatedValues m_updatedValues = 0;
 
+    public static MetatagSchemaDiffOp CreateForTest(ActionType action, Metatag metatag, bool updateName, bool updateDescription, bool updateStandard, bool updateParent)
+    {
+        MetatagSchemaDiffOp op =
+            new MetatagSchemaDiffOp()
+            {
+                Action = action,
+                ID = metatag.ID,
+                m_metatag = metatag
+            };
+
+        if (updateParent)
+            op.m_updatedValues |= UpdatedValues.ParentID;
+        if (updateName)
+            op.m_updatedValues |= UpdatedValues.Name;
+        if (updateDescription)
+            op.m_updatedValues |= UpdatedValues.Description;
+        if (updateStandard)
+            op.m_updatedValues |= UpdatedValues.Standard;
+
+        return op;
+    }
+
     public static MetatagSchemaDiffOp CreateDelete(Guid id)
     {
         return new MetatagSchemaDiffOp()
@@ -51,6 +73,35 @@ public class MetatagSchemaDiffOp
         };
     }
 
+    public static MetatagSchemaDiffOp CreateUpdate3WM(Metatag _base, Metatag server, Metatag local)
+    {
+        MetatagSchemaDiffOp op =
+            new MetatagSchemaDiffOp()
+            {
+                Action = ActionType.Update,
+                ID = local.ID,
+                m_metatag = local
+            };
+
+        op.m_metatag.Parent = server.Parent;
+
+        if (_base.Parent == server.Parent && server.Parent != local.Parent)
+        {
+            // local parent only wins if base==server
+            op.m_metatag.Parent = local.Parent;
+            op.m_updatedValues |= UpdatedValues.ParentID;
+        }
+
+        // for all others, local wins
+        if (_base.Name != server.Name)
+            op.m_updatedValues |= UpdatedValues.Name;
+        if (_base.Description != server.Description)
+            op.m_updatedValues |= UpdatedValues.Description;
+        if (_base.Standard != server.Standard)
+            op.m_updatedValues |= UpdatedValues.Standard;
+        return op;
+    }
+
     public static MetatagSchemaDiffOp CreateUpdate(Metatag original, Metatag updated)
     {
         MetatagSchemaDiffOp op =
@@ -66,9 +117,9 @@ public class MetatagSchemaDiffOp
         if (original.Parent != updated.Parent)
             op.m_updatedValues |= UpdatedValues.ParentID;
         if (original.Description != updated.Description)
-            op.m_updatedValues &= UpdatedValues.Description;
+            op.m_updatedValues |= UpdatedValues.Description;
         if (original.Standard != updated.Standard)
-            op.m_updatedValues &= UpdatedValues.Standard;
+            op.m_updatedValues |= UpdatedValues.Standard;
         return op;
     }
 

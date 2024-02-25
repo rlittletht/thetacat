@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
@@ -301,25 +302,19 @@ public class MetatagSchema
 
     public void ReadNewBaseFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
-        m_schemaBase =
-            new MetatagSchemaDefinition
-            {
-                SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0
-            };
-
-        if (serviceMetatagSchema.Metatags != null)
-        {
-            foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
-            {
-                Metatag metatag = Metatag.CreateFromService(serviceMetatag);
-                m_schemaBase.AddMetatag(metatag);
-            }
-        }
+        m_schemaBase = new MetatagSchemaDefinition(serviceMetatagSchema);
 
         // and bump the schemaversion in versionworking
         m_schemaWorking.SchemaVersion = m_schemaBase.SchemaVersion + 1;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ReplaceFromService
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.ReplaceFromService
+
+        NOTE: this is replaces in-place AND it ensures builtin tags are defined
+        (unlike ReadNewBaseFromService() which doesn't ensure builtin tags)
+    ----------------------------------------------------------------------------*/
     public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
     {
         m_schemaBase = null;
@@ -349,19 +344,160 @@ public class MetatagSchema
         return MetatagSchemaDiff.CreateFromSchemas(m_schemaBase, m_schemaWorking);
     }
 
+    public static MetatagSchemaDiffOp? DoMetatagThreeWayMerge(
+        Metatag? metatagBase,
+        Metatag? metatagServer,
+        Metatag? metatagLocal)
+    {
+        if (metatagServer == metatagLocal
+            || metatagBase == metatagLocal)
+        {
+            // we are the same as the latest server, or the same as the base
+            // we aren't changing anything (either server or base should win)
+            return null;
+        }
+
+        // look for insert
+        if (metatagBase == null && metatagServer == null && metatagLocal != null)
+            return MetatagSchemaDiffOp.CreateInsert(metatagLocal);
+
+        if (metatagBase == metatagServer)
+        {
+            if (metatagLocal == null)
+                return MetatagSchemaDiffOp.CreateDelete(metatagBase!.ID);
+
+            // whatever we are changing from the new server is the diff
+            return MetatagSchemaDiffOp.CreateUpdate(metatagServer!, metatagLocal);
+        }
+
+        // all 3 changed. do a 3wm on the values
+        MetatagSchemaDiffOp op = MetatagSchemaDiffOp.CreateUpdate3WM(metatagBase!, metatagServer!, metatagLocal!);
+
+        // check if this is an update with no values being updated
+        if (op is { Action: MetatagSchemaDiffOp.ActionType.Update, IsParentChanged: false } 
+            && !op.IsDescriptionChanged 
+            && !op.IsNameChanged 
+            && !op.IsStandardChanged)
+        {
+            return null;
+        }
+
+        return op;
+    }
+
+    public static MetatagSchemaDiff DoThreeWayMergeFromDefinitions(
+        MetatagSchemaDefinition schemaBase,
+        MetatagSchemaDefinition schemaServer,
+        MetatagSchemaDefinition schemaLocal)
+    {
+        MetatagSchemaDiff diff = new MetatagSchemaDiff(schemaServer.SchemaVersion, schemaServer.SchemaVersion + 1);
+
+        // first, the tags that exist in base
+        foreach (Metatag tagBase in schemaBase.Metatags)
+        {
+            Metatag? tagServer = schemaServer.GetMetatagFromId(tagBase.ID);
+            Metatag? tagLocal = schemaLocal.GetMetatagFromId(tagBase.ID);
+
+            MetatagSchemaDiffOp? op = DoMetatagThreeWayMerge(tagBase, tagServer, tagLocal);
+            if (op != null)
+                diff.AddDiffOp(op);
+        }
+
+        // now all the tags in server, but not in base
+        foreach (Metatag tagServer in schemaServer.Metatags)
+        {
+            Metatag? tagBase = schemaBase.GetMetatagFromId(tagServer.ID);
+            Metatag? tagLocal = schemaLocal.GetMetatagFromId(tagServer.ID);
+
+            // if base exists, then we've already handled it above
+            if (tagBase != null)
+                continue;
+
+            MetatagSchemaDiffOp? op = DoMetatagThreeWayMerge(tagBase, tagServer, tagLocal);
+            if (op != null)
+                diff.AddDiffOp(op);
+        }
+
+        // lastly, the local tags not in base and not in server
+        // now all the tags in server, but not in base
+        foreach (Metatag tagLocal in schemaLocal.Metatags)
+        {
+            Metatag? tagBase = schemaBase.GetMetatagFromId(tagLocal.ID);
+            Metatag? tagServer = schemaServer.GetMetatagFromId(tagLocal.ID);
+
+            // if base or server exists, then we've already handled it above
+            if (tagBase != null || tagServer != null)
+                continue;
+
+            MetatagSchemaDiffOp? op = DoMetatagThreeWayMerge(tagBase, tagServer, tagLocal);
+            if (op != null)
+                diff.AddDiffOp(op);
+        }
+
+        return diff;
+    }
+
+    private MetatagSchemaDiff DoThreeWayMerge(Guid catalogID)
+    {
+        ServiceMetatagSchema current = ServiceInterop.GetMetatagSchema(catalogID);
+
+        if (m_schemaBase == null || m_schemaBase.Count == 0)
+        {
+            // had no base, so server becomes base
+            ReadNewBaseFromService(current);
+            return BuildDiffForSchemas();
+        }
+
+        // we have (B)ase, (S)erver, and (L)ocal.
+        // if B == S != L, then L wins
+        // if B == L != S, then S wins
+        // if B != S != L then L wins
+        MetatagSchemaDefinition schemaServer = new MetatagSchemaDefinition(current);
+
+        return DoThreeWayMergeFromDefinitions(m_schemaBase, schemaServer, m_schemaWorking);
+    }
+
     public void UpdateServer(Guid catalogID, Func<int, bool>? verify = null)
     {
-        // need to handle 3WM here if we get an exception (because schema changed)
-        MetatagSchemaDiff diff = BuildDiffForSchemas();
-        if (!diff.IsEmpty)
-        {
-            if (verify != null && verify(diff.GetDiffCount) == false)
-                return;
+        int retriesLeft = 3;
+        bool fRequeryServerWhenDone = false;
 
-            ServiceInterop.UpdateMetatagSchema(catalogID, diff);
-            m_schemaBase = null; // working is now the base
+        MetatagSchemaDiff diff = BuildDiffForSchemas();
+
+        while (retriesLeft-- > 0)
+        {
+            try
+            {
+                // need to handle 3WM here if we get an exception (because schema changed)
+                if (!diff.IsEmpty)
+                {
+                    if (verify != null && verify(diff.GetDiffCount) == false)
+                        return;
+
+                    ServiceInterop.UpdateMetatagSchema(catalogID, diff);
+                    m_schemaWorking.SchemaVersion = diff.TargetSchemaVersion;
+
+                    m_schemaBase = null; // working is now the base
+                }
+
+                if (fRequeryServerWhenDone)
+                {
+                    // lastly, requery from the server (this will take care of updating with 3WM results)
+                    ReplaceFromService(catalogID);
+                }
+
+                TriggerItemDirtied(false);
+                return;
+            }
+            catch (CatExceptionSchemaUpdateFailed)
+            {
+                MessageBox.Show("Failed to update server metatags. Doing three-way merge");
+                diff = DoThreeWayMerge(catalogID);
+                fRequeryServerWhenDone = true;
+            }
         }
-        TriggerItemDirtied(false);
+
+        MessageBox.Show("Failed to update server metatags after 3 retries. Giving up.");
     }
 
     public void Reset()

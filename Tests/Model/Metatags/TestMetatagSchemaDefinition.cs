@@ -10,8 +10,8 @@ public class TestMetatagSchemaDefinition
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -23,8 +23,8 @@ public class TestMetatagSchemaDefinition
             schemaDef.AddMetatag(metatag);
         }
 
-        TestMetatagTree.AssertList("metatag1:metatag1_3:metatag1_3_5:metatag2:metatag2_6:metatag7:", schemaDef.Metatags);
-        TestMetatagTree.AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag1_3(2)[#]:metatag1_3_5(3)[#]:metatag2(1)[#]:metatag2_6(2)[#]:metatag7(1)[#]:", schemaDef.Tree);
+        TestMetatagTree.AssertList("metatag1:metatag3_1:metatag5_3_1:metatag2:metatag6_2:metatag7:", schemaDef.Metatags);
+        TestMetatagTree.AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag3_1(2)[#]:metatag5_3_1(3)[#]:metatag2(1)[#]:metatag6_2(2)[#]:metatag7(1)[#]:", schemaDef.Tree);
     }
 
     [Test]
@@ -33,8 +33,8 @@ public class TestMetatagSchemaDefinition
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -48,9 +48,9 @@ public class TestMetatagSchemaDefinition
 
         schemaDef.FRemoveMetatag(TestMetatags.metatagId7);
 
-        TestMetatagTree.AssertList("metatag1:metatag1_3:metatag1_3_5:metatag2:metatag2_6:", schemaDef.Metatags);
+        TestMetatagTree.AssertList("metatag1:metatag3_1:metatag5_3_1:metatag2:metatag6_2:", schemaDef.Metatags);
         TestMetatagTree.AssertTree(
-            "___Root(0)[#]:metatag1(1)[#]:metatag1_3(2)[#]:metatag1_3_5(3)[#]:metatag2(1)[#]:metatag2_6(2)[#]:",
+            "___Root(0)[#]:metatag1(1)[#]:metatag3_1(2)[#]:metatag5_3_1(3)[#]:metatag2(1)[#]:metatag6_2(2)[#]:",
             schemaDef.Tree);
     }
 
@@ -60,8 +60,8 @@ public class TestMetatagSchemaDefinition
         List<Metatag> metatags = new(
             new[]
             {
-                TestMetatags.metatag1, TestMetatags.metatag1_3, TestMetatags.metatag1_3_5,
-                TestMetatags.metatag2, TestMetatags.metatag2_6,
+                TestMetatags.metatag1, TestMetatags.metatag3_1, TestMetatags.metatag5_3_1,
+                TestMetatags.metatag2, TestMetatags.metatag6_2,
                 TestMetatags.metatag7
             }
         );
@@ -75,7 +75,7 @@ public class TestMetatagSchemaDefinition
 
         schemaDef.FRemoveMetatag(TestMetatags.metatagId5);
 
-        TestMetatagTree.AssertList("metatag1:metatag1_3:metatag2:metatag2_6:metatag7:", schemaDef.Metatags);
-        TestMetatagTree.AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag1_3(2)[#]:metatag2(1)[#]:metatag2_6(2)[#]:metatag7(1)[#]:", schemaDef.Tree);
+        TestMetatagTree.AssertList("metatag1:metatag3_1:metatag2:metatag6_2:metatag7:", schemaDef.Metatags);
+        TestMetatagTree.AssertTree("___Root(0)[#]:metatag1(1)[#]:metatag3_1(2)[#]:metatag2(1)[#]:metatag6_2(2)[#]:metatag7(1)[#]:", schemaDef.Tree);
     }
 }

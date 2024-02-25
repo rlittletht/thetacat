@@ -5,6 +5,7 @@ using TCore;
 using TCore.SqlCore;
 using TCore.SqlClient;
 using Thetacat.Metatags.Model;
+using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -206,10 +207,7 @@ public class Metatags
             int result = sql.NExecuteScalar(new SqlCommandTextInit(cmd));
 
             if (result == 0)
-            {
-                MessageBox.Show("Failed to update schema");
-                return;
-            }
+                throw new CatExceptionSchemaUpdateFailed();
         }
         finally
         {

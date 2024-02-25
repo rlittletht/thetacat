@@ -19,7 +19,7 @@ namespace Thetacat.Import.UI
     /// </summary>
     public partial class MediaImport : Window
     {
-        private readonly MediaImportModel m_model = new ();
+        private readonly MediaImportModel m_model = new();
         private MediaImporter m_importer;
 
         public MediaImport(MediaImporter importer)
@@ -196,7 +196,7 @@ namespace Thetacat.Import.UI
 
                         return _nodesToAdd;
                     });
-                
+
             m_model.ImportItems.AddRange(nodesToAdd);
             m_model.FileExtensions.Clear();
             List<string> sortedExtensions = new List<string>(extensions);
@@ -238,7 +238,6 @@ namespace Thetacat.Import.UI
 
         private void ToggleSelectedExtensions(object sender, RoutedEventArgs e)
         {
-            
         }
 
         HashSet<string> GetSelectedExtensions()
@@ -360,26 +359,55 @@ namespace Thetacat.Import.UI
             m_importBackgroundWorkers.AddWork("searching for already imported items", SearchForImportedItemsWork);
         }
 
-        public static PathSegment BuildVirtualPath(string sourcePath, string itemPath, string itemName, bool includeSubdirs, string? virtualPrefix)
+        public static PathSegment BuildVirtualPath(
+            string sourcePath,
+            string itemPath,
+            string itemName,
+            bool includeParentDir,
+            bool includeSubdirs,
+            string? virtualRoot,
+            string? virtualSuffix)
         {
-            PathSegment itemPathWithName = PathSegment.Join(itemPath, itemName);
-            PathSegment relativePath = new PathSegment(Path.GetRelativePath(sourcePath, itemPathWithName));
+            PathSegment sourceSegment = PathSegment.CreateFromString(sourcePath);
+            PathSegment itemSegment = PathSegment.CreateFromString(itemPath);
 
-            if (string.IsNullOrEmpty(virtualPrefix))
-            {
-                // no prefix
-                if (includeSubdirs == false || !relativePath.HasDirectory())
-                    return PathSegment.Empty;
+            PathSegment relativeSegment = includeSubdirs ? itemSegment.GetRelativePath(sourceSegment) : PathSegment.Empty;
 
-                return relativePath;
-            }
+            PathSegment parentSegment =
+                includeParentDir
+                    ? sourceSegment.GetLeafItem() ?? PathSegment.Empty
+                    : PathSegment.Empty;
 
-            PathSegment virtualPath =
-                includeSubdirs
-                    ? PathSegment.Join(virtualPrefix, relativePath)
-                    : PathSegment.Join(virtualPrefix, itemName);
+            PathSegment virtualRootSegment = PathSegment.CreateFromString(virtualRoot);
+            PathSegment virtualRootSuffixSegment = PathSegment.CreateFromString(virtualSuffix);
+
+            PathSegment virtualPath = PathSegment.Join(virtualRootSegment, virtualRootSuffixSegment, parentSegment, relativeSegment, itemName);
+
+//            PathSegment virtualPath = PathSegment.CreateFromString(virtualRoot);
+//
+//            virtualPath = PathSegment.Join(
+//                virtualPath,
+//                includeSubdirs
+//                    ? PathSegment.Join(virtualSuffix ?? string.Empty, relativePath, itemName)
+//                    : PathSegment.Join(virtualSuffix ?? string.Empty, itemName));
 
             return virtualPath.Unroot();
+        }
+
+
+        private PathSegment MakeVirtualPathForImportItem(ImportNode item)
+        {
+            if (item.IsDirectory)
+                return PathSegment.Empty;
+
+            return BuildVirtualPath(
+                m_model.SourcePath,
+                item.Path,
+                item.Name,
+                m_model.IncludeParentDirInVirtualPath,
+                m_model.IncludeSubdirInVirtualPath,
+                m_model.VirtualPathRoot?.FullName ?? null,
+                m_model.VirtualPathSuffix ?? null);
         }
 
         private void DoPrePopulateWork(IProgressReport report, List<ImportNode> checkedItems)
@@ -402,27 +430,6 @@ namespace Thetacat.Import.UI
             }
 
             report.WorkCompleted();
-        }
-
-        private PathSegment MakeVirtualPathForImportItem(ImportNode item)
-        {
-            if (item.IsDirectory)
-                return PathSegment.Empty;
-
-            PathSegment relativePath = new PathSegment(Path.GetRelativePath(m_model.SourcePath, item.Path));
-
-            PathSegment virtualPath = PathSegment.CreateFromString(m_model.VirtualPathRoot?.FullName);
-
-            virtualPath = PathSegment.Join(
-                virtualPath,
-                m_model.IncludeSubdirInVirtualPath
-                    ? PathSegment.Join(m_model.VirtualPathSuffix ?? string.Empty, relativePath, item.Name)
-                    : new PathSegment(m_model.VirtualPathSuffix ?? string.Empty, item.Name));
-
-            if (virtualPath.GetPathRoot() == PathSegment.Empty)
-                virtualPath = PathSegment.Join("/", virtualPath);
-
-            return virtualPath;
         }
 
         private void DoImport(object sender, RoutedEventArgs e)

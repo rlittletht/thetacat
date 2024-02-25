@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Thetacat.ServiceClient;
 using Thetacat.Types;
 
 namespace Thetacat.Metatags.Model;
@@ -26,6 +27,22 @@ public class MetatagSchemaDefinition
     public MetatagTree Tree => m_tree ??= new MetatagTree(Metatags);
 
     private readonly ConcurrentDictionary<Guid, Metatag> m_metatagLookup = new();
+
+    public MetatagSchemaDefinition(){}
+
+    public MetatagSchemaDefinition(ServiceMetatagSchema serviceMetatagSchema)
+    {
+        SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+
+        if (serviceMetatagSchema.Metatags != null)
+        {
+            foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
+            {
+                Metatag metatag = Metatag.CreateFromService(serviceMetatag);
+                AddMetatag(metatag);
+            }
+        }
+    }
 
     public void RebuildTree()
     {

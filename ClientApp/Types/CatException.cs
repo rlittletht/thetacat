@@ -159,3 +159,15 @@ public class CatExceptionDebugFailure: CatException
         public CatExceptionDebugFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
 #pragma warning restore format // @formatter:on
 }
+
+public class CatExceptionSchemaUpdateFailed: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionSchemaUpdateFailed() : base(Guid.Empty) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids) : base(crids) { }
+        public CatExceptionSchemaUpdateFailed(string errorMessage) : base(errorMessage) { }
+        public CatExceptionSchemaUpdateFailed(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}

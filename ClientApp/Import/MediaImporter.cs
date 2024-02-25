@@ -136,6 +136,10 @@ public class MediaImporter
         int total = ImportItems.Count;
         int current = 0;
 
+        // before we do this, make sure we have the latest metatag schema (so we don't try to create metatags
+        // that are already there
+        metatagSchema.ReplaceFromService(catalogID);
+
         foreach (ImportItem item in ImportItems)
         {
             report.UpdateProgress((current * 100.0) / total);

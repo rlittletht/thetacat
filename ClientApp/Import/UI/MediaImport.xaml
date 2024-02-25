@@ -111,6 +111,8 @@
                         <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
                             <TextBlock>Preview VirtualPath:</TextBlock>
                             <TextBox Text="{Binding Path=VirtualPathPreview}" />
+                            <CheckBox Content="Include parent directory in virtual path?"
+                                      IsChecked="{Binding Path=IncludeParentDirInVirtualPath}" />
                             <CheckBox Content="Include subdirectories in virtual path?"
                                       IsChecked="{Binding Path=IncludeSubdirInVirtualPath}" />
                         </StackPanel>

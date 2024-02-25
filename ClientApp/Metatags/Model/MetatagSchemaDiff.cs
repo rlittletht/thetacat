@@ -16,29 +16,37 @@ public class MetatagSchemaDiff
 {
     private readonly List<MetatagSchemaDiffOp> m_ops = new();
     private readonly int m_baseSchemaVersion;
+    private readonly int m_targetSchemaVersion;
 
     public int GetDiffCount => m_ops.Count;
     public IEnumerable<MetatagSchemaDiffOp> Ops => m_ops;
     public int BaseSchemaVersion => m_baseSchemaVersion;
+    public int TargetSchemaVersion => m_targetSchemaVersion;
 
-    public MetatagSchemaDiff(int baseSchemaVersion)
+    public MetatagSchemaDiff(int baseSchemaVersion, int targetSchemaVersion)
     {
         m_baseSchemaVersion = baseSchemaVersion;
+        m_targetSchemaVersion = targetSchemaVersion;
+    }
+
+    public void AddDiffOp(MetatagSchemaDiffOp op)
+    {
+        m_ops.Add(op);
     }
 
     public void DeleteMetatag(Metatag metatag)
     {
-        m_ops.Add(MetatagSchemaDiffOp.CreateDelete(metatag.ID));
+        AddDiffOp(MetatagSchemaDiffOp.CreateDelete(metatag.ID));
     }
 
     public void InsertMetatag(Metatag metatag)
     {
-        m_ops.Add(MetatagSchemaDiffOp.CreateInsert(metatag));
+        AddDiffOp(MetatagSchemaDiffOp.CreateInsert(metatag));
     }
 
     public void UpdateMetatag(Metatag original, Metatag updated)
     {
-        m_ops.Add(MetatagSchemaDiffOp.CreateUpdate(original, updated));
+        AddDiffOp(MetatagSchemaDiffOp.CreateUpdate(original, updated));
     }
 
     public static Dictionary<Guid, Metatag> BuildMetatagDictionary(IEnumerable<Metatag> metatags)
@@ -55,7 +63,7 @@ public class MetatagSchemaDiff
 
     public static MetatagSchemaDiff CreateFromSchemas(MetatagSchemaDefinition baseSchema, MetatagSchemaDefinition working)
     {
-        MetatagSchemaDiff diff = new MetatagSchemaDiff(baseSchema.SchemaVersion);
+        MetatagSchemaDiff diff = new MetatagSchemaDiff(baseSchema.SchemaVersion, working.SchemaVersion);
 
         // build dictionaries for both for faster access
         Dictionary<Guid, Metatag> baseDictionary = BuildMetatagDictionary(baseSchema.Metatags);

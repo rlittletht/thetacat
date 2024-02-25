@@ -144,6 +144,16 @@ public class PathSegment
         return m_segment.Contains("/");
     }
 
+    public PathSegment? GetLeafItem()
+    {
+        int ichLim = m_segment.Length - 1;
+        int ich = m_segment.LastIndexOf('/', ichLim - 1);
+        if (ich == -1)
+            return null;
+
+        return new PathSegment(m_segment[(ich + 1)..(ichLim + 1)]);
+    }
+
     public delegate bool TraverseDelegate(PathSegment segment);
 
     /*----------------------------------------------------------------------------
