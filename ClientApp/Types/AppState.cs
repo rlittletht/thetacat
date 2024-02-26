@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Thetacat.Explorer;
+using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
@@ -203,7 +204,7 @@ public class AppState : IAppState
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Couldn't remove collateral for item {item}. Will try again later.");
+            MainWindow.LogForApp(EventType.Warning, $"Couldn't remove collateral for item {item}. Will try again later.");
         }
     }
 
