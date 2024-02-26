@@ -52,6 +52,19 @@ public class MediaStacks : INotifyPropertyChanged
         m_items.Clear();
     }
 
+    public void RemoveFromStack(Guid stackId, MediaItem item)
+    {
+        if (m_items.TryGetValue(stackId, out MediaStack? stack))
+        {
+            MediaStackItem? stackItem = stack.FindMediaInStack(item.ID);
+
+            if (stackItem != null)
+            {
+                stack.RemoveItem(stackItem);
+            }
+        }
+    }
+
     public void AddStack(MediaStack item)
     {
         item.Type = m_type;

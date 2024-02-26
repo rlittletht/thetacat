@@ -251,6 +251,24 @@ public class Catalog : ICatalog
         MediaStacks.SetPendingChangesFromBase(other.MediaStacks);
     }
 
+    public void DeleteItem(Guid catalogId, Guid id)
+    {
+        MediaItem item = GetMediaFromId(id);
+
+        // delete from the service
+        ServiceInterop.DeleteMediaItem(catalogId, id);
+
+        // now delete all remnants from ourselves
+        if (item.MediaStack != null)
+            MediaStacks.RemoveFromStack(item.MediaStack.Value, item);
+
+        if (item.VersionStack != null)
+            VersionStacks.RemoveFromStack(item.VersionStack.Value, item);
+
+        m_media.DeleteMediaItem(item);
+        TriggerItemDirtied(true);
+    }
+
     #region Observable Collection Support
 
     private ObservableCollection<MediaItem>? m_observableView;

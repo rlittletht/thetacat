@@ -130,23 +130,6 @@ public class Metatags
         return $"UPDATE tcat_metatags SET {setsSql} WHERE ID='{diffOp.ID}' AND catalog_id='{catalogID}'";
     }
 
-    static string WrapSqlTransactionTryCatch(string tryBlock, string catchBlock)
-    {
-        string sql =
-            @$"
-                BEGIN TRANSACTION
-                BEGIN TRY
-                  {tryBlock}
-                  COMMIT TRANSACTION
-                END TRY
-                BEGIN CATCH
-                  {catchBlock}
-                  ROLLBACK TRANSACTION
-                END CATCH";
-
-        return sql;
-    }
-
     static string BuildWrapSqlVersionCheckUpdate(Guid catalogID, int requiredSchemaVersion, string block)
     {
         string sql =
@@ -193,7 +176,7 @@ public class Metatags
         // now build the boilerlate around the updates
         // (note that the CATCH block doesn't include the rollback -- that is included
         // automatically
-        string cmd = WrapSqlTransactionTryCatch(
+        string cmd = LocalServiceClient.WrapSqlTransactionTryCatch(
             BuildWrapSqlVersionCheckUpdate(
                 catalogID,
                 schemaDiff.BaseSchemaVersion,

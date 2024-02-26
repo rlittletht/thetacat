@@ -104,6 +104,9 @@ public class WorkgroupDb
     private readonly string s_updateClientClock = @"
         UPDATE tcat_workgroup_clients SET vectorClock = @VectorClock WHERE id = @Id";
 
+    private readonly string s_deleteMediaItemFromWorkgroup = @"
+        DELETE FROM tcat_workgroup_media WHERE media = @MediaId";
+
     /*----------------------------------------------------------------------------
         %%Function: OpenDatabase
         %%Qualified: Thetacat.Model.WorkgroupDb.OpenDatabase
@@ -171,6 +174,14 @@ public class WorkgroupDb
         {
             return null;
         }
+    }
+
+    public void DeleteMediaItemFromWorkgroup(Guid itemId)
+    {
+        _Connection.ExecuteNonQuery(
+            s_deleteMediaItemFromWorkgroup,
+            cmd => cmd.AddParameterWithValue("@MediaId", itemId.ToString()),
+            s_aliases);
     }
 
     public ServiceWorkgroupMediaClock GetLatestWorkgroupMediaWithClock()

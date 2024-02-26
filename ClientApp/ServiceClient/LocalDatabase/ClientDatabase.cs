@@ -173,6 +173,17 @@ public class ClientDatabase
         return commands;
     }
 
+    private static readonly string s_deleteMediaDerivatives = @"
+        DELETE FROM tcat_derivatives WHERE media=@MediaId";
+
+    public void DeleteMediaDerivatives(Guid id)
+    {
+        _Connection.ExecuteNonQuery(
+            s_deleteMediaDerivatives,
+            cmd => cmd.AddParameterWithValue("@MediaId", id.ToString()),
+            s_aliases);
+    }
+
     public void ExecuteDerivativeUpdates(IEnumerable<DerivativeItem> deletes, IEnumerable<DerivativeItem> inserts)
     {
         List<string> insertCommands = BuildDerivativeInsertCommands(inserts);
@@ -203,6 +214,17 @@ public class ClientDatabase
             _Connection.Rollback();
             throw;
         }
+    }
+
+    private readonly string s_deleteMediaItemDerivatives = @"
+        DELETE FROM tcat_derivatives WHERE media=@MediaId";
+
+    public void DeleteMediaItemDerivatives(Guid itemId)
+    {
+        _Connection.ExecuteNonQuery(
+            s_deleteMediaItemDerivatives,
+            cmd => cmd.AddParameterWithValue("@MediaId", itemId.ToString()),
+            s_aliases);
     }
 
     private readonly string s_queryAllMd5Cache = @"

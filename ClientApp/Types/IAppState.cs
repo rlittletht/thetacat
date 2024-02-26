@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
@@ -38,4 +39,7 @@ public interface IAppState
     public void ChangeProfile(string profileName);
     public void PushTemporarySqlConnection(string connectionString);
     public void PopTemporarySqlConnection();
+
+    public void EnsureDeletedItemCollateralRemoved(Guid id);
+    public void EnsureDeletedItemsCollateralRemoved(List<Guid> items);
 }

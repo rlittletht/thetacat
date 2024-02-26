@@ -392,6 +392,18 @@ public class Media
         }
     }
 
+    private static readonly string s_queryAllDeletedItems = @"
+        SELECT id FROM tcat_deletedmedia WHERE catalog_id = @CatalogID";
+
+    public static List<Guid> GetDeletedMediaItems(Guid catalogId)
+    {
+        return LocalServiceClient.DoGenericQueryWithAliases(
+            s_queryAllDeletedItems,
+            (ISqlReader reader, Guid _, ref List<Guid> building) => building.Add(reader.GetGuid(0)),
+            s_aliases,
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogId));
+    }
+
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID)
     {
         LocalServiceClient.DoGenericCommandWithAliases(
@@ -402,5 +414,69 @@ public class Media
                 cmd.AddParameterWithValue("@CatalogID", catalogID);
                 cmd.CommandTimeout = 0;
             });
+    }
+
+    private static readonly string s_insertDeletedMedia = @"
+        INSERT INTO tcat_deletedmedia (catalog_id, id) VALUES (@CatalogID, @MediaID)";
+
+    private static readonly string s_deleteMediaTagsForMedia = @"
+        DELETE FROM tcat_mediatags
+        WHERE catalog_id = @CatalogID AND id = @MediaID";
+
+    private static readonly string s_deleteMediaItem = @"
+        DELETE FROM tcat_media
+        WHERE catalog_id = @CatalogID AND id = @MediaID";
+
+
+    public static void DeleteMediaItem(Guid catalogId, Guid itemId)
+    {
+        ISql sql = LocalServiceClient.GetConnection();
+
+        // its fine for this insert to fail for a duplicate key...
+        try
+        {
+            sql.ExecuteNonQuery(
+                s_insertDeletedMedia,
+                cmd =>
+                {
+                    cmd.AddParameterWithValue("@CatalogID", catalogId);
+                    cmd.AddParameterWithValue("MediaID", itemId);
+                },
+                s_aliases);
+        }
+        catch { }
+
+        sql.BeginTransaction();
+        try
+        {
+            sql.ExecuteNonQuery(
+                s_deleteMediaTagsForMedia,
+                cmd =>
+                {
+                    cmd.AddParameterWithValue("@CatalogID", catalogId);
+                    cmd.AddParameterWithValue("@MediaID", itemId);
+                },
+                s_aliases);
+
+            sql.ExecuteNonQuery(
+                s_deleteMediaItem,
+                cmd =>
+                {
+                    cmd.AddParameterWithValue("@CatalogID", catalogId);
+                    cmd.AddParameterWithValue("@MediaID", itemId);
+                },
+                s_aliases);
+
+            sql.Commit();
+        }
+        catch (Exception)
+        {
+            sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            sql.Close();
+        }
     }
 }

@@ -30,6 +30,7 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
+using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
 
 namespace Thetacat;
@@ -185,6 +186,9 @@ public partial class MainWindow : Window
         LogForApp(EventType.Information, "Beginning read catalog");
         MicroTimer timer = new MicroTimer();
 
+        List<Guid> deletedItems = ServiceInterop.GetDeletedMediaItems(App.State.ActiveProfile.CatalogID);
+
+        App.State.EnsureDeletedItemsCollateralRemoved(deletedItems);
         await App.State.Catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, App.State.MetatagSchema);
         // good time to refresh the MRU now that we loaded the catalog and the schema
         App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);

@@ -423,4 +423,9 @@ public class Workgroup: IWorkgroup
     {
         PushChangesToDatabaseWithCache(App.State.Cache, itemsForCache);
     }
+
+    public void DeleteMediaItem(Guid id)
+    {
+        _Database.DeleteMediaItemFromWorkgroup(id);
+    }
 }

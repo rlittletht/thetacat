@@ -15,6 +15,7 @@ public class MediaExplorerModel : INotifyPropertyChanged
 
     public ExplorerContextMenuModel ExplorerContextMenu { get; set; } = new ExplorerContextMenuModel();
     public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
+    public DeleteCommand? DeleteItems { get; set; }
     public SelectPanelCommand? SelectPanel { get; set; }
     public SelectPanelCommand? ExtendSelectPanel { get; set; }
     public SelectPanelCommand? AddSelectPanel { get; set; }

@@ -61,6 +61,24 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, reformattedImage, true));
     }
 
+    public void DeleteMediaItem(Guid id)
+    {
+        if (m_mediaDerivatives.TryGetValue(id, out List<DerivativeItem>? items))
+        {
+            foreach (DerivativeItem item in items)
+            {
+                if (File.Exists(item.Path.Local))
+                    File.Delete(item.Path.Local);
+            }
+        }
+
+        m_mediaDerivatives.Remove(id);
+        m_mediaFormatDerivatives.Remove(id);
+        m_scaledMediaDerivatives.Remove(id);
+
+        App.State.ClientDatabase?.DeleteMediaDerivatives(id);
+    }
+
     public void ResetDerivatives(ClientDatabase? client)
     {
         // clear all the derivatives we have, but leave the pipeline running

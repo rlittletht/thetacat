@@ -21,6 +21,11 @@ public class Media
         m_items.Clear();
     }
 
+    public void DeleteMediaItem(MediaItem item)
+    {
+        m_items.TryRemove(item.ID, out MediaItem? _);
+    }
+
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;

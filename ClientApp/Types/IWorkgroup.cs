@@ -20,4 +20,5 @@ public interface IWorkgroup
     public void PushChangesToDatabaseWithCache(ICache cache, Dictionary<Guid, MediaItem>? itemsForCache);
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
     public void CreateCacheEntryForItem(ICache cache, MediaItem item, DateTime? cachedDate, bool pending);
+    public void DeleteMediaItem(Guid id);
 }

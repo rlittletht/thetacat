@@ -207,13 +207,12 @@ public class ImageCache
 //        //                img.Source = new CachedBitmap()
     }
 
-    private BitmapSource CreatePlaceholderImage(string text)
+    public static BitmapSource CreatePlaceholderImage(string text, double size = 36.0)
     {
         DrawingVisual visual = new DrawingVisual();
         DrawingContext context = visual.RenderOpen();
 
         Point pt = new Point(10, 10);
-        double size = 36;
         Brush brush = Brushes.Blue;
         DpiScale dpi = App.State.DpiScale;
 

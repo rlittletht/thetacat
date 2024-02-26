@@ -48,8 +48,11 @@
                             </MenuItem.ItemTemplate>
                         </MenuItem>
                         <Separator />
-                        <MenuItem Header="Show/Hide Metatag Panel" PresentationTraceSources.TraceLevel="High"
+                        <MenuItem Header="Show/Hide Metatag Panel"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
+                                  CommandParameter="{Binding}"/>
+                        <MenuItem Header="Delete"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
                                   CommandParameter="{Binding}"/>
                     </ContextMenu>
                 </StackPanel.ContextMenu>

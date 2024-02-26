@@ -293,7 +293,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             ImageCacheItem? cacheItem = App.State.PreviewImageCache.GetAnyExistingItem(item.ID);
             explorerItem.TileImage = cacheItem?.Image;
         }
-
+        else
+        {
+            explorerItem.TileImage = ImageCache.CreatePlaceholderImage($"uncached: '{item.VirtualPath}'", 11.0);
+        }
         if (startNewSegment)
         {
             m_collection.AddSegment(null);

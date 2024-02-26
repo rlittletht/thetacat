@@ -110,6 +110,20 @@ public class Cache: ICache
         return GetFullLocalPath(value.Path);
     }
 
+    public void DeleteMediaItem(Guid id)
+    {
+        if (Entries.TryGetValue(id, out ICacheEntry? entry))
+        {
+            string localPath = GetFullLocalPath(entry.Path);
+
+            if (File.Exists(localPath))
+                File.Delete(localPath);
+
+            Entries.TryRemove(id, out ICacheEntry? _);
+            _Workgroup.DeleteMediaItem(id);
+        }
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: Cache
         %%Qualified: Thetacat.Model.Cache.Cache

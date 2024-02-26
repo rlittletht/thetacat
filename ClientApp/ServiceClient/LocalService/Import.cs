@@ -25,6 +25,21 @@ public class Import
         FROM $$#tcat_import$$
         WHERE $$tcat_import$$.source = @SourceClient AND $$tcat_import$$.catalog_id = @CatalogID";
 
+    private static readonly string s_deleteMediaItem = @"
+        DELETE FROM tcat_import WHERE catalog_id=@CatalogID AND id=@MediaID";
+
+    public static void DeleteMediaItem(Guid catalogId, Guid mediaId)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteMediaItem,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogId);
+                cmd.AddParameterWithValue("@MediaID", mediaId);
+            });
+    }
+
     public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
     {
         return LocalServiceClient.DoGenericQueryWithAliases(

@@ -134,6 +134,24 @@ public class LocalServiceClient
         }
     }
 
+
+    public static string WrapSqlTransactionTryCatch(string tryBlock, string catchBlock)
+    {
+        string sql =
+            @$"
+                BEGIN TRANSACTION
+                BEGIN TRY
+                  {tryBlock}
+                  COMMIT TRANSACTION
+                END TRY
+                BEGIN CATCH
+                  {catchBlock}
+                  ROLLBACK TRANSACTION
+                END CATCH";
+
+        return sql;
+    }
+
     public static void ExecutePartedCommands<T>(
         ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
     {

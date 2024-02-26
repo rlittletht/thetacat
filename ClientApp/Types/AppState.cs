@@ -193,4 +193,25 @@ public class AppState : IAppState
     {
         ((App)Application.Current).WindowPlace.Register(window, key);
     }
+
+    public void EnsureDeletedItemCollateralRemoved(Guid item)
+    {
+        try
+        {
+            Cache.DeleteMediaItem(item);
+            Derivatives.DeleteMediaItem(item);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Couldn't remove collateral for item {item}. Will try again later.");
+        }
+    }
+
+    public void EnsureDeletedItemsCollateralRemoved(List<Guid> items)
+    {
+        foreach (Guid item in items)
+        {
+            EnsureDeletedItemCollateralRemoved(item);
+        }
+    }
 }

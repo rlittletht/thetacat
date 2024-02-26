@@ -29,7 +29,7 @@ public interface ICatalog
     public MediaStacks VersionStacks { get; }
     public MediaStacks MediaStacks { get; }
     public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index);
-
+    public void DeleteItem(Guid catalogId, Guid id);
     public bool HasMediaItem(Guid mediaId);
     public void Reset();
 }

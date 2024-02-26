@@ -85,6 +85,26 @@ public class MediaStack: INotifyPropertyChanged
         set => SetField(ref m_items, value);
     }
 
+    public MediaStackItem? FindMediaInStack(Guid itemId)
+    {
+        foreach (MediaStackItem item in m_items)
+        {
+            if (item.MediaId == itemId)
+                return item;
+        }
+
+        return null;
+    }
+
+    public void RemoveItem(MediaStackItem item)
+    {
+        m_items.Remove(item);
+        if (m_items.Count == 0)
+            PendingOp = Op.Delete;
+        else if (PendingOp == Op.None)
+            PendingOp = Op.Update;
+    }
+
     public void PushItem(MediaStackItem item)
     {
         m_items.Add(item);

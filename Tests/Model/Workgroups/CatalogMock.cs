@@ -76,6 +76,11 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
+    public void DeleteItem(Guid catalogId, Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
     public void Reset()
     {

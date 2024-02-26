@@ -13,6 +13,7 @@ using Thetacat.Types;
 using Thetacat.Explorer.Commands;
 using Thetacat.Util;
 using Thetacat.Explorer.UI;
+using Thetacat.ServiceClient;
 
 namespace Thetacat.Explorer;
 
@@ -35,6 +36,7 @@ public partial class MediaExplorer : UserControl
         m_selector = new ItemSelector(null, UpdateMetatagPanelIfNecessary);
 
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
+        Model.DeleteItems = new DeleteCommand(_DeleteItems);
         Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
         Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
         Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
@@ -271,6 +273,34 @@ public partial class MediaExplorer : UserControl
         }
 
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
+    }
+
+    private void _DeleteItems(MediaExplorerItem? context)
+    {
+        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+
+        if (mediaItems.Count == 0)
+            return;
+
+        if (MessageBox.Show($"Are you sure you want to delete {mediaItems.Count} items? This cannot be undone.", "Confirm delete", MessageBoxButton.YesNo)
+            != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        foreach (MediaItem item in mediaItems)
+        {
+            try
+            {
+                App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
+                ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
+                App.State.EnsureDeletedItemCollateralRemoved(item.ID);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
+            }
+        }
     }
 
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)

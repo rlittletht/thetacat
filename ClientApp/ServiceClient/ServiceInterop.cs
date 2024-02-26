@@ -28,8 +28,14 @@ public class ServiceInterop
         LocalService.Media.UpdateMediaItems(catalogID, diffs);
     }
 
+    public static List<Guid> GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
+
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
+
+    public static void DeleteMediaItem(Guid catalogID, Guid id) => LocalService.Media.DeleteMediaItem(catalogID, id);
+
+    public static void DeleteImportsForMediaItem(Guid catalogId, Guid id) => LocalService.Import.DeleteMediaItem(catalogId, id);
 
     public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
     {
