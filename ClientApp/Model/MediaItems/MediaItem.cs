@@ -7,6 +7,11 @@ using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using HeyRed.Mime;
 using MetadataExtractor.Formats.Exif;
 using Thetacat.Filtering;
 using Thetacat.Import;
@@ -610,13 +615,25 @@ public class MediaItem : INotifyPropertyChanged
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
             
         // load exif and other data from this item.
-        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
 
-        this.MD5 = CalculateMD5Hash(file);
-
-        foreach (MetadataExtractor.Directory directory in directories)
+//        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
+//        {
+//            // this is a jpeg2000 file. have to use emgu
+//            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
+//            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
+//
+//            MessageBox.Show($"num: {img.")
+//        }
+//        else
         {
-            PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
+            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
+
+            this.MD5 = CalculateMD5Hash(file);
+
+            foreach (MetadataExtractor.Directory directory in directories)
+            {
+                PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
+            }
         }
 
         metatagSchema.EnsureBuiltinMetatagsDefined();

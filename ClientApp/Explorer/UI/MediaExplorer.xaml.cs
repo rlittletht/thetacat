@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -37,6 +38,7 @@ public partial class MediaExplorer : UserControl
 
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
         Model.DeleteItems = new DeleteCommand(_DeleteItems);
+        Model.ClearCacheItems = new ClearCacheItemsCommand(_ClearCacheItems);
         Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
         Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
         Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
@@ -273,6 +275,29 @@ public partial class MediaExplorer : UserControl
         }
 
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
+    }
+
+    private void _ClearCacheItems(MediaExplorerItem? context)
+    {
+        foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
+        {
+            MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
+
+            try
+            {
+                BitmapSource? imageSource = explorerItem.TileImage;
+                explorerItem.TileImage = null;
+
+                App.State.PreviewImageCache.ResetImageForKey(item.ID);
+                App.State.ImageCache.ResetImageForKey(item.ID);
+                MediaExplorerCollection.QueueImageForMediaItem(item);
+                App.State.Derivatives.DeleteMediaItem(item.ID);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
+            }
+        }
     }
 
     private void _DeleteItems(MediaExplorerItem? context)

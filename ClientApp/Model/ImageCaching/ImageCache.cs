@@ -75,9 +75,13 @@ public class ImageCache
                 //return item;
             }
 
-            return existingItem;
+            if (existingItem.IsLoadQueued)
+                return existingItem;
+
+            item = existingItem;
         }
 
+        item.IsLoadQueued = true;
         m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, item));
         return item;
     }
@@ -99,6 +103,7 @@ public class ImageCache
         if (Items.TryGetValue(mediaId, out ImageCacheItem? item))
         {
             item.Image = null;
+            item.IsLoadQueued = false;
             TriggerImageCacheUpdatedEvent(mediaId);
         }
     }
@@ -142,7 +147,7 @@ public class ImageCache
     public static readonly HashSet<string> ComingSoonExtensions =
         new HashSet<string>()
         {
-            ".psd", ".jp2"
+            ".psd" // , ".jp2"
         };
 
     public static readonly HashSet<string> ReformatExtensions =

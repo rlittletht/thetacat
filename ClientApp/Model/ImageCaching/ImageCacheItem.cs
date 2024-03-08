@@ -8,6 +8,7 @@ namespace Thetacat.Model.ImageCaching;
 
 public class ImageCacheItem : INotifyPropertyChanged
 {
+    public bool IsLoadQueued { get; set; } = false;
     private BitmapSource? m_image;
     public string LocalPath { get; set; }
     public Guid MediaId { get; set; }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using HeyRed.Mime;
 using RestoreWindowPlace;
 using Thetacat.Types;
 
@@ -65,6 +66,8 @@ namespace Thetacat
             // items in the dispatch queue, which includes creating the main window, but
             // that will fail if we haven't finished initializing the App here (namely, the
             // StartupUri has to get setup).
+
+            MimeTypesMap.AddOrUpdate("image/jp2", "jp2");
 
             try
             {

@@ -153,6 +153,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
         {
+            cacheItem.IsLoadQueued = false;
             if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))
             {
                 explorerItem.TileImage = cacheItem.Image;
@@ -271,6 +272,22 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             });
 
         MainWindow.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
+    }
+
+    public static void QueueImageForMediaItem(MediaItem mediaItem)
+    {
+        ICache cache = App.State.Cache;
+
+        ThreadPool.QueueUserWorkItem(
+            stateInfo =>
+            {
+                string? path = cache.TryGetCachedFullPath(mediaItem.ID);
+
+                if (path != null)
+                {
+                    App.State.PreviewImageCache.TryAddItem(mediaItem, path);
+                }
+            });
     }
 
     public void Clear()

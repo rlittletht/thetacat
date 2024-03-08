@@ -11,6 +11,7 @@ public class MetatagStandards
         Cat,
         Pse,
         Jpeg,
+        Jpeg2000,
         Jfif,
         Iptc,
         ExifMakernotes_Nikon1,
@@ -48,6 +49,31 @@ public class MetatagStandards
     //            {
     //                new(MetadataExtractor.Formats., ""),
     //            });
+
+    public static StandardDefinitions Jpeg2000_ImageHeader =
+        new(
+            Standard.Jpeg2000,
+            "JP2000",
+            new[]
+            {
+                    "Jp2000ImageHeaderDirectory",
+                    "Jp2000CaptureResolutionDirectory"
+            },
+            new Dictionary<int, StandardDefinition>
+            {
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagMajorBrand, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagMajorBrand, "MajorBrand", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagMinorVersion, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagMinorVersion, "MinorVersion", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagCompatibleBrands, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagCompatibleBrands, "CompatibleBrands", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagImageHeight, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagImageHeight, "ImageHeight") },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagImageWidth, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagImageWidth, "ImageWidth") },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagNumberOfComponents, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagNumberOfComponents, "NumberOfComponents", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagBitsPerComponent, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagBitsPerComponent, "BitsPerComponent", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagCompression, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagCompression, "Compression", false) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagResX, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagResX, "ResX") },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagResY, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagResY, "ResY") },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagXUnit, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagXUnit, "XUnit" ) },
+                { MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagYUnit, new(MetadataExtractor.Formats.Jp2000.Jp2000DirectoryBase.TagYUnit, "YUnit" ) }
+            });
 
     public static StandardDefinitions Jpeg =
         new(
@@ -155,7 +181,7 @@ public class MetatagStandards
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagSource, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagSource, "Source", false)},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagCopyrightNotice, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagCopyrightNotice, "CopyrightNotice", false)},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagContact, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagContact, "Contact", false)},
-                { MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaption, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaption, "Caption", false)},
+                { MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaption, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaption, "Caption" )},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagLocalCaption, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagLocalCaption, "LocalCaption", false)},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaptionWriter, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagCaptionWriter, "CaptionWriter", false)},
                 { MetadataExtractor.Formats.Iptc.IptcDirectory.TagRasterizedCaption, new(MetadataExtractor.Formats.Iptc.IptcDirectory.TagRasterizedCaption, "RasterizedCaption", false)},
@@ -573,6 +599,13 @@ public class MetatagStandards
             { Standard.ExifMakernotes_Nikon2, ExifMakernotes_Nikon2 },
             { Standard.Exif, Exif },
             { Standard.ExifGps, ExifGps },
+
+            // how to deal with Jpeg2000 having multiple directories? we want them all to map to the
+            // standard, but doesn't that mean you will get duplicate tag values in the StandardDefinition?
+            // (since we get a single STandardDefinition from the directory name...
+            // ot can we have different standard.xxx names, but that all map to the same base tag
+            // name (for the metadata defintion int he database)??
+            { Standard.Jpeg2000, Jpeg2000_ImageHeader }
         };
 
     public static Standard GetStandardFromType(string typeName)

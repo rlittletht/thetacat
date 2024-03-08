@@ -67,8 +67,15 @@ public class Derivatives
         {
             foreach (DerivativeItem item in items)
             {
-                if (File.Exists(item.Path.Local))
-                    File.Delete(item.Path.Local);
+                try
+                {
+                    if (File.Exists(item.Path.Local))
+                        File.Delete(item.Path.Local);
+                }
+                catch
+                {
+                    // we're going to ignore a file deletion failure...we'll just overwrite it if we encounter it again.
+                }
             }
         }
 
