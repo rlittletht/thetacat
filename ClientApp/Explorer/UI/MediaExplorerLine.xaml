@@ -54,8 +54,8 @@
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
                                   CommandParameter="{Binding}"/>
-                        <MenuItem Header="Clear Cache"
-                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ClearCacheItems}"
+                        <MenuItem Header="Reset Cache"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
                                   CommandParameter="{Binding}" />
                     </ContextMenu>
                 </StackPanel.ContextMenu>

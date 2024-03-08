@@ -202,7 +202,7 @@ public class AppState : IAppState
             Cache.DeleteMediaItem(item);
             Derivatives.DeleteMediaItem(item);
         }
-        catch (Exception ex)
+        catch
         {
             MainWindow.LogForApp(EventType.Warning, $"Couldn't remove collateral for item {item}. Will try again later.");
         }

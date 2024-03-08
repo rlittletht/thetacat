@@ -38,7 +38,7 @@ public partial class MediaExplorer : UserControl
 
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
         Model.DeleteItems = new DeleteCommand(_DeleteItems);
-        Model.ClearCacheItems = new ClearCacheItemsCommand(_ClearCacheItems);
+        Model.ResetCacheItems = new ResetCacheItemsCommand(_ClearCacheItems);
         Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
         Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
         Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
