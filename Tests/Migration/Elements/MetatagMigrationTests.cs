@@ -1,10 +1,6 @@
-﻿using Emgu.CV.Dnn;
-using Thetacat;
-using Thetacat.Migration.Elements.Metadata.UI;
-using NUnit.Framework;
-using Thetacat.ServiceClient.LocalService;
+﻿using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Standards;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 public class MetatagMigrationTests
 {

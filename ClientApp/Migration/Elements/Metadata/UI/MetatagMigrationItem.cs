@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;

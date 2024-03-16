@@ -1,7 +1,4 @@
-﻿
-using System;
-using Azure;
-using Azure.Storage.Blobs.Models;
+﻿using Azure;
 
 namespace Thetacat;
 

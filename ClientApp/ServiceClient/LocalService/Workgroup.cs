@@ -1,27 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
+using Thetacat.Model;
 
 namespace Thetacat.ServiceClient.LocalService;
 
 public class Workgroup
 {
-    private static Dictionary<string, string> s_aliases =
+    private static readonly TableAliases s_aliases = new TableAliases(
         new()
         {
             { "tcat_workgroups", "WG" },
             { "tcat_workgroup_clients", "WGC" },
             { "tcat_workgroup_media", "WGM" }
-        };
+        });
 
     static readonly string s_queryAllWorkgroups = @"
             SELECT $$tcat_workgroups$$.id, $$tcat_workgroups$$.name, $$tcat_workgroups$$.serverPath, $$tcat_workgroups$$.cacheRoot
-            FROM $$#tcat_workgroups$$";
+            FROM $$#tcat_workgroups$$
+            WHERE $$tcat_workgroups$$.catalog_id = @CatalogID";
 
     static readonly string s_queryWorkgroup = @"
             SELECT $$tcat_workgroups$$.id, $$tcat_workgroups$$.name, $$tcat_workgroups$$.serverPath, $$tcat_workgroups$$.cacheRoot
             FROM $$#tcat_workgroups$$
-            WHERE $$tcat_workgroups$$.id = @Id";
+            WHERE $$tcat_workgroups$$.id = @Id AND $$tcat_workgroups$$.catalog_id = @CatalogID";
 
 #if WG_ON_SQL
     static readonly string s_queryWorkgroupMedia = @"
@@ -32,29 +36,38 @@ public class Workgroup
 #endif
 
     private static readonly string s_insertWorkgroup = @"
-            INSERT INTO tcat_workgroups (id, name, serverPath, cacheRoot) VALUES (@Id, @Name, @ServerPath, @CacheRoot)";
+            INSERT INTO tcat_workgroups (catalog_id, id, name, serverPath, cacheRoot) VALUES (@CatalogID, @Id, @Name, @ServerPath, @CacheRoot)";
 
     private static readonly string s_updateWorkgroup = @"
-            UPDATE tcat_workgroups SET name=@Name, serverPath=@ServerPath, cacheRoot=@CacheRoot WHERE id=@Id";
+            UPDATE tcat_workgroups SET name=@Name, serverPath=@ServerPath, cacheRoot=@CacheRoot WHERE id=@Id AND catalog_id=@CatalogID";
 
-    public static List<ServiceWorkgroup> ReadWorkgroups()
+    private static readonly string s_deleteWorkgroups = @"
+            DELETE from tcat_workgroups WHERE catalog_id=@CatalogID";
+
+    public static void DeleteAllWorkgroups(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(s_deleteWorkgroups, null, cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
+    }
+
+    public static List<ServiceWorkgroup> ReadWorkgroups(Guid catalogID)
     {
         return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceWorkgroup>>(
             s_queryAllWorkgroups,
-            s_aliases,
-            (SqlReader reader, Guid correlationId, ref List<ServiceWorkgroup> building) =>
+            (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroup> building) =>
             {
                 ServiceWorkgroup workgroup =
                     new ServiceWorkgroup()
                     {
-                        ID = reader.Reader.GetGuid(0),
-                        Name = reader.Reader.GetString(1),
-                        ServerPath = reader.Reader.GetString(2),
-                        CacheRoot = reader.Reader.GetString(3)
+                        ID = reader.GetGuid(0),
+                        Name = reader.GetString(1),
+                        ServerPath = reader.GetString(2),
+                        CacheRoot = reader.GetString(3)
                     };
 
                 building.Add(workgroup);
-            });
+            },
+            s_aliases,
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
 #if WG_ON_SQL
@@ -96,49 +109,59 @@ public class Workgroup
     }
 #endif
 
-    public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
+    public static ServiceWorkgroup GetWorkgroupDetails(Guid catalogID, Guid id)
     {
         return LocalServiceClient.DoGenericQueryWithAliases<ServiceWorkgroup>(
             s_queryWorkgroup,
-            s_aliases,
-            (SqlReader reader, Guid correlationId, ref ServiceWorkgroup building) =>
+            (ISqlReader reader, Guid correlationId, ref ServiceWorkgroup building) =>
             {
-                building.ID = reader.Reader.GetGuid(0);
-                building.Name = reader.Reader.GetString(1);
-                building.ServerPath = reader.Reader.GetString(2);
-                building.CacheRoot = reader.Reader.GetString(3);
+                building.ID = reader.GetGuid(0);
+                building.Name = reader.GetString(1);
+                building.ServerPath = reader.GetString(2);
+                building.CacheRoot = reader.GetString(3);
             },
+            s_aliases,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", id);
+                cmd.AddParameterWithValue("@Id", id);
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
             });
     }
 
-    public static void CreateWorkgroup(ServiceWorkgroup workgroup)
+    /*----------------------------------------------------------------------------
+        %%Function: CreateWorkgroup
+        %%Qualified: Thetacat.ServiceClient.LocalService.Workgroup.CreateWorkgroup
+
+        NOTE: this will create the workgroupw with the given catalogID, NOT with
+        the one in workgroup passed in
+    ----------------------------------------------------------------------------*/
+    public static void CreateWorkgroup(Guid catalogID, ServiceWorkgroup workgroup)
     {
         LocalServiceClient.DoGenericCommandWithAliases(
             s_insertWorkgroup,
             s_aliases,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", workgroup.ID);
-                cmd.Parameters.AddWithValue("@Name", workgroup.Name);
-                cmd.Parameters.AddWithValue("@ServerPath", workgroup.ServerPath);
-                cmd.Parameters.AddWithValue("@CacheRoot", workgroup.CacheRoot);
+                cmd.AddParameterWithValue("@Id", workgroup.ID);
+                cmd.AddParameterWithValue("@Name", workgroup.Name);
+                cmd.AddParameterWithValue("@ServerPath", workgroup.ServerPath);
+                cmd.AddParameterWithValue("@CacheRoot", workgroup.CacheRoot);
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
             });
     }
 
-    public static void UpdateWorkgroup(ServiceWorkgroup workgroup)
+    public static void UpdateWorkgroup(Guid catalogID, ServiceWorkgroup workgroup)
     {
         LocalServiceClient.DoGenericCommandWithAliases(
             s_updateWorkgroup,
             s_aliases,
             (cmd) =>
             {
-                cmd.Parameters.AddWithValue("@Id", workgroup.ID);
-                cmd.Parameters.AddWithValue("@Name", workgroup.Name);
-                cmd.Parameters.AddWithValue("@ServerPath", workgroup.ServerPath);
-                cmd.Parameters.AddWithValue("@CacheRoot", workgroup.CacheRoot);
+                cmd.AddParameterWithValue("@Id", workgroup.ID);
+                cmd.AddParameterWithValue("@Name", workgroup.Name);
+                cmd.AddParameterWithValue("@ServerPath", workgroup.ServerPath);
+                cmd.AddParameterWithValue("@CacheRoot", workgroup.CacheRoot);
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
             });
     }
 }

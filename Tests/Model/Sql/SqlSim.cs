@@ -1,15 +1,15 @@
-﻿using System.Windows.Controls;
-using TCore;
-using Thetacat.TCore.TcSqlLite;
-using CustomizeCommandDelegate = Thetacat.TCore.TcSqlLite.CustomizeCommandDelegate;
+﻿using TCore;
+using TCore.SqlCore;
+using CustomizeCommandDelegate = TCore.SqlCore.CustomizeCommandDelegate;
 
 namespace Tests.Model.Sql;
 
 public class SqlSim: ISql
 {
     public bool InTransaction { get; }
-    public SQLiteTransaction? Transaction { get; }
+    public ISqlTransaction? Transaction { get; }
     public ISqlCommand CreateCommand() => throw new NotImplementedException();
+    public ISqlReader CreateReader() => throw new NotImplementedException();
 
     private SqlSimQueryDataItem[]? m_data;
     private SqlSimNonQueryDataItem[]? m_nonQueryValidation;
@@ -24,13 +24,12 @@ public class SqlSim: ISql
         m_nonQueryValidation = validation;
     }
 
-    public void ExecuteNonQuery(string query, CustomizeCommandDelegate? customizeParams = null, Dictionary<string, string>? aliases = null)
+    public void ExecuteNonQuery(string query, CustomizeCommandDelegate? customizeParams = null, TableAliases? aliases = null)
     {
         if (m_nonQueryValidation == null)
             throw new InvalidOperationException($"no data for nonquery sim: {query}");
 
-        if (aliases != null)
-            query = SQLite.ExpandAliasesProperly(query, aliases);
+        query = aliases?.ExpandAliases(query) ?? query;
 
         foreach (SqlSimNonQueryDataItem item in m_nonQueryValidation)
         {
@@ -51,15 +50,20 @@ public class SqlSim: ISql
         ExecuteNonQuery(cmdText.CommandText, customizeParams, cmdText.Aliases);
     }
 
-    public T DoGenericQueryDelegateRead<T>(
-        Guid crids, string query, Dictionary<string, string>? aliases, ISqlReader.DelegateReader<T> delegateReader,
+    public T ExecuteMultiSetDelegatedQuery<T>(Guid crids, string sQuery, ISqlReader.DelegateMultiSetReader<T> delegateReader, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) where T : new() => throw new NotImplementedException();
+    public ISqlReader ExecuteQuery(Guid crids, string query, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) => throw new NotImplementedException();
+
+    public string SExecuteScalar(SqlCommandTextInit cmdText) => throw new NotImplementedException();
+
+    public T ExecuteDelegatedQuery<T>(
+        Guid crids, string query, ISqlReader.DelegateReader<T> delegateReader,
+        TableAliases? aliases = null,
         CustomizeCommandDelegate? customizeDelegate = null) where T : new()
     {
         if (m_data == null)
             throw new InvalidOperationException("no data for sim");
 
-        if (aliases != null)
-            query = SQLite.ExpandAliasesProperly(query, aliases);
+        query = aliases?.ExpandAliases(query) ?? query;
 
         if (m_data == null)
             throw new InvalidOperationException("no data for sim");
@@ -87,10 +91,9 @@ public class SqlSim: ISql
         throw new InvalidOperationException($"no match for query {query}");
     }
 
-    public int NExecuteScalar(string query, Dictionary<string, string>? aliases = null)
+    public int NExecuteScalar(string query, TableAliases? aliases = null)
     {
-        if (aliases != null)
-            query = SQLite.ExpandAliasesProperly(query, aliases);
+        query = aliases?.ExpandAliases(query) ?? query;
 
         if (m_data == null)
             throw new InvalidOperationException("no data for sim");
@@ -113,10 +116,13 @@ public class SqlSim: ISql
 
         throw new InvalidOperationException("no match for query");
     }
+
     public int NExecuteScalar(SqlCommandTextInit cmdText)
     {
         return NExecuteScalar(cmdText.CommandText, cmdText.Aliases);
     }
+
+    public DateTime DttmExecuteScalar(SqlCommandTextInit cmdText) => throw new NotImplementedException();
 
     public void BeginExclusiveTransaction()
     {

@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Forms.VisualStyles;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 
@@ -87,6 +85,26 @@ public class MediaStack: INotifyPropertyChanged
         set => SetField(ref m_items, value);
     }
 
+    public MediaStackItem? FindMediaInStack(Guid itemId)
+    {
+        foreach (MediaStackItem item in m_items)
+        {
+            if (item.MediaId == itemId)
+                return item;
+        }
+
+        return null;
+    }
+
+    public void RemoveItem(MediaStackItem item)
+    {
+        m_items.Remove(item);
+        if (m_items.Count == 0)
+            PendingOp = Op.Delete;
+        else if (PendingOp == Op.None)
+            PendingOp = Op.Update;
+    }
+
     public void PushItem(MediaStackItem item)
     {
         m_items.Add(item);
@@ -101,6 +119,30 @@ public class MediaStack: INotifyPropertyChanged
 
         PushItem(newStackItem);
         return newStackItem;
+    }
+
+    public Op CompareTo(MediaStack? right)
+    {
+        if (right == null)
+            return Op.Create;
+
+        Dictionary<Guid, MediaStackItem> mapItems = new();
+
+        foreach (MediaStackItem item in right.Items)
+        {
+            mapItems.Add(item.MediaId, item);
+        }
+
+        foreach (MediaStackItem item in m_items)
+        {
+            if (!mapItems.TryGetValue(item.MediaId, out MediaStackItem? otherItem))
+                return Op.Update;
+
+            if (otherItem != item)
+                return Op.Update;
+        }
+
+        return Op.None;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -1,23 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using NUnit.Framework;
 using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -92,30 +82,39 @@ public partial class MediaTagMigrateSummary : UserControl
             if (metadataItem.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
-                MetatagMatcher.CreateIdMatch(metadataItem.CatID.Value));
+            Metatag? metatag = App.State.MetatagSchema.GetMetatagFromId(metadataItem.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {metadataItem.CatID.Value}");
 
-            // see if this tag is already set on the media item
-            if (catItem.Tags.TryGetValue(metadataItem.CatID.Value, out MediaTag? existing))
-            {
-                // check to see if the values are the same (we won't change them, we will just log it
-                // and move on
-                if (existing.Value != null && existing.Value != mediaTagValue.Value)
-                {
-                    MainWindow.LogForApp(
-                        EventType.Warning,
-                        $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {mediaTagValue.Value}");
-                }
+            AddMetadataValueItemIfNotPresent(item, catItem, metatag, mediaTagValue.Value);
+        }
+    }
 
-                // since we already have the tag, just skip
-                continue;
+    void AddMetadataValueItemIfNotPresent(PseMediaItem item, MediaItem catItem, Metatag metatag, string value)
+    {
+        // see if this tag is already set on the media item
+        if (catItem.Tags.TryGetValue(metatag.ID, out MediaTag? existing))
+        {
+            bool identical = true;
+
+            // check to see if the values are the same (we won't change them, we will just log it
+            // and move on
+            if (existing.Value != null && existing.Value != value)
+            {
+                MainWindow.LogForApp(
+                EventType.Warning,
+                    $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {value}");
+                identical = false;
             }
 
-            m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, mediaTagValue.Value));
+            // since we already have the tag, just skip (except for import date -- we want to override the
+            // value that import prepopulated)
+            if (metatag.ID != BuiltinTags.s_ImportDateID || identical == true)
+                return;
         }
+
+        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, value));
     }
 
     void AddMetatagsToMirationItems(PseMediaItem item, MediaItem catItem)
@@ -125,8 +124,7 @@ public partial class MediaTagMigrateSummary : UserControl
             if (mediaTagValue.CatID == null)
                 continue;
 
-            Metatag? metatag = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(
-                MetatagMatcher.CreateIdMatch(mediaTagValue.CatID.Value));
+            Metatag? metatag = App.State.MetatagSchema.GetMetatagFromId(mediaTagValue.CatID.Value);
 
             if (metatag == null)
                 throw new CatExceptionInternalFailure($"can't find metatag {mediaTagValue.CatID.Value}");
@@ -141,9 +139,14 @@ public partial class MediaTagMigrateSummary : UserControl
 
     void AddBuiltinDataToMigrationItems(PseMediaItem item, MediaItem catItem)
     {
-        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_Width, item.ImageWidth.ToString()));
-        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_Height, item.ImageHeight.ToString()));
-        m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, BuiltinTags.s_OriginalFileDate, item.FileDateOriginal.ToUniversalTime().ToString("u")));
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Width, item.ImageWidth.ToString());
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Height, item.ImageHeight.ToString());
+        if (item.FileDateOriginal == null)
+            MainWindow.LogForApp(EventType.Error, $"no original media data for item: {item.FullPath}");
+        else
+            AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_OriginalMediaDate, item.FileDateOriginal.Value.ToUniversalTime().ToString("u"));
+
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_ImportDate, item.ImportDate.ToUniversalTime().ToString("u"));
     }
 
     void AddVersionStacksToMigrationItems(PseMediaItem item, MediaItem catItem)
@@ -162,7 +165,7 @@ public partial class MediaTagMigrateSummary : UserControl
                 continue;
             }
 
-            MediaItem catItem = MainWindow._AppState.Catalog.Media.Items[item.CatID];
+            MediaItem catItem = App.State.Catalog.GetMediaFromId(item.CatID);
 
             AddMetadataValuesToMigrationItems(item, catItem);
             AddMetatagsToMirationItems(item, catItem);
@@ -178,7 +181,7 @@ public partial class MediaTagMigrateSummary : UserControl
     ----------------------------------------------------------------------------*/
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        MetatagSchemaDiff diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
+        MetatagSchemaDiff diff = App.State.MetatagSchema.BuildDiffForSchemas();
 
         if (!diff.IsEmpty)
         {
@@ -191,14 +194,16 @@ public partial class MediaTagMigrateSummary : UserControl
 
         foreach (MediaTagMigrateItem item in checkedItems)
         {
-            if (!MainWindow._AppState.Catalog.Media.Items.TryGetValue(item.MediaID, out MediaItem catItem))
+            if (!App.State.Catalog.TryGetMedia(item.MediaID, out MediaItem? catItem))
             {
                 MainWindow.LogForApp(EventType.Warning, $"can't find media item {item}");
             }
+            else
+            {
+                MediaTag tag = new MediaTag(item.MetatagSetting, item.Value);
 
-            MediaTag tag = new MediaTag(item.MetatagSetting, item.Value);
-
-            catItem.FAddOrUpdateMediaTag(tag);
+                catItem.FAddOrUpdateMediaTag(tag, false);
+            }
         }
 
         BuildSummary();

@@ -1,6 +1,5 @@
 ﻿using System;
-using Thetacat.Model.Metatags;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 

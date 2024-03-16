@@ -14,6 +14,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlCore", "..\liblet\cs\TCore.SqlCore\SqlCore\SqlCore.csproj", "{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLiteClient", "..\liblet\cs\TCore.SQLiteClient\SQLiteClient\SQLiteClient.csproj", "{65EAAF0A-1398-4793-992A-39616E16E421}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sql", "..\liblet\cs\sql\sql.csproj", "{B9037ADE-F787-431B-B309-46219A06BF79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,9 +39,32 @@ Global
 		{6289E08C-C080-43A3-B111-898552F529A5}.ProdDebug|Any CPU.Build.0 = Debug|Any CPU
 		{6289E08C-C080-43A3-B111-898552F529A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6289E08C-C080-43A3-B111-898552F529A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.ProdDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.ProdDebug|Any CPU.Build.0 = Debug|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.ProdDebug|Any CPU.ActiveCfg = ProdDebug|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.ProdDebug|Any CPU.Build.0 = ProdDebug|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65EAAF0A-1398-4793-992A-39616E16E421}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.ProdDebug|Any CPU.ActiveCfg = ProdDebug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.ProdDebug|Any CPU.Build.0 = ProdDebug|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9037ADE-F787-431B-B309-46219A06BF79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A6A49872-A1AD-48CE-953D-1BD9E1FE1F27} = {78E5D325-20FF-4340-9463-3D72DE06AF5C}
+		{65EAAF0A-1398-4793-992A-39616E16E421} = {78E5D325-20FF-4340-9463-3D72DE06AF5C}
+		{B9037ADE-F787-431B-B309-46219A06BF79} = {78E5D325-20FF-4340-9463-3D72DE06AF5C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52762D7C-92EE-4EA4-94A0-6563828854D5}

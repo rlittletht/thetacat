@@ -1,0 +1,138 @@
+﻿<Window x:Class="Thetacat.Import.UI.MediaImport"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Import.UI"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
+        mc:Ignorable="d"
+        Title="MediaImport" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="7*" />
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="Source Directories">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="64" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0">Path:</TextBlock>
+                        <TextBox Grid.Column="1" Text="{Binding Path=SourcePath}" />
+                        <Button Grid.Column="2" Content="..." Click="BrowseForPath" />
+                        <Button Grid.Column="23" Content="Set" Click="SetSourcePath" />
+                    </Grid>
+                    <TreeView ItemsSource="{Binding Path=Nodes}" Name="Sources" Grid.Row="1">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <DockPanel LastChildFill="True">
+                                    <CheckBox IsChecked="{Binding Path=Checked}" Click="OnCheckboxClick" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Name}" Margin="2,0,0,0" />
+                                </DockPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                    <Button Content="Add to import" Click="AddToImport" Grid.Row="2" />
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="Items to import" Grid.Column="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="8*" />
+                        <RowDefinition Height="2*" />
+                    </Grid.RowDefinitions>
+                    <TreeView ItemsSource="{Binding Path=ImportItems}" Name="Items" SelectedItemChanged="ImportItemSelectionChanged">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate DataType="{x:Type local:ImportNode}"
+                                                      ItemsSource="{Binding Children}">
+                                <DockPanel LastChildFill="True">
+                                    <CheckBox IsChecked="{Binding Path=Checked}" Click="OnCheckboxClick" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding MediaId}" Margin="10,0,0,0" />
+                                    <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
+                                </DockPanel>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <ListBox Name="ExtensionList" ItemsSource="{Binding Path=FileExtensions}"
+                                     SelectionMode="Multiple" Grid.Row="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <StackPanel Orientation="Horizontal" Grid.Row="1">
+                                <Button Content="Uncheck" Click="UncheckSelectedExtensions" Grid.Row="2" Width="56"/>
+                                <Button Content="Check" Click="CheckSelectedExtensions" Grid.Row="2" Width="56"/>
+                            </StackPanel>
+                        </Grid>
+                        <Popup Name="VirtualRootPickerPopup"
+                               PlacementTarget="{Binding ElementName=SelectVirtualRootButton}">
+                            <controls:BackedTreeView Checkable="False"
+                                                     x:Name="VirtualRootTree"
+                                                     SelectedItemChanged="DoSelectedVirtualRootChanged" />
+                        </Popup>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                            <TextBlock>Virtual path root</TextBlock>
+                            <Button Content="Select Root" Click="SelectVirtualRoot" Name="SelectVirtualRootButton" />
+                            <ComboBox ItemsSource="{Binding Path=VirtualPathRoots}" SelectedItem="{Binding Path=VirtualPathRoot}" Name="VirtualPathRootsComboBox"/>
+                            <TextBlock>Virtual path root suffix</TextBlock>
+                           <TextBox Text="{Binding Path=VirtualPathSuffix}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <TextBlock>Preview VirtualPath:</TextBlock>
+                            <TextBox Text="{Binding Path=VirtualPathPreview}" />
+                            <CheckBox Content="Include parent directory in virtual path?"
+                                      IsChecked="{Binding Path=IncludeParentDirInVirtualPath}" />
+                            <CheckBox Content="Include subdirectories in virtual path?"
+                                      IsChecked="{Binding Path=IncludeSubdirInVirtualPath}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
+                            <Button Content="Check Existing" Click="SearchForImportedItems" />
+                            <Button Content="Import" Click="DoImport"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent" VerticalAlignment="Bottom">
+                            <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        <Grid Grid.Row="2" Height="32">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="32" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+        </Grid>
+    </Grid>
+</Window>

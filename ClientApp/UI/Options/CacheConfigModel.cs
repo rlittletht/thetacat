@@ -2,18 +2,34 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
+using System.Windows;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 
 namespace Thetacat.UI.Options;
 
 public class CacheConfigModel: INotifyPropertyChanged
 {
+    public bool CreateNewWorkgroup
+    {
+        get => m_createNewWorkgroup;
+        set => SetField(ref m_createNewWorkgroup, value);
+    }
+
+    public ProfileOptions? ProfileOptions
+    {
+        get => m_profileOptions;
+        set => SetField(ref m_profileOptions, value);
+    }
+
+    public string DerivativeLocation
+    {
+        get => m_derivativeLocation;
+        set => SetField(ref m_derivativeLocation, value);
+    }
+
     public class CacheTypeItem
     {
         public Cache.CacheType Type;
@@ -77,6 +93,9 @@ public class CacheConfigModel: INotifyPropertyChanged
     private CacheTypeItem m_cacheType = s_cacheTypePrivate;
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
+    private string m_derivativeLocation = string.Empty;
+    private ProfileOptions? m_profileOptions;
+    private bool m_createNewWorkgroup;
 
     public string WorkgroupCacheRoot
     {
@@ -129,16 +148,17 @@ public class CacheConfigModel: INotifyPropertyChanged
         return true;
     }
 
-    public void PopulateWorkgroups()
+    public void PopulateWorkgroups(Guid catalogID)
     {
-        foreach (ServiceWorkgroup workgroup in ServiceInterop.GetAvailableWorkgroups())
+        Workgroups.Clear();
+
+        foreach (ServiceWorkgroup workgroup in ServiceInterop.GetAvailableWorkgroups(catalogID))
         {
-            Workgroups.Clear();
             Workgroups.Add(new WorkgroupItem(workgroup));
         }
     }
 
-    WorkgroupItem GetWorkgroupInfoFromId(Guid id)
+    WorkgroupItem? GetWorkgroupInfoFromId(Guid id)
     {
         foreach (WorkgroupItem workgroup in m_workgroups)
         {
@@ -146,7 +166,8 @@ public class CacheConfigModel: INotifyPropertyChanged
                 return workgroup;
         }
 
-        throw new CatExceptionServiceDataFailure($"workgroup {id} not found but we knew about it?");
+        MessageBox.Show($"workgroup {id} not found but we knew about it?");
+        return null;
     }
 
     public Guid? GetWorkgroupIdFromName(string name)
@@ -171,17 +192,31 @@ public class CacheConfigModel: INotifyPropertyChanged
             WorkgroupName = string.Empty;
             WorkgroupServerPath = string.Empty;
             return;
+        } 
+
+        if (string.IsNullOrWhiteSpace(App.State.ActiveProfile.SqlConnection))
+            return;
+
+        try
+        {
+            WorkgroupItem? workgroup = GetWorkgroupInfoFromId(id.Value);
+
+            if (workgroup == null)
+                return;
+
+            if (CurrentWorkgroup != workgroup)
+                CurrentWorkgroup = workgroup;
+
+            WorkgroupItemName = workgroup.Workgroup?.Name ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupID = workgroup.Workgroup.ID?.ToString() ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupCacheRoot = workgroup.Workgroup.CacheRoot ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupName = workgroup.Workgroup.Name ?? throw new CatExceptionServiceDataFailure();
+            WorkgroupServerPath = workgroup.Workgroup.ServerPath ?? throw new CatExceptionServiceDataFailure();
         }
-        WorkgroupItem workgroup = GetWorkgroupInfoFromId(id.Value);
-
-        if (CurrentWorkgroup != workgroup)
-            CurrentWorkgroup = workgroup;
-
-        WorkgroupItemName = workgroup.Workgroup?.Name ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupID = workgroup.Workgroup.ID?.ToString() ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupCacheRoot = workgroup.Workgroup.CacheRoot ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupName = workgroup.Workgroup.Name ?? throw new CatExceptionServiceDataFailure();
-        WorkgroupServerPath = workgroup.Workgroup.ServerPath ?? throw new CatExceptionServiceDataFailure();
+        catch (CatExceptionNoSqlConnection)
+        {
+            return;
+        }
     }
 
     public void SetCacheTypeFromString(string type)

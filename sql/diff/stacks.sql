@@ -1,0 +1,1 @@
+select * from tcat_stacks order by id

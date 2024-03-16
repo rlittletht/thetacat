@@ -3,8 +3,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Metadata.UI;
 
 namespace Thetacat.Util;
 

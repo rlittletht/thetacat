@@ -1,4 +1,4 @@
-﻿using Thetacat.TCore.TcSqlLite;
+﻿using TCore.SqlCore;
 
 namespace Tests.Model.Sql;
 
@@ -13,6 +13,7 @@ public class SqlCommandSim:  ISqlCommand
     }
 
     public string CommandText { get; set; }
+    public int CommandTimeout { get; set; }
     public ISqlTransaction? Transaction { get; set; }
     public ISqlReader ExecuteReader() => throw new NotImplementedException();
 

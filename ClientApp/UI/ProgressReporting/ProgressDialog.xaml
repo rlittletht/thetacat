@@ -1,0 +1,13 @@
+﻿<Window x:Class="Thetacat.UI.ProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.UI"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterOwner"
+        Title="ProgressDialog" Height="100" Width="300">
+    <Grid Margin="20">
+        <ProgressBar Minimum="0" Maximum="1000" Value="{Binding Path=ProgressValue}" IsIndeterminate="{Binding Path=IsIndeterminate}"/>
+    </Grid>
+</Window>

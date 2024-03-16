@@ -2,18 +2,17 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media.Animation;
 using HeyRed.Mime;
-using NUnit.Framework.Internal.Execution;
 using TCore;
+using TCore.SqlCore;
 using Thetacat.Azure;
 using Thetacat.Logging;
 using Thetacat.Model.Workgroups;
-using Thetacat.ServiceClient;
+using Thetacat.TcSettings;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.Util;
 
 namespace Thetacat.Model;
@@ -27,7 +26,7 @@ public class Cache: ICache
         Unknown
     }
 
-    public virtual CacheType Type { get; }
+    public virtual CacheType Type { get; private set; }
 
     public virtual IWorkgroup _Workgroup
     {
@@ -40,7 +39,7 @@ public class Cache: ICache
         }
     }
 
-    public PathSegment LocalPathToCacheRoot { get; }
+    public PathSegment LocalPathToCacheRoot { get; private set; }
 
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; } = new ConcurrentDictionary<Guid, ICacheEntry>();
 
@@ -75,7 +74,7 @@ public class Cache: ICache
         throw new ArgumentException("bad cache type argument");
     }
 
-    void ConnectToWorkgroupCache(TcSettings.TcSettings settings)
+    void ConnectToWorkgroupCache(TcSettings.Profile settings)
     {
         if (Type != CacheType.Workgroup)
             throw new InvalidOperationException("intializing a non-workgroup");
@@ -85,9 +84,9 @@ public class Cache: ICache
 
         try
         {
-            m_workgroup = new Workgroup(id);
+            m_workgroup = new Workgroup(settings.CatalogID, id);
         }
-        catch (TcSqlExceptionNoResults e)
+        catch (SqlExceptionNoResults e)
         {
             throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
         }
@@ -103,6 +102,28 @@ public class Cache: ICache
         return Entries.ContainsKey(id);
     }
 
+    public string? TryGetCachedFullPath(Guid id)
+    {
+        if (!Entries.TryGetValue(id, out ICacheEntry? value))
+            return null;
+
+        return GetFullLocalPath(value.Path);
+    }
+
+    public void DeleteMediaItem(Guid id)
+    {
+        if (Entries.TryGetValue(id, out ICacheEntry? entry))
+        {
+            string localPath = GetFullLocalPath(entry.Path);
+
+            if (File.Exists(localPath))
+                File.Delete(localPath);
+
+            Entries.TryRemove(id, out ICacheEntry? _);
+            _Workgroup.DeleteMediaItem(id);
+        }
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: Cache
         %%Qualified: Thetacat.Model.Cache.Cache
@@ -114,8 +135,25 @@ public class Cache: ICache
 
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
-    public Cache(TcSettings.TcSettings settings)
+#pragma warning disable CS8618 // we set these in a method
+    public Cache(TcSettings.Profile? settings)
     {
+        ResetCache(settings);
+    }
+#pragma warning restore CS8618
+
+    public void ResetCache(Profile? settings)
+    {
+        Entries.Clear();
+
+        if (settings == null)
+        {
+            Type = CacheType.Unknown;
+            LocalPathToCacheRoot = PathSegment.Empty;
+            m_workgroup = null;
+            return;
+        }
+
         CacheType cacheType = CacheTypeFromString(settings.CacheType);
 
         Type = cacheType;
@@ -129,7 +167,12 @@ public class Cache: ICache
             }
             catch (CatExceptionWorkgroupNotFound)
             {
-                MessageBox.Show("Workgroup id not found. Reconnect to workgroup");
+                MessageBox.Show($"Failed to connect to workgroup {settings.WorkgroupName}.");
+                LocalPathToCacheRoot = new PathSegment();
+            }
+            catch (CatExceptionNoSqlConnection)
+            {
+                MessageBox.Show($"Failed to connect to workgroup. No SQL connection available.");
                 LocalPathToCacheRoot = new PathSegment();
             }
         }
@@ -166,7 +209,7 @@ public class Cache: ICache
 
         // if the virtual path is rooted, we can't use it
         // just use a guid.
-        if (Path.IsPathRooted(item.VirtualPath.Local))
+        if (Path.IsPathRooted(item.VirtualPath.Local) || item.VirtualPath == PathSegment.Empty)
         {
             return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
         }
@@ -190,7 +233,7 @@ public class Cache: ICache
         return item.VirtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void QueueCacheDownloads(int chunkSize)
+    public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
     {
         if (Type != CacheType.Workgroup)
         {
@@ -214,10 +257,10 @@ public class Cache: ICache
             {
                 // add this to our queue
                 entry.Value.LocalPending = true;
-                MediaItem item = MainWindow._AppState.Catalog.Media.Items[entry.Key];
+                MediaItem item = App.State.Catalog.GetMediaFromId(entry.Key);
                 item.IsCachePending = true;
                 m_cacheQueue.Enqueue(item);
-                chunkSize--;    // since we just added one
+                chunkSize--; // since we just added one
             }
         }
 
@@ -225,14 +268,19 @@ public class Cache: ICache
             return;
 
         // now let's stake our claim to some items we're going to cache
-        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueue(chunkSize);
-        _Workgroup.PushChangesToDatabase(itemsForCache);
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, chunkSize);
+        _Workgroup.PushChangesToDatabaseWithCache(cache, itemsForCache);
 
         // lastly, queue all the items left in itemsForCache
         foreach (MediaItem item in itemsForCache.Values)
         {
             m_cacheQueue.Enqueue(item);
         }
+    }
+
+    public void QueueCacheDownloads(int chunkSize)
+    {
+        QueueCacheDownloadsFromMedia(App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
     }
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
@@ -264,7 +312,7 @@ public class Cache: ICache
     {
         // we still have to make an entry in the cache db
         // since we are manually caching it right now, set the time to now and pending to false)
-        _Workgroup.CreateCacheEntryForItem(item, DateTime.Now, false);
+        _Workgroup.CreateCacheEntryForItem(App.State.Cache, item, DateTime.Now, false);
         // now get the destination path it wants us to use
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");
@@ -282,36 +330,92 @@ public class Cache: ICache
         File.Copy(importSource.Local, fullLocalPath);
     }
 
-    public async Task DoForegroundCache(int chunkSize)
+    public bool DoCacheWork(IProgressReport progressReport, int chunkSize)
     {
-        AzureCat.EnsureCreated(MainWindow._AppState.AzureStorageAccount);
+        // this is an indeterminate progress report, so just report infinately
+
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
+        progressReport.SetIndeterminate();
 
         QueueCacheDownloads(chunkSize);
 
-        // and now download
-        while (m_cacheQueue.TryDequeue(out MediaItem? item))
+        while (m_cacheQueue.IsEmpty == false)
         {
-            ICacheEntry cacheEntry = Entries[item.ID];
-
-            if (cacheEntry.LocalPending)
+            // and now download what we queued
+            while (m_cacheQueue.TryDequeue(out MediaItem? item))
             {
-                // first thing, unmark it since its no longer in our queue to download
-                // (if it fails, we will want to do it again...)
-                cacheEntry.LocalPending = false;
-                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
-                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
-                {
+                ICacheEntry cacheEntry = Entries[item.ID];
 
-                    item.LocalPath = fullLocalPath;
-                    item.IsCachePending = false;
+                if (cacheEntry.LocalPending)
+                {
+                    // first thing, unmark it since its no longer in our queue to download
+                    // (if it fails, we will want to do it again...)
                     cacheEntry.LocalPending = false;
-                    cacheEntry.CachedDate = DateTime.Now;
-                    item.NotifyCacheStatusChanged();
+                    string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
+                    Task<bool> task = FEnsureMediaItemDownloadedToCache(item, fullLocalPath);
+
+                    task.Wait();
+                    if (task.IsCanceled || task.IsFaulted)
+                    {
+                        MainWindow.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
+                        _Workgroup.PushChangesToDatabase(null);
+                        return false;
+                    }
+                    if (task.Result)
+                    {
+
+                        item.LocalPath = fullLocalPath;
+                        item.IsCachePending = false;
+                        cacheEntry.LocalPending = false;
+                        cacheEntry.CachedDate = DateTime.Now;
+                        item.NotifyCacheStatusChanged();
+                    }
                 }
             }
-        }
 
-        _Workgroup.PushChangesToDatabase(null);
+            _Workgroup.PushChangesToDatabase(null);
+
+            // and do it again, until we don't have any left to cache
+            QueueCacheDownloads(chunkSize);
+        }
+        progressReport.WorkCompleted();
+        return true;
+    }
+
+    public void StartBackgroundCaching(int chunkSize)
+    {
+        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
+
+        App.State.AddBackgroundWork(
+            "Populating cache from Azure",
+            (progress) => DoCacheWork(progress, chunkSize));
+//
+//        QueueCacheDownloads(chunkSize);
+//
+//        // and now download
+//        while (m_cacheQueue.TryDequeue(out MediaItem? item))
+//        {
+//            ICacheEntry cacheEntry = Entries[item.ID];
+//
+//            if (cacheEntry.LocalPending)
+//            {
+//                // first thing, unmark it since its no longer in our queue to download
+//                // (if it fails, we will want to do it again...)
+//                cacheEntry.LocalPending = false;
+//                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
+//                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
+//                {
+//
+//                    item.LocalPath = fullLocalPath;
+//                    item.IsCachePending = false;
+//                    cacheEntry.LocalPending = false;
+//                    cacheEntry.CachedDate = DateTime.Now;
+//                    item.NotifyCacheStatusChanged();
+//                }
+//            }
+//        }
+//
+//        _Workgroup.PushChangesToDatabase(null);
     }
 
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)

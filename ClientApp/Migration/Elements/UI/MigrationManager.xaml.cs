@@ -1,26 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Thetacat.Migration.Elements.Media;
-using Thetacat.Migration.Elements.Versions;
-using Thetacat.ServiceClient.LocalService;
-using Thetacat.Types;
+using Thetacat.ServiceClient.LocalDatabase;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -75,7 +56,7 @@ public partial class MigrationManager : Window
             ReloadSchemasForTabs);
 
         BuildMetadataReportFromDatabase(database);
-        MainWindow._AppState.RegisterWindowPlace(this, "ElementsMigrationManager");
+        App.State.RegisterWindowPlace(this, "ElementsMigrationManager");
     }
 
     private void OnMetatagMigrateSummaryTabSelected(object sender, RoutedEventArgs e)

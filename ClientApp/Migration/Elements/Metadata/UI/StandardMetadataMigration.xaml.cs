@@ -1,30 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Model.Metatags;
-using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
+using Thetacat.Metatags.Model;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Standards;
-using Thetacat.Types;
 using Thetacat.Util;
-using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -55,7 +38,7 @@ public partial class StandardMetadataMigration : UserControl
 
     IMetatagTreeItem? GetRootForMetadataItem(PseMetadata item)
     {
-        return MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+        return App.State.MetatagSchema.WorkingTree.FindMatchingChild(
             MetatagTreeItemMatcher.CreateNameMatch(MetatagStandards.GetMetadataRootFromStandardTag(item.StandardTag)),
             1);
     }
@@ -115,15 +98,15 @@ public partial class StandardMetadataMigration : UserControl
 
         metadataListView.ItemsSource = _Migrate.MetatagMigrate.MetadataSchema.MetadataItems;
 
-        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
-            MainWindow._AppState.RefreshMetatagSchema();
+        if (App.State.MetatagSchema.SchemaVersionWorking == 0)
+            App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
     }
 
     private void EditSelected(object sender, RoutedEventArgs e)
     {
         if (metadataListView.SelectedValue is PseMetadata metadata)
         {
-            DefineMetadataMap define = new(MainWindow._AppState, metadata.PseIdentifier);
+            DefineMetadataMap define = new(App.State, metadata.PseIdentifier);
 
             bool? defined = define.ShowDialog();
 
@@ -139,7 +122,7 @@ public partial class StandardMetadataMigration : UserControl
 
     private void DoMigrate(object sender, RoutedEventArgs e)
     {
-        if (MainWindow._AppState?.MetatagSchema == null || _Migrate == null)
+        if (App.State?.MetatagSchema == null || _Migrate == null)
             throw new Exception("appstate or migrate uninitialized");
 
         foreach (PseMetadata? item in CheckableListViewSupport<PseMetadata>.GetCheckedItems(metadataListView))
@@ -150,7 +133,7 @@ public partial class StandardMetadataMigration : UserControl
             if (item.CatID != null)
             {
                 // make sure its really there
-                if (MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(item.CatID.Value)) != null)
+                if (App.State.MetatagSchema.GetMetatagFromId(item.CatID.Value) != null)
                     continue;
 
                 Debug.Assert(false, "strange. we had a catid, but its not in the working schema??");
@@ -169,14 +152,14 @@ public partial class StandardMetadataMigration : UserControl
                 // otherwise this is a user-define element
                 standard = MetatagStandards.Standard.User;
                 string rootName = MetatagStandards.GetMetadataRootFromStandard(standard);
-                IMetatagTreeItem? userRoot = MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+                IMetatagTreeItem? userRoot = App.State.MetatagSchema.WorkingTree.FindMatchingChild(
                     MetatagTreeItemMatcher.CreateNameMatch(rootName),
                     1);
 
                 if (userRoot == null)
                 {
-                    MainWindow._AppState.MetatagSchema.AddNewStandardRoot(standard);
-                    userRoot = MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(
+                    App.State.MetatagSchema.AddNewStandardRoot(standard);
+                    userRoot = App.State.MetatagSchema.WorkingTree.FindMatchingChild(
                         MetatagTreeItemMatcher.CreateNameMatch(rootName),
                         1);
                 }
@@ -188,7 +171,7 @@ public partial class StandardMetadataMigration : UserControl
                 if (existing == null)
                 {
                     Metatag parentTag = Metatag.Create(Guid.Parse(userRoot.ID), item.StandardTag, item.StandardTag, MetatagStandards.Standard.User);
-                    MainWindow._AppState.MetatagSchema.AddMetatag(parentTag);
+                    App.State.MetatagSchema.AddMetatag(parentTag);
                     existing = userRoot.FindMatchingChild(MetatagTreeItemMatcher.CreateNameMatch(item.StandardTag), -1);
                 }
 
@@ -200,7 +183,7 @@ public partial class StandardMetadataMigration : UserControl
 
                 if (root == null)
                 {
-                    MainWindow._AppState.MetatagSchema.AddNewStandardRoot(standard);
+                    App.State.MetatagSchema.AddNewStandardRoot(standard);
                     root = GetRootForMetadataItem(item);
                     if (root == null)
                         throw new Exception("failed to create standard root");
@@ -225,7 +208,7 @@ public partial class StandardMetadataMigration : UserControl
                    .SetStandard(standard)
                    .Build();
 
-            MainWindow._AppState.MetatagSchema.AddMetatag(newTag);
+            App.State.MetatagSchema.AddMetatag(newTag);
             item.CatID = newTag.ID;
 
         }

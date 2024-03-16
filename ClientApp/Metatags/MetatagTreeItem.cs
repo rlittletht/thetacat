@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Thetacat.Model.Metatags;
+using System.Runtime.CompilerServices;
+using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
 namespace Thetacat.Metatags;
@@ -10,6 +11,7 @@ public class MetatagTreeItem: IMetatagTreeItem
 {
     private Metatag? m_metatag;
 
+    public bool? Checked { get; set; }
     public bool IsLocalOnly { get; set; }
     public Guid ItemId => m_metatag?.ID ?? Guid.Empty;
     public Guid? ParentId => m_metatag?.Parent;
@@ -54,6 +56,44 @@ public class MetatagTreeItem: IMetatagTreeItem
         Children.Add(treeItem);
     }
 
+    public static void SeekAndDelete(IMetatagTreeItem tree, HashSet<string> delete)
+    {
+        for (int i = tree.Children.Count - 1; i >= 0; i--)
+        {
+            if (delete.Contains(tree.Children[i].ID))
+            {
+                tree.Children.RemoveAt(i);
+                continue;
+            }
+
+            tree.Children[i].SeekAndDelete(delete);
+        }
+    }
+
+    public static bool FilterTreeToMatches(IMetatagTreeItem tree, MetatagTreeItemMatcher matcher)
+    {
+        bool fMatched = matcher.IsMatch(tree);
+
+        // even if we matched, we might have other matches in other children
+        for (int i = tree.Children.Count - 1; i >= 0; i--)
+        {
+            if (!tree.Children[i].FilterTreeToMatches(matcher))
+            {
+                // this item didn't have a match. delete it
+                tree.Children.RemoveAt(i);
+            }
+            else
+            {
+                fMatched = true;
+            }
+        }
+
+        return fMatched; // if we matched this item, or any of our descendents
+    }
+
+    public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
+    public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
+
     /*----------------------------------------------------------------------------
         %%Function: FindMatchingChild
         %%Qualified: Thetacat.Metatags.MetatagTree.FindMatchingChild
@@ -80,5 +120,57 @@ public class MetatagTreeItem: IMetatagTreeItem
         }
 
         return null;
+    }
+
+    public static IMetatagTreeItem? FindParentOfChild(IMetatagTreeItem item, IMetatagMatcher<IMetatagTreeItem> treeItemMatcher)
+    {
+        if (treeItemMatcher.IsMatch(item))
+            throw new CatExceptionInternalFailure("should never match <this> when looking for parent");
+
+        foreach (IMetatagTreeItem child in item.Children)
+        {
+            if (treeItemMatcher.IsMatch(child))
+                return item;
+
+            IMetatagTreeItem? parent = child.FindParentOfChild(treeItemMatcher);
+
+            if (parent != null)
+                return parent;
+        }
+
+        return null;
+    }
+
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => FindParentOfChild(this, treeItemMatcher);
+
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    {
+        MetatagTreeItem newItem =
+            new MetatagTreeItem()
+            {
+                m_metatag = m_metatag
+            };
+
+        cloneDelegate(newItem);
+        foreach (IMetatagTreeItem item in Children)
+        {
+            newItem.Children.Add(item.Clone(cloneDelegate));
+        }
+
+        return newItem;
+    }
+
+    public static void Preorder(IMetatagTreeItem item, IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
+    {
+        visit(item, parent, depth);
+        foreach (IMetatagTreeItem child in item.Children)
+        {
+            child.Preorder(item, visit, depth + 1);
+        }
+    }
+
+    public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
+    {
+        Preorder(this, parent, visit, depth);
     }
 }

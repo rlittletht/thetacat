@@ -1,31 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Forms.VisualStyles;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Emgu.CV.Features2D;
-using Thetacat.Controls;
 using Thetacat.Metatags;
-using Thetacat.Model.Metatags;
-using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
+using Thetacat.Metatags.Model;
+using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
-using MetatagTree = Thetacat.Metatags.MetatagTree;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -71,8 +54,8 @@ public partial class UserMetatagMigration : UserControl
     {
         m_migrate = migrate;
 
-        if (MainWindow._AppState.MetatagSchema.SchemaVersionWorking == 0)
-            MainWindow._AppState.RefreshMetatagSchema();
+        if (App.State.MetatagSchema.SchemaVersionWorking == 0)
+            App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
 
         m_migrate.MetatagMigrate.SetUserMetatags(db.ReadMetadataTags());
         MarkExistingMetatags();
@@ -156,14 +139,14 @@ public partial class UserMetatagMigration : UserControl
     public void MarkExistingMetatags()
     {
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag? userRoot = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
+        IMetatag? userRoot = App.State.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName));
 
         // if there's no user root, then no tags are already in the cat
         if (userRoot == null)
             return;
 
         IMetatagTreeItem? userTreeItem =
-            MainWindow._AppState.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
+            App.State.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(userRoot.ID.ToString()), -1);
 
         if (userTreeItem == null)
             throw new Exception("no user root found");
@@ -256,13 +239,13 @@ public partial class UserMetatagMigration : UserControl
         // its just a user control that takes two SchemaModels (base and new)
         // and build the diff ops and lists those in the control.
 
-        Metatags.MetatagTree liveTree = MainWindow._AppState.MetatagSchema.WorkingTree;
+        Metatags.MetatagTree liveTree = App.State.MetatagSchema.WorkingTree;
 
         // now figure out what items (if any) we have to add to the live schema
         List<PseMetatag> tagsToSync = _Migrate.MetatagMigrate.CollectDependentTags(liveTree, metatags);
         string userTagName = MetatagStandards.GetStandardsTagFromStandard(MetatagStandards.Standard.User);
-        IMetatag userRoot = MainWindow._AppState.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
-            ?? MainWindow._AppState.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
+        IMetatag userRoot = App.State.MetatagSchema.FindFirstMatchingItem(MetatagMatcher.CreateNameMatch(userTagName))
+            ?? App.State.MetatagSchema.AddNewStandardRoot(MetatagStandards.Standard.User);
 
         PseMetatagTree treeToSync = new(tagsToSync);
 
@@ -270,7 +253,7 @@ public partial class UserMetatagMigration : UserControl
 
         foreach (MetatagPair pair in tagsToInsert)
         {
-            MainWindow._AppState.MetatagSchema.AddMetatag(pair.Metatag);
+            App.State.MetatagSchema.AddMetatag(pair.Metatag);
             _Migrate.MetatagMigrate.GetMetatagFromID(int.Parse(pair.PseId)).CatID = pair.Metatag.ID;
         }
 

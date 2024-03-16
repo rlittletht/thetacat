@@ -1,13 +1,13 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework.Constraints;
+using Thetacat.Types;
 
 namespace Thetacat.Util;
 
 // this could also be a full path, but not necessarily
 public class PathSegment
 {
-    private string m_segment;
+    private readonly string m_segment;
     private string? m_local;
 
     public PathSegment()
@@ -15,15 +15,16 @@ public class PathSegment
         m_segment = string.Empty;
     }
 
-    public static PathSegment CreateForTest(string segmentIn, string? local)
+    public PathSegment(PathSegment segmentIn)
     {
-        PathSegment segment =
-            new()
-            {
-                m_segment = segmentIn,
-                m_local = local
-            };
-        return segment;
+        m_segment = segmentIn.m_segment;
+        m_local = segmentIn.m_local;
+    }
+
+    public PathSegment(string segmentIn, string? local)
+    {
+        m_segment = segmentIn;
+        m_local = local;
     }
 
     public PathSegment(string segment)
@@ -43,7 +44,11 @@ public class PathSegment
     {
         foreach (PathSegment path in paths)
         {
-            a = new PathSegment(Path.Join(a.Local, path.Local));
+            string pathLocal = path.Local;
+            if (pathLocal.StartsWith(".\\"))
+                pathLocal = pathLocal.Substring(2);
+
+            a = new PathSegment(Path.Join(a.Local, pathLocal));
         }
 
         return a;
@@ -55,10 +60,23 @@ public class PathSegment
 
         foreach (string path in paths)
         {
+            if (path == "." || path == ".\\")
+                continue;  // meaningless join
+
             segment = new PathSegment(Path.Join(segment.Local, path));
         }
 
         return segment;
+    }
+
+    public PathSegment Unroot()
+    {
+        PathSegment root = GetPathRoot(this);
+
+        if (root != PathSegment.Empty)
+            return GetRelativePath(root, this);
+
+        return this;
     }
 
     public PathSegment? GetPathRoot()
@@ -91,6 +109,16 @@ public class PathSegment
         return CreateFromString(Path.GetPathRoot(path));
     }
 
+    public static PathSegment GetPathDirectory(PathSegment path)
+    {
+        return CreateFromString(Path.GetDirectoryName(path));
+    }
+
+    public PathSegment GetPathDirectory()
+    {
+        return GetPathDirectory(this);
+    }
+
     public static implicit operator string(PathSegment path) => path.ToString();
 
     public static PathSegment Empty => new PathSegment(string.Empty);
@@ -108,11 +136,49 @@ public class PathSegment
 
     public PathSegment Clone()
     {
-        return new PathSegment()
-               {
-                   m_segment = m_segment,
-                   m_local = m_local
-               };
+        return new PathSegment(this);
+    }
+
+    public bool HasDirectory()
+    {
+        return m_segment.Contains("/");
+    }
+
+    public PathSegment? GetLeafItem()
+    {
+        int ichLim = m_segment.Length - 1;
+        int ich = m_segment.LastIndexOf('/', ichLim - 1);
+        if (ich == -1)
+            return null;
+
+        return new PathSegment(m_segment[(ich + 1)..(ichLim + 1)]);
+    }
+
+    public delegate bool TraverseDelegate(PathSegment segment);
+
+    /*----------------------------------------------------------------------------
+        %%Function: TraverseDirectories
+        %%Qualified: Thetacat.Util.PathSegment.TraverseDirectories
+
+        delegate should return false if we should not continue to traverse
+    ----------------------------------------------------------------------------*/
+    public void TraverseDirectories(TraverseDelegate traverseItem)
+    {
+        string? root = Path.GetPathRoot(Local);
+        string rootedDirectory = string.IsNullOrEmpty(root) ? Local : Path.GetRelativePath(root, Local);
+
+        PathSegment current = new(rootedDirectory);
+        while (current.HasDirectory())
+        {
+            if (!traverseItem(current))
+                return;
+
+            int ich = current.m_segment.IndexOf("/") + 1;
+
+            if (ich == -1)
+                throw new CatExceptionInternalFailure("no directory separator with a directory present?");
+            current = new(current.m_segment[ich..]);
+        }
     }
 
     public static bool operator ==(PathSegment? left, PathSegment? right)

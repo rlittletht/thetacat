@@ -16,6 +16,9 @@ public interface IWorkgroup
     public string FullyQualifiedPath { get; }
     public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries);
     public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count);
+    public Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(IEnumerable<MediaItem> mediaCollection, ICache cache, int count);
+    public void PushChangesToDatabaseWithCache(ICache cache, Dictionary<Guid, MediaItem>? itemsForCache);
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
-    public void CreateCacheEntryForItem(MediaItem item, DateTime? cachedDate, bool pending);
+    public void CreateCacheEntryForItem(ICache cache, MediaItem item, DateTime? cachedDate, bool pending);
+    public void DeleteMediaItem(Guid id);
 }

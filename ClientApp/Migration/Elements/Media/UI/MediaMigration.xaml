@@ -65,6 +65,7 @@
                         </StackPanel>
                         <Grid HorizontalAlignment="Right" Margin="0 4 0 5" Grid.Column="1">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="156" />
                                 <ColumnDefinition Width="108" />
                                 <ColumnDefinition Width="108" />
                                 <ColumnDefinition Width="108" />
@@ -75,16 +76,17 @@
                                         Margin="5 0 0 0" /> -->
                             <!--<Button Content="Show Count" IsDefault="True"
                                     Click="ShowCount" Grid.Column="3" Height="24" Margin="0 0 2 0" />-->
+                            <CheckBox Content="Use MD5 During Verify" IsChecked="{Binding Path=VerifyMD5}" Grid.Column="0" VerticalAlignment="Center"/>
                             <Button Content="Verify Paths" IsDefault="True"
-                                    Click="VerifyPaths" Grid.Column="0" Height="24" Margin="0 0 2 0" />
+                                    Click="VerifyPaths" Grid.Column="1" Height="24" Margin="0 0 2 0" />
                             <Button Content="Add To Catalog" IsDefault="True"
-                                    Click="MigrateToCatalog" Grid.Column="1" Height="24" Margin="2 0 0 0" />
+                                    Click="MigrateToCatalog" Grid.Column="2" Height="24" Margin="2 0 0 0" />
                             <Button Content="Migrate Metadata" IsDefault="True"
-                                    Click="MigrateMetadata" Grid.Column="2" Height="24" Margin="2 0 0 0" />
+                                    Click="MigrateMetadata" Grid.Column="3" Height="24" Margin="2 0 0 0" />
                             <controls:SpinnerSwirl x:Name="VerifyStatus" HorizontalAlignment="Left"
                                                    VerticalAlignment="Top" Margin="2,-1,0,0" Width="24"
-                                                   Grid.Column="3" Visibility="Collapsed" />
-                            <TextBlock x:Name="VerifyResult" Grid.Column="3" FontFamily="Segoe UI"
+                                                   Grid.Column="4" Visibility="Collapsed" />
+                            <TextBlock x:Name="VerifyResult" Grid.Column="4" FontFamily="Segoe UI"
                                        FontSize="15" FontWeight="Bold" Foreground="Black"
                                        VerticalAlignment="Center" HorizontalAlignment="Center">
                                 ?

@@ -3,18 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
 using MetadataExtractor;
-using MetadataExtractor.Formats.Xmp;
-using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -39,8 +32,10 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     public string VolumeName { get; set; } = string.Empty;
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
-    public DateTime FileDateOriginal { get; set; }
+    public DateTime? FileDateOriginal { get; set; }
+    public DateTime ImportDate { get; set; }
     public PathSegment? VerifiedPath { get; set; }
+    public PathSegment? VirtualPath => null;
 
     public bool InCatalog
     {
@@ -175,12 +170,15 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
     string GetFullyQualifiedForSlashed()
     {
-        return VerifiedPath?.ToString() ?? $"{VolumeName}/{FullPath}";
+        if (Path.IsPathRooted(FullPath))
+            return VerifiedPath?.ToString() ?? $"{VolumeName}{FullPath}";
+        else
+            return VerifiedPath?.ToString() ?? $"{VolumeName}/{FullPath}";
     }
 
     public string FullyQualifiedPath => VerifiedPath?.Local ?? new PathSegment(GetFullyQualifiedForSlashed()).Local;
 
-    public void UpdateCatalogStatus()
+    public void UpdateCatalogStatus(bool verifyMd5)
     {
         if (PathVerified != TriState.Yes)
             return;
@@ -188,7 +186,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (InCatalog)
             return;
 
-        MediaItem? item = MainWindow._AppState.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!);
+        MediaItem? item = App.State.Catalog.LookupItemFromVirtualPath(FullPath, VerifiedPath!, verifyMd5);
 
         if (item != null)
         {
@@ -198,7 +196,7 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         }
     }
 
-    public void CheckPath(Dictionary<string, string> subst)
+    public void CheckPath(Dictionary<string, string> subst, bool verifyMd5)
     {
         if (PathVerified == TriState.Yes)
             return;
@@ -207,7 +205,9 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
 
         foreach (string key in subst.Keys)
         {
-            newPath = newPath.Replace(key, subst[key]);
+            // don't double substitute if its already been done
+            if (!newPath.ToLowerInvariant().Contains(subst[key].ToLowerInvariant()))
+                newPath = newPath.Replace(key, subst[key]);
         }
 
         newPath = newPath.Replace("/", "\\");
@@ -220,10 +220,10 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
         if (PathVerified == TriState.Yes)
         {
             // see if we think we already have this item in our catalog
-            UpdateCatalogStatus();
+            UpdateCatalogStatus(verifyMd5);
         }
 
-        MainWindow.LogForAsync(EventType.Information, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}");
+        // MainWindow.LogForAsync(EventType.Information, $"verified path for {GetFullyQualifiedForSlashed()}=>{newPath}: {PathVerified}. InCatalog: {InCatalog}");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

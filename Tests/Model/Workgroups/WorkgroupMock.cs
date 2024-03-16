@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using TCore.SqlCore;
 using Thetacat.Model;
 using Thetacat.Model.Workgroups;
-using Thetacat.TCore.TcSqlLite;
 using Thetacat.Types;
 
 namespace Tests.Model.Workgroups;
@@ -39,6 +39,15 @@ public class WorkgroupMock : Workgroup, IWorkgroup
         ServiceWorkgroupMediaClock mediaClock = m_getMediaClockDelegate();
 
         UpdateFromWorkgroupMediaClock(entries, mediaClock);
+    }
+
+    public new Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(IEnumerable<MediaItem> mediaCollection, ICache cache, int count)
+    {
+        if (m_getNextItemsForQueueDelegate == null)
+            return base.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, count);
+
+        throw new NotImplementedException();
+        // return m_getNextItemsForQueueDelegate();
     }
 
     public new Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)

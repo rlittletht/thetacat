@@ -1,8 +1,10 @@
-﻿using Thetacat.Model;
-using Thetacat.Model.Metatags;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
+using Thetacat.Filtering;
+using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
-using Thetacat.Types.Parallel;
 
 namespace Tests.Model.Workgroups;
 
@@ -16,7 +18,7 @@ public class CatalogMock : ICatalog
 
         foreach (ServiceMediaItem item in items)
         {
-            m_media.Items.Add(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
+            m_media.Items.TryAdd(item.Id ?? throw new NullReferenceException(), new MediaItem(item));
         }
     }
 
@@ -26,20 +28,30 @@ public class CatalogMock : ICatalog
 
         foreach (MediaItem item in items)
         {
-            m_media.Items.Add(item.ID, item);
+            m_media.Items.TryAdd(item.ID, item);
         }
     }
 
-    public IMedia Media => m_media;
+    public Media Media => m_media;
+
+    public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
 
     public void AddNewMediaItem(MediaItem item)
     {
         throw new NotImplementedException();
     }
 
-    public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
+    public MediaItem GetMediaFromId(Guid id) => m_media.Items[id];
+    public MediaItem GetMediaFromId(string id) => m_media.Items[Guid.Parse(id)];
+    public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
 
-    public void PushPendingChanges()
+    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter) => throw new NotImplementedException();
+
+    public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
+
+    public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
         throw new NotImplementedException();
     }
@@ -49,12 +61,14 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
-    public void ReadFullCatalogFromServer(MetatagSchema schema)
+    public Task ReadFullCatalogFromServer(Guid catalogID, MetatagSchema schema)
     {
         throw new NotImplementedException();
     }
 
-    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath) => throw new NotImplementedException();
+    public MediaItem? LookupItemFromVirtualPath(string virtualPath, string fullLocalPath, bool verifyMd5) => throw new NotImplementedException();
+    public MediaItem? FindMatchingMediaByMD5(string md5) => throw new NotImplementedException();
+
     public MediaStacks VersionStacks => throw new NotImplementedException();
     public MediaStacks MediaStacks => throw new NotImplementedException();
     public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
@@ -62,5 +76,19 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
+    public void DeleteItem(Guid catalogId, Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
+    public void Reset()
+    {
+        throw new NotImplementedException();
+    }
+
+    protected virtual void OnOnItemDirtied(DirtyItemEventArgs<bool> e)
+    {
+        OnItemDirtied?.Invoke(this, e);
+    }
 }

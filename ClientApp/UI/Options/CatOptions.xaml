@@ -9,10 +9,23 @@
         Title="Options" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="10*"/>
             <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
-        <TabControl x:Name="OptionsTabs" DataContext="{Binding Path=_Model}" Grid.Row="0">
+        <StackPanel Orientation="Horizontal" Grid.Row="0">
+            <TextBlock Text="Profile:" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding Path=ProfileOptions}" Width="128" SelectedItem="{Binding Path=CurrentProfile}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Path=ProfileName}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Content="New Based On" Click="CreateNewBasedOnProfile" />
+            <Button Content="New Profile" Click="CreateNewProfile"/>
+        </StackPanel>
+        <TabControl x:Name="OptionsTabs" DataContext="{Binding Path=_Model}" Grid.Row="1">
             <TabItem>
                 <TabItem.Header>
                     <TextBlock>Account</TextBlock>
@@ -26,13 +39,17 @@
                 <options:CacheConfig x:Name="CacheConfigTab" />
             </TabItem>
         </TabControl>
-        <Grid HorizontalAlignment="Right" Margin="0 0 0 5" Grid.Row="1">
+        <Grid Margin="0 0 0 5" Grid.Row="2">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="64" />
                 <ColumnDefinition Width="64" />
             </Grid.ColumnDefinitions>
-            <Button Content="Cancel" IsCancel="True" Grid.Column="0" Height="24" Margin="0 0 5 0" />
-            <Button Content="Save" IsDefault="True" Click="DoSave" Grid.Column="1" Height="24" Margin="5 0 0 0" />
+            <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <CheckBox Content="Default Profile" IsChecked="{Binding Path=CurrentProfile.Default}"/>
+            </StackPanel>
+            <Button Content="Cancel" IsCancel="True" Grid.Column="1" Height="24" Margin="0 0 5 0" />
+            <Button Content="Save" IsDefault="True" Click="DoSave" Grid.Column="2" Height="24" Margin="5 0 0 0" />
         </Grid>
     </Grid>
 </Window>

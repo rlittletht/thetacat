@@ -1,6 +1,4 @@
-﻿using Tests.Model.Workgroups;
-using Thetacat;
-using Thetacat.Model;
+﻿using Thetacat.Model;
 using Thetacat.Types;
 
 namespace Tests.Model;
@@ -12,9 +10,9 @@ public class TestCatalog
         foreach (MediaStackItem item in stack.Items)
         {
             if (stack.Type.Equals(MediaStackType.Media))
-                Assert.AreEqual(stack.StackId, catalog.Media.Items[item.MediaId].MediaStack);
+                Assert.AreEqual(stack.StackId, catalog.GetMediaFromId(item.MediaId).MediaStack);
             else if (stack.Type.Equals(MediaStackType.Version))
-                Assert.AreEqual(stack.StackId, catalog.Media.Items[item.MediaId].VersionStack);
+                Assert.AreEqual(stack.StackId, catalog.GetMediaFromId(item.MediaId).VersionStack);
             else
                 throw new CatExceptionInternalFailure("unknown stack type");
 
@@ -29,7 +27,6 @@ public class TestCatalog
     public static void TestAddMediaToStackAtIndex_AddToEmptyStack()
     {
         Catalog catalog = new Catalog();
-        MainWindow.SetStateForTests(null);
 
         MediaStacks stacks = catalog.GetStacksFromType(MediaStackType.Version);
         MediaStack stack = stacks.CreateNewStack();
@@ -61,7 +58,6 @@ public class TestCatalog
     [Test]
     public static void TestAddMediaToStackAtIndex_AddToSingleItemStack_NoConflict()
     {
-        MainWindow.SetStateForTests(null);
         Catalog catalog = new Catalog();
         MediaStacks stacks = catalog.GetStacksFromType(MediaStackType.Version);
         MediaStack stack = stacks.CreateNewStack();

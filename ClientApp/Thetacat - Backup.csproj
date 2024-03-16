@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.10.4" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
+    <PackageReference Include="Emgu.CV" Version="4.8.1.5350" />
+    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.0.5324" />
+    <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
+    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
+    <PackageReference Include="Meziantou.Framework.WPF" Version="1.5.5" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.35.0" />
+    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All" Version="1.12.10" />
+    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
+    <PackageReference Include="MimeTypesMap" Version="1.0.8" />
+    <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
+    <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
+    <PackageReference Include="TCore.Pipeline" Version="1.2.0" />
+    <PackageReference Include="TCore.PostfixText" Version="1.0.0" />
+    <PackageReference Include="TCore.Sql" Version="2.2.3" />
+    <PackageReference Include="TCore.XmlSettings" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Azure\" />
+    <Folder Include="Explorer\NewFolder\" />
+    <Folder Include="Model\Metatags\" />
+    <Folder Include="Secrets\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Migration\Elements\Metadata\UI\StandardMetadataMigration.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\AppLogMonitor.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Explorer\MediaItemDetails.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>

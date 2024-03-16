@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows;
-using Thetacat.Model.Metatags;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Model;
 
@@ -17,7 +17,7 @@ public class MediaTag
 
     public static MediaTag CreateMediaTag(MetatagSchema schema, Guid metatagId, string? value)
     {
-        Metatag? tag = schema.FindFirstMatchingItem(MetatagMatcher.CreateIdMatch(metatagId));
+        Metatag? tag = schema.GetMetatagFromId(metatagId);
 
         if (tag == null)
         {
@@ -35,5 +35,13 @@ public class MediaTag
         }
 
         return new MediaTag(tag, value);
+    }
+
+    public bool Equals(MediaTag other)
+    {
+        if (other.Value != Value) return false;
+        if (other.Metatag.ID != Metatag.ID) return false;
+
+        return true;
     }
 }

@@ -135,3 +135,39 @@ public class CatExceptionDatabaseLockTimeout : CatException
         public CatExceptionDatabaseLockTimeout(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
 #pragma warning restore format // @formatter:on
 }
+
+public class CatExceptionNoSqlConnection: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionNoSqlConnection() : base(Guid.Empty) { }
+        public CatExceptionNoSqlConnection(Guid crids) : base(crids) { }
+        public CatExceptionNoSqlConnection(string errorMessage) : base(errorMessage) { }
+        public CatExceptionNoSqlConnection(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionNoSqlConnection(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionNoSqlConnection(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
+public class CatExceptionDebugFailure: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionDebugFailure() : base(Guid.Empty) { }
+        public CatExceptionDebugFailure(Guid crids) : base(crids) { }
+        public CatExceptionDebugFailure(string errorMessage) : base(errorMessage) { }
+        public CatExceptionDebugFailure(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionDebugFailure(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionDebugFailure(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}
+
+public class CatExceptionSchemaUpdateFailed: CatException
+{
+#pragma warning disable format // @formatter:off
+        public CatExceptionSchemaUpdateFailed() : base(Guid.Empty) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids) : base(crids) { }
+        public CatExceptionSchemaUpdateFailed(string errorMessage) : base(errorMessage) { }
+        public CatExceptionSchemaUpdateFailed(string errorMessage, Exception innerException) : base(errorMessage, innerException) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids, string errorMessage) : base(crids, errorMessage) { }
+        public CatExceptionSchemaUpdateFailed(Guid crids, Exception innerException, string errorMessage) : base(crids, innerException, errorMessage) { }
+#pragma warning restore format // @formatter:on
+}

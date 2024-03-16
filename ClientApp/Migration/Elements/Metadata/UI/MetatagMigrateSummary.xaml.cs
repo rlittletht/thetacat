@@ -1,24 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Thetacat.Controls;
-using Thetacat.Model.Metatags;
-using Thetacat.Types;
+using Thetacat.Metatags.Model;
 using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
@@ -61,7 +46,7 @@ public partial class MetadataMigrateSummary : UserControl
     public void RebuildSchemaDiff()
     {
         // build the schema differences for all the metadata and metatag migration tabs
-        m_diff = MainWindow._AppState.MetatagSchema.BuildDiffForSchemas();
+        m_diff = App.State.MetatagSchema.BuildDiffForSchemas();
         m_metatagMigrationItems.Clear();
 
         foreach (MetatagSchemaDiffOp op in m_diff.Ops)
@@ -76,9 +61,9 @@ public partial class MetadataMigrateSummary : UserControl
             return;
 
         // commit all the diff ops
-        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(m_diff);
+        ServiceClient.LocalService.Metatags.UpdateMetatagSchema(App.State.ActiveProfile.CatalogID, m_diff);
 
-        MainWindow._AppState.RefreshMetatagSchema();
+        App.State.RefreshMetatagSchema(App.State.ActiveProfile.CatalogID);
         _Migrate.ReloadSchemas();
         RebuildSchemaDiff();
         MessageBox.Show("All changes have been uploaded to the server. All tabs have been refreshed.");

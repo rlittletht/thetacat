@@ -1,29 +1,27 @@
 ﻿using MetadataExtractor;
-using MetadataExtractor.Formats.Xmp;
-using NUnit.Framework.Internal;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Security.Permissions;
 using System.Windows;
-using System.Windows.Markup;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using HeyRed.Mime;
+using MetadataExtractor.Formats.Exif;
+using Thetacat.Filtering;
 using Thetacat.Import;
 using Thetacat.Logging;
-using Thetacat.Model.Metatags;
 using Thetacat.ServiceClient;
-using Thetacat.ServiceClient.LocalService;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using Thetacat.Metatags.Model;
+using Thetacat.Model.ImageCaching;
 
 namespace Thetacat.Model;
 
@@ -35,6 +33,8 @@ public class MediaItem : INotifyPropertyChanged
         Delete,
         MaybeUpdate
     };
+
+    public event EventHandler<DirtyItemEventArgs<Guid>>? OnItemDirtied;
 
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
@@ -55,7 +55,7 @@ public class MediaItem : INotifyPropertyChanged
     {
         m_working = new MediaItemData(clone.m_working);
         Stacks[MediaStackType.Version] = clone.VersionStack;
-        Stacks[MediaStackType.Media]= clone.MediaStack;
+        Stacks[MediaStackType.Media] = clone.MediaStack;
     }
 
     public MediaItem(ServiceMediaItem item)
@@ -63,7 +63,13 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(item);
     }
 
-#region Public Data / Accessors
+    private void TriggerItemDirtied()
+    {
+        if (OnItemDirtied != null)
+            OnItemDirtied(this, new DirtyItemEventArgs<Guid>(ID));
+    }
+
+    #region Public Data / Accessors
 
     // the vector clock changes whenever a change is made to the data. we use this
     // clock to determine if a diffitem (when committed) should clear any changes to
@@ -82,7 +88,8 @@ public class MediaItem : INotifyPropertyChanged
     private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
     {
         if (!stacks.Items.TryGetValue(stackId, out MediaStack? stack))
-            throw new CatExceptionInternalFailure($"can't set the version stack of an item without first adding it to the stack: {stackId}. {stacks.Items.Count}: {stacks.Items.Keys.First()}");
+            throw new CatExceptionInternalFailure(
+                $"can't set the version stack of an item without first adding it to the stack: {stackId}. {stacks.Items.Count}: {stacks.Items.Keys.First()}");
 
         foreach (MediaStackItem item in stack.Items)
         {
@@ -100,7 +107,7 @@ public class MediaItem : INotifyPropertyChanged
         null
     };
 
-    public void SetVersionStackSafe(ICatalog catalog, Guid? stackId)
+    public void SetVersionStackVerify(ICatalog catalog, Guid? stackId)
     {
         if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Version], stackId)) return;
         Stacks[MediaStackType.Version] = stackId;
@@ -109,7 +116,7 @@ public class MediaItem : INotifyPropertyChanged
             VerifyMediaInMediaStack(catalog.VersionStacks, stackId.Value);
     }
 
-    public void SetMediaStackSafe(ICatalog catalog, Guid? stackId)
+    public void SetMediaStackVerify(ICatalog catalog, Guid? stackId)
     {
         if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Media], stackId)) return;
         Stacks[MediaStackType.Media] = stackId;
@@ -121,23 +128,13 @@ public class MediaItem : INotifyPropertyChanged
     public Guid? VersionStack
     {
         get => Stacks[MediaStackType.Version];
-        set
-        {
-            SetField(ref Stacks[MediaStackType.Version], value);
-            if (value != null)
-                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.VersionStacks, value.Value);
-        }
+        set => SetField(ref Stacks[MediaStackType.Version], value);
     }
 
-    public Guid? MediaStack 
+    public Guid? MediaStack
     {
         get => Stacks[MediaStackType.Media];
-        set
-        {
-            SetField(ref Stacks[MediaStackType.Media], value);
-            if (value != null)
-                VerifyMediaInMediaStack(MainWindow._AppState.Catalog.MediaStacks, value.Value);
-        }
+        set => SetField(ref Stacks[MediaStackType.Media], value);
     }
 
     // this means we are waiting for this item to be cached. maybe by this client,
@@ -220,7 +217,7 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_Width, value.ToString());
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageWidth));
         }
     }
@@ -237,31 +234,48 @@ public class MediaItem : INotifyPropertyChanged
         set
         {
             MediaTag tag = new MediaTag(BuiltinTags.s_Height, value.ToString());
-            FAddOrUpdateMediaTag(tag);
+            FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageHeight));
         }
     }
 
-    public DateTime? OriginalFileDate
+    public DateTime? OriginalMediaDate
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_OriginalFileDateID, out MediaTag? tag))
+            if (Tags.TryGetValue(BuiltinTags.s_OriginalMediaDateID, out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalFileDate, value?.ToUniversalTime().ToString("u"));
-            FAddOrUpdateMediaTag(tag);
-            OnPropertyChanged(nameof(OriginalFileDate));
+            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
+            FAddOrUpdateMediaTag(tag, true);
+            OnPropertyChanged(nameof(OriginalMediaDate));
         }
     }
 
-#endregion
+    public DateTime? ImportDate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_ImportDateID, out MediaTag? tag))
+                return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
-#region Changes/Versions
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_ImportDate, value?.ToUniversalTime().ToString("u"));
+            FAddOrUpdateMediaTag(tag, true);
+            OnPropertyChanged(nameof(ImportDate));
+        }
+    }
+
+    #endregion
+
+    #region Changes/Versions
 
     public bool MaybeHasChanges => m_base != null;
 
@@ -278,11 +292,46 @@ public class MediaItem : INotifyPropertyChanged
         m_base = null;
     }
 
+    public bool Equals(MediaItemData other)
+    {
+        if (other.State != State)
+            return false;
+        if (other.ID != ID)
+            return false;
+        if (other.VirtualPath.Equals(VirtualPath))
+            return false;
+        if (other.MD5 != MD5) 
+            return false;
+        if (other.MimeType != MimeType) 
+            return false;
+
+        foreach (MediaTag tag in Tags.Values)
+        {
+            if (!other.Tags.TryGetValue(tag.Metatag.ID, out MediaTag? otherTag))
+                return false;
+
+            if (!tag.Equals(otherTag))
+                return false;
+        }
+
+        return true;
+    }
+
+    public void SetPendingStateFromOther(MediaItem? other)
+    {
+        m_base = other?.Data;
+
+        if (m_base == null)
+             PendingOp = Op.Create;
+        else
+            PendingOp = Op.MaybeUpdate;
+    }
+
 #endregion
 
 #region Cache Status/Media State
 
-    public string CacheStatus => MainWindow._AppState.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
+    public string CacheStatus => App.State.Cache.IsItemCached(ID) ? "cached" : "<No Cache>";
 
     public void NotifyCacheStatusChanged()
     {
@@ -319,6 +368,21 @@ public class MediaItem : INotifyPropertyChanged
 
 #region MediaTags
 
+    private static Dictionary<MetatagStandards.Standard, HashSet<int>> PropertiesAllowedToOverride =
+        new()
+        {
+            {
+                MetatagStandards.Standard.Exif,
+                new HashSet<int>()
+                {
+                    ExifDirectoryBase.TagImageWidth,
+                    ExifDirectoryBase.TagImageHeight,
+                    ExifDirectoryBase.TagXResolution,
+                    ExifDirectoryBase.TagYResolution
+                }
+            }
+        };
+
     /*----------------------------------------------------------------------------
         %%Function: PopulateMediaTagsFromMetadataDirectory
         %%Qualified: Thetacat.Model.MediaItem.PopulateMediaTagsFromMetadataDirectory
@@ -331,6 +395,7 @@ public class MediaItem : INotifyPropertyChanged
         Metatag? parent,
         MetadataExtractor.Directory directory,
         MetatagStandards.Standard standard,
+        bool allowSubifdOverrideIfd,
         List<string>? log = null)
     {
         bool changed = false;
@@ -383,11 +448,37 @@ public class MediaItem : INotifyPropertyChanged
 
             MediaTag newTag = new MediaTag(metatag, value);
 
-            if (FAddOrUpdateMediaTag(newTag, log))
+            bool allowPropertyOverride = false;
+
+            if (allowSubifdOverrideIfd)
+            {
+                if (PropertiesAllowedToOverride.TryGetValue(standard, out HashSet<int>? set))
+                    allowPropertyOverride = set.Contains(def.PropertyTag);
+            }
+
+            if (FAddOrUpdateMediaTag(newTag, allowPropertyOverride, log))
                 changed = true;
         }
 
         return changed;
+    }
+
+    public bool FRemoveMediaTag(Guid mediaTagID)
+    {
+        bool ensuredBase = m_base == null;
+
+        EnsureBase();
+
+        if (!Tags.TryRemove(mediaTagID, out MediaTag? value))
+        {
+            if (ensuredBase)
+                ResetPendingChanges();
+
+            return false;
+        }
+
+        VectorClock++;
+        return true;
     }
 
     /*----------------------------------------------------------------------------
@@ -396,7 +487,7 @@ public class MediaItem : INotifyPropertyChanged
 
         Add or updated a media tag
     ----------------------------------------------------------------------------*/
-    public bool FAddOrUpdateMediaTag(MediaTag tag, List<string>? log = null)
+    public bool FAddOrUpdateMediaTag(MediaTag tag, bool allowPropertyOverride, List<string>? log = null)
     {
         bool ensuredBase = m_base == null;
 
@@ -411,8 +502,12 @@ public class MediaItem : INotifyPropertyChanged
             {
                 if (oldMediaTag.Value != tag.Value)
                 {
-                    MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
-                    log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                    if (!allowPropertyOverride)
+                    {
+                        MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                        log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                    }
+
                     oldMediaTag.Value = tag.Value;
                 }
                 else
@@ -432,6 +527,10 @@ public class MediaItem : INotifyPropertyChanged
 
         if (!identicalExisting)
             VectorClock++;
+
+        if (!identicalExisting)
+            TriggerItemDirtied();
+//            App.State.SetCollectionDirtyState(true);
 
         return !identicalExisting;
     }
@@ -513,15 +612,28 @@ public class MediaItem : INotifyPropertyChanged
         List<string> log = new List<string>();
 
         string file = LocalPath;
-
+        bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
+            
         // load exif and other data from this item.
-        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
 
-        this.MD5 = CalculateMD5Hash(file);
-
-        foreach (MetadataExtractor.Directory directory in directories)
+//        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
+//        {
+//            // this is a jpeg2000 file. have to use emgu
+//            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
+//            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
+//
+//            MessageBox.Show($"num: {img.")
+//        }
+//        else
         {
-            PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, log);
+            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
+
+            this.MD5 = CalculateMD5Hash(file);
+
+            foreach (MetadataExtractor.Directory directory in directories)
+            {
+                PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
+            }
         }
 
         metatagSchema.EnsureBuiltinMetatagsDefined();
@@ -530,12 +642,40 @@ public class MediaItem : INotifyPropertyChanged
         Tuple<int, int>? widthHeight = FindWidthHeightFromMediaTags(metatagSchema);
         if (widthHeight != null)
         {
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()));
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()));
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()), true);
+            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()), true);
         }
 
-        DateTime createTime = File.GetCreationTime(file);
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalFileDate, createTime.ToUniversalTime().ToString("u")));
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")), true);
+
+        string? dateTimeString =
+            TryGetMediaTagValueFromStandardAndType(
+                metatagSchema,
+                MetatagStandards.Standard.Exif,
+                ExifDirectoryBase.TagDateTimeOriginal);
+
+        if (dateTimeString != null)
+        {
+            try
+            {
+                // try to get it into a canonical format
+                if (dateTimeString.Length >= 19 && dateTimeString[4] == ':' && dateTimeString[7] == ':')
+                {
+                    // replace the : in the data with -
+                    dateTimeString = $"{dateTimeString[..4]}-{dateTimeString[5..7]}-{dateTimeString[8..10]}{dateTimeString[10..]}";
+                    dateTimeString = DateTime.Parse(dateTimeString).ToUniversalTime().ToString("u");
+                }
+            }
+            catch
+            {
+                MainWindow.LogForApp(EventType.Warning, $"Could not get date from metadata for {file}");
+                dateTimeString = null;
+            }
+        }
+
+        dateTimeString ??= File.GetCreationTime(file).ToUniversalTime().ToString("u");
+
+        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalMediaDate, dateTimeString), true);
 
         return log;
     }
@@ -573,18 +713,32 @@ public class MediaItem : INotifyPropertyChanged
     ----------------------------------------------------------------------------*/
     public static string CalculateMD5Hash(string localPath)
     {
-        using FileStream fs = File.Open(
-            localPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read);
+        return App.State.Md5Cache.GetMd5ForPathSync(localPath);
 
-        using MD5 md5 = System.Security.Cryptography.MD5.Create();
+//        using FileStream fs = File.Open(
+//            localPath,
+//            FileMode.Open,
+//            FileAccess.Read,
+//            FileShare.Read);
+//
+//        using MD5 md5 = System.Security.Cryptography.MD5.Create();
+//
+//        byte[] hash = md5.ComputeHash(fs);
+//
+//        string fullContentMd5 = Convert.ToBase64String(hash);
+//
+//        return fullContentMd5;
+    }
 
-        byte[] hash = md5.ComputeHash(fs);
+    /*----------------------------------------------------------------------------
+        %%Function: MatchesMetatagFilter
+        %%Qualified: Thetacat.Model.MediaItem.MatchesMetatagFilter
 
-        string fullContentMd5 = Convert.ToBase64String(hash);
-
-        return fullContentMd5;
+        The filter defines the tags that must not be set (false) or must be set
+        (true). If its not present then it doesn't matter
+    ----------------------------------------------------------------------------*/
+    public bool MatchesMetatagFilter(FilterDefinition filter)
+    {
+        return filter.Expression.FEvaluate(new FilterValueClient(this));
     }
 }

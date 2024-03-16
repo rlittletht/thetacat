@@ -1,86 +1,112 @@
 ﻿using System;
 using System.Collections.Generic;
 using Thetacat.Import;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
-using Thetacat.Model.Metatags;
-using Thetacat.ServiceClient.LocalService;
 
 namespace Thetacat.ServiceClient;
 
 public class ServiceInterop
 {
-    public static ServiceMetatagSchema GetMetatagSchema()
+    public static List<ServiceCatalogDefinition> GetCatalogDefinitions() => LocalService.CatalogDefinitions.GetCatalogDefinitions();
+    public static void AddCatalogDefinition(ServiceCatalogDefinition catalogDefinition) => LocalService.CatalogDefinitions.AddCatalogDefinition(catalogDefinition);
+
+    public static ServiceMetatagSchema GetMetatagSchema(Guid catalogID)
     {
-        return LocalService.Metatags.GetMetatagSchema();
+        return LocalService.Metatags.GetMetatagSchema(catalogID);
     }
 
-    public static void UpdateMetatagSchema(MetatagSchemaDiff schemaDiff)
+    public static void UpdateMetatagSchema(Guid catalogID, MetatagSchemaDiff schemaDiff)
     {
-        LocalService.Metatags.UpdateMetatagSchema(schemaDiff);
+        LocalService.Metatags.UpdateMetatagSchema(catalogID, schemaDiff);
     }
 
-    public static void UpdateMediaItems(IEnumerable<MediaItemDiff> diffs)
+    public static void ResetMetatagSchema(Guid catalogID) => LocalService.Metatags.ResetMetatagSchema(catalogID);
+
+    public static void UpdateMediaItems(Guid catalogID, IEnumerable<MediaItemDiff> diffs)
     {
-        LocalService.Media.UpdateMediaItems(diffs);
-    }
-    public static List<ServiceImportItem> GetPendingImportsForClient(string sourceClient)
-    {
-        return LocalService.Import.GetPendingImportsForClient(sourceClient);
+        LocalService.Media.UpdateMediaItems(catalogID, diffs);
     }
 
-    public static void InsertImportItems(IEnumerable<ImportItem> items)
+    public static List<Guid> GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
+
+    public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
+    public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
+
+    public static void DeleteMediaItem(Guid catalogID, Guid id) => LocalService.Media.DeleteMediaItem(catalogID, id);
+
+    public static void DeleteImportsForMediaItem(Guid catalogId, Guid id) => LocalService.Import.DeleteMediaItem(catalogId, id);
+
+    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
     {
-        LocalService.Import.InsertImportItems(items);
+        return LocalService.Import.GetPendingImportsForClient(catalogID, sourceClient);
     }
 
-    public static void CompleteImportForItem(Guid id)
+    public static List<ServiceImportItem> GetAllImports(Guid catalogID)
     {
-        LocalService.Import.CompleteImportForItem(id);
+        return LocalService.Import.GetAllImports(catalogID);
     }
 
-    public static void DeleteImportItem(Guid id)
+    public static void InsertAllServiceImportItems(Guid catalogID, IEnumerable<ServiceImportItem> items) => LocalService.Import.InsertServiceImportItems(catalogID, items);
+
+    public static void InsertImportItems(Guid catalogID, IEnumerable<ImportItem> items)
     {
-        LocalService.Import.DeleteImportItem(id);
+        LocalService.Import.InsertImportItems(catalogID, items);
     }
 
-    public static void InsertNewMediaItems(IEnumerable<MediaItem> newItems)
+    public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
-        LocalService.Media.InsertNewMediaItems(newItems);
+        LocalService.Import.CompleteImportForItem(catalogID, id);
     }
 
-    public static ServiceCatalog ReadFullCatalog()
+    public static void DeleteImportItem(Guid catalogID, Guid id)
     {
-        return LocalService.Media.ReadFullCatalog();
+        LocalService.Import.DeleteImportItem(catalogID, id);
     }
 
-    public static List<ServiceWorkgroup> GetAvailableWorkgroups()
+    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> newItems)
     {
-        return LocalService.Workgroup.ReadWorkgroups();
+        LocalService.Media.InsertNewMediaItems(catalogID, newItems);
     }
 
-    public static void CreateWorkgroup(ServiceWorkgroup workgroup)
+    public static ServiceCatalog ReadFullCatalog(Guid catalogID)
     {
-        LocalService.Workgroup.CreateWorkgroup(workgroup);
+        return LocalService.Media.ReadFullCatalog_OldWithJoin(catalogID);
     }
 
-    public static void UpdateWorkgroup(ServiceWorkgroup workgroup)
+    public static List<ServiceMediaTag> ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Media.ReadFullCatalogMediaTags(catalogID);
+    public static List<ServiceMediaItem> ReadFullCatalogMedia(Guid catalogID) => LocalService.Media.ReadFullCatalogMedia(catalogID);
+
+    public static List<ServiceWorkgroup> GetAvailableWorkgroups(Guid catalogID)
     {
-        LocalService.Workgroup.UpdateWorkgroup(workgroup);
+        return LocalService.Workgroup.ReadWorkgroups(catalogID);
     }
 
-    public static ServiceWorkgroup GetWorkgroupDetails(Guid id)
+    public static void DeleteAllWorkgroups(Guid catalogID) => LocalService.Workgroup.DeleteAllWorkgroups(catalogID);
+
+    public static void CreateWorkgroup(Guid catalogID, ServiceWorkgroup workgroup)
     {
-        return LocalService.Workgroup.GetWorkgroupDetails(id);
+        LocalService.Workgroup.CreateWorkgroup(catalogID, workgroup);
     }
 
-    public static List<ServiceStack> GetAllStacks()
+    public static void UpdateWorkgroup(Guid catalogID, ServiceWorkgroup workgroup)
     {
-        return LocalService.Stacks.GetAllStacks();
+        LocalService.Workgroup.UpdateWorkgroup(catalogID, workgroup);
     }
 
-    public static void UpdateMediaStacks(List<MediaStackDiff> diffs)
+    public static ServiceWorkgroup GetWorkgroupDetails(Guid catalogID, Guid id)
     {
-        LocalService.Stacks.UpdateMediaStacks(diffs);
+        return LocalService.Workgroup.GetWorkgroupDetails(catalogID, id);
+    }
+
+    public static List<ServiceStack> GetAllStacks(Guid catalogID)
+    {
+        return LocalService.Stacks.GetAllStacks(catalogID);
+    }
+
+    public static void UpdateMediaStacks(Guid catalogID, List<MediaStackDiff> diffs)
+    {
+        LocalService.Stacks.UpdateMediaStacks(catalogID, diffs);
     }
 
 #if WG_ON_SQL

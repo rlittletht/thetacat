@@ -1,6 +1,4 @@
-﻿using Thetacat.Metatags;
-
-namespace Thetacat.Types;
+﻿namespace Thetacat.Types;
 
 public interface IMetatagMatcher<T>
 {

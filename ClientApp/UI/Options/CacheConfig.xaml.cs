@@ -1,23 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
-using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.Util;
 using UserControl = System.Windows.Controls.UserControl;
@@ -30,6 +17,7 @@ namespace Thetacat.UI.Options;
 public partial class CacheConfig : UserControl
 {
     readonly CacheConfigModel _Model = new CacheConfigModel();
+    AccountModel? _AccountModel;
 
     public CacheConfig()
     {
@@ -39,18 +27,25 @@ public partial class CacheConfig : UserControl
         _Model.PropertyChanged += ModelPropertyChanged;
     }
 
-    public void LoadFromSettings()
+    public void LoadFromSettings(AccountModel accountModel, CatOptionsModel catOptionsModel, string sqlConnection, Guid catalogID)
     {
-        _Model.CacheLocation = MainWindow._AppState.Settings.CacheLocation ?? string.Empty;
-        _Model.SetCacheTypeFromString(MainWindow._AppState.Settings.CacheType ?? string.Empty);
-        if (MainWindow._AppState.Settings.WorkgroupId != null)
+        _AccountModel = accountModel;
+        _Model.ProfileOptions = catOptionsModel.CurrentProfile;
+
+        _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
+        _Model.DerivativeLocation = _Model.ProfileOptions?.Profile.DerivativeCache ?? string.Empty;
+        _Model.SetCacheTypeFromString(_Model.ProfileOptions?.Profile.CacheType ?? string.Empty);
+
+        // we might have changed the sql server connection string, so use that string
+        App.State.PushTemporarySqlConnection(sqlConnection);
+        if (_Model.ProfileOptions?.Profile.WorkgroupId != null)
         {
-            _Model.WorkgroupID = MainWindow._AppState.Settings.WorkgroupId;
-            _Model.PopulateWorkgroups();
-            _Model.SetWorkgroup(Guid.Parse(_Model.WorkgroupID));
+            string workgroupId = _Model.ProfileOptions?.Profile.WorkgroupId!;
+            _Model.PopulateWorkgroups(catalogID);
+            _Model.SetWorkgroup(Guid.Parse(workgroupId));
             try
             {
-                ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(Guid.Parse(_Model.WorkgroupID));
+                ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(catalogID, Guid.Parse(_Model.WorkgroupID));
                 
                 _Model.WorkgroupName = workgroup.Name ?? string.Empty;
                 _Model.WorkgroupCacheRoot = workgroup.CacheRoot ?? string.Empty;
@@ -58,11 +53,14 @@ public partial class CacheConfig : UserControl
             }
             catch (Exception)
             {
-                _Model.WorkgroupName = MainWindow._AppState.Settings.WorkgroupName ?? String.Empty;
-                _Model.WorkgroupCacheRoot = MainWindow._AppState.Settings.WorkgroupCacheRoot ?? String.Empty;
-                _Model.WorkgroupServerPath = MainWindow._AppState.Settings.WorkgroupCacheServer ?? String.Empty;
+                _Model.WorkgroupName = _Model.ProfileOptions?.Profile.WorkgroupName ?? String.Empty;
+                _Model.WorkgroupCacheRoot = _Model.ProfileOptions?.Profile.WorkgroupCacheRoot ?? String.Empty;
+                _Model.WorkgroupServerPath = _Model.ProfileOptions?.Profile.WorkgroupCacheServer ?? String.Empty;
             }
         }
+
+        App.State.PopTemporarySqlConnection();
+
     }
 
 
@@ -77,13 +75,28 @@ public partial class CacheConfig : UserControl
             if (LocalOptions != null)
                 LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
             if (cacheType != Cache.CacheType.Private)
-                _Model.PopulateWorkgroups();
-
+            {
+                App.State.PushTemporarySqlConnection(_AccountModel?.SqlConnection ?? "");
+                _Model.PopulateWorkgroups(_AccountModel?.CatalogDefinition?.ID ?? Guid.Empty);
+                App.State.PopTemporarySqlConnection();
+            }
             return;
         }
 
         if (e.PropertyName == "CurrentWorkgroup")
             _Model.SetWorkgroup(_Model.CurrentWorkgroup?.Workgroup?.ID);
+
+        if (e.PropertyName == "CreateNewWorkgroup")
+        {
+            if (_Model.CreateNewWorkgroup)
+            {
+                _Model.WorkgroupID = Guid.NewGuid().ToString();
+            }
+            else
+            {
+                _Model.WorkgroupID = _Model.CurrentWorkgroup?.Workgroup?.ID.ToString() ?? Guid.Empty.ToString();
+            }
+        }
     }
 
     bool IsValidWorkgroupSettings()
@@ -131,16 +144,39 @@ public partial class CacheConfig : UserControl
         return true;
     }
 
-    public bool FSaveSettings()
+    public bool FSaveSettings(string sqlConnection, Guid catalogID)
     {
         Cache.CacheType cacheType = Cache.CacheTypeFromString(CacheConfiguration.Text);
 
-        MainWindow._AppState.Settings.CacheLocation = _Model.CacheLocation;
+        PathSegment derivativeLocation = new PathSegment(_Model.DerivativeLocation);
+        try
+        {
+            PathSegment formatsDirectory = PathSegment.Join(derivativeLocation, "cat-derivatives/formats");
+            // other derivatives may exist but they will create their directories on demand
+
+            if (!Directory.Exists(formatsDirectory.Local))
+            {
+                Directory.CreateDirectory(formatsDirectory.Local);
+                if (!Directory.Exists(formatsDirectory.Local))
+                {
+                    throw new CatExceptionInternalFailure("directory didn't exist after create");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"can't create or use derivative location {derivativeLocation}: {ex}");
+            return false;
+        }
+
+        _Model.ProfileOptions!.Profile.DerivativeCache = derivativeLocation;
+        _Model.ProfileOptions.Profile.CacheLocation = _Model.CacheLocation;
+
+        _Model.ProfileOptions.Profile.CacheType = Cache.StringFromCacheType(cacheType);
 
         if (cacheType == Cache.CacheType.Private)
         {
-            MainWindow._AppState.Settings.WorkgroupId = null;
-            MainWindow._AppState.Settings.CacheType = Cache.StringFromCacheType(cacheType);
+            _Model.ProfileOptions.Profile.WorkgroupId = null;
         }
         else
         {
@@ -158,10 +194,11 @@ public partial class CacheConfig : UserControl
                     CacheRoot = PathSegment.CreateFromString(_Model.WorkgroupCacheRoot)
                 };
 
-            if (string.IsNullOrEmpty(_Model.WorkgroupID))
+            App.State.PushTemporarySqlConnection(sqlConnection);
+            if (_Model.CreateNewWorkgroup)
             {
                 workgroup.ID = Guid.NewGuid();
-                ServiceInterop.CreateWorkgroup(workgroup);
+                ServiceInterop.CreateWorkgroup(catalogID, workgroup);
             }
             else
             {
@@ -174,10 +211,12 @@ public partial class CacheConfig : UserControl
                 }
 
                 workgroup.ID = id;
-                ServiceInterop.UpdateWorkgroup(workgroup);
+                ServiceInterop.UpdateWorkgroup(catalogID, workgroup);
             }
 
-            MainWindow._AppState.Settings.WorkgroupId = workgroup.ID.ToString();
+            App.State.PopTemporarySqlConnection();
+
+            _Model.ProfileOptions.Profile.WorkgroupId = workgroup.ID.ToString();
         }
         return true;
     }
@@ -204,7 +243,11 @@ public partial class CacheConfig : UserControl
             if (LocalOptions != null)
                 LocalOptions.IsEnabled = cacheType == Cache.CacheType.Private;
             if (cacheType != Cache.CacheType.Private)
-                _Model.PopulateWorkgroups();
+            {
+                App.State.PushTemporarySqlConnection(_AccountModel?.SqlConnection ?? "");
+                _Model.PopulateWorkgroups(_AccountModel?.CatalogDefinition?.ID ?? Guid.Empty);
+                App.State.PopTemporarySqlConnection();
+            }
         }
     }
 }

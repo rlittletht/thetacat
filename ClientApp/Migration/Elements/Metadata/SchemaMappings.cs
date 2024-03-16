@@ -33,7 +33,9 @@ public class SchemaMappings
     public static readonly Dictionary<string, SchemaMapping<DateTime>> DateTimeMappings =
         new()
         {
-            { "pse:FileDateOriginal", SchemaMapping<DateTime>.CreateBuiltIn((item, dateTime) => item.FileDateOriginal = dateTime) }
+            // xmp:CreateDate always winds, but if it isn't present, then FileDateOriginal will be used 
+            { "xmp:CreateDate", SchemaMapping<DateTime>.CreateBuiltIn((item, dateTime) => item.FileDateOriginal = dateTime) },
+            { "pse:FileDateOriginal", SchemaMapping<DateTime>.CreateBuiltIn((item, dateTime) => item.FileDateOriginal ??= dateTime) }
         };
 
     public static readonly Dictionary<string, SchemaMapping<double>> DecimalMappings =

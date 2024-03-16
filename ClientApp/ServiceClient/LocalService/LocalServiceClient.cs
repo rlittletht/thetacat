@@ -1,37 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+using Microsoft.Data.SqlClient;
 using TCore;
+using TCore.SqlCore;
+using TCore.SqlClient;
+using Thetacat.Logging;
 using Thetacat.Secrets;
+using Thetacat.Types;
 
 namespace Thetacat.ServiceClient.LocalService;
 
+public delegate void LogDelegate(EventType eventType, string log, string? details = null, Guid? correlationId = null);
+
 public class LocalServiceClient
 {
-    private static Sql? m_sql;
+    public static LogDelegate? LogService { get; set; }
 
-    public static Sql Sql
+    public static ISql GetConnection()
     {
-        get
-        {
-            if (m_sql == null)
-                throw new Exception("client not initialized");
+        if (String.IsNullOrWhiteSpace(AppSecrets.MasterSqlConnectionString))
+            throw new CatExceptionNoSqlConnection();
 
-            return m_sql;
+        try
+        {
+            return Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
+        }
+        catch (Exception e)
+        {
+            throw new CatExceptionNoSqlConnection(Guid.NewGuid(), e, "failed to open SQL connection");
+            throw;
         }
     }
 
-    public static void EnsureConnected()
-    {
-        if (m_sql != null)
-            return;
+    // public delegate void DelegateReader<T>(ISqlReader sqlr, Guid crid, ref T t);
 
-        m_sql = Sql.OpenConnection(AppSecrets.MasterSqlConnectionString);
-    }
-
-    public delegate void DelegateReader<T>(SqlReader sqlr, Guid crid, ref T t);
-
-    public static T? DoGenericQueryDelegateRead<T>(string sQuery, DelegateReader<T>? delegateReader)
+    public static T? DoGenericQueryDelegateRead<T>(string sQuery, ISqlReader.DelegateReader<T>? delegateReader) where T : new()
     {
         Guid crid = Guid.NewGuid();
         LocalSqlHolder? lsh = null;
@@ -40,44 +44,14 @@ public class LocalServiceClient
         try
         {
             lsh = new LocalSqlHolder(null, crid, AppSecrets.MasterSqlConnectionString);
-            string sCmd = sQuery;
 
             if (delegateReader == null)
             {
-                // just execute as a command
-                Sql.ExecuteNonQuery(lsh, sCmd, AppSecrets.MasterSqlConnectionString);
+                lsh.Sql.ExecuteNonQuery(sQuery);
                 return default;
             }
-            else
-            {
-                SqlReader sqlr = new SqlReader(lsh);
-                try
-                {
-                    sqlr.ExecuteQuery(sQuery, AppSecrets.MasterSqlConnectionString);
-                    sr.CorrelationID = crid;
-                    T? t = default;
-                    if (t == null)
-                        throw new Exception("failed to create return class");
-                    bool fOnce = false;
 
-                    while (sqlr.Reader.Read())
-                    {
-                        delegateReader(sqlr, crid, ref t);
-                        fOnce = true;
-                    }
-
-                    if (!fOnce)
-                        throw new TcSqlExceptionNoResults(crid);
-
-                    return t;
-
-                }
-                catch (Exception)
-                {
-                    sqlr.Close();
-                    throw;
-                }
-            }
+            return lsh.Sql.ExecuteDelegatedQuery(crid, sQuery, delegateReader);
         }
         finally
         {
@@ -87,12 +61,11 @@ public class LocalServiceClient
 
     public static T DoGenericQueryWithAliases<T>(
         string query, 
-        Dictionary<string, string> aliases, 
-        SqlReader.DelegateReader<T> delegateReader, 
+        TCore.SqlCore.ISqlReader.DelegateReader<T> delegateReader,
+        TableAliases aliases,
         CustomizeCommandDelegate? custDelegate = null) where T : new()
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -100,48 +73,164 @@ public class LocalServiceClient
         selectTags.AddAliases(aliases);
 
         string sQuery = selectTags.ToString();
+        ISql? sql = null;
 
         try
         {
+            sql = LocalServiceClient.GetConnection();
+
             T t =
-                SqlReader.DoGenericQueryDelegateRead(
-                    LocalServiceClient.Sql,
+                sql.ExecuteDelegatedQuery<T>(
                     crid,
                     sQuery,
-                    delegateReader, 
+                    delegateReader,
+                    null,
                     custDelegate);
 
             return t;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return new T();
         }
+        catch (CatExceptionNoSqlConnection)
+        {
+            return new T();
+        }
+        finally
+        {
+            sql?.Close();
+        }
     }
 
-    public static void DoGenericCommandWithAliases(string query, Dictionary<string, string> aliases, CustomizeCommandDelegate? custDelegate)
+    public static void DoGenericCommandWithAliases(string query, TableAliases? aliases, CustomizeCommandDelegate? custDelegate)
     {
         Guid crid = Guid.NewGuid();
-        LocalServiceClient.EnsureConnected();
+        ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
 
         selectTags.AddBase(query);
-        selectTags.AddAliases(aliases);
+        if (aliases != null)
+            selectTags.AddAliases(aliases);
 
         string sQuery = selectTags.ToString();
 
         try
         {
-            LocalServiceClient.Sql.ExecuteNonQuery(
+            sql.ExecuteNonQuery(
                 new SqlCommandTextInit(query, aliases),
                 custDelegate);
 
             return;
         }
-        catch (TcSqlExceptionNoResults)
+        catch (SqlExceptionNoResults)
         {
             return;
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
+
+
+    public static string WrapSqlTransactionTryCatch(string tryBlock, string catchBlock)
+    {
+        string sql =
+            @$"
+                BEGIN TRANSACTION
+                BEGIN TRY
+                  {tryBlock}
+                  COMMIT TRANSACTION
+                END TRY
+                BEGIN CATCH
+                  {catchBlock}
+                  ROLLBACK TRANSACTION
+                END CATCH";
+
+        return sql;
+    }
+
+    public static void ExecutePartedCommands<T>(
+        ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases)
+    {
+        StringBuilder sb = new StringBuilder();
+        int current = 0;
+
+        sb.Clear();
+        sb.Append(commandBase);
+
+        foreach (T item in items)
+        {
+            if (current == partLimit)
+            {
+                string command = sb.ToString();
+
+                if (!string.IsNullOrWhiteSpace(command))
+                {
+                    LocalServiceClient.LogService?.Invoke(EventType.Verbose, command);
+                    sql.ExecuteNonQuery(new SqlCommandTextInit(sb.ToString(), aliases));
+                    current = 0;
+                }
+
+                sb.Clear();
+                sb.Append(commandBase);
+            }
+
+            if (current > 0)
+                sb.Append(joinString);
+
+            sb.Append(buildLine(item));
+
+            current++;
+        }
+
+        if (current > 0)
+        {
+            string sCmd = sb.ToString();
+
+            if (!string.IsNullOrWhiteSpace(sCmd))
+            {
+                LocalServiceClient.LogService?.Invoke(EventType.Verbose, sCmd);
+                sql.ExecuteNonQuery(new SqlCommandTextInit(sCmd, aliases));
+            }
+        }
+    }
+
+    public static void DoGenericPartedCommands<T>(
+        string commandBase, 
+        IEnumerable<T> items, 
+        Func<T, string> buildLine, 
+        int partLimit, 
+        string joinString, 
+        TableAliases? aliases)
+    {
+        ISql sql = GetConnection();
+
+        sql.BeginTransaction();
+
+        try
+        {
+            ExecutePartedCommands(
+                sql,
+                commandBase,
+                items,
+                buildLine,
+                partLimit,
+                joinString,
+                aliases);
+
+            sql.Commit();
+        }
+        catch (Exception)
+        {
+            sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            sql.Close();
         }
     }
 }

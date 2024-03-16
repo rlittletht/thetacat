@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Meziantou.Framework.WPF.Collections;
-using Thetacat.Types.Parallel;
 
 namespace Thetacat.Logging;
 
@@ -20,7 +19,8 @@ public class CatLog
             { EventType.Information, 3 },
             { EventType.Verbose, 4 }
         };
-    private bool ShouldLog(EventType eventType)
+
+    public bool ShouldLog(EventType eventType)
     {
         return (s_logLevelMap[eventType] <= s_logLevelMap[m_mostVerboseEventType]);
     }

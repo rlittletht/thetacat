@@ -18,6 +18,11 @@ public class PseMetatagTree : IMetatagTreeItem
     private readonly ObservableCollection<IMetatagTreeItem> RootMetatags = new();
 
     public string Description => string.Empty;
+    public bool? Checked { get; set; }
+
+    public PseMetatagTree()
+    {
+    }
 
     public PseMetatagTree(IEnumerable<PseMetatag> metatags)
     {
@@ -91,6 +96,10 @@ public class PseMetatagTree : IMetatagTreeItem
     public string Name => "___Root";
     public string ID => "";
 
+    public void SeekAndDelete(HashSet<string> delete) => MetatagTreeItem.SeekAndDelete(this, delete);
+    public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher) => MetatagTreeItem.FilterTreeToMatches(this, matcher);
+    public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
+
     /*----------------------------------------------------------------------------
         %%Function: FindMatchingChild
         %%Qualified: Thetacat.Metatags.PseMetatagTree.FindMatchingChild
@@ -117,5 +126,23 @@ public class PseMetatagTree : IMetatagTreeItem
         }
 
         return null;
+    }
+
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    {
+        PseMetatagTree newItem = new PseMetatagTree();
+
+        cloneDelegate(newItem);
+        foreach (IMetatagTreeItem item in Children)
+        {
+            newItem.Children.Add(item.Clone(cloneDelegate));
+        }
+
+        return newItem;
+    }
+
+    public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
+    {
+        MetatagTreeItem.Preorder(this, parent, visit, depth);
     }
 }

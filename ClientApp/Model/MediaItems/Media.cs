@@ -1,39 +1,60 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Thetacat.ServiceClient;
-using Thetacat.Types;
-using Thetacat.Types.Parallel;
 
 namespace Thetacat.Model;
 
-public class Media: IMedia
+public class Media
 {
-    private readonly ObservableConcurrentDictionary<Guid, MediaItem> m_items;
+    private readonly ConcurrentDictionary<Guid, MediaItem> m_items;
 
-    public ObservableConcurrentDictionary<Guid, MediaItem> Items => m_items;
+    public ConcurrentDictionary<Guid, MediaItem> Items => m_items;
 
     public Media()
     {
-        m_items = new ObservableConcurrentDictionary<Guid, MediaItem>();
+        m_items = new ConcurrentDictionary<Guid, MediaItem>();
+    }
+
+    public void Reset()
+    {
+        m_items.Clear();
+    }
+
+    public void DeleteMediaItem(MediaItem item)
+    {
+        m_items.TryRemove(item.ID, out MediaItem? _);
     }
 
     public void AddNewMediaItem(MediaItem item)
     {
         item.PendingOp = MediaItem.Op.Create;
-        m_items.Add(item.ID, item);
+        m_items.TryAdd(item.ID, item);
     }
 
-    public void PushPendingChanges()
+    public void SetBaseFromOtherMedia(Media mediaBase)
+    {
+        foreach (MediaItem item in m_items.Values)
+        {
+            mediaBase.Items.TryGetValue(item.ID, out MediaItem? other);
+            item.SetPendingStateFromOther(other);
+        }
+    }
+
+    public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
         List<MediaItemDiff> diffs = BuildUpdates();
 
-        ServiceInterop.UpdateMediaItems(diffs);
+        if (verify != null && !verify(diffs.Count, "mediaItem"))
+            return;
+
+        ServiceInterop.UpdateMediaItems(catalogID, diffs);
 
         foreach (MediaItemDiff diff in diffs)
         {
             if (diff.DiffOp == MediaItemDiff.Op.Delete)
-                Items.Remove(diff.ID);
-            else if (Items.TryGetValue(diff.ID, out MediaItem item))
+                Items.TryRemove(diff.ID, out MediaItem? removing);
+            else if (Items.TryGetValue(diff.ID, out MediaItem? item))
             {
                 if (item.VectorClock == diff.VectorClock)
                     item.ResetPendingChanges();
@@ -47,7 +68,7 @@ public class Media: IMedia
 
         foreach (KeyValuePair<Guid, MediaItem> item in m_items)
         {
-            if (item.Value.MaybeHasChanges)
+            if (item.Value.MaybeHasChanges || item.Value.PendingOp == MediaItem.Op.Create)
             {
                 if (item.Value.PendingOp == MediaItem.Op.Create)
                     diffs.Add(MediaItemDiff.CreateInsert(item.Value));

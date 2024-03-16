@@ -38,6 +38,8 @@
                     <TextBox IsEnabled="False" Text="{Binding Path=ImageHeight}" />
                     <TextBlock Text="Original File Date" />
                     <TextBox IsEnabled="False" Text="{Binding Path=FileDateOriginal}" />
+                    <TextBlock Text="Import Date" />
+                    <TextBox IsEnabled="False" Text="{Binding Path=ImportDate}" />
                     <TextBlock Text="MD5 Hash" />
                     <TextBox IsEnabled="False" Text="{Binding Path=MD5}" />
                     <TextBlock Text="Mime Type" />

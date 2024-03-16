@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.CompilerServices;
 using Thetacat.Import;
 using Thetacat.ServiceClient;
@@ -45,7 +44,11 @@ public class MediaItemData : INotifyPropertyChanged
         m_mimeType = source.m_mimeType;
         m_md5 = source.m_md5;
         m_state = source.m_state;
-        m_tags = new ConcurrentDictionary<Guid, MediaTag>(source.Tags);
+        m_tags = new();
+        foreach (KeyValuePair<Guid, MediaTag> tag in source.m_tags)
+        {
+            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value));
+        }
         m_virtualPath = source.m_virtualPath;
     }
 
@@ -67,7 +70,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_state = MediaItemState.Pending;
         m_md5 = string.Empty;
         m_mimeType = string.Empty;
-        m_virtualPath = importItem.SourcePath;
+        m_virtualPath = importItem.VirtualPath;
         ID = Guid.NewGuid();
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
     }
