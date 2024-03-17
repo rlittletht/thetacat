@@ -59,7 +59,7 @@ public partial class MediaItemZoom : Window
             string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
             if (path != null)
-                App.State.ImageCache.TryAddItem(item, path);
+                App.State.ImageCache.TryQueueBackgroundLoadToCache(item, path);
 
             App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
         }

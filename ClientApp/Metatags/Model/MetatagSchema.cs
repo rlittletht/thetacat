@@ -293,6 +293,8 @@ public class MetatagSchema
             AddMetatag(BuiltinTags.s_OriginalMediaDate);
         if (GetMetatagFromId(BuiltinTags.s_ImportDateID) == null)
             AddMetatag(BuiltinTags.s_ImportDate);
+        if (GetMetatagFromId(BuiltinTags.s_TransformRotateID) == null)
+            AddMetatag(BuiltinTags.s_TransformRotate);
     }
 
     public void ReplaceFromService(Guid catalogID)

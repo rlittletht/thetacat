@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
 using System.Windows.Media.Imaging;
 using TCore.Pipeline;
 using Thetacat.ServiceClient.LocalDatabase;
@@ -33,7 +34,7 @@ public class Derivatives
     private readonly Dictionary<Guid, Dictionary<string, List<DerivativeItem>>> m_mediaFormatDerivatives = new();
 
     // for each media item, an ordered list of scaled media -- smallest to largest
-    private readonly Dictionary<Guid, SortedList<double, DerivativeItem>> m_scaledMediaDerivatives = new();
+    private readonly Dictionary<Guid, SortedList<double, List<DerivativeItem>>> m_scaledMediaDerivatives = new();
 
     private readonly object m_lock = new Object();
 
@@ -43,7 +44,8 @@ public class Derivatives
         {
             List<DerivativeItem> items = ListSupport.AddItemToMappedList(m_mediaDerivatives, item.MediaId, item);
             List<DerivativeItem> mimeList = ListSupport.AddItemToMappedMapList(m_mediaFormatDerivatives, item.MediaId, item.MimeType, item);
-            SortedList<double, DerivativeItem> scaledList = ListSupport.AddItemToMappedSortedList(
+
+            SortedList<double, List<DerivativeItem>> scaledList = ListSupport.AddItemToMappedSortedListOfList(
                 m_scaledMediaDerivatives,
                 item.MediaId,
                 item.ScaleFactor,
@@ -51,14 +53,14 @@ public class Derivatives
         }
     }
 
-    public void QueueSaveResampledImage(MediaItem item, BitmapSource resampledImage)
+    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage)
     {
-        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, resampledImage, false));
+        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey));
     }
 
-    public void QueueSaveReformatImage(MediaItem item, BitmapSource reformattedImage)
+    public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
     {
-        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, reformattedImage, true));
+        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey));
     }
 
     public void DeleteMediaItem(Guid id)
@@ -197,7 +199,7 @@ public class Derivatives
 
         this requires a scaleFactor of at least 1.0
     ----------------------------------------------------------------------------*/
-    public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, [MaybeNullWhen(false)] out DerivativeItem matched)
+    public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched)
     {
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
         {
@@ -210,6 +212,9 @@ public class Derivatives
 
         foreach (DerivativeItem item in items)
         {
+            if (!transformations.IsEqualTransformations(item.TransformationsKey))
+                continue;
+
             if (CompareDoubles(item.ScaleFactor, 1.0, 4) < 0)
                 continue;
 
@@ -247,9 +252,9 @@ public class Derivatives
         if an epsilon is provided, then return a scaling factor within that
         epsilon or false.
     ----------------------------------------------------------------------------*/
-    public bool TryGetResampledDerivative(Guid mediaId, double scaleFactor, [MaybeNullWhen(false)] out DerivativeItem matched, double? epsilon = null)
+    public bool TryGetResampledDerivative(Guid mediaId, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, double? epsilon = null)
     {
-        if (!m_scaledMediaDerivatives.TryGetValue(mediaId, out SortedList<double, DerivativeItem>? items))
+        if (!m_scaledMediaDerivatives.TryGetValue(mediaId, out SortedList<double, List<DerivativeItem>>? items))
         {
             matched = null;
             return false;
@@ -259,14 +264,27 @@ public class Derivatives
         // usable value; else its the nearest equal or greatest value)
         DerivativeItem? itemLast = null;
 
-        foreach (KeyValuePair<double, DerivativeItem> item in items)
+        foreach (KeyValuePair<double, List<DerivativeItem>> kvpItems in items)
         {
+            DerivativeItem? transformedMatch = null;
+
+            foreach (DerivativeItem item in kvpItems.Value)
+            {
+                if (!transformations.IsEqualTransformations(item.TransformationsKey))
+                    continue;
+
+                transformedMatch = item;
+            }
+
+            if (transformedMatch == null)
+                continue;
+
             if (epsilon != null)
             {
-                int comp = CompareDoublesWithEpsilon(item.Key, scaleFactor, epsilon.Value);
+                int comp = CompareDoublesWithEpsilon(kvpItems.Key, scaleFactor, epsilon.Value);
                 if (comp == 0)
                 {
-                    itemLast = item.Value;
+                    itemLast = transformedMatch;
                     continue;
                 }
 
@@ -278,11 +296,11 @@ public class Derivatives
             }
             else
             {
-                if (CompareDoubles(item.Key, scaleFactor, 4) >= 0)
+                if (CompareDoubles(kvpItems.Key, scaleFactor, 4) >= 0)
                 {
                     if (itemLast == null)
                     {
-                        matched = item.Value;
+                        matched = transformedMatch;
                         return true;
                     }
 
@@ -290,7 +308,7 @@ public class Derivatives
                     return true;
                 }
 
-                itemLast = item.Value;
+                itemLast = transformedMatch;
             }
         }
 
@@ -314,12 +332,14 @@ public class Derivatives
         public int OriginalHeight { get; private set; }
         public bool FullBitmapFidelity { get; private set; }
         public BitmapSource? Image { get; private set; }
+        public string TransformationsKey { get; private set; } = string.Empty;
+
 
         public DerivativeWork()
         {
         }
 
-        public DerivativeWork(MediaItem mediaItem, BitmapSource resampledImage, bool fullBitmapFidelity)
+        public DerivativeWork(MediaItem mediaItem, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;
@@ -327,6 +347,7 @@ public class Derivatives
             MediaKey = mediaItem.ID;
             FullBitmapFidelity = fullBitmapFidelity;
             Type = fullBitmapFidelity ? WorkType.Transcode : WorkType.ResampleImage;
+            TransformationsKey = transformationsKey;
         }
 
         public void InitFrom(DerivativeWork t)
@@ -337,6 +358,7 @@ public class Derivatives
             MediaKey = t.MediaKey;
             Image = t.Image;
             FullBitmapFidelity = t.FullBitmapFidelity;
+            TransformationsKey = t.TransformationsKey;
         }
     }
 
@@ -364,11 +386,13 @@ public class Derivatives
             if (!Directory.Exists(destinationDir.Local))
                 Directory.CreateDirectory(destinationDir.Local);
 
+            string transformationsSuffix = item.TransformationsKey == string.Empty ? "" : $"-{item.TransformationsKey}";
+
             if (!item.FullBitmapFidelity)
             {
                 double scale = (double)item.Image.PixelWidth / item.OriginalWidth;
 
-                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}.jpg");
+                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}{transformationsSuffix}.jpg");
 
                 using FileStream stream = new(destination.Local, FileMode.Create);
 
@@ -380,12 +404,12 @@ public class Derivatives
                 encoder.Frames.Add(BitmapFrame.Create(item.Image));
                 encoder.Save(stream);
 
-                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", scale, destination);
+                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", scale, transformationsSuffix, destination);
                 App.State.Derivatives.AddDerivative(newItem);
             }
             else
             {
-                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}.jpg");
+                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}{transformationsSuffix}.jpg");
 
                 using FileStream stream = new(destination.Local, FileMode.Create);
 
@@ -397,7 +421,7 @@ public class Derivatives
                 encoder.Frames.Add(BitmapFrame.Create(item.Image));
                 encoder.Save(stream);
 
-                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", 1.0, destination);
+                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", 1.0, transformationsSuffix, destination);
                 App.State.Derivatives.AddDerivative(newItem);
             }
         }

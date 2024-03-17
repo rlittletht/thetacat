@@ -273,6 +273,23 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
+    public int? TransformRotate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_TransformRotateID, out MediaTag? tag))
+                return tag.Value == null ? null : int.Parse(tag.Value);
+
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
+            FAddOrUpdateMediaTag(tag, true);
+            OnPropertyChanged(nameof(TransformRotate));
+        }
+    }
+
     #endregion
 
     #region Changes/Versions

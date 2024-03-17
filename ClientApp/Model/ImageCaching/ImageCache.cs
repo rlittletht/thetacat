@@ -63,7 +63,7 @@ public class ImageCache
         m_imageLoaderPipeline?.Stop();
     }
 
-    public ImageCacheItem TryAddItem(MediaItem mediaItem, string localPath)
+    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string localPath)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
 
@@ -116,9 +116,11 @@ public class ImageCache
         public string? PathToImage { get; set; }
         public double AspectRatio { get; set; }
         public int? OriginalWidth { get; set; }
+        public Transformations Transformations { get; set; }
 
         public ImageLoaderWork()
         {
+            Transformations = Transformations.Empty;
         }
 
         public ImageLoaderWork(MediaItem mediaItem, ImageCacheItem cacheItem)
@@ -127,6 +129,7 @@ public class ImageCache
             PathToImage = cacheItem.LocalPath;
             AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
             OriginalWidth = mediaItem.ImageWidth;
+            Transformations = new Transformations(mediaItem);
         }
 
         public void InitFrom(ImageLoaderWork t)
@@ -135,6 +138,7 @@ public class ImageCache
             PathToImage = t.PathToImage;
             AspectRatio = t.AspectRatio;
             OriginalWidth = t.OriginalWidth;
+            Transformations = new Transformations(t.Transformations.TransformationsKey);
         }
     }
 
@@ -156,7 +160,28 @@ public class ImageCache
             ".nef", ".psd", ".jp2"
         };
 
-    private BitmapImage LoadBitmapFromPath(string path, int? scaleWidth)
+    private BitmapSource DoTransformations(BitmapSource bitmapSource, Transformations transformations)
+    {
+        BitmapSource current = bitmapSource;
+        
+        foreach (KeyValuePair<Guid, string?> transformation in transformations._Transformations)
+        {
+            if (transformation.Key == Transformations.s_rotateTransform)
+            {
+                if (transformation.Value != null)
+                {
+                    Transform transform = new RotateTransform(int.Parse(transformation.Value));
+                    current = new TransformedBitmap(current, transform);
+                    current.Freeze();
+                }
+            }
+        }
+
+        return current;
+    }
+
+
+    private BitmapSource LoadBitmapFromPath(string path, Transformations transformations, int? scaleWidth)
     {
         bool ignoreColorProfile = false;
 
@@ -180,7 +205,7 @@ public class ImageCache
                 image.EndInit();
                 image.Freeze();
 
-                return image;
+                return DoTransformations(image, transformations);
             }
             catch (FileFormatException)
             {
@@ -191,7 +216,7 @@ public class ImageCache
         }
     }
 
-    private BitmapSource LoadThroughEmgu(string filename, int? scaleWidth)
+    private BitmapSource LoadThroughEmgu(string filename)
     {
         using Mat mat = Emgu.CV.CvInvoke.Imread(filename, ImreadModes.Unchanged);
 
@@ -242,7 +267,7 @@ public class ImageCache
         return bitmap;
     }
 
-    private BitmapImage LoadBitmapThroughDecoder(string path, int? scaleWidth)
+    private BitmapImage LoadBitmapThroughDecoder(string path, Transformations transformations)
     {
         bool ignoreColorProfile = false;
         string extension = Path.GetExtension(path.ToLowerInvariant());
@@ -265,7 +290,7 @@ public class ImageCache
                     }
                     else
                     {
-                        source = LoadBitmapFromPath(path, scaleWidth);
+                        source = LoadBitmapFromPath(path, transformations, null);
                     }
 
                     // this will fail with some (all?) NEF files trying to copy the metadata, even if we specify to ignore the color
@@ -294,7 +319,9 @@ public class ImageCache
                     // don't try to use emgu for NEF files -- it will just get the thumbnail. rethrow in this case
                     if (path.ToLowerInvariant().EndsWith(".nef"))
                         throw;
-                    source = LoadThroughEmgu(path, scaleWidth);
+                    // we only use emgu for full fidelity conversions. if we didn't manage to get a
+                    // format derivative to work with, then fail
+                    source = LoadThroughEmgu(path);
                 }
 
                 JpegBitmapEncoder encoder = new();
@@ -307,10 +334,10 @@ public class ImageCache
 
                 BitmapImage image = new();
                 image.BeginInit();
-                if (scaleWidth != null)
-                {
-                    image.DecodePixelWidth = scaleWidth.Value;
-                }
+//                if (scaleWidth != null)
+//                {
+//                    image.DecodePixelWidth = scaleWidth.Value;
+//                }
 
                 if (ignoreColorProfile)
                 {
@@ -332,6 +359,20 @@ public class ImageCache
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ScaleBitmap
+        %%Qualified: Thetacat.Model.ImageCaching.ImageCache.ScaleBitmap
+
+        We assume all transformations have already been done on the source
+        bitmap
+    ----------------------------------------------------------------------------*/
+    BitmapSource ScaleBitmap(BitmapSource fullImage, double scaleFactor)
+    {
+        TransformedBitmap transformed = new TransformedBitmap(fullImage, new ScaleTransform(scaleFactor, scaleFactor));
+        transformed.Freeze();
+        return transformed;
+    }
+
     private static Dictionary<string, int> s_formatPriorities =
         new()
         {
@@ -341,12 +382,72 @@ public class ImageCache
             { "image/jpeg", 10 },
         };
 
+    BitmapSource GetTransformedFullFidelityImage(string pathToRawImage, Guid mediaId, Transformations transformations)
+    {
+        BitmapSource? fullImage = null;
+        MediaItem mediaItem = App.State.Catalog.GetMediaFromId(mediaId);
+        string lowerPath = pathToRawImage.ToLowerInvariant();
+        string extension = Path.GetExtension(lowerPath);
+        
+        // first get a readable source for this image
+        if (ReformatExtensions.Contains(extension) || ComingSoonExtensions.Contains(extension) || SkipExtensions.Contains(extension))
+        {
+            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, transformations, out DerivativeItem? formatDerivative))
+            {
+                // check to see if we have a non-transformed version available
+                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, Transformations.Empty, out formatDerivative))
+                {
+                    // ok, do the transformations and save them
+                    fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
+                }
+                else
+                {
+                    // first get an untransformed full fidelity version
+                    fullImage = LoadBitmapThroughDecoder(pathToRawImage, Transformations.Empty);
+
+                    if (!transformations.IsEmpty)
+                    {
+                        // save the pre-transform derivative
+                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, Transformations.Empty, fullImage);
+
+                        // and transform it
+                        fullImage = DoTransformations(fullImage, transformations);
+                    }
+                }
+
+                App.State.Derivatives.QueueSaveReformatImage(mediaItem, transformations, fullImage);
+            }
+            else
+            {
+                fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
+            }
+        }
+        else
+        {
+            // we didn't have to reformat it, so the raw image is our source of full fidelity truth.
+            fullImage = LoadBitmapFromPath(pathToRawImage, transformations, null);
+        }
+
+        return fullImage;
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: DoImageLoaderWork
         %%Qualified: Thetacat.Model.MediaExplorerCollection.DoImageLoaderWork
 
-        This will create a bitmapimage for the path and assign it to the
-        MediaExplorerItem
+        This processes the image on the background thread according to the cache
+        type and media properties.
+
+        Derivative types:
+        This will take care of getting a getting a derivative type if necessary
+        (because we need to reformat it)
+    
+        Resample:
+        Resample the image to a lower resolution if we aren't a full fidelity
+        cache.
+
+        Derivative transforms:
+        This will also apply transormations and cache the derivative
     ----------------------------------------------------------------------------*/
     void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems)
     {
@@ -358,106 +459,77 @@ public class ImageCache
                 continue;
             }
 
-            string lowerPath = item.PathToImage.ToLowerInvariant();
-            string extension = Path.GetExtension(lowerPath);
-
-            DerivativeItem? formatDerivative = null;
-            BitmapImage? fullImage = null;
-            string? pathToFullImage = null;
-            int pixelsCached = 0;
-
             MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaKey);
+            Transformations transformations = item.Transformations;
+
             try
             {
-                // first get a readable source for this image
-                if (ReformatExtensions.Contains(extension) || ComingSoonExtensions.Contains(extension) || SkipExtensions.Contains(extension))
-                {
-                    if (!App.State.Derivatives.TryGetFormatDerivative(item.MediaKey, s_formatPriorities, out formatDerivative))
-                    {
-                        // we have to get a full fidelity format derivative
-                        fullImage = LoadBitmapThroughDecoder(item.PathToImage, null);
-                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, fullImage);
-                    }
-                    else
-                    {
-                        pathToFullImage = formatDerivative.Path.Local;
-                    }
-                }
-
-                // figure out if we are resampling this image
+                BitmapSource? targetBitmap = null;
                 double scaleFactor =
                     (m_fFullFidelity || item.OriginalWidth == null)
                         ? 1.0
                         : (double)Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth)) / item.OriginalWidth.Value;
                 int targetWidth = 0;
+                bool scaling = false;
 
                 if (Derivatives.CompareDoubles(scaleFactor, 1.0, 4) != 0)
+                {
+                    scaling = true;
                     targetWidth = (int)Math.Floor(item.OriginalWidth!.Value * scaleFactor);
+                }
 
-                string path = item.PathToImage;
-
-                // if we have a resampled derivative, use it
+                // if we have a resampled derivative matching transformations, use it
                 // else if we have a fullImage, use it to scale to a resampled derivative (and queue it as a new derivative)
                 // else if we have a pathToFullImage, use that as the source to resample (and queue it as a new derivative)
                 // else use the original ImagePathToSourceas the source to resample (and queue it as a new derivative)
 
-                DerivativeItem? derivative = null;
-                BitmapSource? targetBitmap = null;
-
-                // see if there is a derivative for this
-                if (!m_fFullFidelity)
+                // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
+                // need to transcode)
+                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, transformations, out DerivativeItem? derivative, 0.02))
                 {
-                    if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, out derivative, 0.02))
-                    {
-                        path = derivative.Path.Local;
-                    }
-                    else if (fullImage != null)
-                    {
-                        TransformedBitmap transformed = new TransformedBitmap(fullImage, new ScaleTransform(scaleFactor, scaleFactor));
-                        pixelsCached = transformed.PixelHeight * transformed.PixelWidth * 4;
-
-                        transformed.Freeze();
-                        targetBitmap = transformed;
-                    }
-                    else if (pathToFullImage != null)
-                    {
-                        path = pathToFullImage;
-                    }
+                    // perfect match. use it. don't do any transformations because we matched a transformed derivative
+                    targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_fFullFidelity ? null : targetWidth);
                 }
                 else
                 {
-                    if (fullImage != null)
+                    // we didn't find a match for what we want exactly. get a full fidelity image with the correct transformation
+                    // (this might get transcoded). (this will save any interim transform steps as derivative items)
+                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.Transformations);
+
+                    // and now scale it to the size we want, if necessary
+                    if (scaling)
+                    {
+                        targetBitmap = ScaleBitmap(fullImage, scaleFactor);
+                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap);
+                    }
+                    else
+                    {
                         targetBitmap = fullImage;
-                    else if (pathToFullImage != null)
-                        path = pathToFullImage;
+                    }
                 }
 
-                if (targetBitmap == null)
-                {
-                    BitmapImage image = LoadBitmapFromPath(path, m_fFullFidelity ? null : targetWidth);
-                    pixelsCached = image.PixelHeight * image.PixelWidth * 4;
-                    targetBitmap = image;
-                }
+                int pixelsCached = targetBitmap.PixelHeight * targetBitmap.PixelWidth * 4;
 
                 Interlocked.Add(ref m_cacheSize, pixelsCached);
                 Interlocked.Add(ref m_numImages, 1);
 
-//                MainWindow.LogForApp(EventType.Warning, $"loading image {item.PathToImage} with decode {scaleWidth}");
-
-
-                if (derivative == null && !m_fFullFidelity)
-                    App.State.Derivatives.QueueSaveResampledImage(mediaItem, targetBitmap);
-
-                if (Items.TryGetValue(item.MediaKey, out ImageCacheItem? cacheItem))
-                {
-                    cacheItem.Image = targetBitmap;
-                    TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
-                }
+                InternalSetBitmapForItem(item.MediaKey, targetBitmap);
             }
             catch (Exception e)
             {
                 MainWindow.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
+                BitmapSource error = CreatePlaceholderImage($"cache failed");
+                InternalSetBitmapForItem(item.MediaKey, error);
             }
+        }
+    }
+
+    private void InternalSetBitmapForItem(Guid mediaId, BitmapSource? targetBitmap)
+    {
+        if (Items.TryGetValue(mediaId, out ImageCacheItem? cacheItem))
+        {
+            cacheItem.Image = targetBitmap;
+            TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
         }
     }
 

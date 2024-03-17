@@ -249,43 +249,43 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             minRow++;
         }
 
-        MainWindow.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
-        ThreadPool.QueueUserWorkItem(
-            stateInfo =>
+        List<MediaItem> itemsToQueue = new();
+        foreach (MediaExplorerLineModel line in linesToCache)
+        {
+            foreach (MediaExplorerItem item in line.Items)
             {
-                foreach (MediaExplorerLineModel line in linesToCache)
-                {
-                    foreach (MediaExplorerItem item in line.Items)
-                    {
-                        if (catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
-                        {
-                            string? path = cache.TryGetCachedFullPath(item.MediaId);
+                if (catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
+                    itemsToQueue.Add(mediaItem);
+            }
+        }
 
-                            if (path != null)
-                            {
-//                                MainWindow.LogForApp(EventType.Warning, $"trying to queue {path} for load");
-                                App.State.PreviewImageCache.TryAddItem(mediaItem, path);
-                            }
-                        }
-                    }
-                }
-            });
+        MainWindow.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
+        QueueImageCacheLoadForMediaItems(itemsToQueue);
 
         MainWindow.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
     }
 
-    public static void QueueImageForMediaItem(MediaItem mediaItem)
+    /*----------------------------------------------------------------------------
+        %%Function: QueueImageCacheLoadForMediaItems
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.QueueImageCacheLoadForMediaItems
+
+        This queues an image load into the cache for the media item. This 
+    ----------------------------------------------------------------------------*/
+    public static void QueueImageCacheLoadForMediaItems(IReadOnlyCollection<MediaItem> mediaItems)
     {
         ICache cache = App.State.Cache;
 
         ThreadPool.QueueUserWorkItem(
             stateInfo =>
             {
-                string? path = cache.TryGetCachedFullPath(mediaItem.ID);
-
-                if (path != null)
+                foreach (MediaItem mediaItem in mediaItems)
                 {
-                    App.State.PreviewImageCache.TryAddItem(mediaItem, path);
+                    string? path = cache.TryGetCachedFullPath(mediaItem.ID);
+
+                    if (path != null)
+                    {
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, path);
+                    }
                 }
             });
     }
