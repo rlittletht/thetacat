@@ -471,11 +471,25 @@ namespace Thetacat.Import.UI
                 m_model.VirtualPathPreview = $"{MakeVirtualPathForImportItem(node)}";
         }
 
+        VirtualRootNameItem EnsurePathInVirtualRoots(string path)
+        {
+            VirtualRootNameItem item = new VirtualRootNameItem(path);
+
+            foreach (VirtualRootNameItem root in m_model.VirtualPathRoots)
+            {
+                if (string.Compare(root.FullName, item.FullName, StringComparison.OrdinalIgnoreCase) == 0)
+                    return root;
+            }
+
+            m_model.VirtualPathRoots.Add(item);
+            return item;
+        }
         private void DoSelectedVirtualRootChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (e.NewValue is BackingTreeItem<VirtualRootNameItem> newItem)
             {
-                VirtualPathRootsComboBox.Text = newItem.Data.FullName;
+                
+                VirtualPathRootsComboBox.SelectedItem = EnsurePathInVirtualRoots(newItem.Data.FullName);
             }
 
             VirtualRootPickerPopup.IsOpen = false;
