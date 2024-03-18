@@ -275,6 +275,22 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     {
         ICache cache = App.State.Cache;
 
+        // these are pushed onto the pool with no guarantee about what order they
+        // will get run with respect to other pushes to the pool.
+
+        // we know that the work willbe done as a unit, but it might get done at the same time 
+        // as other work, which means the QueueBackgroundLoadToCache might happen at the same time
+        // as other BackgroundLoadToCache items
+
+        // the image loader work will check for existing derivative items and create them if they 
+        // don't exist.. BUT the create is done on a worker thread and might execute AFTER
+        // another ImageLoaderWork checks to see if they are loading.
+
+        // we need to populate the derivative item IMMEDIATELY with the image that can be used,
+        // and the queued task can be the (slower) save to disk. If the save fails, then we can live
+        // with the derivative item living in memory and it will just go away when we exit (we will
+        // have no durable derivative there).
+
         ThreadPool.QueueUserWorkItem(
             stateInfo =>
             {

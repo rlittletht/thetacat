@@ -59,14 +59,14 @@
                 <GroupBox.Header>
                     MediaTags set on this item
                 </GroupBox.Header>
-                <ListView Name="MetadataListView" ItemsSource="{Binding Path=MediaItem.Tags}">
+                <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn DisplayMemberBinding="{Binding Value.Metatag.StandardName}">
-                                <GridViewColumnHeader Content="Metatag" Tag="Value.Metatag.StandardName"
+                            <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
+                                <GridViewColumnHeader Content="Metatag" Tag="Metatag.StandardName"
                                                       Click="SortType" />
                             </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Value.Value}">
+                            <GridViewColumn DisplayMemberBinding="{Binding Value}">
                                 <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
                             </GridViewColumn>
                         </GridView>

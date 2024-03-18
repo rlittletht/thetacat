@@ -57,9 +57,14 @@
                         <MenuItem Header="Reset Cache"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
                                   CommandParameter="{Binding}" />
-                        <MenuItem Header="Rotate Right"
-                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RotateItemsRight}"
-                                  CommandParameter="{Binding}" />
+                        <MenuItem Header="Transforms">
+                            <MenuItem Header="Rotate Right"
+                                      Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RotateItemsRight}"
+                                      CommandParameter="{Binding}" />
+                            <MenuItem Header="Mirror"
+                                      Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.MirrorItems}"
+                                      CommandParameter="{Binding}" />
+                        </MenuItem>
                     </ContextMenu>
                 </StackPanel.ContextMenu>
                 <Image Source="{Binding Path=TileImage}"

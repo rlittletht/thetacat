@@ -284,9 +284,36 @@ public class MediaItem : INotifyPropertyChanged
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
-            FAddOrUpdateMediaTag(tag, true);
+            if (value != null)
+            {
+                MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
+                FAddOrUpdateMediaTag(tag, true);
+            }
+            else
+            {
+                FRemoveMediaTag(BuiltinTags.s_TransformRotateID);
+            }
+
             OnPropertyChanged(nameof(TransformRotate));
+        }
+    }
+
+    public bool TransformMirror
+    {
+        get => Tags.ContainsKey(BuiltinTags.s_TransformMirrorID);
+        set
+        {
+            if (value)
+            {
+                MediaTag tag = new MediaTag(BuiltinTags.s_TransformMirror, null);
+                FAddOrUpdateMediaTag(tag, true);
+            }
+            else
+            {
+                FRemoveMediaTag(BuiltinTags.s_TransformMirrorID);
+            }
+
+            OnPropertyChanged(nameof(TransformMirror));
         }
     }
 
@@ -494,6 +521,8 @@ public class MediaItem : INotifyPropertyChanged
             return false;
         }
 
+        OnPropertyChanged(nameof(Tags));
+        TriggerItemDirtied();
         VectorClock++;
         return true;
     }
@@ -548,6 +577,9 @@ public class MediaItem : INotifyPropertyChanged
         if (!identicalExisting)
             TriggerItemDirtied();
 //            App.State.SetCollectionDirtyState(true);
+
+        if (!identicalExisting)
+            OnPropertyChanged(nameof(Tags));
 
         return !identicalExisting;
     }

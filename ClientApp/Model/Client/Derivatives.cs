@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
+using System.Windows;
 using System.Windows.Media.Imaging;
 using TCore.Pipeline;
 using Thetacat.ServiceClient.LocalDatabase;
@@ -53,14 +54,60 @@ public class Derivatives
         }
     }
 
+    DerivativeItem CreateDerivativeItemForWork(DerivativeWork item)
+    {
+        if (item.Image == null)
+            throw new CatExceptionInternalFailure("null image");
+
+        double scale;
+
+        if (!item.FullBitmapFidelity)
+            scale = (double)item.Image.PixelWidth / item.OriginalWidth;
+        else
+            scale = 1.0;
+
+        return new DerivativeItem(item.MediaKey, "image/jpeg", scale, item.TransformationsKey, item.Image);
+    }
+
+    public DerivativeItem GetMatchingDerivativeItem(DerivativeItem match)
+    {
+        lock (m_lock)
+        {
+            if (!m_mediaDerivatives.TryGetValue(match.MediaId, out List<DerivativeItem>? items))
+                throw new CatExceptionInternalFailure("can't find matching derivative item");
+
+            foreach (DerivativeItem item in items)
+            {
+                if (item.IsSaveQueued
+                    && item.TransformationsKey == match.TransformationsKey
+                    && Math.Abs(item.ScaleFactor - match.ScaleFactor) < 0.0001
+                    && item.MimeType == match.MimeType)
+                {
+                    return item;
+                }
+            }
+
+            throw new CatExceptionInternalFailure("can't find matching derivative item");
+        }
+    }
+
+
+    void QueueDerivativeWork(DerivativeWork work)
+    {
+        DerivativeItem item = CreateDerivativeItemForWork(work);
+
+        App.State.Derivatives.AddDerivative(item);
+        m_derivativeWorkPipeline?.Producer.QueueRecord(work);
+    }
+
     public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage)
     {
-        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey));
+        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey));
     }
 
     public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
     {
-        m_derivativeWorkPipeline?.Producer.QueueRecord(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey));
+        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey));
     }
 
     public void DeleteMediaItem(Guid id)
@@ -199,8 +246,9 @@ public class Derivatives
 
         this requires a scaleFactor of at least 1.0
     ----------------------------------------------------------------------------*/
-    public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched)
+    public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
     {
+        pendingBitmap = null;
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
         {
             matched = null;
@@ -238,6 +286,7 @@ public class Derivatives
         }
 
         matched = lastMatch;
+        pendingBitmap = matched?.PendingBitmap;
         return matched != null;
     }
 
@@ -252,8 +301,10 @@ public class Derivatives
         if an epsilon is provided, then return a scaling factor within that
         epsilon or false.
     ----------------------------------------------------------------------------*/
-    public bool TryGetResampledDerivative(Guid mediaId, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, double? epsilon = null)
+    public bool TryGetResampledDerivative(Guid mediaId, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap, double? epsilon = null)
     {
+        pendingBitmap = null;
+
         if (!m_scaledMediaDerivatives.TryGetValue(mediaId, out SortedList<double, List<DerivativeItem>>? items))
         {
             matched = null;
@@ -291,6 +342,8 @@ public class Derivatives
                 if (comp > 0)
                 {
                     matched = itemLast;
+                    pendingBitmap = matched?.PendingBitmap;
+
                     return matched != null;
                 }
             }
@@ -305,6 +358,7 @@ public class Derivatives
                     }
 
                     matched = itemLast;
+                    pendingBitmap = matched.PendingBitmap;
                     return true;
                 }
 
@@ -313,6 +367,7 @@ public class Derivatives
         }
 
         matched = itemLast;
+        pendingBitmap = matched?.PendingBitmap;
         return matched != null;
     }
 
@@ -388,41 +443,33 @@ public class Derivatives
 
             string transformationsSuffix = item.TransformationsKey == string.Empty ? "" : $"-{item.TransformationsKey}";
 
-            if (!item.FullBitmapFidelity)
+            PathSegment destination = PathSegment.Join(
+                destinationDir,
+                $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}{transformationsSuffix}.jpg");
+
+            DerivativeItem derivative = CreateDerivativeItemForWork(item);
+            int quality = item.FullBitmapFidelity ? 100 : 90;
+
+            try
             {
-                double scale = (double)item.Image.PixelWidth / item.OriginalWidth;
+                   using FileStream stream = new(destination.Local, FileMode.Create);
 
-                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}{transformationsSuffix}.jpg");
+                    JpegBitmapEncoder encoder =
+                        new()
+                        {
+                            QualityLevel = quality
+                        };
+                    encoder.Frames.Add(BitmapFrame.Create(item.Image));
+                    encoder.Save(stream);
 
-                using FileStream stream = new(destination.Local, FileMode.Create);
-
-                JpegBitmapEncoder encoder =
-                    new()
-                    {
-                        QualityLevel = 90
-                    };
-                encoder.Frames.Add(BitmapFrame.Create(item.Image));
-                encoder.Save(stream);
-
-                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", scale, transformationsSuffix, destination);
-                App.State.Derivatives.AddDerivative(newItem);
+                    DerivativeItem match = GetMatchingDerivativeItem(derivative);
+                    // this is no longer pending save
+                    match.Path = destination;
+                    DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", derivative.ScaleFactor, item.TransformationsKey, destination);
             }
-            else
+            catch (Exception ex)
             {
-                PathSegment destination = PathSegment.Join(destinationDir, $"{item.MediaKey}-{item.Image.PixelWidth}x{item.Image.PixelHeight}{transformationsSuffix}.jpg");
-
-                using FileStream stream = new(destination.Local, FileMode.Create);
-
-                JpegBitmapEncoder encoder =
-                    new()
-                    {
-                        QualityLevel = 100
-                    };
-                encoder.Frames.Add(BitmapFrame.Create(item.Image));
-                encoder.Save(stream);
-
-                DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", 1.0, transformationsSuffix, destination);
-                App.State.Derivatives.AddDerivative(newItem);
+                MessageBox.Show($"Can't save derivate item {destination}: {ex.Message}");
             }
         }
     }

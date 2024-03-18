@@ -102,9 +102,12 @@ public class ImageCache
     {
         if (Items.TryGetValue(mediaId, out ImageCacheItem? item))
         {
+            bool fNeedTrigger = item.Image != null;
+
             item.Image = null;
             item.IsLoadQueued = false;
-            TriggerImageCacheUpdatedEvent(mediaId);
+            if (fNeedTrigger)
+                TriggerImageCacheUpdatedEvent(mediaId);
         }
     }
 
@@ -172,8 +175,12 @@ public class ImageCache
                 {
                     Transform transform = new RotateTransform(int.Parse(transformation.Value));
                     current = new TransformedBitmap(current, transform);
-                    current.Freeze();
                 }
+            }
+            else if (transformation.Key == Transformations.s_mirrorTransform)
+            {
+                Transform transform = new ScaleTransform(-1.0, 1.0, 0.0, 0.0);
+                current = new TransformedBitmap(current, transform);
             }
         }
 
@@ -203,7 +210,6 @@ public class ImageCache
 
                 image.UriSource = new Uri(path);
                 image.EndInit();
-                image.Freeze();
 
                 return DoTransformations(image, transformations);
             }
@@ -262,7 +268,6 @@ public class ImageCache
 
         RenderTargetBitmap bitmap = new RenderTargetBitmap(512, 512, 300, 300, PixelFormats.Pbgra32);
         bitmap.Render(visual);
-        bitmap.Freeze();
 
         return bitmap;
     }
@@ -346,7 +351,6 @@ public class ImageCache
 
                 image.StreamSource = new MemoryStream(memoryStream.ToArray());
                 image.EndInit();
-                image.Freeze();
 
                 return image;
             }
@@ -369,7 +373,6 @@ public class ImageCache
     BitmapSource ScaleBitmap(BitmapSource fullImage, double scaleFactor)
     {
         TransformedBitmap transformed = new TransformedBitmap(fullImage, new ScaleTransform(scaleFactor, scaleFactor));
-        transformed.Freeze();
         return transformed;
     }
 
@@ -392,13 +395,18 @@ public class ImageCache
         // first get a readable source for this image
         if (ReformatExtensions.Contains(extension) || ComingSoonExtensions.Contains(extension) || SkipExtensions.Contains(extension))
         {
-            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, transformations, out DerivativeItem? formatDerivative))
+            BitmapSource? pendingBitmap;
+
+            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
             {
                 // check to see if we have a non-transformed version available
-                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, Transformations.Empty, out formatDerivative))
+                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
                 {
                     // ok, do the transformations and save them
-                    fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
+                    if (pendingBitmap != null)
+                        fullImage = DoTransformations(pendingBitmap, transformations);
+                    else
+                        fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
                 }
                 else
                 {
@@ -408,6 +416,7 @@ public class ImageCache
                     if (!transformations.IsEmpty)
                     {
                         // save the pre-transform derivative
+                        fullImage.Freeze();
                         App.State.Derivatives.QueueSaveReformatImage(mediaItem, Transformations.Empty, fullImage);
 
                         // and transform it
@@ -415,11 +424,15 @@ public class ImageCache
                     }
                 }
 
+                fullImage.Freeze();
                 App.State.Derivatives.QueueSaveReformatImage(mediaItem, transformations, fullImage);
             }
             else
             {
-                fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
+                if (pendingBitmap != null)
+                    fullImage = DoTransformations(pendingBitmap, transformations);
+                else
+                    fullImage = LoadBitmapFromPath(formatDerivative.Path.Local, transformations, null);
             }
         }
         else
@@ -485,10 +498,18 @@ public class ImageCache
 
                 // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
                 // need to transcode)
-                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, transformations, out DerivativeItem? derivative, 0.02))
+                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
                 {
-                    // perfect match. use it. don't do any transformations because we matched a transformed derivative
-                    targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_fFullFidelity ? null : targetWidth);
+                    if (pendingBitmap != null)
+                    {
+                        // we haven't saved this yet, so use this bitmap
+                        targetBitmap = pendingBitmap;
+                    }
+                    else
+                    {
+                        // perfect match. use it. don't do any transformations because we matched a transformed derivative
+                        targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_fFullFidelity ? null : targetWidth);
+                    }
                 }
                 else
                 {
@@ -500,6 +521,7 @@ public class ImageCache
                     if (scaling)
                     {
                         targetBitmap = ScaleBitmap(fullImage, scaleFactor);
+                        targetBitmap.Freeze();
                         App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap);
                     }
                     else
@@ -528,8 +550,14 @@ public class ImageCache
     {
         if (Items.TryGetValue(mediaId, out ImageCacheItem? cacheItem))
         {
+            if (targetBitmap != null && !targetBitmap.IsFrozen)
+                targetBitmap.Freeze();
+
+            bool fNeedTrigger = !(cacheItem.Image == null && targetBitmap == null);
+
             cacheItem.Image = targetBitmap;
-            TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
+            if (fNeedTrigger) 
+                TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
         }
     }
 

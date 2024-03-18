@@ -10,6 +10,7 @@ namespace Thetacat.Model.Client;
 public class Transformations
 {
     public static Guid s_rotateTransform = BuiltinTags.s_TransformRotateID;
+    public static Guid s_mirrorTransform = BuiltinTags.s_TransformMirrorID;
 
     private readonly Dictionary<Guid, string?> m_transformations = new();
 
@@ -37,6 +38,8 @@ public class Transformations
 
         if (rotate != null)
             m_transformations.Add(s_rotateTransform, rotate.ToString());
+        if (item.TransformMirror)
+            m_transformations.Add(s_mirrorTransform, null);
     }
 
     public Transformations(string transformationsKey)

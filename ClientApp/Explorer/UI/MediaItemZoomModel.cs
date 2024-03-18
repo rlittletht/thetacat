@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
@@ -8,6 +9,7 @@ namespace Thetacat.Explorer.UI;
 
 public class MediaItemZoomModel : INotifyPropertyChanged
 {
+    public ObservableCollection<MediaTag> Tags { get; } = new ObservableCollection<MediaTag>();
     private MediaItem? m_mediaItem;
     private BitmapSource? m_image;
 
