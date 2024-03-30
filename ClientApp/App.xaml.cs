@@ -96,6 +96,7 @@ namespace Thetacat
         public static string SettingsPath => 
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
 
+        public static string MapStorePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\remappingPaths.xml");
         public static string ClientDatabasePath(string ClientDatabaseName)
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $"thetacat\\{ClientDatabaseName}");

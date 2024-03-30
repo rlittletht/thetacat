@@ -258,7 +258,7 @@ public class Media
         if (diffOp.IsMD5Changed)
             sets.Add($"MD5={SqlText.SqlifyQuoted(diffOp.ItemData.MD5)}");
         if (diffOp.IsPathChanged)
-            sets.Add($"VirtualPath={MediaItem.StringFromState(diffOp.ItemData.State)}");
+            sets.Add($"VirtualPath={SqlText.SqlifyQuoted(diffOp.ItemData.VirtualPath)}");
 
         if (sets.Count == 0)
             return "";

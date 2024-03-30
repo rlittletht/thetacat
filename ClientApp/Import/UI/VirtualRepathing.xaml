@@ -1,0 +1,129 @@
+﻿<Window x:Class="Thetacat.Import.UI.VirtualRepathing"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Import.UI"
+        xmlns:types="clr-namespace:Thetacat.Types"
+        xmlns:controls="clr-namespace:Thetacat.Controls"
+        mc:Ignorable="d"
+        Title="VirtualRepathing" Height="450" Width="800"
+        x:Name="VirtualRepathingControl">
+    <Window.Resources>
+        <types:BindingProxy x:Key="ManageMetatdataModelProxy"
+                            Data="{Binding ElementName=VirtualRepathingControl, Path=Model}" />
+
+        <ContextMenu x:Key="MyContextMenu">
+            <MenuItem Header="Map path..."
+                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.AddPathToRepathMapCommand}"
+                      CommandParameter="{Binding}" />
+        </ContextMenu>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <GroupBox Header="Create Virtual Repathings">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="70*" />
+                    <RowDefinition Height="30*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0">Original Virtual Tree</TextBlock>
+                        <controls:BackedTreeView Checkable="False"
+                                                 ItemContextMenu="{StaticResource MyContextMenu}"
+                                                 x:Name="OriginalTree" Grid.Row="1" />
+                    </Grid>
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0">Preview of changes</TextBlock>
+                        <controls:BackedTreeView Checkable="False"
+                                                 ItemContextMenu="{StaticResource MyContextMenu}"
+                                                 x:Name="PreviewTree" Grid.Row="1" />
+                    </Grid>
+                </Grid>
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel LastChildFill="False">
+                        <TextBlock VerticalAlignment="Bottom" DockPanel.Dock="Left">Current Repathings</TextBlock>
+                        <Button DockPanel.Dock="Right" Content="Update Preview" Click="UpdatePreview"/>
+                    </DockPanel>
+                    <ListBox ItemsSource="{Binding Path=RepathItems}" Grid.Row="1">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Remove mapping"
+                                                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.RemoveMappingCommand}"
+                                                      CommandParameter="{Binding}" />
+                                        </ContextMenu>
+                                    </StackPanel.ContextMenu>
+                                    <TextBlock Text="{Binding Path=From}" />
+                                    <TextBlock Text=" => " />
+                                    <TextBlock Text="{Binding Path=To}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20*" />
+                        <ColumnDefinition Width="20*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="20*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock>Map From</TextBlock>
+                        <TextBox Text="{Binding Path=MapFrom}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock>Map To</TextBlock>
+                        <TextBox Text="{Binding Path=MapTo}" />
+                    </StackPanel>
+                    <Button Content="Add" Click="DoAddMapping" Grid.Column="2" Height="18" VerticalAlignment="Bottom"
+                            Width="64" />
+                    <StackPanel Grid.Column="3">
+                        <TextBlock>Load mappings from</TextBlock>
+                    <ComboBox ItemsSource="{Binding Path=Maps}"
+                              SelectedItem="{Binding Path=CurrentMap}" Grid.Column="3">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    </StackPanel>
+                    <Button Content="Save" Grid.Column="4" Height="18" Width="64" Click="SaveMappings"
+                            VerticalAlignment="Bottom" />
+                </Grid>
+            </Grid>
+        </GroupBox>
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="2">
+            <Button Content="Cancel" Click="DoCancel" Width="96" />
+            <Button Content="Do Repathing" Click="DoRepathing" Width="96" />
+        </StackPanel>
+    </Grid>
+</Window>

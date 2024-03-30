@@ -20,6 +20,7 @@
             </MenuItem>
             <MenuItem Header="T_ools">
                 <MenuItem Header="_Import" Click="LaunchImport" />
+                <MenuItem Header="_Repath Virtual Roots" Click="LaunchRepather"/>
                 <MenuItem Header="_Migration" Click="LaunchMigration" />
                 <MenuItem Header="Meta_tags" Click="ManageMetatags" />
                 <MenuItem Header="Options" Click="LaunchOptions" />

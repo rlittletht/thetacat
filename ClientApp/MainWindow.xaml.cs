@@ -488,6 +488,11 @@ public partial class MainWindow : Window
         m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
     }
 
+    private void LaunchRepather(object sender, RoutedEventArgs e)
+    {
+        Repather.LaunchRepather(this);
+    }
+
     private void JumpToDate(object sender, RoutedEventArgs e)
     {
         int line = m_model.ExplorerCollection.GetLineToScrollTo(m_model.ExplorerCollection.JumpDate);

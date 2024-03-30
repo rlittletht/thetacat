@@ -63,7 +63,7 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(item);
     }
 
-    private void TriggerItemDirtied()
+    public void TriggerItemDirtied()
     {
         if (OnItemDirtied != null)
             OnItemDirtied(this, new DirtyItemEventArgs<Guid>(ID));
@@ -163,7 +163,7 @@ public class MediaItem : INotifyPropertyChanged
     public PathSegment VirtualPath
     {
         get => m_working.VirtualPath;
-        private set
+        set
         {
             EnsureBase();
             VectorClock++;
