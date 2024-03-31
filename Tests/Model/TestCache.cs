@@ -447,4 +447,40 @@ public class TestCache
         cacheMock.VerifyQueueContains(new MediaItem[] { });
     }
 
+    [TestCase("//mock/server/mockroot/bar/baz.jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz-1.jpg", "bar/baz.jpg", false)]
+    [TestCase("//mock/server/mockroot/bar/baz (1).jpg", "bar/baz.jpg", false)]
+    [TestCase("//mock/server/mockroot/bar/baz.png", "bar/baz.jpg", false)]
+    [TestCase("//mock/server/mockroot/bar/boo/baz.jpg", "boo/baz.jpg", false)]
+    [TestCase("//mock/server/mockroot/Bar/BAZ.jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz(1).jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz.txt(1).jpg", "bar/baz.txt.jpg", true)]
+    [Test]
+    public static void TestIsCachePathItemLikeVirtualPathItem(string _cache, string _virtual, bool expected)
+    {
+        PathSegment cachePath = PathSegment.CreateFromString(_cache);
+        PathSegment virtualPath = PathSegment.CreateFromString(_virtual);
+        string localPathToCacheRoot = PathSegment.CreateFromString("//mock/server/mockroot").Local;
+
+        Assert.AreEqual(expected, Cache.IsCachePathItemLikeVirtualPathItem(localPathToCacheRoot, cachePath, virtualPath));
+    }
+
+    [TestCase("//mock/server/mockroot/bar/baz.jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz-1.jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz (1).jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz.png", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/boo/baz.jpg", "boo/baz.jpg", false)]
+    [TestCase("//mock/server/mockroot/Bar/BAZ.jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz(1).jpg", "bar/baz.jpg", true)]
+    [TestCase("//mock/server/mockroot/bar/baz.txt(1).jpg", "bar/baz.txt.jpg", true)]
+    [Test]
+    public static void TestIsCachePathLikeVirtualPath(string _cache, string _virtual, bool expected)
+    {
+        PathSegment cachePath = PathSegment.CreateFromString(_cache);
+        PathSegment virtualPath = PathSegment.CreateFromString(_virtual);
+        string localPathToCacheRoot = PathSegment.CreateFromString("//mock/server/mockroot").Local;
+
+        Assert.AreEqual(expected, Cache.IsCachePathLikeVirtualPath(localPathToCacheRoot, cachePath, virtualPath));
+    }
+
 }

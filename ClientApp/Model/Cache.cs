@@ -186,51 +186,80 @@ public class Cache: ICache
     // cache.
     protected readonly ConcurrentQueue<MediaItem> m_cacheQueue = new();
 
-    public static bool OkToUseLocalPathForItem(PathSegment fullPath, MediaItem item)
+    public static bool OkToUseLocalPathForItem(PathSegment fullPath, string md5, out bool exists)
     {
+        exists = false;
+
         if (Path.Exists(fullPath.Local))
+        {
+            exists = true;
             // yikes. file already exists
             // last chance...is it already the file we want? (check the MD5 hash)
 
             // if the MD5 matches, then the cache is already done. its ok to use
             // this name. when we see the file already exists in the future we
             // will know its OK to assume its the same file
-            return (MediaItem.CalculateMD5Hash(fullPath.Local) == item.MD5);
+            return (MediaItem.CalculateMD5Hash(fullPath.Local) == md5);
+        }
 
         return true;
     }
 
     public static PathSegment EnsureUniqueLocalCacheVirtualPath(PathSegment localPathToCacheRoot, MediaItem item)
     {
+        PathSegment? unique = EnsureUniqueLocalCacheVirtualPath(localPathToCacheRoot, item.VirtualPath, item.MD5, item.MimeType, true, out bool exists);
+
+        if (unique == null)
+            throw new CatExceptionInternalFailure("couldn't generate unique name when guid was allowed!");
+
+        return unique;
+    }
+
+    public static PathSegment? EnsureUniqueLocalCacheVirtualPath(PathSegment localPathToCacheRoot, PathSegment virtualPath, string itemMD5, string? mimeType, bool okToUseGuid, out bool exists)
+    {
+        exists = false;
+
+        if (okToUseGuid && mimeType == null)
+            throw new CatExceptionInternalFailure("must provide mimetype if guid is OK");
+
         // easiest would be to use the virtual path
 
         if (localPathToCacheRoot == $"{Workgroup.s_mockServer}{Workgroup.s_mockRoot}")
-            return item.VirtualPath;
+            return virtualPath;
 
         // if the virtual path is rooted, we can't use it
-        // just use a guid.
-        if (Path.IsPathRooted(item.VirtualPath.Local) || item.VirtualPath == PathSegment.Empty)
+        // just use a guid if we're allowed to
+        if (Path.IsPathRooted(virtualPath.Local) || virtualPath == PathSegment.Empty)
         {
-            return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
+            if (!okToUseGuid)
+                return null;
+
+            return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(mimeType)));
         }
 
-        PathSegment test = PathSegment.Join(localPathToCacheRoot, item.VirtualPath);
+        PathSegment test = PathSegment.Join(localPathToCacheRoot, virtualPath);
 
         int count = 0;
 
-        while (!OkToUseLocalPathForItem(test, item))
+        while (!OkToUseLocalPathForItem(test, itemMD5, out exists))
         {
             // if we get to 50 collisions, give up and just use a guid
             if (count > 50)
-                return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(item.MimeType)));
+            {
+                if (!okToUseGuid)
+                    return null;
 
-            test = PathSegment.Join(localPathToCacheRoot, item.VirtualPath.AppendLeafSuffix($"({++count})"));
+                exists = false;
+                return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(mimeType)));
+            }
+
+            test = PathSegment.Join(localPathToCacheRoot, virtualPath.AppendLeafSuffix($"({++count})"));
         }
 
         if (count == 0)
-            return item.VirtualPath;
+            return virtualPath;
 
-        return item.VirtualPath.AppendLeafSuffix($"({count})");
+        return virtualPath.AppendLeafSuffix($"({count})");
     }
 
     public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
@@ -330,12 +359,146 @@ public class Cache: ICache
         File.Copy(importSource.Local, fullLocalPath);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: IsCachePathItemLikeVirtualPathItem
+        %%Qualified: Thetacat.Model.Cache.IsCachePathItemLikeVirtualPathItem
+
+        This is clever but unused...it will determine if the virtual path item
+        and the cached path item are the same, or only tweaked by a uniquification
+        (addition of (1), etc)
+    ----------------------------------------------------------------------------*/
+    public static bool IsCachePathItemLikeVirtualPathItem(string localPathToCacheRoot, PathSegment cachedPath, PathSegment virtualPath)
+    {
+        if (!localPathToCacheRoot.EndsWith('\\'))
+            localPathToCacheRoot = $"{localPathToCacheRoot}\\";
+
+        // if this local path doesn't start with our cache root, then we can't match anything
+        if (!cachedPath.Local.StartsWith(localPathToCacheRoot, StringComparison.CurrentCultureIgnoreCase))
+            return false;
+
+        cachedPath = new PathSegment(cachedPath.ToString().Substring(localPathToCacheRoot.Length));
+
+        if (string.Compare(cachedPath, virtualPath, StringComparison.InvariantCultureIgnoreCase) == 0)
+            return true;
+
+        PathSegment withoutLeaf = cachedPath.GetPathDirectory();
+        PathSegment? leaf = cachedPath.GetLeafItem();
+
+        if (leaf != null)
+        {
+            // remove the extension
+            string extension = Path.GetExtension(leaf);
+
+            string localLeafPathWithoutExtension = Path.ChangeExtension(leaf, null);
+
+            // now see if we can remove a trailing (*) suffix
+            int index = localLeafPathWithoutExtension.LastIndexOf('(');
+
+            if (index != -1)
+            {
+                localLeafPathWithoutExtension = localLeafPathWithoutExtension.Substring(0, index);
+
+                cachedPath = PathSegment.Join(withoutLeaf, $"{localLeafPathWithoutExtension}{extension}");
+
+                if (string.Compare(cachedPath, virtualPath, StringComparison.InvariantCultureIgnoreCase) == 0)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: IsCachePathLikeVirtualPath
+        %%Qualified: Thetacat.Model.Cache.IsCachePathLikeVirtualPath
+
+        This tests if the cachePath and the virtualPath items are in the same
+        directory, so repathing is pointless
+    ----------------------------------------------------------------------------*/
+    public static bool IsCachePathLikeVirtualPath(string localPathToCacheRoot, PathSegment cachedPath, PathSegment virtualPath)
+    {
+        if (!localPathToCacheRoot.EndsWith('\\'))
+            localPathToCacheRoot = $"{localPathToCacheRoot}\\";
+
+        // if this local path doesn't start with our cache root, then we can't match anything
+        if (!cachedPath.Local.StartsWith(localPathToCacheRoot, StringComparison.CurrentCultureIgnoreCase))
+            return false;
+
+        cachedPath = new PathSegment(cachedPath.ToString().Substring(localPathToCacheRoot.Length));
+
+        return IsCachePathLikeVirtualPath(cachedPath, virtualPath);
+    }
+
+    public static bool IsCachePathLikeVirtualPath(PathSegment cachedPath, PathSegment virtualPath)
+    {
+        if (string.Compare(cachedPath, virtualPath, StringComparison.InvariantCultureIgnoreCase) == 0)
+            return true;
+
+        PathSegment withoutLeaf = cachedPath.GetPathDirectory();
+        PathSegment virtualPathWithoutLeaf = virtualPath.GetPathDirectory();
+
+        if (string.Compare(withoutLeaf, virtualPathWithoutLeaf, StringComparison.InvariantCultureIgnoreCase) == 0)
+            return true;
+
+        return false;
+    }
+
+
+    public void MoveRepathedItems()
+    {
+        foreach (Guid key in Entries.Keys)
+        {
+            ICacheEntry entry = Entries[key];
+            MediaItem item = App.State.Catalog.GetMediaFromId(entry.ID);
+
+            if (!IsCachePathLikeVirtualPath(entry.Path, item.VirtualPath))
+            {
+                // move this to the remapped path
+
+                // take the virtualpath and use our EnsureUnique algorithm above to get the
+                // item path that we want to move it to...
+                PathSegment? repathed = EnsureUniqueLocalCacheVirtualPath(LocalPathToCacheRoot, item.VirtualPath, item.MD5, null, false, out bool exists);
+
+                if (repathed == null)
+                {
+                    // can't move
+                    continue;
+                }
+
+                string localSource = GetFullLocalPath(entry.Path);
+                string localTarget = GetFullLocalPath(repathed);
+
+                if (!exists)
+                {
+                    string? directory = Path.GetDirectoryName(localTarget);
+                    if (directory != null && !Directory.Exists(directory))
+                        Directory.CreateDirectory(directory);
+
+                    File.Move(localSource, localTarget);
+                }
+                else
+                {
+                    // file already exists and its the file we want. just delete the source
+                    File.Delete(localSource);
+                }
+
+                // update the cache entry
+                WorkgroupCacheEntry _entry = entry as WorkgroupCacheEntry ?? throw new CatExceptionInternalFailure("can't repath non workgroup cache");
+                _entry.Path = repathed;
+            }
+        }
+
+        _Workgroup.PushChangesToDatabase(null);
+    }
+
     public bool DoCacheWork(IProgressReport progressReport, int chunkSize)
     {
-        // this is an indeterminate progress report, so just report infinately
+        // this is an indeterminate progress report, so just report infinitely
 
         AzureCat.EnsureCreated(App.State.AzureStorageAccount);
         progressReport.SetIndeterminate();
+
+        // first, fixup the paths of any cached items that have been virtual repathed
+        MoveRepathedItems();
 
         QueueCacheDownloads(chunkSize);
 
@@ -389,33 +552,6 @@ public class Cache: ICache
         App.State.AddBackgroundWork(
             "Populating cache from Azure",
             (progress) => DoCacheWork(progress, chunkSize));
-//
-//        QueueCacheDownloads(chunkSize);
-//
-//        // and now download
-//        while (m_cacheQueue.TryDequeue(out MediaItem? item))
-//        {
-//            ICacheEntry cacheEntry = Entries[item.ID];
-//
-//            if (cacheEntry.LocalPending)
-//            {
-//                // first thing, unmark it since its no longer in our queue to download
-//                // (if it fails, we will want to do it again...)
-//                cacheEntry.LocalPending = false;
-//                string fullLocalPath = GetFullLocalPath(cacheEntry.Path);
-//                if (await FEnsureMediaItemDownloadedToCache(item, fullLocalPath))
-//                {
-//
-//                    item.LocalPath = fullLocalPath;
-//                    item.IsCachePending = false;
-//                    cacheEntry.LocalPending = false;
-//                    cacheEntry.CachedDate = DateTime.Now;
-//                    item.NotifyCacheStatusChanged();
-//                }
-//            }
-//        }
-//
-//        _Workgroup.PushChangesToDatabase(null);
     }
 
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)

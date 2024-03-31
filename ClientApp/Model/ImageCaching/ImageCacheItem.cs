@@ -13,6 +13,12 @@ public class ImageCacheItem : INotifyPropertyChanged
     public string LocalPath { get; set; }
     public Guid MediaId { get; set; }
 
+    public BitmapSource? ImageInternal
+    {
+        get => m_image;
+        set => m_image = value;
+    }
+
     public BitmapSource? Image
     {
         get => m_image;

@@ -38,6 +38,7 @@ public class TestImageCache
             });
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(1, counter);
     }
@@ -67,6 +68,7 @@ public class TestImageCache
             });
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(11, counter);
     }
@@ -100,6 +102,7 @@ public class TestImageCache
         cache.ImageCacheUpdated -= testHandler;
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(10, counter);
     }

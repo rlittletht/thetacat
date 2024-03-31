@@ -130,4 +130,17 @@ public class PathSegmentTests
 
         Assert.AreEqual(expected, actual);
     }
+
+    [TestCase("//server/share/foo/bar/foo.txt", "//server/share/foo/bar")]
+    [TestCase("foo/bar/foo.txt", "foo/bar")]
+    [TestCase("/foo/bar/foo.txt", "/foo/bar")]
+    [TestCase("/foo.txt", "/")]
+    [TestCase("foo.txt", "")]
+    public static void TestGetDirectory(string localPath, string expected)
+    {
+        PathSegment path = PathSegment.CreateFromString(localPath);
+        PathSegment expectedPath = PathSegment.CreateFromString(expected);
+
+        Assert.AreEqual(expectedPath, path.GetPathDirectory());
+    }
 }

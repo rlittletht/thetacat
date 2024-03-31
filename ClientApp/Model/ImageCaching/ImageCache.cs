@@ -98,6 +98,14 @@ public class ImageCache
             ImageCacheUpdated(this, new ImageCacheUpdateEventArgs() { MediaId = mediaId });
     }
 
+    public void ForceImageNotNullForTest(Guid mediaId)
+    {
+        if (Items.TryGetValue(mediaId, out ImageCacheItem? item))
+        {
+            item.ImageInternal = new BitmapImage();
+        }
+    }
+
     public void ResetImageForKey(Guid mediaId)
     {
         if (Items.TryGetValue(mediaId, out ImageCacheItem? item))
