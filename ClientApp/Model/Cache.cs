@@ -17,7 +17,7 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
-public class Cache: ICache
+public class Cache : ICache
 {
     public enum CacheType
     {
@@ -215,7 +215,8 @@ public class Cache: ICache
         return unique;
     }
 
-    public static PathSegment? EnsureUniqueLocalCacheVirtualPath(PathSegment localPathToCacheRoot, PathSegment virtualPath, string itemMD5, string? mimeType, bool okToUseGuid, out bool exists)
+    public static PathSegment? EnsureUniqueLocalCacheVirtualPath(
+        PathSegment localPathToCacheRoot, PathSegment virtualPath, string itemMD5, string? mimeType, bool okToUseGuid, out bool exists)
     {
         exists = false;
 
@@ -404,6 +405,7 @@ public class Cache: ICache
                     return true;
             }
         }
+
         return false;
     }
 
@@ -445,46 +447,78 @@ public class Cache: ICache
 
     public void MoveRepathedItems()
     {
-        foreach (Guid key in Entries.Keys)
+        bool fPreflight = true;
+
+        while (true)
         {
-            ICacheEntry entry = Entries[key];
-            MediaItem item = App.State.Catalog.GetMediaFromId(entry.ID);
-
-            if (!IsCachePathLikeVirtualPath(entry.Path, item.VirtualPath))
+            foreach (Guid key in Entries.Keys)
             {
-                // move this to the remapped path
+                ICacheEntry entry = Entries[key];
+                MediaItem item = App.State.Catalog.GetMediaFromId(entry.ID);
 
-                // take the virtualpath and use our EnsureUnique algorithm above to get the
-                // item path that we want to move it to...
-                PathSegment? repathed = EnsureUniqueLocalCacheVirtualPath(LocalPathToCacheRoot, item.VirtualPath, item.MD5, null, false, out bool exists);
-
-                if (repathed == null)
+                if (!IsCachePathLikeVirtualPath(entry.Path, item.VirtualPath))
                 {
-                    // can't move
-                    continue;
+                    // move this to the remapped path
+
+                    // take the virtualpath and use our EnsureUnique algorithm above to get the
+                    // item path that we want to move it to...
+                    PathSegment? repathed = EnsureUniqueLocalCacheVirtualPath(LocalPathToCacheRoot, item.VirtualPath, item.MD5, null, false, out bool exists);
+
+                    if (repathed == null)
+                    {
+                        // can't move
+                        continue;
+                    }
+
+                    string localSource = GetFullLocalPath(entry.Path);
+                    string localTarget = GetFullLocalPath(repathed);
+
+                    if (!exists)
+                    {
+                        if (!fPreflight)
+                        {
+                            string? directory = Path.GetDirectoryName(localTarget);
+                            if (directory != null && !Directory.Exists(directory))
+                                Directory.CreateDirectory(directory);
+                        }
+
+                        if (fPreflight)
+                        {
+                            if (!File.Exists(localSource))
+                                MessageBox.Show($"preflight: could not locate local source {localSource}");
+                        }
+                        else
+                        {
+                            try
+                            {
+                                File.Move(localSource, localTarget);
+                            }
+                            catch (Exception exc)
+                            {
+                                MessageBox.Show($"could not move {localSource} to {localTarget}: {exc.Message}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // file already exists and its the file we want. just delete the source
+                        if (!fPreflight)
+                            File.Delete(localSource);
+                    }
+
+                    if (!fPreflight)
+                    {
+                        // update the cache entry
+                        WorkgroupCacheEntry _entry = entry as WorkgroupCacheEntry ?? throw new CatExceptionInternalFailure("can't repath non workgroup cache");
+                        _entry.Path = repathed;
+                    }
                 }
-
-                string localSource = GetFullLocalPath(entry.Path);
-                string localTarget = GetFullLocalPath(repathed);
-
-                if (!exists)
-                {
-                    string? directory = Path.GetDirectoryName(localTarget);
-                    if (directory != null && !Directory.Exists(directory))
-                        Directory.CreateDirectory(directory);
-
-                    File.Move(localSource, localTarget);
-                }
-                else
-                {
-                    // file already exists and its the file we want. just delete the source
-                    File.Delete(localSource);
-                }
-
-                // update the cache entry
-                WorkgroupCacheEntry _entry = entry as WorkgroupCacheEntry ?? throw new CatExceptionInternalFailure("can't repath non workgroup cache");
-                _entry.Path = repathed;
             }
+
+            if (!fPreflight)
+                break;
+
+            fPreflight = false;
         }
 
         _Workgroup.PushChangesToDatabase(null);
@@ -524,9 +558,9 @@ public class Cache: ICache
                         _Workgroup.PushChangesToDatabase(null);
                         return false;
                     }
+
                     if (task.Result)
                     {
-
                         item.LocalPath = fullLocalPath;
                         item.IsCachePending = false;
                         cacheEntry.LocalPending = false;
@@ -541,6 +575,7 @@ public class Cache: ICache
             // and do it again, until we don't have any left to cache
             QueueCacheDownloads(chunkSize);
         }
+
         progressReport.WorkCompleted();
         return true;
     }
