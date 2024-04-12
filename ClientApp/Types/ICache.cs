@@ -21,4 +21,5 @@ public interface ICache
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
     public string? TryGetCachedFullPath(Guid id);
     public void DeleteMediaItem(Guid id);
+    public string GetFullLocalPath(PathSegment itemPath);
 }

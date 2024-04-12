@@ -3,13 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Thetacat.Metatags"
+        xmlns:types="clr-namespace:Thetacat.Types"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
         Title="ManageMetadata" Height="450" Width="800"
         x:Name="ManageMetadataControl">
     <Window.Resources>
-        <local:BindingProxy x:Key="ManageMetatdataModelProxy"
+        <types:BindingProxy x:Key="ManageMetatdataModelProxy"
                             Data="{Binding ElementName=ManageMetadataControl, Path=Model}" />
 
         <ContextMenu x:Key="MyContextMenu">

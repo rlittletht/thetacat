@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -29,45 +30,72 @@ public partial class MediaItemZoom : Window
         if (cache == null)
             throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
 
-        if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
+        if (m_model.MediaItem != null)
+            EnsureZoomImageFromCache(cache, m_model.MediaItem);
+    }
+
+    private void OnMediaItemUpdated(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == "Tags")
         {
-            m_model.Image = cacheItem?.Image;
+            PopulateTags();
         }
     }
 
-    private void OnCloseReleaseImageCacheWatcher(object? sender, CancelEventArgs e)
+    private void OnCloseReleaseWatchers(object? sender, CancelEventArgs e)
     {
         App.State.ImageCache.ImageCacheUpdated -= OnImageCacheUpdated;
+        m_model.MediaItem!.PropertyChanged -= OnMediaItemUpdated;
     }
 
-    public MediaItemZoom(MediaItem item)
+    private void EnsureZoomImageFromCache(ImageCache cache, MediaItem item)
     {
-        m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
-        m_model.MediaItem = item;
+        ImageCacheItem? cacheItem = cache.GetAnyExistingItem(item.ID);
 
-        DataContext = m_model;
-
-        App.State.RegisterWindowPlace(this, "mediaItem-details");
-
-        ImageCacheItem? cacheItem = App.State.ImageCache.GetAnyExistingItem(item.ID);
-
-        App.State.ImageCache.ImageCacheUpdated -= OnImageCacheUpdated;
-        Closing += OnCloseReleaseImageCacheWatcher;
-
-        if (cacheItem == null)
+        if (cacheItem == null || (cacheItem.IsLoadQueued == false && cacheItem.Image == null))
         {
             string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
             if (path != null)
-                App.State.ImageCache.TryAddItem(item, path);
-
-            App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
+                App.State.ImageCache.TryQueueBackgroundLoadToCache(item, path);
         }
 
         m_model.Image = cacheItem?.Image;
+    }
+
+    void PopulateTags()
+    {
+        m_model.Tags.Clear();
+
+        if (m_model.MediaItem == null)
+            return;
+
+        foreach (MediaTag tag in m_model.MediaItem.Tags.Values)
+        {
+            m_model.Tags.Add(tag);
+        }
+    }
+
+    public MediaItemZoom(MediaItem item)
+    {
+        m_model.MediaItem = item;
+
+        PopulateTags();
+        DataContext = m_model;
+
+        App.State.RegisterWindowPlace(this, "mediaItem-details");
+
+        App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
+        m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
+
+        Closing += OnCloseReleaseWatchers;
+
+        EnsureZoomImageFromCache(App.State.ImageCache, item);
+
         this.KeyDown += DoMediaZoomKeyUp;
 
         InitializeComponent();
+        m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
     }
 
     private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)

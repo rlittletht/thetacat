@@ -63,7 +63,7 @@ public class MediaItem : INotifyPropertyChanged
         m_working = new MediaItemData(item);
     }
 
-    private void TriggerItemDirtied()
+    public void TriggerItemDirtied()
     {
         if (OnItemDirtied != null)
             OnItemDirtied(this, new DirtyItemEventArgs<Guid>(ID));
@@ -163,7 +163,7 @@ public class MediaItem : INotifyPropertyChanged
     public PathSegment VirtualPath
     {
         get => m_working.VirtualPath;
-        private set
+        set
         {
             EnsureBase();
             VectorClock++;
@@ -270,6 +270,50 @@ public class MediaItem : INotifyPropertyChanged
             MediaTag tag = new MediaTag(BuiltinTags.s_ImportDate, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImportDate));
+        }
+    }
+
+    public int? TransformRotate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_TransformRotateID, out MediaTag? tag))
+                return tag.Value == null ? null : int.Parse(tag.Value);
+
+            return null;
+        }
+        set
+        {
+            if (value != null)
+            {
+                MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
+                FAddOrUpdateMediaTag(tag, true);
+            }
+            else
+            {
+                FRemoveMediaTag(BuiltinTags.s_TransformRotateID);
+            }
+
+            OnPropertyChanged(nameof(TransformRotate));
+        }
+    }
+
+    public bool TransformMirror
+    {
+        get => Tags.ContainsKey(BuiltinTags.s_TransformMirrorID);
+        set
+        {
+            if (value)
+            {
+                MediaTag tag = new MediaTag(BuiltinTags.s_TransformMirror, null);
+                FAddOrUpdateMediaTag(tag, true);
+            }
+            else
+            {
+                FRemoveMediaTag(BuiltinTags.s_TransformMirrorID);
+            }
+
+            OnPropertyChanged(nameof(TransformMirror));
         }
     }
 
@@ -477,6 +521,8 @@ public class MediaItem : INotifyPropertyChanged
             return false;
         }
 
+        OnPropertyChanged(nameof(Tags));
+        TriggerItemDirtied();
         VectorClock++;
         return true;
     }
@@ -531,6 +577,9 @@ public class MediaItem : INotifyPropertyChanged
         if (!identicalExisting)
             TriggerItemDirtied();
 //            App.State.SetCollectionDirtyState(true);
+
+        if (!identicalExisting)
+            OnPropertyChanged(nameof(Tags));
 
         return !identicalExisting;
     }

@@ -39,6 +39,8 @@ public partial class MediaExplorer : UserControl
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
         Model.DeleteItems = new DeleteCommand(_DeleteItems);
         Model.ResetCacheItems = new ResetCacheItemsCommand(_ClearCacheItems);
+        Model.RotateItemsRight = new RotateItemsRightCommand(_RotateItemsRight);
+        Model.MirrorItems = new MirrorItemsCommand(_MirrorItems);
         Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
         Model.ExtendSelectPanel = new SelectPanelCommand(m_selector._ExtendSelectPanel);
         Model.AddSelectPanel = new SelectPanelCommand(m_selector._AddSelectPanel);
@@ -277,20 +279,28 @@ public partial class MediaExplorer : UserControl
         UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
     }
 
+    private void UnloadItemCaches(MediaExplorerItem explorerItem)
+    {
+        MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
+
+        BitmapSource? imageSource = explorerItem.TileImage;
+        explorerItem.TileImage = null;
+        App.State.PreviewImageCache.ResetImageForKey(item.ID);
+        App.State.ImageCache.ResetImageForKey(item.ID);
+    }
+
     private void _ClearCacheItems(MediaExplorerItem? context)
     {
+        List<MediaItem> itemsToQueue = new();
+
         foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
         {
             MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
 
             try
             {
-                BitmapSource? imageSource = explorerItem.TileImage;
-                explorerItem.TileImage = null;
-
-                App.State.PreviewImageCache.ResetImageForKey(item.ID);
-                App.State.ImageCache.ResetImageForKey(item.ID);
-                MediaExplorerCollection.QueueImageForMediaItem(item);
+                UnloadItemCaches(explorerItem);
+                itemsToQueue.Add(item);
                 App.State.Derivatives.DeleteMediaItem(item.ID);
             }
             catch (Exception ex)
@@ -298,6 +308,65 @@ public partial class MediaExplorer : UserControl
                 MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
             }
         }
+
+        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+    }
+
+    private void _RotateItemsRight(MediaExplorerItem? context)
+    {
+        List<MediaItem> itemsToQueue = new();
+
+        foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
+        {
+            MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
+
+            try
+            {
+                int rotate = item.TransformRotate ?? 0;
+                rotate = (rotate + 90) % 360;
+
+                if (rotate == 0)
+                    item.TransformRotate = null;
+                else
+                    item.TransformRotate = rotate;
+
+                // when we unload the caches, someone might immediately queue a reload
+                // of the cache. make sure we've already changed the mediaitem
+                UnloadItemCaches(explorerItem);
+                itemsToQueue.Add(item);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not rotate item: {item.ID}: {item.VirtualPath}: {ex}");
+            }
+        }
+
+        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+    }
+
+    private void _MirrorItems(MediaExplorerItem? context)
+    {
+        List<MediaItem> itemsToQueue = new();
+
+        foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
+        {
+            MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
+
+            try
+            {
+                item.TransformMirror = !item.TransformMirror;
+                // when we unload the caches, someone might immediately queue a reload
+                // of the cache. make sure we've already changed the mediaitem
+                UnloadItemCaches(explorerItem);
+                itemsToQueue.Add(item);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not mirror item: {item.ID}: {item.VirtualPath}: {ex}");
+            }
+        }
+
+        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _DeleteItems(MediaExplorerItem? context)

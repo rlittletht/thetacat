@@ -17,6 +17,8 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
     public DeleteCommand? DeleteItems { get; set; }
     public ResetCacheItemsCommand? ResetCacheItems { get; set; }
+    public RotateItemsRightCommand? RotateItemsRight{ get; set; }
+    public MirrorItemsCommand? MirrorItems { get; set; }
     public SelectPanelCommand? SelectPanel { get; set; }
     public SelectPanelCommand? ExtendSelectPanel { get; set; }
     public SelectPanelCommand? AddSelectPanel { get; set; }

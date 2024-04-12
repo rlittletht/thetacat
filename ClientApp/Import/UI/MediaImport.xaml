@@ -103,17 +103,21 @@
                         </Popup>
                         <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
                             <TextBlock>Virtual path root</TextBlock>
-                            <Button Content="Select Root" Click="SelectVirtualRoot" Name="SelectVirtualRootButton" />
-                            <ComboBox ItemsSource="{Binding Path=VirtualPathRoots}" SelectedItem="{Binding Path=VirtualPathRoot}" Name="VirtualPathRootsComboBox"/>
-                            <TextBlock>Virtual path root suffix</TextBlock>
-                           <TextBox Text="{Binding Path=VirtualPathSuffix}"/>
+                            <Button Content="Select Root" Click="SelectVirtualRoot" Name="SelectVirtualRootButton" IsEnabled="{Binding Path=EnableRepathControls}"/>
+                            <ComboBox ItemsSource="{Binding Path=VirtualPathRoots}" SelectedItem="{Binding Path=VirtualPathRoot}" Name="VirtualPathRootsComboBox"
+                                      IsEnabled="{Binding Path=EnableRepathControls}" />
+                            <TextBlock IsEnabled="{Binding Path=EnableRepathControls}">Virtual path root suffix</TextBlock>
+                            <TextBox Text="{Binding Path=VirtualPathSuffix}"
+                                     IsEnabled="{Binding Path=EnableRepathControls}" />
                         </StackPanel>
                         <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
                             <TextBlock>Preview VirtualPath:</TextBlock>
                             <TextBox Text="{Binding Path=VirtualPathPreview}" />
                             <CheckBox Content="Include parent directory in virtual path?"
+                                      IsEnabled="{Binding Path=EnableRepathControls}"
                                       IsChecked="{Binding Path=IncludeParentDirInVirtualPath}" />
                             <CheckBox Content="Include subdirectories in virtual path?"
+                                      IsEnabled="{Binding Path=EnableRepathControls}"
                                       IsChecked="{Binding Path=IncludeSubdirInVirtualPath}" />
                         </StackPanel>
                         <StackPanel Grid.Column="3" VerticalAlignment="Bottom">

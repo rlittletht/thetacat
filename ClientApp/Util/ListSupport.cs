@@ -4,6 +4,7 @@ namespace Thetacat.Util;
 
 public class ListSupport
 {
+    #region MappedList (Key => List<>)
     /*----------------------------------------------------------------------------
         %%Function: AddItemToMappedList
         %%Qualified: Thetacat.Util.ListSupport.AddItemToMappedList<T1, T2>
@@ -30,12 +31,14 @@ public class ListSupport
         list.Remove(newItem);
         return true;
     }
+    #endregion
 
+    #region MappedSortedList (Key => SortedList<>)
     /*----------------------------------------------------------------------------
         %%Function: AddItemToMappedSortedList
         %%Qualified: Thetacat.Util.ListSupport.AddItemToMappedSortedList<T1, T2, T3>
 
-        Add an item to a dictionary tha maps a key to a sorted list of items
+        Add an item to a dictionary that maps a key to a sorted list of items
     ----------------------------------------------------------------------------*/
     public static SortedList<T2, T3> AddItemToMappedSortedList<T1, T2, T3>(Dictionary<T1, SortedList<T2, T3>> map, T1 key, T2 itemKey, T3 item)
         where T1 : notnull
@@ -61,7 +64,50 @@ public class ListSupport
         list.Remove(itemKey);
         return true;
     }
+    #endregion
 
+#region MappedSortedListOfList (Key => SortedList<List<>>)
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddItemToMappedSortedListOfList
+        %%Qualified: Thetacat.Util.ListSupport.AddItemToMappedSortedList<T1, T2, T3>
+
+        Add an item to a dictionary that maps a key to a sorted list of lists
+    ----------------------------------------------------------------------------*/
+    public static SortedList<T2, List<T3>> AddItemToMappedSortedListOfList<T1, T2, T3>(Dictionary<T1, SortedList<T2, List<T3>>> map, T1 key, T2 itemKey, T3 item)
+        where T1 : notnull
+        where T2 : notnull
+    {
+        if (!map.TryGetValue(key, out SortedList<T2, List<T3>>? sortedList))
+        {
+            sortedList = new SortedList<T2, List<T3>>();
+            map.Add(key, sortedList);
+        }
+
+        if (!sortedList.TryGetValue(itemKey, out List<T3>? list))
+        {
+            list = new List<T3>();
+            sortedList.Add(itemKey, list);
+        }
+
+        list.Add(item);
+        return sortedList;
+    }
+
+    public static bool RemoveItemFromMappedSortedListOfList<T1, T2, T3>(Dictionary<T1, SortedList<T2, List<T3>>> map, T1 key, T2 itemKey)
+        where T1 : notnull
+        where T2 : notnull
+    {
+        if (!map.TryGetValue(key, out SortedList<T2, List<T3>>? list))
+            return false;
+
+        list.Remove(itemKey);
+        return true;
+    }
+
+#endregion
+
+    #region MappedMapList (Key => Dictionary<>)
     /*----------------------------------------------------------------------------
         %%Function: AddItemToMappedMapList
         %%Qualified: Thetacat.Util.ListSupport.AddItemToMappedMapList<T1, T2, T3>
@@ -103,5 +149,6 @@ public class ListSupport
         list.Remove(newItem);
         return true;
     }
+    #endregion
 
 }

@@ -84,8 +84,9 @@ public class ClientDatabase
             (media VARCHAR(36) NOT NULL,
             mimeType NVARCHAR(36) NOT NULL,
             scaleFactor REAL NOT NULL,
+            transformationsKey NVARCHAR(1024) NOT NULL,
             path VARCHAR(1024) NOT NULL,
-            PRIMARY KEY (media, mimeType, scaleFactor))";
+            PRIMARY KEY (media, mimeType, scaleFactor, transformationsKey))";
 
     /*----------------------------------------------------------------------------
         %%Function: CreateDatabase
@@ -111,7 +112,7 @@ public class ClientDatabase
     }
 
     private readonly string s_queryDerivatives = @"
-        SELECT $$tcat_derivatives$$.media, $$tcat_derivatives$$.mimeType, $$tcat_derivatives$$.scaleFactor, $$tcat_derivatives$$.path
+        SELECT $$tcat_derivatives$$.media, $$tcat_derivatives$$.mimeType, $$tcat_derivatives$$.scaleFactor, $$tcat_derivatives$$.transformationsKey, $$tcat_derivatives$$.path
         FROM $$#tcat_derivatives$$";
 
     public List<DerivativeDbItem> ReadDerivatives()
@@ -128,7 +129,8 @@ public class ClientDatabase
                             reader.GetGuid(0),
                             reader.GetString(1),
                             reader.GetDouble(2),
-                            reader.GetString(3)));
+                            reader.GetString(3),
+                            reader.GetString(4)));
                 },
                 s_aliases
                 );
@@ -143,7 +145,7 @@ public class ClientDatabase
     string BuildDerivativeInsertCommand(DerivativeItem item)
     {
         return
-            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, path) VALUES ({SqlText.SqlifyQuoted(item.MediaId.ToString())}, {SqlText.SqlifyQuoted(item.MimeType)}, {item.ScaleFactor}, {SqlText.SqlifyQuoted(item.Path)}) ";
+            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, transformationsKey, path) VALUES ({SqlText.SqlifyQuoted(item.MediaId.ToString())}, {SqlText.SqlifyQuoted(item.MimeType)}, {item.ScaleFactor}, {SqlText.SqlifyQuoted(item.TransformationsKey)}, {SqlText.SqlifyQuoted(item.Path)}) ";
     }
 
     string BuildDerivativeDeleteCommand(DerivativeItem item)

@@ -2,27 +2,23 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Media.Imaging;
-using Thetacat.Model;
+using Thetacat.Types;
+using Thetacat.Util;
 
-namespace Thetacat.Explorer.UI;
+namespace Thetacat.Import.UI;
 
-public class MediaItemZoomModel : INotifyPropertyChanged
+public class RepathNode : INotifyPropertyChanged, ICheckableTreeViewItem<RepathNode>
 {
-    public ObservableCollection<MediaTag> Tags { get; } = new ObservableCollection<MediaTag>();
-    private MediaItem? m_mediaItem;
-    private BitmapSource? m_image;
+    public bool Checked { get; set; }
+    public PathSegment Leaf { get; set; }
+    public PathSegment FullPath { get; set; }
 
-    public BitmapSource? Image
-    {
-        get => m_image;
-        set => SetField(ref m_image, value);
-    }
+    public ObservableCollection<RepathNode> Children { get; set; } = new();
 
-    public MediaItem? MediaItem
+    public RepathNode(PathSegment path)
     {
-        get => m_mediaItem;
-        set => SetField(ref m_mediaItem, value);
+        FullPath = new PathSegment(path);
+        Leaf = path.GetLeafItem() ?? PathSegment.Empty;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

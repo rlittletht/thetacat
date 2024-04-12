@@ -1,4 +1,6 @@
-﻿using Thetacat;
+﻿using System.Windows.Media.Imaging;
+using Thetacat;
+using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 
 namespace Tests.Model.ImageCaching;
@@ -10,8 +12,8 @@ public class TestImageCache
     {
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
-
-        cache.TryAddItem(TestMedia.mediaItem1, "");
+        
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
 
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         // if we get here, we passed (just looking for a crash...)
@@ -24,7 +26,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryAddItem(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
 
         int counter = 0;
 
@@ -36,6 +38,7 @@ public class TestImageCache
             });
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(1, counter);
     }
@@ -46,7 +49,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryAddItem(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
 
         int counter = 0;
 
@@ -65,6 +68,7 @@ public class TestImageCache
             });
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(11, counter);
     }
@@ -75,7 +79,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryAddItem(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
 
         int counter = 0;
 
@@ -98,6 +102,7 @@ public class TestImageCache
         cache.ImageCacheUpdated -= testHandler;
 
         Assert.AreEqual(0, counter);
+        cache.ForceImageNotNullForTest(TestMedia.mediaItem1.ID);
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         Assert.AreEqual(10, counter);
     }
