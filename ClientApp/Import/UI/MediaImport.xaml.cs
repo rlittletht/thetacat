@@ -138,8 +138,13 @@ namespace Thetacat.Import.UI
             }
 
             string? parent = Path.GetDirectoryName(m_model.SourcePath) ?? m_model.SourcePath;
-
             string directoryLeaf = Path.GetRelativePath(parent, m_model.SourcePath);
+
+            if (PathSegment.CreateFromString(m_model.SourcePath).Subsumes(App.State.Cache.LocalPathToCacheRoot))
+            {
+                m_model.ImportInPlace = true;
+                MessageBox.Show("You have selected a directory inside the cache. This will search for and import in-place");
+            }
 
             List<ImportNode> nodesToAdd =
                 await m_importBackgroundWorkers.DoWorkAsync(
@@ -165,6 +170,13 @@ namespace Thetacat.Import.UI
 
             foreach (string file in Directory.GetFiles(node.FullPath))
             {
+                // don't try to import .db files
+                if (file.EndsWith(".db"))
+                    continue;
+
+                if (m_model.ImportInPlace && IsFullLocalPathInCache(file))
+                    continue;
+
                 ImportNode fileNode = new ImportNode(true, Path.GetFileName(file), "", parent.Path, false);
                 string extension = Path.GetExtension(file).ToLowerInvariant();
                 if (extension.Length > 1)
@@ -275,6 +287,28 @@ namespace Thetacat.Import.UI
                 true);
             CheckableTreeViewSupport<ImportNode>.SetParentCheckStateForChildren(m_model.ImportItems);
             ExtensionList.SelectedItems.Clear();
+        }
+
+        private HashSet<string>? m_existingCacheItems;
+
+        void BuildExistingCacheItemHash()
+        {
+            m_existingCacheItems = new HashSet<string>();
+
+            foreach (ICacheEntry entry in App.State.Cache.Entries.Values)
+            {
+                string full = App.State.Cache.GetFullLocalPath(entry.Path).ToUpper();
+
+                m_existingCacheItems.Add(full);
+            }
+        }
+
+        bool IsFullLocalPathInCache(string fullPathLocal)
+        {
+            if (m_existingCacheItems == null)
+                BuildExistingCacheItemHash();
+
+            return m_existingCacheItems?.Contains(fullPathLocal.ToUpper()) ?? false;
         }
 
         MediaItem? LookupMediaIdForPath(string fullPathLocal, string sourcePath, string name)
@@ -400,8 +434,13 @@ namespace Thetacat.Import.UI
             if (item.IsDirectory)
                 return PathSegment.Empty;
 
+            string sourcePath =
+                m_model.ImportInPlace
+                    ? App.State.Cache.LocalPathToCacheRoot.Local
+                    : m_model.SourcePath;
+
             return BuildVirtualPath(
-                m_model.SourcePath,
+                sourcePath,
                 item.Path,
                 item.Name,
                 m_model.IncludeParentDirInVirtualPath,
@@ -484,11 +523,11 @@ namespace Thetacat.Import.UI
             m_model.VirtualPathRoots.Add(item);
             return item;
         }
+
         private void DoSelectedVirtualRootChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (e.NewValue is BackingTreeItem<VirtualRootNameItem> newItem)
             {
-                
                 VirtualPathRootsComboBox.SelectedItem = EnsurePathInVirtualRoots(newItem.Data.FullName);
             }
 

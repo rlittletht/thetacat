@@ -24,6 +24,7 @@ using Thetacat.UI.ProgressReporting;
 using Thetacat.Explorer;
 using System.Windows.Media.Imaging;
 using System.Globalization;
+using System.Windows.Forms;
 using Microsoft.Windows.EventTracing.Power;
 using Thetacat.BackupRestore.Backup;
 using Thetacat.BackupRestore.Restore;
@@ -32,6 +33,7 @@ using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
 using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
+using FlowDirection = System.Windows.FlowDirection;
 
 namespace Thetacat;
 
@@ -121,6 +123,17 @@ public partial class MainWindow : Window
 
     void OnClosing(object sender, EventArgs e)
     {
+        if (m_model.IsDirty)
+        {
+            DialogResult result = MessageBox.Show("The main catalog is dirty. Do you want to save changes?", "Save Changes", MessageBoxButtons.YesNo);
+
+            if (result == System.Windows.Forms.DialogResult.Yes)
+            {
+                App.State.Catalog.PushPendingChanges(App.State.ActiveProfile.CatalogID);
+                App.State.MetatagSchema.UpdateServer(App.State.ActiveProfile.CatalogID);
+            }
+        }
+
         App.State.Derivatives.CommitDerivatives();
         App.State.Derivatives.Close();
         App.State.ActiveProfile.ShowAsyncLogOnStart = m_asyncLogMonitor != null;

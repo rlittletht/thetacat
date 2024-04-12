@@ -154,6 +154,34 @@ public class PathSegment
         return new PathSegment(m_segment[(ich + 1)..(ichLim + 1)]);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoesPathSubsumePath
+        %%Qualified: Thetacat.Util.PathSegment.DoesPathSubsumePath
+
+        Full path subsumes the check if check is inside full path
+    ----------------------------------------------------------------------------*/
+    public static bool DoesPathSubsumePath(PathSegment fullPath, PathSegment checkPath)
+    {
+        string full = fullPath;
+        string check = checkPath;
+
+        if (string.Compare(full, check, StringComparison.InvariantCultureIgnoreCase) == 0)
+            return true;
+
+        if (!check.EndsWith('/'))
+            check = $"{check}/";
+
+        if (full.StartsWith(check, StringComparison.CurrentCultureIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    public bool Subsumes(PathSegment path)
+    {
+        return DoesPathSubsumePath(this, path);
+    }
+
     public delegate bool TraverseDelegate(PathSegment segment);
 
     /*----------------------------------------------------------------------------

@@ -143,4 +143,22 @@ public class PathSegmentTests
 
         Assert.AreEqual(expectedPath, path.GetPathDirectory());
     }
+
+    [TestCase("\\\\server\\share\\root\\subdir", "\\\\server\\share\\root", true)]
+    [TestCase("\\\\server\\share\\root\\subdir", "\\\\server\\share\\root2", false)]
+    [TestCase("\\\\server\\share\\root2\\subdir", "\\\\server\\share\\root", false)]
+    [TestCase("//server/share/root/subdir", "//server/share/root", true)]
+    [TestCase("//server/share/root/subdir", "//server/share/root2", false)]
+    [TestCase("//server/share/root2/subdir", "//server/share/root", false)]
+    [TestCase("//server/share/root", "//server/share/root", true)]
+    [TestCase("//server/share/root2", "//server/share/root", false)]
+    [TestCase("//server/share/root", "//server/share/root2", false)]
+    [Test]
+    public static void TestDoesPathSubsumePath(string full, string check, bool expected)
+    {
+        PathSegment fullPath = new PathSegment(full);
+        PathSegment checkPath = new PathSegment(check);
+
+        Assert.AreEqual(expected, PathSegment.DoesPathSubsumePath(fullPath, checkPath));
+    }
 }

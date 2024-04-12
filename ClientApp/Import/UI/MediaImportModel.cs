@@ -19,6 +19,19 @@ public class MediaImportModel: INotifyPropertyChanged
     public ObservableCollection<VirtualRootNameItem> VirtualPathRoots { get; }= new();
     private VirtualRootNameItem? m_virtualPathRoot;
     private bool m_includeParentDirInVirtualPath;
+    private bool m_importInPlace;
+
+    public bool ImportInPlace
+    {
+        get => m_importInPlace;
+        set
+        {
+            SetField(ref m_importInPlace, value);
+            OnPropertyChanged(nameof(EnableRepathControls));
+        }
+    }
+
+    public bool EnableRepathControls => !ImportInPlace;
 
     public bool IncludeParentDirInVirtualPath
     {
