@@ -313,6 +313,20 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         m_mapLineItemOffsets.Clear();
     }
 
+
+    public MediaExplorerItem? GetNextItem(MediaItem item)
+    {
+        // find this item in the collection and get the next item
+        if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+        {
+            // now get the next item
+            return m_collection.GetNextItem(location.Line, location.Offset);
+        }
+
+        return null;
+    }
+
+
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {
         string? path = App.State.Cache.TryGetCachedFullPath(item.ID);

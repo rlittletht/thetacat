@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Converters;
 using Thetacat.Explorer.UI;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
@@ -17,9 +18,11 @@ namespace Thetacat.Explorer;
 public partial class MediaItemZoom : Window
 {
     public delegate void OnZoomClosingDelegate(MediaItemZoom zoom);
+    public delegate MediaItem? GetNextMediaItem(MediaItem item);
 
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
+    private bool m_pruning = false;
 
     private MediaItemZoomModel m_model = new();
 
@@ -76,7 +79,7 @@ public partial class MediaItemZoom : Window
         }
     }
 
-    public MediaItemZoom(MediaItem item)
+    void SetMediaItem(MediaItem item)
     {
         m_model.MediaItem = item;
 
@@ -88,19 +91,57 @@ public partial class MediaItemZoom : Window
         App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
         m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
 
-        Closing += OnCloseReleaseWatchers;
 
         EnsureZoomImageFromCache(App.State.ImageCache, item);
+    }
 
+    private GetNextMediaItem? m_nextDelegate;
+
+    public MediaItemZoom(MediaItem item, GetNextMediaItem? getNextDelegate)
+    {
+        m_nextDelegate = getNextDelegate;
+        Closing += OnCloseReleaseWatchers;
         this.KeyDown += DoMediaZoomKeyUp;
-
         InitializeComponent();
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
+
+        SetMediaItem(item);
     }
 
     private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
             Close();
+        else if (e.Key == Key.N)
+            DoNextImage();
+    }
+
+    private void TogglePruneMode(object sender, RoutedEventArgs e)
+    {
+        if (m_pruning)
+        {
+            m_model.PruneModeCaption = "Stop Pruning";
+            m_pruning = false;
+        }
+        else
+        {
+            m_model.PruneModeCaption = "Start Pruning";
+            m_pruning = true;
+        }
+    }
+
+    void DoNextImage()
+    {
+        if (m_nextDelegate != null)
+        {
+            MediaItem? next = m_nextDelegate(m_model.MediaItem!);
+            if (next != null)
+                SetMediaItem(next);
+        }
+    }
+
+    private void NextImage(object sender, RoutedEventArgs e)
+    {
+        DoNextImage();
     }
 }

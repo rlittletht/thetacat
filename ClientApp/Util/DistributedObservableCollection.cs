@@ -20,6 +20,7 @@ public interface IObservableSegmentableCollectionHolder<T>
 // to be considered the 'end of the segment')
 public class DistributedObservableCollection<T, T1> 
     where T : class, IObservableSegmentableCollectionHolder<T1>
+    where T1: class
 {
     public delegate T LineFactoryDelegate(T? reference);
     public delegate void MoveLinePropertiesDelegate(T from, T to);
@@ -362,6 +363,23 @@ public class DistributedObservableCollection<T, T1>
     {
         m_collection.Clear();
         m_segments = null;
+    }
+
+    public T1? GetNextItem(int lineNumber, int offset)
+    {
+        T line = m_collection[lineNumber];
+
+        if (line.Items.Count - 1 >= offset)
+        {
+            // get the next line
+            if (lineNumber == m_collection.Count - 1)
+                return null;
+
+            line = m_collection[lineNumber + 1];
+            return line.Items[0];
+        }
+
+        return line.Items[offset + 1];
     }
 
     public void AddItem(T1 itemToAdd)

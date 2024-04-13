@@ -12,6 +12,13 @@ public class MediaItemZoomModel : INotifyPropertyChanged
     public ObservableCollection<MediaTag> Tags { get; } = new ObservableCollection<MediaTag>();
     private MediaItem? m_mediaItem;
     private BitmapSource? m_image;
+    private string m_pruneModeCaption = "Start Pruning";
+
+    public string PruneModeCaption
+    {
+        get => m_pruneModeCaption;
+        set => SetField(ref m_pruneModeCaption, value);
+    }
 
     public BitmapSource? Image
     {

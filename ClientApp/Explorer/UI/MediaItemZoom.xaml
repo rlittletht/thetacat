@@ -13,66 +13,74 @@
             <Setter Property="Margin" Value="1 0 1 0" />
         </Style>
     </Window.Resources>
-    <Grid Margin="5" KeyUp="DoMediaZoomKeyUp">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="7*" />
-            <RowDefinition Height="3*" />
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
-            <TextBlock Text="{Binding Path=MediaItem.ID}" Style="{StaticResource Heading}" />
-            <TextBlock Text=":" Style="{StaticResource Heading}" />
-            <TextBlock Text="{Binding Path=MediaItem.VirtualPath}" Style="{StaticResource Heading}" />
-        </StackPanel>
-        <Image Source="{Binding Path=Image}" Grid.Row="1" />
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5*" />
-                <ColumnDefinition Width="5*" />
-            </Grid.ColumnDefinitions>
-            <GroupBox Grid.Column="0">
-                <GroupBox.Header>Builtin Properties</GroupBox.Header>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5*" />
-                        <ColumnDefinition Width="5*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Image Width" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
-                        <TextBlock Text="Image Height" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
-                        <TextBlock Text="Mime Type" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Text="Original File Date" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
-                        <TextBlock Text="Import Date" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
-                        <TextBlock Text="MD5 Hash" />
-                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
-                    </StackPanel>
-                </Grid>
-            </GroupBox>
-            <GroupBox Grid.Column="1">
-                <GroupBox.Header>
-                    MediaTags set on this item
-                </GroupBox.Header>
-                <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
-                                <GridViewColumnHeader Content="Metatag" Tag="Metatag.StandardName"
-                                                      Click="SortType" />
-                            </GridViewColumn>
-                            <GridViewColumn DisplayMemberBinding="{Binding Value}">
-                                <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-            </GroupBox>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Zoom">
+                <MenuItem Header="{Binding Path=PruneModeCaption}" Click="TogglePruneMode" />
+                <MenuItem Header="_Next" Click="NextImage" />
+            </MenuItem>
+        </Menu>
+        <Grid Margin="5" KeyUp="DoMediaZoomKeyUp">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="7*" />
+                <RowDefinition Height="3*" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
+                <TextBlock Text="{Binding Path=MediaItem.ID}" Style="{StaticResource Heading}" />
+                <TextBlock Text=":" Style="{StaticResource Heading}" />
+                <TextBlock Text="{Binding Path=MediaItem.VirtualPath}" Style="{StaticResource Heading}" />
+            </StackPanel>
+            <Image Source="{Binding Path=Image}" Grid.Row="1" />
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <GroupBox Grid.Column="0">
+                    <GroupBox.Header>Builtin Properties</GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="5*" />
+                            <ColumnDefinition Width="5*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Image Width" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
+                            <TextBlock Text="Image Height" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
+                            <TextBlock Text="Mime Type" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Original File Date" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
+                            <TextBlock Text="Import Date" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
+                            <TextBlock Text="MD5 Hash" />
+                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Grid.Column="1">
+                    <GroupBox.Header>
+                        MediaTags set on this item
+                    </GroupBox.Header>
+                    <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
+                                    <GridViewColumnHeader Content="Metatag" Tag="Metatag.StandardName"
+                                                          Click="SortType" />
+                                </GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Value}">
+                                    <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </GroupBox>
+            </Grid>
         </Grid>
-    </Grid>
+    </DockPanel>
 </Window>
