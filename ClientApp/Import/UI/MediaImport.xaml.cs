@@ -209,11 +209,19 @@ namespace Thetacat.Import.UI
                         return _nodesToAdd;
                     });
 
-            m_model.ImportItems.AddRange(nodesToAdd);
-            m_model.FileExtensions.Clear();
-            List<string> sortedExtensions = new List<string>(extensions);
-            sortedExtensions.Sort();
-            m_model.FileExtensions.AddRange(sortedExtensions);
+            if (nodesToAdd.Count == 0)
+            {
+                UpdateStatus("Done searching. No new media to import.");
+            }
+            else
+            {
+                UpdateStatus($"Done searching. Adding {nodesToAdd.Count} items.");
+                m_model.ImportItems.AddRange(nodesToAdd);
+                m_model.FileExtensions.Clear();
+                List<string> sortedExtensions = new List<string>(extensions);
+                sortedExtensions.Sort();
+                m_model.FileExtensions.AddRange(sortedExtensions);
+            }
         }
 
         private ProgressListDialog? m_backgroundProgressDialog;
@@ -537,6 +545,11 @@ namespace Thetacat.Import.UI
         private void SelectVirtualRoot(object sender, RoutedEventArgs e)
         {
             VirtualRootPickerPopup.IsOpen = !VirtualRootPickerPopup.IsOpen;
+        }
+
+        void UpdateStatus(string status)
+        {
+            m_model.ImportStatus = status;
         }
     }
 }

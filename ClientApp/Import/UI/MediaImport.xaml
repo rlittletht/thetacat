@@ -124,10 +124,6 @@
                             <Button Content="Check Existing" Click="SearchForImportedItems" />
                             <Button Content="Import" Click="DoImport"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="4" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent" VerticalAlignment="Bottom">
-                            <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
-                                                   VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
-                        </StackPanel>
                     </Grid>
                 </Grid>
             </GroupBox>
@@ -137,6 +133,12 @@
                 <ColumnDefinition Width="32" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" PreviewMouseDown="HandleSpinnerMouseDown" Background="Transparent"
+                        VerticalAlignment="Bottom">
+                <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
+                                       VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
+            </StackPanel>
+            <TextBlock Text="{Binding Path=ImportStatus}" Grid.Column="1"/>
         </Grid>
     </Grid>
 </Window>

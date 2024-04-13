@@ -20,6 +20,13 @@ public class MediaImportModel: INotifyPropertyChanged
     private VirtualRootNameItem? m_virtualPathRoot;
     private bool m_includeParentDirInVirtualPath;
     private bool m_importInPlace;
+    private string m_importStatus;
+
+    public string ImportStatus
+    {
+        get => m_importStatus;
+        set => SetField(ref m_importStatus, value);
+    }
 
     public bool ImportInPlace
     {
