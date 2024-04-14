@@ -273,48 +273,53 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
+    private T? GetBuiltinTagValue<T>(Metatag metatag, Func<string, T> parser)
+        where T: struct // restrict this to value types (int, string, bool)
+    {
+        if (Tags.TryGetValue(metatag.ID, out MediaTag? tag))
+            return tag.Value == null ? null : parser(tag.Value);
+
+        return null;
+    }
+
+    private void SetBuiltinTagValue<T>(Metatag metatag, T? value, [CallerMemberName] string? propertyName = null)
+        where T : struct
+    {
+        if (value != null)
+        {
+            MediaTag tag = new MediaTag(metatag, value?.ToString());
+            FAddOrUpdateMediaTag(tag, true);
+        }
+        else
+        {
+            FRemoveMediaTag(metatag.ID);
+        }
+
+        OnPropertyChanged(propertyName);
+    }
+
     public int? TransformRotate
     {
-        get
-        {
-            if (Tags.TryGetValue(BuiltinTags.s_TransformRotateID, out MediaTag? tag))
-                return tag.Value == null ? null : int.Parse(tag.Value);
+        get => GetBuiltinTagValue(BuiltinTags.s_TransformRotate, int.Parse);
+        set => SetBuiltinTagValue(BuiltinTags.s_TransformRotate, value);
+    }
 
-            return null;
-        }
-        set
-        {
-            if (value != null)
-            {
-                MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
-                FAddOrUpdateMediaTag(tag, true);
-            }
-            else
-            {
-                FRemoveMediaTag(BuiltinTags.s_TransformRotateID);
-            }
+    public bool IsTrashItem
+    {
+        get => GetBuiltinTagValue(BuiltinTags.s_IsTrashItem, bool.Parse) ?? false;
+        set => SetBuiltinTagValue<bool>(BuiltinTags.s_IsTrashItem, value);
+    }
 
-            OnPropertyChanged(nameof(TransformRotate));
-        }
+    public bool DontPushToCloud
+    {
+        get => GetBuiltinTagValue(BuiltinTags.s_DontPushToCloud, bool.Parse) ?? false;
+        set => SetBuiltinTagValue<bool>(BuiltinTags.s_DontPushToCloud, value);
     }
 
     public bool TransformMirror
     {
-        get => Tags.ContainsKey(BuiltinTags.s_TransformMirrorID);
-        set
-        {
-            if (value)
-            {
-                MediaTag tag = new MediaTag(BuiltinTags.s_TransformMirror, null);
-                FAddOrUpdateMediaTag(tag, true);
-            }
-            else
-            {
-                FRemoveMediaTag(BuiltinTags.s_TransformMirrorID);
-            }
-
-            OnPropertyChanged(nameof(TransformMirror));
-        }
+        get => GetBuiltinTagValue(BuiltinTags.s_TransformMirror, bool.Parse) ?? false;
+        set => SetBuiltinTagValue<bool>(BuiltinTags.s_TransformMirror, value);
     }
 
     #endregion

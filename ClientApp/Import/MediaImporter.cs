@@ -93,7 +93,7 @@ public class MediaImporter
 
         foreach (ServiceImportItem item in items)
         {
-            if (!App.State.Catalog.HasMediaItem(item.ID))
+            if (!App.State.Catalog.TryGetMedia(item.ID, out MediaItem? mediaItem))
             {
                 MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
 
@@ -108,13 +108,16 @@ public class MediaImporter
             }
             else
             {
-                ImportItems.Add(
-                    new ImportItem(
-                        item.ID,
-                        clientSource,
-                        PathSegment.CreateFromString(item.SourceServer),
-                        PathSegment.CreateFromString(item.SourcePath),
-                        ImportItem.StateFromString(item.State ?? string.Empty)));
+                ImportItem newItem = new ImportItem(
+                    item.ID,
+                    clientSource,
+                    PathSegment.CreateFromString(item.SourceServer),
+                    PathSegment.CreateFromString(item.SourcePath),
+                    ImportItem.StateFromString(item.State ?? string.Empty));
+
+                newItem.SkipWorkgroupOnlyItem = mediaItem.DontPushToCloud;
+
+                ImportItems.Add(newItem);
             }
         }
 
@@ -192,7 +195,9 @@ public class MediaImporter
                 i++;
                 progress.UpdateProgress((i * 100.0) / iMax);
 
-                if (item.State == ImportItem.ImportState.PendingUpload && !item.SourcePath.Local.EndsWith("MOV"))
+                if (item.State == ImportItem.ImportState.PendingUpload 
+                    && !item.SourcePath.Local.EndsWith("MOV")
+                    && !item.SkipWorkgroupOnlyItem)
                 {
                     PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
                     Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
