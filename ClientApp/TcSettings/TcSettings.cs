@@ -53,7 +53,7 @@ public class TcSettings
                             .AddAttribute("Order", (_, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder, (_, value, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder = value)
                             .AddElement("MetatagMru")
                                 .AddChildElement("Tag", (_, context) => (string?)context?.RepeatKey, (_, value, context) => context!.RepeatKey = value ?? "")
-                                .SetRepeating(CreateMetatagMruRepeatContext, AreRemainingMetatagMru, CommitMetatagMruRepeatItem)
+                                .SetRepeating(CreateMetatagMruRepeatContext, AreRemainingMetatagMru, CommitMetatagMruRepeatItem, (settings) => settings.MetatagMruEnumerator = null)
                                 .Pop()
                             .Pop()
                         .Pop()
@@ -68,7 +68,7 @@ public class TcSettings
                     .AddChildElement("Filters")
                     .AddAttribute("DefaultFilter", (_, context) => context!.GetDictionaryValue<string, Profile>().DefaultFilterName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().DefaultFilterName = value)
                         .AddChildElement("Filter")
-                        .SetRepeating(CreateFiltersRepeatContext, AreRemainingFilters, CommitFiltersRepeatItem)
+                        .SetRepeating(CreateFiltersRepeatContext, AreRemainingFilters, CommitFiltersRepeatItem, (settings) => settings.FiltersEnumerator = null)
                         .AddAttribute("Name", (_, context) => context!.GetDictionaryValue<string, FilterDefinition>().FilterName, (_, value, context) => context!.GetDictionaryValue<string, FilterDefinition>().FilterName = value)
                             .AddChildElement("Description", (_, context) => context!.GetDictionaryValue<string, FilterDefinition>().Description, (_, value, context) => context!.GetDictionaryValue<string, FilterDefinition>().Description = value ?? "")
                             .AddElement("Expression", (_, context) => context!.GetDictionaryValue<string, FilterDefinition>().ExpressionText, (_, value, context) => context!.GetDictionaryValue<string, FilterDefinition>().ExpressionText = value ?? "")
@@ -79,7 +79,7 @@ public class TcSettings
                         .AddChildElement("ElementsDatabase", (_, context) => context!.GetDictionaryValue<string, Profile>().ElementsDatabase, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ElementsDatabase = value)
                         .AddElement("Substitutions")
                             .AddChildElement("Substitution")
-                            .SetRepeating(CreateElementsSubstitutionRepeatContext, AreRemainingElementsSubstitutions, CommitElementsSubstitutionRepeatItem)
+                            .SetRepeating(CreateElementsSubstitutionRepeatContext, AreRemainingElementsSubstitutions, CommitElementsSubstitutionRepeatItem, (settings) => settings.SubstitutionsEnumerator = null)
                             .AddAttribute("From", (_, context) => ((MapPair)context!.RepeatKey).From, (_, value, context) => ((MapPair)context!.RepeatKey).From = value)
                             .AddAttribute("To", (_, context) => ((MapPair)context!.RepeatKey).To, (_, value, context) => ((MapPair)context!.RepeatKey).To = value)
                             .Pop()
@@ -108,10 +108,7 @@ public class TcSettings
             .AddElement("LastExportPath", (settings, _) => settings.LastExportPath, (settings, value, _) => settings.LastExportPath = value ?? "")
             .AddElement("WindowPlacements")
             .AddChildElement("Placement")
-            .SetRepeating(
-            CreatePlacementRepeatItem,
-            AreRemainingPlacementItems,
-            CommitPlacementsItem)
+            .SetRepeating(CreatePlacementRepeatItem,AreRemainingPlacementItems,CommitPlacementsItem)
             .AddAttribute("Name", GetPlacementName, SetPlacementName)
             .AddAttribute("X", GetPlacementX, SetPlacementX)
             .AddAttribute("Y", GetPlacementY, SetPlacementY)
