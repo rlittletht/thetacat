@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Filtering.UI;
+using Thetacat.Import.UI.Commands;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Import.UI;
 
 public class MediaImportModel: INotifyPropertyChanged
 {
+    public ObservableCollection<FilterModelMetatagItem> AvailableTags { get; set; } = new ObservableCollection<FilterModelMetatagItem>();
+
     private string m_sourcePath = String.Empty;
     private bool m_includeSubdirInVirtualPath = true;
     private string m_virtualPathSuffix = string.Empty;
@@ -20,13 +25,15 @@ public class MediaImportModel: INotifyPropertyChanged
     private VirtualRootNameItem? m_virtualPathRoot;
     private bool m_includeParentDirInVirtualPath;
     private bool m_importInPlace;
-    private string m_importStatus;
+    private string m_importStatus = String.Empty;
 
     public string ImportStatus
     {
         get => m_importStatus;
         set => SetField(ref m_importStatus, value);
     }
+
+    public ObservableCollection<FilterModelMetatagItem> InitialTags { get; set; } = new ObservableCollection<FilterModelMetatagItem>();
 
     public bool ImportInPlace
     {
@@ -90,4 +97,7 @@ public class MediaImportModel: INotifyPropertyChanged
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    public RemoveInitialTagCommand? RemoveInitialTagCommand { get; set; }
+
 }
