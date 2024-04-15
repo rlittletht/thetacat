@@ -163,7 +163,7 @@ public partial class ManageMetadata : Window
 
     private void SelectParent(object sender, RoutedEventArgs e)
     {
-        ParentPickerPopup.IsOpen = true;
+        ParentPickerPopup.IsOpen = !ParentPickerPopup.IsOpen;
     }
 
     void InitializeAvailableParents()

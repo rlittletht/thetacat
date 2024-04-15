@@ -41,7 +41,11 @@ public partial class ApplyMetatag : Window
         Dictionary<string, bool?> initialState = GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
 
         Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
+        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState);
+        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_IsTrashItem, initialState);
         MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
+        MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_DontPushToCloud, initialState);
+        MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_IsTrashItem, initialState);
         MainWindow.LogForApp(EventType.Warning, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 
