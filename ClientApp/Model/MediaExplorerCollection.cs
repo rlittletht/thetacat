@@ -326,6 +326,18 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         return null;
     }
 
+    public MediaExplorerItem? GetPreviousItem(MediaItem item)
+    {
+        // find this item in the collection and get the next item
+        if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+        {
+            // now get the previous item
+            return m_collection.GetPreviousItem(location.Line, location.Offset);
+        }
+
+        return null;
+    }
+
 
     public void AddToExplorerCollection(MediaItem item, bool startNewSegment, string segmentTitle)
     {

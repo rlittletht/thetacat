@@ -64,6 +64,17 @@ public partial class MediaExplorer : UserControl
         return nextMediaItem;
     }
 
+    MediaItem? GetPreviousItem(MediaItem item)
+    {
+        MediaExplorerItem? previousItem = m_collection?.GetPreviousItem(item);
+
+        if (previousItem == null)
+            return null;
+
+        App.State.Catalog.TryGetMedia(previousItem.MediaId, out MediaItem? nextMediaItem);
+        return nextMediaItem;
+    }
+
     public void LaunchItem(MediaExplorerItem? context)
     {
         if (context == null)
@@ -71,7 +82,7 @@ public partial class MediaExplorer : UserControl
 
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
             
-        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem);
+        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem);
 
         zoom.Closing += OnMediaZoomClosing;
 

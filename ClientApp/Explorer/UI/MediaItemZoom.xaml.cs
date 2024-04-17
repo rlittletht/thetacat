@@ -19,10 +19,13 @@ public partial class MediaItemZoom : Window
 {
     public delegate void OnZoomClosingDelegate(MediaItemZoom zoom);
     public delegate MediaItem? GetNextMediaItem(MediaItem item);
+    public delegate MediaItem? GetPreviousMediaItem(MediaItem item);
 
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
     private bool m_pruning = false;
+    private GetNextMediaItem? m_nextDelegate;
+    private GetPreviousMediaItem? m_previousDelegate;
 
     private MediaItemZoomModel m_model = new();
 
@@ -34,7 +37,7 @@ public partial class MediaItemZoom : Window
             throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
 
         if (m_model.MediaItem != null)
-            EnsureZoomImageFromCache(cache, m_model.MediaItem);
+            EnsureZoomImageFromCache(null, cache, m_model.MediaItem);
     }
 
     private void OnMediaItemUpdated(object? sender, PropertyChangedEventArgs args)
@@ -51,7 +54,7 @@ public partial class MediaItemZoom : Window
         m_model.MediaItem!.PropertyChanged -= OnMediaItemUpdated;
     }
 
-    private void EnsureZoomImageFromCache(ImageCache cache, MediaItem item)
+    private void EnsureZoomImageFromCache(ImageCache? lowResCache, ImageCache cache, MediaItem item)
     {
         ImageCacheItem? cacheItem = cache.GetAnyExistingItem(item.ID);
 
@@ -62,6 +65,8 @@ public partial class MediaItemZoom : Window
             if (path != null)
                 App.State.ImageCache.TryQueueBackgroundLoadToCache(item, path);
         }
+
+        cacheItem ??= lowResCache?.GetAnyExistingItem(item.ID);
 
         m_model.Image = cacheItem?.Image;
     }
@@ -91,15 +96,15 @@ public partial class MediaItemZoom : Window
         App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
         m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
 
-
-        EnsureZoomImageFromCache(App.State.ImageCache, item);
+        EnsureZoomImageFromCache(App.State.PreviewImageCache, App.State.ImageCache, item);
     }
 
-    private GetNextMediaItem? m_nextDelegate;
 
-    public MediaItemZoom(MediaItem item, GetNextMediaItem? getNextDelegate)
+    public MediaItemZoom(MediaItem item, GetNextMediaItem? getNextDelegate, GetPreviousMediaItem? getPreviousDelegate)
     {
         m_nextDelegate = getNextDelegate;
+        m_previousDelegate = getPreviousDelegate;
+
         Closing += OnCloseReleaseWatchers;
         this.KeyDown += DoMediaZoomKeyUp;
         InitializeComponent();
@@ -112,8 +117,10 @@ public partial class MediaItemZoom : Window
     {
         if (e.Key == Key.Escape)
             Close();
-        else if (e.Key == Key.N)
+        else if (e.Key == Key.N || e.Key == Key.Right)
             DoNextImage();
+        else if (e.Key == Key.P || e.Key == Key.Left)
+            DoPreviousImage();
     }
 
     private void TogglePruneMode(object sender, RoutedEventArgs e)
@@ -140,8 +147,23 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    void DoPreviousImage()
+    {
+        if (m_previousDelegate != null)
+        {
+            MediaItem? next = m_previousDelegate(m_model.MediaItem!);
+            if (next != null)
+                SetMediaItem(next);
+        }
+    }
+
     private void NextImage(object sender, RoutedEventArgs e)
     {
         DoNextImage();
+    }
+
+    private void PreviousImage(object sender, RoutedEventArgs e)
+    {
+        DoPreviousImage();
     }
 }

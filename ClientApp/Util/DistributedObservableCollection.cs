@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Emgu.CV.CvEnum;
 
 namespace Thetacat.Util;
 
@@ -369,7 +370,7 @@ public class DistributedObservableCollection<T, T1>
     {
         T line = m_collection[lineNumber];
 
-        if (line.Items.Count - 1 >= offset)
+        if (offset >= line.Items.Count - 1)
         {
             // get the next line
             if (lineNumber == m_collection.Count - 1)
@@ -380,6 +381,22 @@ public class DistributedObservableCollection<T, T1>
         }
 
         return line.Items[offset + 1];
+    }
+
+    public T1? GetPreviousItem(int lineNumber, int offset)
+    {
+        T line = m_collection[lineNumber];
+
+        if (offset == 0)
+        {
+            if (lineNumber == 0)
+                return null;
+
+            line = m_collection[lineNumber - 1];
+            return line.Items[line.Items.Count - 1];
+        }
+
+        return line.Items[offset - 1];
     }
 
     public void AddItem(T1 itemToAdd)
