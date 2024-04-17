@@ -16,6 +16,7 @@ using Thetacat.Filtering.UI;
 using Thetacat.Standards;
 using Thetacat.Metatags;
 using Thetacat.Import.UI.Commands;
+using Thetacat.Metatags.Model;
 
 namespace Thetacat.Import.UI
 {
@@ -511,6 +512,15 @@ namespace Thetacat.Import.UI
                     ImportNode node = itemFile as ImportNode ?? throw new CatExceptionInternalFailure("file item isn't an ImportNode?");
                     node.MediaId = catalogItem.ID;
                     node.MatchedItem = catalogItem.VirtualPath;
+
+                    if (m_model.InitialTags.Count > 0)
+                    {
+                        foreach (FilterModelMetatagItem metatag in m_model.InitialTags)
+                        {
+                            MediaTag tag = new MediaTag(metatag.Metatag, null);
+                            catalogItem.FAddOrUpdateMediaTag(tag, true);
+                        }
+                    }
                 });
 
             m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
