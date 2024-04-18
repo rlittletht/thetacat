@@ -399,6 +399,11 @@ public class DistributedObservableCollection<T, T1>
         return line.Items[offset - 1];
     }
 
+    public T1 GetItem(int lineNumber, int offset)
+    {
+        return m_collection[lineNumber].Items[offset];
+    }
+
     public void AddItem(T1 itemToAdd)
     {
         if (m_itemsPerLine == 0)

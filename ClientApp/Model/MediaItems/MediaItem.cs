@@ -282,6 +282,29 @@ public class MediaItem : INotifyPropertyChanged
         return null;
     }
 
+    private bool FHasBuiltinTag(Metatag metatag)
+    {
+        if (Tags.TryGetValue(metatag.ID, out MediaTag? tag))
+            return true;
+
+        return false;
+    }
+
+    private void SetBuiltinTagToggleTag(Metatag metatag, bool fSet, [CallerMemberName] string? propertyName = null)
+    {
+        if (fSet)
+        {
+            MediaTag tag = new MediaTag(metatag, null);
+            FAddOrUpdateMediaTag(tag, true);
+        }
+        else
+        {
+            FRemoveMediaTag(metatag.ID);
+        }
+
+        OnPropertyChanged(propertyName);
+    }
+
     private void SetBuiltinTagValue<T>(Metatag metatag, T? value, [CallerMemberName] string? propertyName = null)
         where T : struct
     {
@@ -306,20 +329,20 @@ public class MediaItem : INotifyPropertyChanged
 
     public bool IsTrashItem
     {
-        get => GetBuiltinTagValue(BuiltinTags.s_IsTrashItem, bool.Parse) ?? false;
-        set => SetBuiltinTagValue<bool>(BuiltinTags.s_IsTrashItem, value);
+        get => FHasBuiltinTag(BuiltinTags.s_IsTrashItem);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_IsTrashItem, value);
     }
 
     public bool DontPushToCloud
     {
-        get => GetBuiltinTagValue(BuiltinTags.s_DontPushToCloud, bool.Parse) ?? false;
-        set => SetBuiltinTagValue<bool>(BuiltinTags.s_DontPushToCloud, value);
+        get => FHasBuiltinTag(BuiltinTags.s_DontPushToCloud);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_DontPushToCloud, value);
     }
 
     public bool TransformMirror
     {
-        get => GetBuiltinTagValue(BuiltinTags.s_TransformMirror, bool.Parse) ?? false;
-        set => SetBuiltinTagValue<bool>(BuiltinTags.s_TransformMirror, value);
+        get => FHasBuiltinTag(BuiltinTags.s_TransformMirror);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_TransformMirror, value);
     }
 
     #endregion

@@ -345,6 +345,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         MediaExplorerItem explorerItem = new MediaExplorerItem(path ?? string.Empty, item.VirtualPath, item.ID);
 
+        explorerItem.IsTrashItem = item.IsTrashItem;
+        explorerItem.IsOffline = item.DontPushToCloud;
+
+        item.PropertyChanged += ItemOnPropertyChanged;
         m_explorerItems.Add(item.ID, explorerItem);
 
         if (path != null)
@@ -372,6 +376,20 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             new LineItemOffset(
                 m_collection.TopCollection.Count - 1,
                 m_collection.TopCollection[m_collection.TopCollection.Count - 1].Items.Count - 1));
+    }
+
+    private void ItemOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is MediaItem item && e.PropertyName == "Tags")
+        {
+            if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+            {
+                MediaExplorerItem explorerItem = m_collection.GetItem(location.Line, location.Offset);
+
+                explorerItem.IsTrashItem = item.IsTrashItem;
+                explorerItem.IsOffline = item.DontPushToCloud;
+            }
+        }
     }
 
     /*----------------------------------------------------------------------------

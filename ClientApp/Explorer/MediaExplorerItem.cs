@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Media.Imaging;
 
 namespace Thetacat.Explorer;
@@ -13,14 +14,49 @@ public class MediaExplorerItem : INotifyPropertyChanged
     public string m_tileLabel;
     private BitmapSource? m_tileImage;
     private bool m_selected;
+    private bool m_isTrashItem;
+    private Visibility m_trashAdornerVisibility;
+    private bool m_isOffline;
+    private Visibility m_offlineAdornerVisibility;
+
+    public bool IsTrashItem
+    {
+        get => m_isTrashItem;
+        set
+        {
+            SetField(ref m_isTrashItem, value);
+            TrashAdornerVisibility = m_isTrashItem ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    public bool IsOffline
+    {
+        get => m_isOffline;
+        set
+        {
+            SetField(ref m_isOffline, value);
+            OfflineAdornerVisibility = m_isOffline ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    public Visibility OfflineAdornerVisibility
+    {
+        get => m_offlineAdornerVisibility;
+        private set => SetField(ref m_offlineAdornerVisibility, value);
+    }
+
+    public Visibility TrashAdornerVisibility
+    {
+        get => m_trashAdornerVisibility;
+        private set => SetField(ref m_trashAdornerVisibility, value);
+    }
 
     public bool Selected
     {
         get => m_selected;
         set => SetField(ref m_selected, value);
     }
-
-
+    
     public Guid MediaId
     {
         get => m_mediaId;

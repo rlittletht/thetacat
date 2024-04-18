@@ -442,7 +442,7 @@ public partial class MediaExplorer : UserControl
     {
         // figure out either the current item, or the selected items
 
-        if (e.OriginalSource is System.Windows.Controls.Image { Parent: StackPanel { DataContext: MediaExplorerItem item } })
+        if (e.OriginalSource is System.Windows.Controls.Image { Parent: Grid { DataContext: MediaExplorerItem item } })
         {
             Model.ExplorerContextMenu.AppliedTags.Clear();
 
@@ -450,8 +450,12 @@ public partial class MediaExplorer : UserControl
             {
                 foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
                 {
-                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User)
+                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User
+                        && tag.Value.Metatag.ID != BuiltinTags.s_DontPushToCloudID
+                        && tag.Value.Metatag.ID != BuiltinTags.s_IsTrashItemID)
+                    {
                         continue;
+                    }
 
                     Model.ExplorerContextMenu.AppliedTags.Add(
                         new ExplorerMenuTag()
