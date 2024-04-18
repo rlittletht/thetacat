@@ -650,4 +650,9 @@ public partial class MainWindow : Window
         exportData.Owner = this;
         exportData.ShowDialog();
     }
+
+    private void DoEmptyTrash(object sender, RoutedEventArgs e)
+    {
+
+    }
 }

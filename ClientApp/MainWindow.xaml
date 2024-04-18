@@ -26,6 +26,7 @@
                 <MenuItem Header="Options" Click="LaunchOptions" />
                 <MenuItem Header="_Backup Database" Click="DoBackupDatabase"/>
                 <MenuItem Header="_Restore Database" Click="DoRestoreDatabase" />
+                <MenuItem Header="_Empty Trash" Click="DoEmptyTrash"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Filter" Click="DoChooseFilter" />

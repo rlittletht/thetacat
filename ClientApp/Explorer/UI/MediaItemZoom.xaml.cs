@@ -95,6 +95,8 @@ public partial class MediaItemZoom : Window
 
         App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
         m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
+        m_model.IsTrashItem = item.IsTrashItem;
+        m_model.IsOffline = item.DontPushToCloud;
 
         EnsureZoomImageFromCache(App.State.PreviewImageCache, App.State.ImageCache, item);
     }
@@ -113,6 +115,15 @@ public partial class MediaItemZoom : Window
         SetMediaItem(item);
     }
 
+    void DoToggleImageTrashed()
+    {
+        if (m_model.MediaItem != null)
+        {
+            m_model.MediaItem.IsTrashItem = !m_model.MediaItem.IsTrashItem;
+            m_model.IsTrashItem = m_model.MediaItem.IsTrashItem;
+        }
+    }
+
     private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
@@ -121,6 +132,11 @@ public partial class MediaItemZoom : Window
             DoNextImage();
         else if (e.Key == Key.P || e.Key == Key.Left)
             DoPreviousImage();
+        else if (e.Key == Key.D && m_pruning)
+        {
+            DoToggleImageTrashed();
+            DoNextImage();
+        }
     }
 
     private void TogglePruneMode(object sender, RoutedEventArgs e)
@@ -160,6 +176,11 @@ public partial class MediaItemZoom : Window
     private void NextImage(object sender, RoutedEventArgs e)
     {
         DoNextImage();
+    }
+
+    private void ToggleImageTrashed(object sender, RoutedEventArgs e)
+    {
+        DoToggleImageTrashed();
     }
 
     private void PreviousImage(object sender, RoutedEventArgs e)
