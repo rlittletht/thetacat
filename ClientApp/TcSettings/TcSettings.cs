@@ -261,7 +261,7 @@ public class TcSettings
         if (itemContext== null)
             throw new CatExceptionInternalFailure("no contexts for remaining filters check");
 
-        if (itemContext.GetDictionaryValue<string, Profile>().ElementsSubstitutions.Count == 0)
+        if (itemContext.GetDictionaryValue<string, Profile>().Filters.Count == 0)
             return false;
 
         settings.FiltersEnumerator ??= itemContext.GetDictionaryValue<string, Profile>().Filters.GetEnumerator();
