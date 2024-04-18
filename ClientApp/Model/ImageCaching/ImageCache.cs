@@ -206,6 +206,8 @@ public class ImageCache
             {
                 BitmapImage image = new BitmapImage();
                 image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
                 if (scaleWidth != null)
                 {
                     image.DecodePixelWidth = scaleWidth.Value;
@@ -218,6 +220,7 @@ public class ImageCache
 
                 image.UriSource = new Uri(path);
                 image.EndInit();
+                image.Freeze();
 
                 return DoTransformations(image, transformations);
             }

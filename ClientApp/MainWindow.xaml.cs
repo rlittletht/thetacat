@@ -653,6 +653,11 @@ public partial class MainWindow : Window
 
     private void DoEmptyTrash(object sender, RoutedEventArgs e)
     {
+        // get a collection of all the items marked for the trash
+        FilterDefinition trashFilter = new FilterDefinition("", "", $"[{BuiltinTags.s_IsTrashItemID:B}] == '$true'");
+        
+        if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter)))
+            m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
 
     }
 }

@@ -12,6 +12,7 @@ using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
+using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -654,6 +655,34 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
         OnPropertyChanged(propertyName);
+        return true;
+    }
+
+    public bool FDoDeleteItems(IReadOnlyCollection<MediaItem> mediaItems)
+    {
+        if (mediaItems.Count == 0)
+            return false;
+
+        if (MessageBox.Show($"Are you sure you want to delete {mediaItems.Count} items? This cannot be undone.", "Confirm delete", MessageBoxButton.YesNo)
+            != MessageBoxResult.Yes)
+        {
+            return false;
+        }
+
+        foreach (MediaItem item in mediaItems)
+        {
+            try
+            {
+                App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
+                ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
+                App.State.EnsureDeletedItemCollateralRemoved(item.ID);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
+            }
+        }
+
         return true;
     }
 }

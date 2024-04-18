@@ -318,7 +318,7 @@ public partial class MediaExplorer : UserControl
         foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
         {
             MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
-
+            
             try
             {
                 UnloadItemCaches(explorerItem);
@@ -395,28 +395,7 @@ public partial class MediaExplorer : UserControl
     {
         List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
 
-        if (mediaItems.Count == 0)
-            return;
-
-        if (MessageBox.Show($"Are you sure you want to delete {mediaItems.Count} items? This cannot be undone.", "Confirm delete", MessageBoxButton.YesNo)
-            != MessageBoxResult.Yes)
-        {
-            return;
-        }
-
-        foreach (MediaItem item in mediaItems)
-        {
-            try
-            {
-                App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
-                ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
-                App.State.EnsureDeletedItemCollateralRemoved(item.ID);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
-            }
-        }
+        m_collection?.FDoDeleteItems(mediaItems);
     }
 
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)
