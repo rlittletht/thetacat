@@ -658,6 +658,10 @@ public partial class MainWindow : Window
         
         if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter)))
             m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
+    }
 
+    private void DoPurgeCache(object sender, RoutedEventArgs e)
+    {
+        App.State.ImageCache.Purge();
     }
 }

@@ -148,12 +148,13 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
     {
         ImageCache? cache = sender as ImageCache;
-
         if (cache == null)
             throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
 
         if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
         {
+            MainWindow.LogForAsync(EventType.Critical, $"Done caching {cacheItem.MediaId}");
+
             cacheItem.IsLoadQueued = false;
             if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))
             {

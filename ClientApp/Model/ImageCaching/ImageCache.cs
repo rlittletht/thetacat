@@ -63,9 +63,27 @@ public class ImageCache
         m_imageLoaderPipeline?.Stop();
     }
 
+    public void Purge()
+    {
+        foreach (Guid item in Items.Keys)
+        {
+            if (Items.TryGetValue(item, out ImageCacheItem? cacheItem))
+            {
+                if (cacheItem.IsLoadQueued)
+                    continue;
+
+                cacheItem.Image = null;
+
+                Items.TryRemove(item, out ImageCacheItem? _);
+            }
+        }
+    }
+
+
     public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string localPath)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
+        MainWindow.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
 
         if (!Items.TryAdd(mediaItem.ID, item))
         {
@@ -75,7 +93,7 @@ public class ImageCache
                 //return item;
             }
 
-            if (existingItem.IsLoadQueued)
+            if (existingItem.IsLoadQueued || existingItem.Image != null)
                 return existingItem;
 
             item = existingItem;
@@ -569,6 +587,8 @@ public class ImageCache
             cacheItem.Image = targetBitmap;
             if (fNeedTrigger) 
                 TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
+
+            cacheItem.IsLoadQueued = false; // we're done
         }
     }
 
