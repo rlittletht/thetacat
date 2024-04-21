@@ -3,7 +3,7 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Documents;
 
-namespace Thetacat.Controls;
+namespace Thetacat.UI.Controls;
 
 public class SortAdorner : Adorner
 {
@@ -18,7 +18,7 @@ public class SortAdorner : Adorner
     public SortAdorner(UIElement element, ListSortDirection dir)
         : base(element)
     {
-        this.Direction = dir;
+        Direction = dir;
     }
 
     protected override void OnRender(DrawingContext drawingContext)
@@ -35,7 +35,7 @@ public class SortAdorner : Adorner
         drawingContext.PushTransform(transform);
 
         Geometry geometry = ascGeometry;
-        if (this.Direction == ListSortDirection.Descending)
+        if (Direction == ListSortDirection.Descending)
             geometry = descGeometry;
         drawingContext.DrawGeometry(Brushes.Black, null, geometry);
 

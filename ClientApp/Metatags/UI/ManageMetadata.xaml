@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:types="clr-namespace:Thetacat.Types"
-        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="ManageMetadata" Height="450" Width="800"
         x:Name="ManageMetadataControl">

@@ -49,10 +49,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Controls\BackedTreeViewControl\BackedTreeView.xaml.cs">
+    <Compile Update="UI\Controls\BackedTreeViewControl\BackedTreeView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Controls\OfflineAdornment.xaml.cs">
+    <Compile Update="UI\Controls\OfflineAdornment.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Migration\Elements\Metadata\UI\StandardMetadataMigration.xaml.cs">

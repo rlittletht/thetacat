@@ -4,22 +4,15 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using Thetacat.Metatags;
+using Thetacat.Types;
 
-namespace Thetacat.Controls.MetatagTreeViewControl;
+namespace Thetacat.UI.Controls;
 
-public class MetatagTreeViewModel: INotifyPropertyChanged
+public class BackedTreeViewModel : INotifyPropertyChanged
 {
-    public ObservableCollection<IMetatagTreeItem> Items = new();
-    private int m_schemaVersion;
+    public ObservableCollection<IBackingTreeItem> Items = new();
 
     public TreeViewItem? _SelectedItem { get; set; }
-
-
-    public int SchemaVersion
-    {
-        get => m_schemaVersion;
-        set => SetField(ref m_schemaVersion, value);
-    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

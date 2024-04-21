@@ -4,12 +4,11 @@ using System.Runtime.InteropServices.ObjectiveC;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Thetacat.Controls.BackedTreeViewControl;
 using Thetacat.Metatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 
-namespace Thetacat.Controls;
+namespace Thetacat.UI.Controls;
 
 /// <summary>
 /// Interaction logic for BackedTreeView.xaml

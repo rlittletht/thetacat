@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.Import.UI"
         xmlns:types="clr-namespace:Thetacat.Types"
-        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         x:Name="MediaImportControl"
         mc:Ignorable="d"
         Title="MediaImport" Height="768" Width="1024">
