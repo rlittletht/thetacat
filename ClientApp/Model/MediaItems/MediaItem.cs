@@ -39,7 +39,6 @@ public class MediaItem : INotifyPropertyChanged
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
     private bool m_isCachePending = false;
-    private string m_localPath = string.Empty;
 
     public MediaItem()
     {
@@ -78,12 +77,6 @@ public class MediaItem : INotifyPropertyChanged
     public int VectorClock = 0;
 
     public MediaItemData Data => m_working;
-
-    public string LocalPath
-    {
-        get => m_localPath;
-        set => SetField(ref m_localPath, value);
-    }
 
     private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
     {
@@ -684,11 +677,11 @@ public class MediaItem : INotifyPropertyChanged
         Parse the file for this media item and extract all the mediatags
         (that we have mappings for)
     ----------------------------------------------------------------------------*/
-    public List<string>? SetMediaTagsFromFileMetadata(MetatagSchema metatagSchema)
+    public List<string>? SetMediaTagsFromFileMetadata(MetatagSchema metatagSchema, string localFilePath)
     {
         List<string> log = new List<string>();
 
-        string file = LocalPath;
+        string file = localFilePath;
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
             
         // load exif and other data from this item.

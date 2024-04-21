@@ -490,6 +490,20 @@ public class ImageCache
 
         Derivative transforms:
         This will also apply transormations and cache the derivative
+
+        MEMORY WARNING: When we don't have a derivative, we will scale/transform
+        the image. Transformations are created on-demand from the original (full
+        fidelity) source. THis means that the scaled version we are showing is
+        actually the FULL IMAGE but scaled. This means we spend all the memory
+        for this. When we reload, we will grab the derivative which is only the
+        bytes we need.
+
+        To get around this, we could opportunistically reload the derivative
+        cache to actually load the lower fidelity image thus freeing resources.
+
+        this would require knowing when the derivative is written to disk and then
+        we could free and reload. or just live with the awful memory consumption
+        until you close and reopen the app...
     ----------------------------------------------------------------------------*/
     void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems)
     {

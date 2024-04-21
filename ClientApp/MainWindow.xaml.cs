@@ -31,6 +31,7 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
+using Thetacat.Repair;
 using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
 using FlowDirection = System.Windows.FlowDirection;
@@ -663,5 +664,10 @@ public partial class MainWindow : Window
     private void DoPurgeCache(object sender, RoutedEventArgs e)
     {
         App.State.ImageCache.Purge();
+    }
+
+    private void DoRepairWorkgroup(object sender, RoutedEventArgs e)
+    {
+        WorkgroupRepair.FixMissingWorkgroupEntries(App.State.Catalog);
     }
 }

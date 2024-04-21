@@ -26,6 +26,13 @@ public class MediaImportModel: INotifyPropertyChanged
     private bool m_includeParentDirInVirtualPath;
     private bool m_importInPlace;
     private string m_importStatus = String.Empty;
+    private bool m_isMediaCheckedAgainstCatalog = false;
+
+    public bool IsMediaCheckedAgainstCatalog
+    {
+        get => m_isMediaCheckedAgainstCatalog;
+        set => SetField(ref m_isMediaCheckedAgainstCatalog, value);
+    }
 
     public string ImportStatus
     {

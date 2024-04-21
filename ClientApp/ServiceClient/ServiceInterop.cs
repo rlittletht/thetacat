@@ -54,6 +54,11 @@ public class ServiceInterop
         LocalService.Import.InsertImportItems(catalogID, items);
     }
 
+    public static List<ServiceImportItem> QueryImportedItems(Guid catalogID, IEnumerable<Guid> ids)
+    {
+        return LocalService.Import.QueryImportedItems(catalogID, ids);
+    }
+
     public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
         LocalService.Import.CompleteImportForItem(catalogID, id);

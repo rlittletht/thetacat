@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Xps.Serialization;
 using HeyRed.Mime;
 using Thetacat.Azure;
 using Thetacat.Import.UI;
@@ -29,8 +30,8 @@ namespace Thetacat.Import;
         Read the metadata from the file
         Create a Local MediaItem:
             Set its state to pending
-        
-     
+
+
     If the constructor is given just the source string, then this will
     return the pending-upload items for this source (presumably this client)
 ----------------------------------------------------------------------------*/
@@ -51,11 +52,19 @@ public class MediaImporter
             PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
             PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
 
-            if (file.VirtualPath != null)
-                ImportItems.Add(
-                    new ImportItem(Guid.Empty, source, pathRoot, path, file.VirtualPath, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
-            else
-                ImportItems.Add(new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate));
+            ImportItem newItem =
+                file.VirtualPath != null
+                    ? new ImportItem(Guid.Empty, source, pathRoot, path, file.VirtualPath, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate)
+                    : new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate);
+
+            // check to see if this is a repair item
+            if (file.NeedsRepair && file.ExistingID != null)
+            {
+                newItem.ID = file.ExistingID.Value;
+                newItem.State = ImportItem.ImportState.PendingRepair;
+            }
+
+            ImportItems.Add(newItem);
         }
     }
 
@@ -134,10 +143,52 @@ public class MediaImporter
         }
     }
 
+    void PrePopulateCacheForItem(ImportItem item, MediaItem mediaItem)
+    {
+        // here we can pre-populate our cache.
+        App.State.Cache.PrimeCacheFromImport(mediaItem, PathSegment.Join(item.SourceServer, item.SourcePath));
+        mediaItem.NotifyCacheStatusChanged();
+    }
+
+    private readonly HashSet<string> m_ignoreLogs = new();
+
+    bool FTryPopulateMediaTagsForImport(ImportItem item, MediaItem mediaItem, MetatagSchema metatagSchema, string localPath)
+    {
+        try
+        {
+            List<string>? log = mediaItem.SetMediaTagsFromFileMetadata(metatagSchema, localPath);
+
+            if (log != null && log.Count != 0)
+            {
+                string joined = string.Join(", ", log);
+
+                if (!m_ignoreLogs.Contains(joined))
+                {
+                    if (MessageBox.Show($"Found tag differences: {joined}. Ignore future logs like this?", "Ignore Logs", MessageBoxButton.YesNo)
+                        == MessageBoxResult.Yes)
+                    {
+                        m_ignoreLogs.Add(joined);
+                    }
+                }
+            }
+        }
+
+        catch (Exception)
+        {
+            MessageBox.Show($"Failed to read metadata for item: {item.VirtualPath}. Skipping");
+            return false;
+        }
+
+        return true;
+    }
+
     private void CreateCatalogAndUpdateImportTableWork(Guid catalogID, IProgressReport report, ICatalog catalog, MetatagSchema metatagSchema)
     {
+        m_ignoreLogs.Clear();
         int total = ImportItems.Count;
         int current = 0;
+        List<Guid> repairedItems = new();
+        List<Guid> skippedItems = new();
 
         // before we do this, make sure we have the latest metatag schema (so we don't try to create metatags
         // that are already there
@@ -146,35 +197,100 @@ public class MediaImporter
         foreach (ImportItem item in ImportItems)
         {
             report.UpdateProgress((current * 100.0) / total);
-            // create a new MediaItem for this item
-            MediaItem mediaItem = new(item);
 
-            catalog.AddNewMediaItem(mediaItem);
-            item.NotifyMediaItemCreated(mediaItem);
-            mediaItem.LocalPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
-            mediaItem.MimeType = MimeTypesMap.GetMimeType(mediaItem.LocalPath);
+            try
+            {
+                MediaItem? mediaItem;
 
-            List<string>? log = mediaItem.SetMediaTagsFromFileMetadata(metatagSchema);
+                string localPath = PathSegment.Join(item.SourceServer, item.SourcePath).Local;
 
-            if (log != null && log.Count != 0)
-                MessageBox.Show($"Found tag differences: {string.Join(", ", log)}");
+                if (item.State == ImportItem.ImportState.PendingRepair)
+                {
+                    repairedItems.Add(item.ID);
+                    if (!catalog.TryGetMedia(item.ID, out mediaItem))
+                    {
+                        MessageBox.Show("Could not find item for repair in catalog");
+                        continue;
+                    }
+                }
+                else
+                {
+                    // create a new MediaItem for this item
+                    mediaItem = new MediaItem(item);
 
-            item.ID = mediaItem.ID;
+                    mediaItem.MimeType = MimeTypesMap.GetMimeType(localPath);
+                }
 
-            // go ahead and mark pending upload -- we're going to create the item in the
-            // catalog before we insert the import items...
-            item.State = ImportItem.ImportState.PendingUpload;
+                bool fSkip = false;
+
+                fSkip = !FTryPopulateMediaTagsForImport(item, mediaItem, metatagSchema, localPath);
+                if (fSkip)
+                    skippedItems.Add(item.ID);
+
+                if (!fSkip)
+                {
+                    if (item.State != ImportItem.ImportState.PendingRepair)
+                        catalog.AddNewMediaItem(mediaItem);
+
+                    // even if we are repairing, notify. they will get the item, so they can
+                    // query if PendingRepair
+                    item.NotifyMediaItemCreated(mediaItem);
+                    item.ID = mediaItem.ID;
+
+                    // go ahead and mark pending upload -- we're going to create the item in the
+                    // catalog before we insert the import items...
+                    item.State = ImportItem.ImportState.PendingUpload;
+
+                    // and handle prepopulating the cache since we have the media locally
+                    PrePopulateCacheForItem(item, mediaItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Caught exception trying to add media item {item.VirtualPath}. Skipping. {ex.Message}");
+            }
+
             current++;
         }
 
+        // also flush any pending schema changes now
         metatagSchema.UpdateServer(catalogID);
 
         // at this point, we have an ID created for the media. Go ahead and insert the
         // new media items and commit the import to the database
         catalog.PushPendingChanges(catalogID);
-        // also flush any pending schema changes now
 
-        ServiceInterop.InsertImportItems(catalogID, ImportItems);
+        // and update the imports table (but don't insert anything we skipped, or any repair items that already
+        // exist in the imports table)
+        if (repairedItems.Count > 0 || skippedItems.Count > 0)
+        {
+            HashSet<Guid> skipIds = new(skippedItems);
+
+            if (repairedItems.Count > 0)
+            {
+                // we might have already marked items as imported, so check first
+                List<ServiceImportItem> existingImports = ServiceInterop.QueryImportedItems(catalogID, repairedItems);
+
+                foreach (ServiceImportItem importedItem in existingImports)
+                {
+                    skipIds.Add(importedItem.ID);
+                }
+            }
+
+            List<ImportItem> newImports = new();
+            foreach (ImportItem item in ImportItems)
+            {
+                if (!skipIds.Contains(item.ID))
+                    newImports.Add(item);
+            }
+
+            ServiceInterop.InsertImportItems(catalogID, newImports);
+        }
+        else
+        {
+            ServiceInterop.InsertImportItems(catalogID, ImportItems);
+        }
+
         report.WorkCompleted();
     }
 
@@ -195,7 +311,7 @@ public class MediaImporter
                 i++;
                 progress.UpdateProgress((i * 100.0) / iMax);
 
-                if (item.State == ImportItem.ImportState.PendingUpload 
+                if (item.State == ImportItem.ImportState.PendingUpload
                     && !item.SourcePath.Local.EndsWith("MOV")
                     && !item.SkipWorkgroupOnlyItem)
                 {
@@ -254,7 +370,7 @@ public class MediaImporter
     {
         AzureCat.EnsureCreated(App.State.AzureStorageAccount);
 
-        App.State.AddBackgroundWork("Uploading pending media",  UploadPendingMediaWork);
+        App.State.AddBackgroundWork("Uploading pending media", UploadPendingMediaWork);
     }
 
     public static void LaunchImporter(Window parentWindow)
@@ -264,5 +380,4 @@ public class MediaImporter
         import.Owner = parentWindow;
         import.ShowDialog();
     }
-
 }

@@ -24,6 +24,9 @@ public class PseMediaItem : INotifyPropertyChanged, IPseMediaItem, IMediaItemFil
     private Guid m_catId;
     private int m_id;
 
+    public bool NeedsRepair => false;
+    public Guid? ExistingID => null;
+
     public string Filename { get; set; } = string.Empty;
     public string FullPath { get; set; } = string.Empty;
     public string FilePathSearch { get; set; } = string.Empty;

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.Data.SqlClient;
 using TCore;
+using TCore.PostfixText;
 using TCore.SqlCore;
 using TCore.SqlClient;
 using Thetacat.Import;
 using Thetacat.Model;
+using Microsoft.VisualBasic;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -211,4 +214,56 @@ public class Import
             ",",
             s_aliases);
     }
+
+    private static readonly string s_baseForIds = $@"
+        SELECT 
+            $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
+            $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
+        FROM $$#tcat_import$$";
+
+    private static readonly string s_queryForIds = $@"
+        SELECT 
+            $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
+            $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
+        FROM $$#tcat_import$$
+        WHERE $$tcat_import$$.catalog_id = @CatalogID AND $$tcat_import$$.catalog_id in @Ids";
+
+    public static List<ServiceImportItem> QueryImportedItems(Guid catalogID, IEnumerable<Guid> ids)
+    {
+        SqlSelect select = new SqlSelect(s_baseForIds, s_aliases.Aliases);
+
+        select.Where.Add("$$tcat_import$$.catalog_id = @CatalogID", SqlWhere.Op.And);
+        List<string> idStrings = new();
+        foreach (Guid id in ids)
+        {
+            idStrings.Add($"'{id:D}'");
+        }
+
+        select.Where.Add($"$$tcat_import$$.id in ({string.Join(",", idStrings)})", SqlWhere.Op.And);
+
+        return LocalServiceClient.DoGenericQueryWithAliases(
+            select.ToString(),
+            (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+            {
+                ServiceImportItem item =
+                    new()
+                    {
+                        ID = reader.GetGuid(0),
+                        State = reader.GetString(1),
+                        SourcePath = reader.GetString(2),
+                        SourceServer = reader.GetString(3),
+                        UploadDate = reader.GetNullableDateTime(4),
+                        Source = reader.GetNullableString(5)
+                    };
+
+                building.Add(item);
+            },
+            s_aliases,
+            (cmd) =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+//                cmd.AddParameterWithValue("@Ids", string.Join(",", idStrings));
+            });
+    }
+
 }

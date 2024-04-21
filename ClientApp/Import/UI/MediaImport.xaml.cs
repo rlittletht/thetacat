@@ -17,6 +17,7 @@ using Thetacat.Standards;
 using Thetacat.Metatags;
 using Thetacat.Import.UI.Commands;
 using Thetacat.Metatags.Model;
+using Thetacat.Repair;
 
 namespace Thetacat.Import.UI
 {
@@ -373,16 +374,14 @@ namespace Thetacat.Import.UI
                     if (item.IsDirectory)
                         continue;
 
+                    string fullLocalWithName = Path.Join(item.Path, item.Name);
+                    string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalWithName);
+
                     // first, do we have a match on path?
                     MediaItem? mediaItem = LookupMediaIdForPath(item.Path, m_model.SourcePath, item.Name);
 
-                    if (mediaItem == null)
+                    if (mediaItem == null || mediaItem.MD5 != md5)
                     {
-                        string fullLocalWithName = Path.Join(item.Path, item.Name);
-
-                        // do a deeper scan here?
-                        string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalWithName);
-
                         mediaItem = App.State.Catalog.FindMatchingMediaByMD5(md5);
                     }
 
@@ -392,6 +391,13 @@ namespace Thetacat.Import.UI
                         item.MD5 = mediaItem.MD5;
                         item.Checked = false;
                         item.MatchedItem = $"{mediaItem.VirtualPath}";
+
+                        // check to see if this is in a broken workgroup state
+                        if (WorkgroupRepair.IsMediaItemInBrokenWorkgroupState(mediaItem.ID))
+                        {
+                            item.NeedsRepair = true;
+                            item.Checked = true;
+                        }
                     }
                 }
 
@@ -401,6 +407,7 @@ namespace Thetacat.Import.UI
             finally
             {
                 progress.WorkCompleted();
+                m_model.IsMediaCheckedAgainstCatalog = true;
             }
 
             return true;
@@ -491,6 +498,18 @@ namespace Thetacat.Import.UI
 
         private void DoImport(object sender, RoutedEventArgs e)
         {
+            if (!m_model.IsMediaCheckedAgainstCatalog)
+            {
+                if (MessageBox.Show(
+                        "Thetacat Import",
+                        "You have not checked for items that already exist in the catalog. Do you want to continue and potentially import duplicate items?",
+                        MessageBoxButton.YesNo)
+                    == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
             List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(
                 m_model.ImportItems,
                 (node) => !node.IsDirectory);
@@ -524,7 +543,7 @@ namespace Thetacat.Import.UI
                 });
 
             m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
-            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
+//            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
             // and lastly we have to add the items we just manually added to our cache
             // (we don't have any items we are tracking. these should all be adds)

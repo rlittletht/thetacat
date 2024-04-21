@@ -28,6 +28,7 @@
                 <MenuItem Header="_Restore Database" Click="DoRestoreDatabase" />
                 <MenuItem Header="_Empty Trash" Click="DoEmptyTrash"/>
                 <MenuItem Header="_Purge Image Cache" Click="DoPurgeCache" />
+                <MenuItem Header="_Repair Workgroup Database" Click="DoRepairWorkgroup" />
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Filter" Click="DoChooseFilter" />

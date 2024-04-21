@@ -15,6 +15,7 @@ public class ImportItem: INotifyPropertyChanged
         PendingUpload,
         Complete,
         MissingFromCatalog,
+        PendingRepair,
         Unknown
     }
 
@@ -28,6 +29,8 @@ public class ImportItem: INotifyPropertyChanged
                 return ImportState.PendingUpload;
             case "COMPLETE":
                 return ImportState.Complete;
+            case "PENDING-REPAIR":
+                return ImportState.PendingRepair;
         }
 
         return ImportState.Unknown;
@@ -43,6 +46,8 @@ public class ImportItem: INotifyPropertyChanged
                 return "pending-upload";
             case ImportState.Complete:
                 return "complete";
+            case ImportState.PendingRepair:
+                return "pending-repair";
             default:
                 return "unknown";
         }
