@@ -31,6 +31,7 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
+using Thetacat.Repair;
 using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
 using FlowDirection = System.Windows.FlowDirection;
@@ -649,5 +650,24 @@ public partial class MainWindow : Window
 
         exportData.Owner = this;
         exportData.ShowDialog();
+    }
+
+    private void DoEmptyTrash(object sender, RoutedEventArgs e)
+    {
+        // get a collection of all the items marked for the trash
+        FilterDefinition trashFilter = new FilterDefinition("", "", $"[{BuiltinTags.s_IsTrashItemID:B}] == '$true'");
+        
+        if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter)))
+            m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
+    }
+
+    private void DoPurgeCache(object sender, RoutedEventArgs e)
+    {
+        App.State.ImageCache.Purge();
+    }
+
+    private void DoRepairWorkgroup(object sender, RoutedEventArgs e)
+    {
+        WorkgroupRepair.FixMissingWorkgroupEntries(App.State.Catalog);
     }
 }

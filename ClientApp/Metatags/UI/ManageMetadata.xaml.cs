@@ -163,13 +163,13 @@ public partial class ManageMetadata : Window
 
     private void SelectParent(object sender, RoutedEventArgs e)
     {
-        ParentPickerPopup.IsOpen = true;
+        ParentPickerPopup.IsOpen = !ParentPickerPopup.IsOpen;
     }
 
     void InitializeAvailableParents()
     {
         if (m_metatagLineageMap == null)
-            m_metatagLineageMap = EditFilter.BuildLineageMap(MetatagStandards.Standard.User);
+            m_metatagLineageMap = EditFilter.BuildLineageMap();
 
         IComparer<KeyValuePair<Guid, string>> comparer =
             Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));

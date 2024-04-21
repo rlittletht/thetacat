@@ -32,37 +32,32 @@ namespace Thetacat.Filtering.UI
 
         private Dictionary<Guid, string>? m_metatagLineageMap;
 
-        public static Dictionary<Guid, string> BuildLineageMap(MetatagStandards.Standard standard)
+        public static Dictionary<Guid, string> BuildLineageMap()
         {
-            // for now, just the user tags
-            IMetatagTreeItem? standardRoot = App.State.MetatagSchema.GetStandardRootItem(MetatagStandards.Standard.User);
             Dictionary<Guid, string> lineage = new();
 
-            if (standardRoot != null)
-            {
-                App.State.MetatagSchema.WorkingTree.Preorder(
-                    null,
-                    (treeItem, parent, depth) =>
+            App.State.MetatagSchema.WorkingTree.Preorder(
+                null,
+                (treeItem, parent, depth) =>
+                {
+                    string dropdownName;
+
+                    if (parent != null && !string.IsNullOrEmpty(parent.ID))
                     {
-                        string dropdownName;
+                        Guid parentID = Guid.Parse(parent.ID);
 
-                        if (parent != null && !string.IsNullOrEmpty(parent.ID))
-                        {
-                            Guid parentID = Guid.Parse(parent.ID);
+                        lineage.TryAdd(parentID, parent.Name);
+                        dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
+                    }
+                    else
+                    {
+                        dropdownName = treeItem.Name;
+                    }
 
-                            lineage.TryAdd(parentID, parent.Name);
-                            dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
-                        }
-                        else
-                        {
-                            dropdownName = treeItem.Name;
-                        }
-
-                        if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
-                            lineage.Add(treeItemID, dropdownName);
-                    },
-                    0);
-            }
+                    if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
+                        lineage.Add(treeItemID, dropdownName);
+                },
+                0);
 
             return lineage;
         }
@@ -70,9 +65,10 @@ namespace Thetacat.Filtering.UI
         private void InitializeAvailableTags()
         {
             if (m_metatagLineageMap == null)
-                m_metatagLineageMap = BuildLineageMap(MetatagStandards.Standard.User);
+                m_metatagLineageMap = BuildLineageMap();
 
-            IComparer<KeyValuePair<Guid, string>> comparer = Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
+            IComparer<KeyValuePair<Guid, string>> comparer =
+                Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
             ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);
 
             foreach (KeyValuePair<Guid, string> item in sorted)
@@ -83,7 +79,6 @@ namespace Thetacat.Filtering.UI
             TagMetatagsTree.Initialize(
                 App.State.MetatagSchema.WorkingTree.Children,
                 App.State.MetatagSchema.SchemaVersionWorking);
-
         }
 
         public EditFilter(FilterDefinition? definition = null, Dictionary<Guid, string>? lineageMap = null)
@@ -134,7 +129,7 @@ namespace Thetacat.Filtering.UI
             // get the metatag selected
             Metatag metatag = m_model.SelectedTagForClause.Metatag;
             Dictionary<string, int> valueCounts = new();
-            
+
             HashSet<ComparisonOperator.Op> ops = new HashSet<ComparisonOperator.Op>();
 
             foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
@@ -170,12 +165,13 @@ namespace Thetacat.Filtering.UI
             }
 
             IComparer<KeyValuePair<string, int>> comparer =
-                Comparer<KeyValuePair<string, int>>.Create((x, y) =>
-                                                           {
-                                                               return x.Value - y.Value < 0
-                                                                   ? x.Value - y.Value
-                                                                   : x.Value - y.Value + 1;
-                                                           });
+                Comparer<KeyValuePair<string, int>>.Create(
+                    (x, y) =>
+                    {
+                        return x.Value - y.Value < 0
+                            ? x.Value - y.Value
+                            : x.Value - y.Value + 1;
+                    });
             ImmutableSortedSet<KeyValuePair<string, int>> sorted = valueCounts.ToImmutableSortedSet(comparer);
 
             // add the top 15 items and the bottom 5 items
@@ -198,7 +194,7 @@ namespace Thetacat.Filtering.UI
                 }
             }
 
-            foreach(ComparisonOperator.Op op in ops)
+            foreach (ComparisonOperator.Op op in ops)
             {
                 m_model.ComparisonOperators.Add(new ComparisonOperator(op));
             }
@@ -207,17 +203,18 @@ namespace Thetacat.Filtering.UI
         void UpdateQueryClauses()
         {
             m_model.ExpressionClauses.Clear();
-            m_model.ExpressionClauses.AddRange(m_model.Expression.ToStrings(
-                (field) =>
-                {
-                    if (m_metatagLineageMap != null && Guid.TryParse(field, out Guid metatagId))
+            m_model.ExpressionClauses.AddRange(
+                m_model.Expression.ToStrings(
+                    (field) =>
                     {
-                        if (m_metatagLineageMap.TryGetValue(metatagId, out string? lineage))
-                            return $"[{lineage}]";
-                    }
+                        if (m_metatagLineageMap != null && Guid.TryParse(field, out Guid metatagId))
+                        {
+                            if (m_metatagLineageMap.TryGetValue(metatagId, out string? lineage))
+                                return $"[{lineage}]";
+                        }
 
-                    return $"[{field}]";
-                }));
+                        return $"[{field}]";
+                    }));
         }
 
         private void AddPostfixOp(object sender, RoutedEventArgs e)
@@ -330,6 +327,5 @@ namespace Thetacat.Filtering.UI
 
             TagPickerPopup.IsOpen = false;
         }
-
     }
 }

@@ -465,7 +465,6 @@ public class Derivatives
                     DerivativeItem match = GetMatchingDerivativeItem(derivative);
                     // this is no longer pending save
                     match.Path = destination;
-                    DerivativeItem newItem = new DerivativeItem(item.MediaKey, "image/jpeg", derivative.ScaleFactor, item.TransformationsKey, destination);
             }
             catch (Exception ex)
             {

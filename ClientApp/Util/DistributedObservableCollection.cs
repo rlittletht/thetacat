@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Emgu.CV.CvEnum;
 
 namespace Thetacat.Util;
 
@@ -20,6 +21,7 @@ public interface IObservableSegmentableCollectionHolder<T>
 // to be considered the 'end of the segment')
 public class DistributedObservableCollection<T, T1> 
     where T : class, IObservableSegmentableCollectionHolder<T1>
+    where T1: class
 {
     public delegate T LineFactoryDelegate(T? reference);
     public delegate void MoveLinePropertiesDelegate(T from, T to);
@@ -362,6 +364,44 @@ public class DistributedObservableCollection<T, T1>
     {
         m_collection.Clear();
         m_segments = null;
+    }
+
+    public T1? GetNextItem(int lineNumber, int offset)
+    {
+        T line = m_collection[lineNumber];
+
+        if (offset >= line.Items.Count - 1)
+        {
+            // get the next line
+            if (lineNumber == m_collection.Count - 1)
+                return null;
+
+            line = m_collection[lineNumber + 1];
+            return line.Items[0];
+        }
+
+        return line.Items[offset + 1];
+    }
+
+    public T1? GetPreviousItem(int lineNumber, int offset)
+    {
+        T line = m_collection[lineNumber];
+
+        if (offset == 0)
+        {
+            if (lineNumber == 0)
+                return null;
+
+            line = m_collection[lineNumber - 1];
+            return line.Items[line.Items.Count - 1];
+        }
+
+        return line.Items[offset - 1];
+    }
+
+    public T1 GetItem(int lineNumber, int offset)
+    {
+        return m_collection[lineNumber].Items[offset];
     }
 
     public void AddItem(T1 itemToAdd)

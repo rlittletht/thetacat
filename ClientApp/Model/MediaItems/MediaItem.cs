@@ -39,7 +39,6 @@ public class MediaItem : INotifyPropertyChanged
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
     private bool m_isCachePending = false;
-    private string m_localPath = string.Empty;
 
     public MediaItem()
     {
@@ -78,12 +77,6 @@ public class MediaItem : INotifyPropertyChanged
     public int VectorClock = 0;
 
     public MediaItemData Data => m_working;
-
-    public string LocalPath
-    {
-        get => m_localPath;
-        set => SetField(ref m_localPath, value);
-    }
 
     private void VerifyMediaInMediaStack(MediaStacks stacks, Guid stackId)
     {
@@ -273,48 +266,76 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
+    private T? GetBuiltinTagValue<T>(Metatag metatag, Func<string, T> parser)
+        where T: struct // restrict this to value types (int, string, bool)
+    {
+        if (Tags.TryGetValue(metatag.ID, out MediaTag? tag))
+            return tag.Value == null ? null : parser(tag.Value);
+
+        return null;
+    }
+
+    private bool FHasBuiltinTag(Metatag metatag)
+    {
+        if (Tags.TryGetValue(metatag.ID, out MediaTag? tag))
+            return true;
+
+        return false;
+    }
+
+    private void SetBuiltinTagToggleTag(Metatag metatag, bool fSet, [CallerMemberName] string? propertyName = null)
+    {
+        if (fSet)
+        {
+            MediaTag tag = new MediaTag(metatag, null);
+            FAddOrUpdateMediaTag(tag, true);
+        }
+        else
+        {
+            FRemoveMediaTag(metatag.ID);
+        }
+
+        OnPropertyChanged(propertyName);
+    }
+
+    private void SetBuiltinTagValue<T>(Metatag metatag, T? value, [CallerMemberName] string? propertyName = null)
+        where T : struct
+    {
+        if (value != null)
+        {
+            MediaTag tag = new MediaTag(metatag, value?.ToString());
+            FAddOrUpdateMediaTag(tag, true);
+        }
+        else
+        {
+            FRemoveMediaTag(metatag.ID);
+        }
+
+        OnPropertyChanged(propertyName);
+    }
+
     public int? TransformRotate
     {
-        get
-        {
-            if (Tags.TryGetValue(BuiltinTags.s_TransformRotateID, out MediaTag? tag))
-                return tag.Value == null ? null : int.Parse(tag.Value);
+        get => GetBuiltinTagValue(BuiltinTags.s_TransformRotate, int.Parse);
+        set => SetBuiltinTagValue(BuiltinTags.s_TransformRotate, value);
+    }
 
-            return null;
-        }
-        set
-        {
-            if (value != null)
-            {
-                MediaTag tag = new MediaTag(BuiltinTags.s_TransformRotate, value?.ToString());
-                FAddOrUpdateMediaTag(tag, true);
-            }
-            else
-            {
-                FRemoveMediaTag(BuiltinTags.s_TransformRotateID);
-            }
+    public bool IsTrashItem
+    {
+        get => FHasBuiltinTag(BuiltinTags.s_IsTrashItem);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_IsTrashItem, value);
+    }
 
-            OnPropertyChanged(nameof(TransformRotate));
-        }
+    public bool DontPushToCloud
+    {
+        get => FHasBuiltinTag(BuiltinTags.s_DontPushToCloud);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_DontPushToCloud, value);
     }
 
     public bool TransformMirror
     {
-        get => Tags.ContainsKey(BuiltinTags.s_TransformMirrorID);
-        set
-        {
-            if (value)
-            {
-                MediaTag tag = new MediaTag(BuiltinTags.s_TransformMirror, null);
-                FAddOrUpdateMediaTag(tag, true);
-            }
-            else
-            {
-                FRemoveMediaTag(BuiltinTags.s_TransformMirrorID);
-            }
-
-            OnPropertyChanged(nameof(TransformMirror));
-        }
+        get => FHasBuiltinTag(BuiltinTags.s_TransformMirror);
+        set => SetBuiltinTagToggleTag(BuiltinTags.s_TransformMirror, value);
     }
 
     #endregion
@@ -656,11 +677,11 @@ public class MediaItem : INotifyPropertyChanged
         Parse the file for this media item and extract all the mediatags
         (that we have mappings for)
     ----------------------------------------------------------------------------*/
-    public List<string>? SetMediaTagsFromFileMetadata(MetatagSchema metatagSchema)
+    public List<string>? SetMediaTagsFromFileMetadata(MetatagSchema metatagSchema, string localFilePath)
     {
         List<string> log = new List<string>();
 
-        string file = LocalPath;
+        string file = localFilePath;
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
             
         // load exif and other data from this item.

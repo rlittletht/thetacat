@@ -14,9 +14,7 @@ public interface IProgressReport
 
 // This will perform the given work on a background thread
 // and launch the modal progress dialog
-
 public delegate void WorkDelegate(IProgressReport reportProgress);
-
 
 /// <summary>
 /// Interaction logic for ProgressDialog.xaml
@@ -54,7 +52,18 @@ public partial class ProgressDialog : Window, IProgressReport
     {
         ProgressDialog dialog = new ProgressDialog();
 
-        Task.Run(() => work(dialog));
+        Task.Run(
+            () =>
+            {
+                try
+                {
+                    work(dialog);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Uncaught exception in DoWork(): {ex.Message}");
+                }
+            });
         dialog.Owner = parent;
         dialog.ShowDialog();
     }

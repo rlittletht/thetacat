@@ -1,0 +1,41 @@
+﻿<UserControl x:Class="Thetacat.Controls.OfflineAdornment"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Thetacat.Controls"
+             mc:Ignorable="d" Height="19" Width="23">
+    <Grid Margin="0,0,23,29">
+        <Canvas Margin="0,0,768,427">
+            <Canvas.LayoutTransform>
+                <ScaleTransform ScaleY=".05" ScaleX=".05" />
+            </Canvas.LayoutTransform>
+            <Canvas x:Name="canvas" Height="18" Width="23" RenderTransformOrigin="0.0,0.0">
+                <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Data="M93.72,183.25C49.49,198.05,16,233.1,16,288c0,66,54,112,120,112H320.37" />
+                <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Data="M467.82,377.74C485.24,363.3,496,341.61,496,312c0-59.82-53-85.76-96-88-8.89-89.54-71-144-144-144-26.16,0-48.79,6.93-67.6,18.14"/>
+                <Line X1="448" Y1="448" X2="64" Y2="64" Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                <!-- Disconnected 
+                <Path
+                    Data="M12.7778 12.2757C13.0707 11.9828 13.0707 11.5079 12.7778 11.215C12.485 10.9221 12.0101 10.9221 11.7172 11.215L9.59085 13.3413L8.76851 12.5189C8.47561 12.226 8.00074 12.226 7.70785 12.5189L5.7633 14.4635C3.79537 16.4314 3.6305 19.5196 5.26867 21.6752L2.22404 24.7202C1.93116 25.0131 1.93118 25.488 2.22409 25.7808C2.517 26.0737 2.99187 26.0737 3.28475 25.7808L6.32928 22.736C8.48495 24.3745 11.5734 24.2097 13.5415 22.2416L15.486 20.2971C15.7789 20.0042 15.7789 19.5293 15.486 19.2364L14.6589 18.4093L16.7842 16.284C17.0771 15.9912 17.0771 15.5163 16.7842 15.2234C16.4913 14.9305 16.0164 14.9305 15.7235 15.2234L13.5982 17.3486L10.6515 14.4019L12.7778 12.2757Z"
+                        UseLayoutRounding="False" Canvas.Top="9" Height="9" Stretch="Fill" Width="12">
+                    <Path.Fill>
+                        <SolidColorBrush Color="#ff212121" />
+                    </Path.Fill>
+                </Path>
+                <Path
+                    Data="M22.7399 6.32717C24.3781 8.48282 24.2132 11.571 22.2453 13.5389L20.3007 15.4835C20.0078 15.7764 19.533 15.7764 19.2401 15.4835L12.5226 8.76595C12.2297 8.47306 12.2297 7.99818 12.5226 7.70529L14.4671 5.76075C16.4352 3.79268 19.5237 3.62792 21.6793 5.26646L24.7238 2.22166C25.0167 1.92875 25.4916 1.92873 25.7845 2.22161C26.0774 2.51449 26.0774 2.98936 25.7845 3.28227L22.7399 6.32717Z"
+                    UseLayoutRounding="False" Canvas.Top="2.169" Canvas.Left="10" Height="9" Stretch="Fill" Width="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Path.Fill>
+                        <SolidColorBrush Color="#ff212121"/>
+                    </Path.Fill>
+                </Path>
+                -->
+            </Canvas>
+        </Canvas>
+    </Grid>
+</UserControl>

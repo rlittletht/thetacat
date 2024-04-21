@@ -318,7 +318,7 @@ public class Cache : ICache
         if (item.IsCachePending && item.State != MediaItemState.Pending)
         {
             TcBlob blob = await AzureCat._Instance.DownloadMedia(destination, item.ID.ToString(), item.MD5);
-            MainWindow.LogForAsync(EventType.Information, $"downloaded {item.ID} to {item.LocalPath}");
+            MainWindow.LogForAsync(EventType.Information, $"downloaded {item.ID} to {destination}");
             return true;
         }
 
@@ -454,7 +454,12 @@ public class Cache : ICache
             foreach (Guid key in Entries.Keys)
             {
                 ICacheEntry entry = Entries[key];
-                MediaItem item = App.State.Catalog.GetMediaFromId(entry.ID);
+
+                if (!App.State.Catalog.TryGetMedia(entry.ID, out MediaItem? item))
+                {
+                    MainWindow.LogForApp(EventType.Critical, $"Could not find item: {entry.ID} in catalog for repath check. skipping");
+                    continue;
+                }
 
                 if (!IsCachePathLikeVirtualPath(entry.Path, item.VirtualPath))
                 {
@@ -561,7 +566,6 @@ public class Cache : ICache
 
                     if (task.Result)
                     {
-                        item.LocalPath = fullLocalPath;
                         item.IsCachePending = false;
                         cacheEntry.LocalPending = false;
                         cacheEntry.CachedDate = DateTime.Now;

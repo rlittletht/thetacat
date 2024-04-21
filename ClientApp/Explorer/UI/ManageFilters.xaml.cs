@@ -55,7 +55,7 @@ public partial class ManageFilters : Window
 
         FillAvailableFilters();
         App.State.RegisterWindowPlace(this, "FilterCatalogWindow");
-        m_metatagLineageMap = EditFilter.BuildLineageMap(MetatagStandards.Standard.User);
+        m_metatagLineageMap = EditFilter.BuildLineageMap();
         m_model.PropertyChanged += OnModelChanged;
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
+using Thetacat.Logging;
 using Thetacat.ServiceClient;
 using Thetacat.Standards;
 using Thetacat.Types;
@@ -113,9 +114,9 @@ public class MetatagSchema
 
         NotifyChanging();
 
-        m_schemaWorking.AddMetatag(metatag);
-        TriggerItemDirtied(true);
-
+        // before we add the metatag, make sure we update the working tree...otherwise if we on-demand
+        // build the tree after adding the metatag, the tree will have this new metatag, and adding it
+        // to the tree will end up adding a duplicate item.
         IMetatagTreeItem newItem = MetatagTreeItem.CreateFromMetatag(metatag);
 
         if (!DontBuildTree)
@@ -134,6 +135,9 @@ public class MetatagSchema
                 parent.Children.Add(newItem);
             }
         }
+
+        m_schemaWorking.AddMetatag(metatag);
+        TriggerItemDirtied(true);
     }
 
     /*----------------------------------------------------------------------------
@@ -283,20 +287,22 @@ public class MetatagSchema
 
     public void EnsureBuiltinMetatagsDefined()
     {
-        GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+        lock (BuiltinTags.s_BuiltinTags)
+        {
+            MainWindow.LogForApp(EventType.Warning, "ensure builtin defined");
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
 
-        if (GetMetatagFromId(BuiltinTags.s_WidthID) == null)
-            AddMetatag(BuiltinTags.s_Width);
-        if (GetMetatagFromId(BuiltinTags.s_HeightID) == null)
-            AddMetatag(BuiltinTags.s_Height);
-        if (GetMetatagFromId(BuiltinTags.s_OriginalMediaDateID) == null)
-            AddMetatag(BuiltinTags.s_OriginalMediaDate);
-        if (GetMetatagFromId(BuiltinTags.s_ImportDateID) == null)
-            AddMetatag(BuiltinTags.s_ImportDate);
-        if (GetMetatagFromId(BuiltinTags.s_TransformRotateID) == null)
-            AddMetatag(BuiltinTags.s_TransformRotate);
-        if (GetMetatagFromId(BuiltinTags.s_TransformMirrorID) == null)
-            AddMetatag(BuiltinTags.s_TransformMirror);
+            foreach (Metatag metatag in BuiltinTags.s_BuiltinTags)
+            {
+                if (GetMetatagFromId(metatag.ID) == null)
+                {
+                    MainWindow.LogForApp(EventType.Warning, $"adding {metatag.Description}: {metatag.ID}");
+                    AddMetatag(metatag);
+                }
+            }
+
+            MainWindow.LogForApp(EventType.Warning, "ensure builtin done");
+        }
     }
 
     public void ReplaceFromService(Guid catalogID)

@@ -11,6 +11,13 @@ using Thetacat.Util;
 using Directory = System.IO.Directory;
 using Path = System.IO.Path;
 using PathSegment = Thetacat.Util.PathSegment;
+using System.Collections.Immutable;
+using Thetacat.Filtering.UI;
+using Thetacat.Standards;
+using Thetacat.Metatags;
+using Thetacat.Import.UI.Commands;
+using Thetacat.Metatags.Model;
+using Thetacat.Repair;
 
 namespace Thetacat.Import.UI
 {
@@ -22,8 +29,11 @@ namespace Thetacat.Import.UI
         private readonly MediaImportModel m_model = new();
         private MediaImporter m_importer;
 
+        public MediaImportModel Model => m_model;
+
         public MediaImport(MediaImporter importer)
         {
+            m_model.RemoveInitialTagCommand = new RemoveInitialTagCommand(_RemoveInitialTagCommand);
             InitializeComponent();
             DataContext = m_model;
             m_importer = importer;
@@ -31,6 +41,7 @@ namespace Thetacat.Import.UI
             m_importBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
             App.State.RegisterWindowPlace(this, "media-import");
             InitializeVirtualRoots();
+            InitializeAvailableParents();
         }
 
         static KeyValuePair<string?, VirtualRootNameItem>[] VirtualRootSplitter(VirtualRootNameItem data)
@@ -363,16 +374,14 @@ namespace Thetacat.Import.UI
                     if (item.IsDirectory)
                         continue;
 
+                    string fullLocalWithName = Path.Join(item.Path, item.Name);
+                    string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalWithName);
+
                     // first, do we have a match on path?
                     MediaItem? mediaItem = LookupMediaIdForPath(item.Path, m_model.SourcePath, item.Name);
 
-                    if (mediaItem == null)
+                    if (mediaItem == null || mediaItem.MD5 != md5)
                     {
-                        string fullLocalWithName = Path.Join(item.Path, item.Name);
-
-                        // do a deeper scan here?
-                        string md5 = App.State.Md5Cache.GetMd5ForPathSync(fullLocalWithName);
-
                         mediaItem = App.State.Catalog.FindMatchingMediaByMD5(md5);
                     }
 
@@ -382,6 +391,13 @@ namespace Thetacat.Import.UI
                         item.MD5 = mediaItem.MD5;
                         item.Checked = false;
                         item.MatchedItem = $"{mediaItem.VirtualPath}";
+
+                        // check to see if this is in a broken workgroup state
+                        if (WorkgroupRepair.IsMediaItemInBrokenWorkgroupState(mediaItem.ID))
+                        {
+                            item.NeedsRepair = true;
+                            item.Checked = true;
+                        }
                     }
                 }
 
@@ -391,6 +407,7 @@ namespace Thetacat.Import.UI
             finally
             {
                 progress.WorkCompleted();
+                m_model.IsMediaCheckedAgainstCatalog = true;
             }
 
             return true;
@@ -481,6 +498,18 @@ namespace Thetacat.Import.UI
 
         private void DoImport(object sender, RoutedEventArgs e)
         {
+            if (!m_model.IsMediaCheckedAgainstCatalog)
+            {
+                if (MessageBox.Show(
+                        "Thetacat Import",
+                        "You have not checked for items that already exist in the catalog. Do you want to continue and potentially import duplicate items?",
+                        MessageBoxButton.YesNo)
+                    == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
             List<ImportNode> checkedItems = CheckableTreeViewSupport<ImportNode>.GetCheckedItems(
                 m_model.ImportItems,
                 (node) => !node.IsDirectory);
@@ -502,10 +531,19 @@ namespace Thetacat.Import.UI
                     ImportNode node = itemFile as ImportNode ?? throw new CatExceptionInternalFailure("file item isn't an ImportNode?");
                     node.MediaId = catalogItem.ID;
                     node.MatchedItem = catalogItem.VirtualPath;
+
+                    if (m_model.InitialTags.Count > 0)
+                    {
+                        foreach (FilterModelMetatagItem metatag in m_model.InitialTags)
+                        {
+                            MediaTag tag = new MediaTag(metatag.Metatag, null);
+                            catalogItem.FAddOrUpdateMediaTag(tag, true);
+                        }
+                    }
                 });
 
             m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
-            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
+//            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
             // and lastly we have to add the items we just manually added to our cache
             // (we don't have any items we are tracking. these should all be adds)
@@ -550,6 +588,65 @@ namespace Thetacat.Import.UI
         void UpdateStatus(string status)
         {
             m_model.ImportStatus = status;
+        }
+
+        private Dictionary<Guid, string>? m_metatagLineageMap;
+
+        void InitializeAvailableParents()
+        {
+            if (m_metatagLineageMap == null)
+                m_metatagLineageMap = EditFilter.BuildLineageMap();
+
+            IComparer<KeyValuePair<Guid, string>> comparer =
+                Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
+            ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);
+
+            foreach (KeyValuePair<Guid, string> item in sorted)
+            {
+                m_model.AvailableTags.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
+            }
+
+            AvailableMetatagsTree.Initialize(
+                App.State.MetatagSchema.WorkingTree.Children,
+                App.State.MetatagSchema.SchemaVersionWorking,
+                MetatagStandards.Standard.Cat);
+        }
+
+        private FilterModelMetatagItem? GetTagFromId(Guid id)
+        {
+            foreach (FilterModelMetatagItem tag in m_model.AvailableTags)
+            {
+                if (tag.Metatag.ID == id)
+                    return tag;
+            }
+
+            return null;
+        }
+
+        private void DoSelectedInitialTagChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is MetatagTreeItem newItem)
+            {
+                FilterModelMetatagItem? item = GetTagFromId(newItem.ItemId);
+
+                if (item != null)
+                    m_model.InitialTags.Add(item);
+            }
+
+            InitialTagPickerPopup.IsOpen = false;
+        }
+
+        private void AddInitialTag(object sender, RoutedEventArgs e)
+        {
+            InitialTagPickerPopup.IsOpen = !InitialTagPickerPopup.IsOpen;
+        }
+
+        void _RemoveInitialTagCommand(FilterModelMetatagItem? item)
+        {
+            if (item != null)
+            {
+                m_model.InitialTags.Remove(item);
+            }
         }
     }
 }

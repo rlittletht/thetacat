@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Converters;
 using Thetacat.Explorer.UI;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
@@ -17,9 +18,14 @@ namespace Thetacat.Explorer;
 public partial class MediaItemZoom : Window
 {
     public delegate void OnZoomClosingDelegate(MediaItemZoom zoom);
+    public delegate MediaItem? GetNextMediaItem(MediaItem item);
+    public delegate MediaItem? GetPreviousMediaItem(MediaItem item);
 
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
+    private bool m_pruning = false;
+    private GetNextMediaItem? m_nextDelegate;
+    private GetPreviousMediaItem? m_previousDelegate;
 
     private MediaItemZoomModel m_model = new();
 
@@ -31,7 +37,7 @@ public partial class MediaItemZoom : Window
             throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
 
         if (m_model.MediaItem != null)
-            EnsureZoomImageFromCache(cache, m_model.MediaItem);
+            EnsureZoomImageFromCache(null, cache, m_model.MediaItem);
     }
 
     private void OnMediaItemUpdated(object? sender, PropertyChangedEventArgs args)
@@ -48,7 +54,7 @@ public partial class MediaItemZoom : Window
         m_model.MediaItem!.PropertyChanged -= OnMediaItemUpdated;
     }
 
-    private void EnsureZoomImageFromCache(ImageCache cache, MediaItem item)
+    private void EnsureZoomImageFromCache(ImageCache? lowResCache, ImageCache cache, MediaItem item)
     {
         ImageCacheItem? cacheItem = cache.GetAnyExistingItem(item.ID);
 
@@ -59,6 +65,8 @@ public partial class MediaItemZoom : Window
             if (path != null)
                 App.State.ImageCache.TryQueueBackgroundLoadToCache(item, path);
         }
+
+        cacheItem ??= lowResCache?.GetAnyExistingItem(item.ID);
 
         m_model.Image = cacheItem?.Image;
     }
@@ -76,7 +84,7 @@ public partial class MediaItemZoom : Window
         }
     }
 
-    public MediaItemZoom(MediaItem item)
+    void SetMediaItem(MediaItem item)
     {
         m_model.MediaItem = item;
 
@@ -87,20 +95,96 @@ public partial class MediaItemZoom : Window
 
         App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
         m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
+        m_model.IsTrashItem = item.IsTrashItem;
+        m_model.IsOffline = item.DontPushToCloud;
+
+        EnsureZoomImageFromCache(App.State.PreviewImageCache, App.State.ImageCache, item);
+    }
+
+
+    public MediaItemZoom(MediaItem item, GetNextMediaItem? getNextDelegate, GetPreviousMediaItem? getPreviousDelegate)
+    {
+        m_nextDelegate = getNextDelegate;
+        m_previousDelegate = getPreviousDelegate;
 
         Closing += OnCloseReleaseWatchers;
-
-        EnsureZoomImageFromCache(App.State.ImageCache, item);
-
         this.KeyDown += DoMediaZoomKeyUp;
-
         InitializeComponent();
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
+
+        SetMediaItem(item);
+    }
+
+    void DoToggleImageTrashed()
+    {
+        if (m_model.MediaItem != null)
+        {
+            m_model.MediaItem.IsTrashItem = !m_model.MediaItem.IsTrashItem;
+            m_model.IsTrashItem = m_model.MediaItem.IsTrashItem;
+        }
     }
 
     private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
             Close();
+        else if (e.Key == Key.N || e.Key == Key.Right)
+            DoNextImage();
+        else if (e.Key == Key.P || e.Key == Key.Left)
+            DoPreviousImage();
+        else if (e.Key == Key.D && m_pruning)
+        {
+            DoToggleImageTrashed();
+            DoNextImage();
+        }
+    }
+
+    private void TogglePruneMode(object sender, RoutedEventArgs e)
+    {
+        if (m_pruning)
+        {
+            m_model.PruneModeCaption = "Stop Pruning";
+            m_pruning = false;
+        }
+        else
+        {
+            m_model.PruneModeCaption = "Start Pruning";
+            m_pruning = true;
+        }
+    }
+
+    void DoNextImage()
+    {
+        if (m_nextDelegate != null)
+        {
+            MediaItem? next = m_nextDelegate(m_model.MediaItem!);
+            if (next != null)
+                SetMediaItem(next);
+        }
+    }
+
+    void DoPreviousImage()
+    {
+        if (m_previousDelegate != null)
+        {
+            MediaItem? next = m_previousDelegate(m_model.MediaItem!);
+            if (next != null)
+                SetMediaItem(next);
+        }
+    }
+
+    private void NextImage(object sender, RoutedEventArgs e)
+    {
+        DoNextImage();
+    }
+
+    private void ToggleImageTrashed(object sender, RoutedEventArgs e)
+    {
+        DoToggleImageTrashed();
+    }
+
+    private void PreviousImage(object sender, RoutedEventArgs e)
+    {
+        DoPreviousImage();
     }
 }

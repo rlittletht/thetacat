@@ -15,6 +15,7 @@ public class ImportItem: INotifyPropertyChanged
         PendingUpload,
         Complete,
         MissingFromCatalog,
+        PendingRepair,
         Unknown
     }
 
@@ -28,6 +29,8 @@ public class ImportItem: INotifyPropertyChanged
                 return ImportState.PendingUpload;
             case "COMPLETE":
                 return ImportState.Complete;
+            case "PENDING-REPAIR":
+                return ImportState.PendingRepair;
         }
 
         return ImportState.Unknown;
@@ -43,6 +46,8 @@ public class ImportItem: INotifyPropertyChanged
                 return "pending-upload";
             case ImportState.Complete:
                 return "complete";
+            case ImportState.PendingRepair:
+                return "pending-repair";
             default:
                 return "unknown";
         }
@@ -57,6 +62,12 @@ public class ImportItem: INotifyPropertyChanged
     private object? m_sourceObject;
     private PathSegment m_virtualPath;
 
+    public bool SkipWorkgroupOnlyItem
+    {
+        get => m_skipWorkgroupOnlyItem;
+        set => SetField(ref m_skipWorkgroupOnlyItem, value);
+    }
+
     public PathSegment VirtualPath { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
     public string Source { get => m_source; set => SetField(ref m_source, value); }
     public DateTime UploadDate { get => m_uploadDate; set => SetField(ref m_uploadDate, value); }
@@ -65,6 +76,7 @@ public class ImportItem: INotifyPropertyChanged
     public ImportState State { get => m_state; set => SetField(ref m_state, value); }
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
     public MediaImporter.NotifyCatalogItemCreatedDelegate? m_onCatalogItemCreated;
+    private bool m_skipWorkgroupOnlyItem;
 
     public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
     {

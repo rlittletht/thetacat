@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Thetacat.Controls.MetatagTreeViewControl;
 using Thetacat.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.Standards;
 
 namespace Thetacat.Controls;
@@ -80,12 +81,19 @@ public partial class MetatagTreeView : UserControl
     }
 
     public void SetItems(
-        IEnumerable<IMetatagTreeItem>? items, 
+        IEnumerable<IMetatagTreeItem>? items,
         int schemaVersion,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
         MetatagTree.CloneAndSetCheckedItems(items, Model.Items, initialCheckboxState);
         Model.SchemaVersion = schemaVersion;
+    }
+
+    public void AddItems(
+        IEnumerable<IMetatagTreeItem>? items,
+        Dictionary<string, bool?>? initialCheckboxState = null)
+    {
+        MetatagTree.CloneAndAddCheckedItems(items, Model.Items, initialCheckboxState);
     }
 
 #if NOTUSED
@@ -133,7 +141,7 @@ public partial class MetatagTreeView : UserControl
     public void Initialize(
         IEnumerable<IMetatagTreeItem> roots,
         int schemaVersion,
-        MetatagStandards.Standard? standardRoot = null, 
+        MetatagStandards.Standard? standardRoot = null,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
         Model.SchemaVersion = schemaVersion;
@@ -158,6 +166,24 @@ public partial class MetatagTreeView : UserControl
         {
             SetItems(roots, schemaVersion, initialCheckboxState);
         }
+    }
+
+    public void AddSpecificTag(
+        IEnumerable<IMetatagTreeItem> roots,
+        Metatag metatag, 
+        Dictionary<string, bool?>? initialCheckboxState = null)
+    {
+        IMetatagTreeItem? itemMatch = MetatagTree.FindMatchingChild(
+            roots,
+            MetatagTreeItemMatcher.CreateIdMatch(metatag.ID),
+            -1);
+
+        // its ok for this to be null -- this will happen when we are trying to add a specific
+        // tag that *might* be applied (like dontPushToCloud/isTrashItem). in this case, we will
+        // go ahead and try to add the item, but the roots passed in will only be the actually
+        // applied items, which means it won't be present if its not already applied.
+        if (itemMatch != null)
+            AddItems(new IMetatagTreeItem[] { itemMatch }, initialCheckboxState);
     }
 
     /*----------------------------------------------------------------------------

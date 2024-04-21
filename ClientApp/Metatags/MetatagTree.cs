@@ -184,13 +184,11 @@ public class MetatagTree : IMetatagTreeItem
         MetatagTreeItem.Preorder(this, parent, visit, depth);
     }
 
-    public static void CloneAndSetCheckedItems(
-        IEnumerable<IMetatagTreeItem>? items, 
+    public static void CloneAndAddCheckedItems(
+        IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
-        cloneInto.Clear();
-
         if (items == null)
             return;
 
@@ -206,5 +204,15 @@ public class MetatagTree : IMetatagTreeItem
                 });
             cloneInto.Add(newItem);
         }
+    }
+
+    public static void CloneAndSetCheckedItems(
+        IEnumerable<IMetatagTreeItem>? items, 
+        ObservableCollection<IMetatagTreeItem> cloneInto,
+        Dictionary<string, bool?>? initialCheckboxState = null)
+    {
+        cloneInto.Clear();
+
+        CloneAndAddCheckedItems(items, cloneInto, initialCheckboxState);
     }
 }

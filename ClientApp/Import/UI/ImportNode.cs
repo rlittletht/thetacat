@@ -18,8 +18,17 @@ public class ImportNode: INotifyPropertyChanged, ICheckableTreeViewItem<ImportNo
     private Guid? m_mediaId;
     private string m_matchedItem = string.Empty;
     private PathSegment? m_virtualPath;
+    private bool m_needsRepair = false;
 
     public ObservableCollection<ImportNode> Children { get; set; } = new ObservableCollection<ImportNode>();
+
+    public bool NeedsRepair
+    {
+        get => m_needsRepair;
+        set => SetField(ref m_needsRepair, value);
+    }
+
+    public Guid? ExistingID => m_mediaId;
 
     public string MatchedItem
     {

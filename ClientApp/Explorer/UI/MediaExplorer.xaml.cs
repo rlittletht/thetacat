@@ -53,6 +53,28 @@ public partial class MediaExplorer : UserControl
 
     private readonly List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
 
+    MediaItem? GetNextItem(MediaItem item)
+    {
+        MediaExplorerItem? nextItem = m_collection?.GetNextItem(item);
+
+        if (nextItem == null)
+            return null;
+
+        App.State.Catalog.TryGetMedia(nextItem.MediaId, out MediaItem? nextMediaItem);
+        return nextMediaItem;
+    }
+
+    MediaItem? GetPreviousItem(MediaItem item)
+    {
+        MediaExplorerItem? previousItem = m_collection?.GetPreviousItem(item);
+
+        if (previousItem == null)
+            return null;
+
+        App.State.Catalog.TryGetMedia(previousItem.MediaId, out MediaItem? nextMediaItem);
+        return nextMediaItem;
+    }
+
     public void LaunchItem(MediaExplorerItem? context)
     {
         if (context == null)
@@ -60,7 +82,7 @@ public partial class MediaExplorer : UserControl
 
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
             
-        MediaItemZoom zoom = new MediaItemZoom(mediaItem);
+        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem);
 
         zoom.Closing += OnMediaZoomClosing;
 
@@ -296,7 +318,7 @@ public partial class MediaExplorer : UserControl
         foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
         {
             MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
-
+            
             try
             {
                 UnloadItemCaches(explorerItem);
@@ -373,28 +395,7 @@ public partial class MediaExplorer : UserControl
     {
         List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
 
-        if (mediaItems.Count == 0)
-            return;
-
-        if (MessageBox.Show($"Are you sure you want to delete {mediaItems.Count} items? This cannot be undone.", "Confirm delete", MessageBoxButton.YesNo)
-            != MessageBoxResult.Yes)
-        {
-            return;
-        }
-
-        foreach (MediaItem item in mediaItems)
-        {
-            try
-            {
-                App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
-                ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
-                App.State.EnsureDeletedItemCollateralRemoved(item.ID);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
-            }
-        }
+        m_collection?.FDoDeleteItems(mediaItems);
     }
 
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)
@@ -420,7 +421,7 @@ public partial class MediaExplorer : UserControl
     {
         // figure out either the current item, or the selected items
 
-        if (e.OriginalSource is System.Windows.Controls.Image { Parent: StackPanel { DataContext: MediaExplorerItem item } })
+        if (e.OriginalSource is System.Windows.Controls.Image { Parent: Grid { DataContext: MediaExplorerItem item } })
         {
             Model.ExplorerContextMenu.AppliedTags.Clear();
 
@@ -428,8 +429,12 @@ public partial class MediaExplorer : UserControl
             {
                 foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
                 {
-                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User)
+                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User
+                        && tag.Value.Metatag.ID != BuiltinTags.s_DontPushToCloudID
+                        && tag.Value.Metatag.ID != BuiltinTags.s_IsTrashItemID)
+                    {
                         continue;
+                    }
 
                     Model.ExplorerContextMenu.AppliedTags.Add(
                         new ExplorerMenuTag()

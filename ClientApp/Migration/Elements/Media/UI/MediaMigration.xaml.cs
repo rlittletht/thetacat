@@ -209,6 +209,11 @@ public partial class MediaMigration : UserControl
         Interlocked.Increment(ref m_countRunningVerifyTasks);
         TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
+        if (!m_model.VerifyMD5)
+        {
+            MessageBox.Show(
+                "You are verifying paths WITHOUT checking MD5 hashes. This will only check against the virtual path in the catalog which is inherently imprecise. You make miss some media imports because of false path matches.");
+        }
         Task.Run(
                 () =>
                 {
@@ -303,7 +308,7 @@ public partial class MediaMigration : UserControl
         }
     }
 
-    private void DoPrePopulateWork(IProgressReport report, List<PseMediaItem> checkedItems)
+    private void DoRemainingPrePopulateWork(IProgressReport report, List<PseMediaItem> checkedItems)
     {
         int i = 0, iMax = checkedItems.Count;
 
@@ -311,11 +316,11 @@ public partial class MediaMigration : UserControl
         {
             report.UpdateProgress((i++ * 100.0) / iMax);
             item.UpdateCatalogStatus(false /*verifyMd5*/);
-
-            // here we can pre-populate our cache.
-            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.CatID);
-            App.State.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
-            mediaItem.NotifyCacheStatusChanged();
+//
+//            // here we can pre-populate our cache.
+//            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.CatID);
+//            App.State.Cache.PrimeCacheFromImport(mediaItem, item.VerifiedPath ?? throw new CatExceptionInternalFailure());
+//            mediaItem.NotifyCacheStatusChanged();
         }
         report.WorkCompleted();
     }
@@ -340,7 +345,7 @@ public partial class MediaMigration : UserControl
             });
 
         importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
-        ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
+        ProgressDialog.DoWorkWithProgress(report => DoRemainingPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
         // and lastly we have to add the items we just manually added to our cache
         // (we don't have any items we are tracking. these should all be adds)
