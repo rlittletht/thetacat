@@ -494,13 +494,40 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 #endif
     }
 
+    class ItemShort
+    {
+        public DateTime Date;
+        public Guid ID;
+        public string Leaf;
+
+        public ItemShort(DateTime date, MediaItem item)
+        {
+            Date = date;
+            ID = item.ID;
+            Leaf = item.VirtualPath.GetLeafItem() ?? "";
+        }
+    }
+
+    int ItemShortComparer(ItemShort left, ItemShort right)
+    {
+        int n = left.Date.CompareTo(right.Date);
+        if (n != 0)
+            return n;
+
+        n = string.CompareOrdinal(left.Leaf, right.Leaf);
+        if (n != 0) 
+            return n;
+
+        return 1;
+    }
+
     public void BuildTimelineFromMediaCatalog()
     {
         MicroTimer timer = new MicroTimer();
         MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");
 
         // build a group by date
-        Dictionary<DateTime, ICollection<KeyValuePair<DateTime, Guid>>> dateGrouping = new();
+        Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = new();
 
         IEnumerable<MediaItem> collection =
             m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
@@ -510,13 +537,13 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             DateTime dateTime = GetTimelineDateFromMediaItem(item);
             DateTime date = dateTime.Date;
 
-            if (!dateGrouping.TryGetValue(date, out ICollection<KeyValuePair<DateTime, Guid>>? items))
+            if (!dateGrouping.TryGetValue(date, out ICollection<ItemShort>? items))
             {
-                items = new List<KeyValuePair<DateTime, Guid>>();
+                items = new List<ItemShort>();
                 dateGrouping.Add(date, items);
             }
 
-            ((List<KeyValuePair<DateTime, Guid>>)items).Add(KeyValuePair.Create(dateTime, item.ID));
+            items.Add(new ItemShort(dateTime, item));
         }
 
         IComparer<DateTime> comparer =
@@ -524,10 +551,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
                 ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1)
                 : Comparer<DateTime>.Create((y, x) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
 
-        IComparer<KeyValuePair<DateTime, Guid>> comparerKvp =
+        IComparer<ItemShort> comparerKvp =
             TimelineOrder.Equals(TimelineOrder.Descending)
-                ? Comparer<KeyValuePair<DateTime, Guid>>.Create((x, y) => y.Key.CompareTo(x.Key) < 0 ? y.Key.CompareTo(x.Key) : y.Key.CompareTo(x.Key) + 1)
-                : Comparer<KeyValuePair<DateTime, Guid>>.Create((y, x) => y.Key.CompareTo(x.Key) < 0 ? y.Key.CompareTo(x.Key) : y.Key.CompareTo(x.Key) + 1);
+                ? Comparer<ItemShort>.Create((y, x) => ItemShortComparer(x, y))
+                : Comparer<ItemShort>.Create((x, y) => ItemShortComparer(x, y));
 
         ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet(comparer);
 
@@ -537,11 +564,11 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         {
             bool newSegment = true;
 
-            ICollection<KeyValuePair<DateTime, Guid>> items = dateGrouping[date].ToImmutableSortedSet(comparerKvp);
+            ICollection<ItemShort> items = dateGrouping[date].ToImmutableSortedSet(comparerKvp);
 
-            foreach (KeyValuePair<DateTime, Guid> pair in items)
+            foreach (ItemShort pair in items)
             {
-                MediaItem item = App.State.Catalog.GetMediaFromId(pair.Value);
+                MediaItem item = App.State.Catalog.GetMediaFromId(pair.ID);
                 AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
                 newSegment = false;
             }
