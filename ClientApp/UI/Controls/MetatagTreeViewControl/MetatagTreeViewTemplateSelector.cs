@@ -5,8 +5,9 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Thetacat.Controls;
 
-namespace Thetacat.Controls.MetatagTreeViewControl;
+namespace Thetacat.UI.Controls;
 
 public class MetatagTreeViewTemplateSelector : DataTemplateSelector
 {
@@ -16,9 +17,9 @@ public class MetatagTreeViewTemplateSelector : DataTemplateSelector
     public T? ParentOfType<T>(DependencyObject? element) where T : DependencyObject
     {
         if (element == null)
-            return default(T);
+            return default;
         else
-            return Enumerable.FirstOrDefault<T>(Enumerable.OfType<T>((IEnumerable)GetParents(element)));
+            return GetParents(element).OfType<T>().FirstOrDefault();
     }
 
     public IEnumerable<DependencyObject> GetParents(DependencyObject? element)

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.Explorer"
         xmlns:metatags="clr-namespace:Thetacat.Metatags"
-        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="ApplyMetatag" Height="600" Width="300">
     <Grid>

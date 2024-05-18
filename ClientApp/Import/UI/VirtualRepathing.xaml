@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.Import.UI"
         xmlns:types="clr-namespace:Thetacat.Types"
-        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="VirtualRepathing" Height="450" Width="800"
         x:Name="VirtualRepathingControl">

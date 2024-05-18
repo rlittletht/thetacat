@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using Thetacat.Controls;
+using Thetacat.UI.Controls;
 
 namespace Thetacat.Util;
 

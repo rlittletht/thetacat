@@ -37,43 +37,30 @@ namespace Thetacat.Import;
 ----------------------------------------------------------------------------*/
 public class MediaImporter
 {
-    public delegate void NotifyCatalogItemCreatedDelegate(object? source, MediaItem newItem);
+    public delegate void NotifyCatalogItemCreatedOrRepairedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
+    private readonly HashSet<string> m_ignoreLogs = new();
 
-    public void ClearItems()
-    {
-        ImportItems.Clear();
-    }
+    #region Constructors
 
-    public void AddMediaItemFilesToImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
-    {
-        foreach (IMediaItemFile file in files)
-        {
-            PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
-            PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
+    /*----------------------------------------------------------------------------
+        %%Function: MediaImporter.
 
-            ImportItem newItem =
-                file.VirtualPath != null
-                    ? new ImportItem(Guid.Empty, source, pathRoot, path, file.VirtualPath, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate)
-                    : new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate);
-
-            // check to see if this is a repair item
-            if (file.NeedsRepair && file.ExistingID != null)
-            {
-                newItem.ID = file.ExistingID.Value;
-                newItem.State = ImportItem.ImportState.PendingRepair;
-            }
-
-            ImportItems.Add(newItem);
-        }
-    }
-
-    public MediaImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+        Create an importer from a set of IMediaItemFile's (this could include
+        richer path information and repair information)
+    ----------------------------------------------------------------------------*/
+    public MediaImporter(IEnumerable<IMediaItemFile> files, string source, NotifyCatalogItemCreatedOrRepairedDelegate? notifyDelegate)
     {
         AddMediaItemFilesToImporter(files, source, notifyDelegate);
     }
 
-    public MediaImporter(IEnumerable<string> files, string source, NotifyCatalogItemCreatedDelegate? notifyDelegate)
+    /*----------------------------------------------------------------------------
+        %%Function: MediaImporter
+        %%Qualified: Thetacat.Import.MediaImporter.MediaImporter
+
+        Create an import from a list of filenames
+    ----------------------------------------------------------------------------*/
+    public MediaImporter(IEnumerable<string> files, string source, NotifyCatalogItemCreatedOrRepairedDelegate? notifyDelegate)
     {
         foreach (string file in files)
         {
@@ -95,6 +82,13 @@ public class MediaImporter
     {
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: MediaImporter
+        %%Qualified: Thetacat.Import.MediaImporter.MediaImporter
+
+        Create an importer for this client -- it will have all the items that
+        are pending upload and owned by this client
+    ----------------------------------------------------------------------------*/
     public MediaImporter(string clientSource)
     {
         List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
@@ -142,7 +136,74 @@ public class MediaImporter
             }
         }
     }
+    #endregion
 
+    #region Interactive
+    /*----------------------------------------------------------------------------
+        %%Function: ClearItems
+        %%Qualified: Thetacat.Import.MediaImporter.ClearItems
+
+        Clear all the import items
+    ----------------------------------------------------------------------------*/
+    public void ClearItems()
+    {
+        ImportItems.Clear();
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: AddMediaItemFilesToImporter
+        %%Qualified: Thetacat.Import.MediaImporter.AddMediaItemFilesToImporter
+
+        Add the set of files to the importer. Interactive version
+    ----------------------------------------------------------------------------*/
+    public void AddMediaItemFilesToImporter(
+        IEnumerable<IMediaItemFile> files, 
+        string source, 
+        NotifyCatalogItemCreatedOrRepairedDelegate? notifyDelegate)
+    {
+        foreach (IMediaItemFile file in files)
+        {
+            PathSegment? pathRoot = PathSegment.CreateFromString(Path.GetPathRoot(file.FullyQualifiedPath)) ?? PathSegment.Empty;
+            PathSegment path = PathSegment.GetRelativePath(pathRoot, file.FullyQualifiedPath);
+
+            ImportItem newItem =
+                file.VirtualPath != null
+                    ? new ImportItem(Guid.Empty, source, pathRoot, path, file.VirtualPath, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate)
+                    : new ImportItem(Guid.Empty, source, pathRoot, path, ImportItem.ImportState.PendingMediaCreate, file, notifyDelegate);
+
+            // check to see if this is a repair item
+            if (file.NeedsRepair && file.ExistingID != null)
+            {
+                newItem.ID = file.ExistingID.Value;
+                newItem.State = ImportItem.ImportState.PendingRepair;
+            }
+
+            ImportItems.Add(newItem);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: LaunchImporter
+        %%Qualified: Thetacat.Import.MediaImporter.LaunchImporter
+    ----------------------------------------------------------------------------*/
+    public static void LaunchImporter(Window parentWindow)
+    {
+        MediaImporter importer = new MediaImporter();
+        MediaImport import = new(importer);
+        import.Owner = parentWindow;
+        import.ShowDialog();
+    }
+    #endregion
+
+    #region Import Media
+    /*----------------------------------------------------------------------------
+        %%Function: PrePopulateCacheForItem
+        %%Qualified: Thetacat.Import.MediaImporter.PrePopulateCacheForItem
+
+        Do any core prepopulation work on import. Since we are the client
+        doing the importing, we have the media already cached locally. we can
+        populate the workgroup cache saving a download.
+    ----------------------------------------------------------------------------*/
     void PrePopulateCacheForItem(ImportItem item, MediaItem mediaItem)
     {
         // here we can pre-populate our cache.
@@ -150,8 +211,14 @@ public class MediaImporter
         mediaItem.NotifyCacheStatusChanged();
     }
 
-    private readonly HashSet<string> m_ignoreLogs = new();
 
+    /*----------------------------------------------------------------------------
+        %%Function: FTryPopulateMediaTagsForImport
+        %%Qualified: Thetacat.Import.MediaImporter.FTryPopulateMediaTagsForImport
+
+        try to populate the media tags for this media. If we fail to access the
+        media, then return false so we know we can't import this item.
+    ----------------------------------------------------------------------------*/
     bool FTryPopulateMediaTagsForImport(ImportItem item, MediaItem mediaItem, MetatagSchema metatagSchema, string localPath)
     {
         try
@@ -182,7 +249,26 @@ public class MediaImporter
         return true;
     }
 
-    private void CreateCatalogAndUpdateImportTableWork(Guid catalogID, IProgressReport report, ICatalog catalog, MetatagSchema metatagSchema)
+    /*----------------------------------------------------------------------------
+        %%Function: CreateCatalogAndUpdateImportTableWork
+        %%Qualified: Thetacat.Import.MediaImporter.CreateCatalogAndUpdateImportTableWork
+
+        The core work of importing and prepopulating the workgroup cache.
+
+        For each item, try to add it to the catalog (if not repairing), populate
+        its media tags, prepopulate the cache.
+
+        When done, update the metatag schema, commit the catalog, and update the
+        imports table
+
+        BE VERY CAREFUL - check for exceptions carefully to ensure we don't leave
+        things in an incoherent state.
+    ----------------------------------------------------------------------------*/
+    private void CreateCatalogAndUpdateImportTableWork(
+        Guid catalogID, 
+        IProgressReport report, 
+        ICatalog catalog, 
+        MetatagSchema metatagSchema)
     {
         m_ignoreLogs.Clear();
         int total = ImportItems.Count;
@@ -294,12 +380,26 @@ public class MediaImporter
         report.WorkCompleted();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: CreateCatalogItemsAndUpdateImportTable
+        %%Qualified: Thetacat.Import.MediaImporter.CreateCatalogItemsAndUpdateImportTable
+
+        Do the actual import on a background thread with progress
+    ----------------------------------------------------------------------------*/
     public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema)
     {
         ProgressDialog.DoWorkWithProgress(
             (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema));
     }
+    #endregion
 
+    #region Upload Media
+    /*----------------------------------------------------------------------------
+        %%Function: UploadPendingMediaWork
+        %%Qualified: Thetacat.Import.MediaImporter.UploadPendingMediaWork
+
+        This will upload the items we have locally to the cloud.
+    ----------------------------------------------------------------------------*/
     private bool UploadPendingMediaWork(IProgressReport progress)
     {
         try
@@ -372,12 +472,5 @@ public class MediaImporter
 
         App.State.AddBackgroundWork("Uploading pending media", UploadPendingMediaWork);
     }
-
-    public static void LaunchImporter(Window parentWindow)
-    {
-        MediaImporter importer = new MediaImporter();
-        MediaImport import = new(importer);
-        import.Owner = parentWindow;
-        import.ShowDialog();
-    }
+    #endregion
 }

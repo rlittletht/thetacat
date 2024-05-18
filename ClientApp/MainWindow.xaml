@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat"
         xmlns:xpl="clr-namespace:Thetacat.Explorer"
-        xmlns:controls="clr-namespace:Thetacat.Controls"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded">
     <Window.Resources>

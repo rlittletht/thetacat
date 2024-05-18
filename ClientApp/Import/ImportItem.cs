@@ -75,10 +75,10 @@ public class ImportItem: INotifyPropertyChanged
     public PathSegment SourcePath { get => m_sourcePath; set => SetField(ref m_sourcePath, value); }
     public ImportState State { get => m_state; set => SetField(ref m_state, value); }
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
-    public MediaImporter.NotifyCatalogItemCreatedDelegate? m_onCatalogItemCreated;
+    public MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? m_onCatalogItemCreated;
     private bool m_skipWorkgroupOnlyItem;
 
-    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
+    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? onCatalogItemCreated = null)
     {
         ID = id;
         m_source = source;
@@ -90,7 +90,7 @@ public class ImportItem: INotifyPropertyChanged
         m_virtualPath = sourcePath;
     }
 
-    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, PathSegment virtualPath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedDelegate? onCatalogItemCreated = null)
+    public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, PathSegment virtualPath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? onCatalogItemCreated = null)
     {
         ID = id;
         m_source = source;

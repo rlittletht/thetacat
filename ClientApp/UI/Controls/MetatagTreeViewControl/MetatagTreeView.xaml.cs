@@ -4,12 +4,11 @@ using System.Runtime.InteropServices.ObjectiveC;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Thetacat.Controls.MetatagTreeViewControl;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Standards;
 
-namespace Thetacat.Controls;
+namespace Thetacat.UI.Controls;
 
 /// <summary>
 /// Interaction logic for MetatagTreeView.xaml
