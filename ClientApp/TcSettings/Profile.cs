@@ -43,7 +43,10 @@ public class Profile
 
     public Dictionary<string, FilterDefinition> Filters = new();
 
-    public Profile() {}
+    public Profile()
+    {
+        ClientDatabaseName = "client.db";
+    }
 
     public Profile(Profile basedOn)
     {
