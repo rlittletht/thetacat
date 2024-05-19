@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using TCore.SqlCore;
 using TCore;
 using TCore.SqlClient;
@@ -153,11 +155,15 @@ public class ClientDatabase
         return $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor}";
     }
 
+
     List<string> BuildDerivativeInsertCommands(IEnumerable<DerivativeItem> items)
     {
         List<string> commands = new List<string>();
         foreach (DerivativeItem item in items)
         {
+            if (!item.HasPath)
+                continue;
+
             commands.Add(BuildDerivativeInsertCommand(item));
         }
 

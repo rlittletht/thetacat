@@ -42,7 +42,7 @@ public partial class CacheConfig : UserControl
         {
             string workgroupId = _Model.ProfileOptions?.Profile.WorkgroupId!;
             _Model.PopulateWorkgroups(catalogID);
-            _Model.SetWorkgroup(Guid.Parse(workgroupId));
+            _Model.SetWorkgroup(_AccountModel, Guid.Parse(workgroupId));
             try
             {
                 ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(catalogID, Guid.Parse(_Model.WorkgroupID));
@@ -84,7 +84,7 @@ public partial class CacheConfig : UserControl
         }
 
         if (e.PropertyName == "CurrentWorkgroup")
-            _Model.SetWorkgroup(_Model.CurrentWorkgroup?.Workgroup?.ID);
+            _Model.SetWorkgroup(_AccountModel, _Model.CurrentWorkgroup?.Workgroup?.ID);
 
         if (e.PropertyName == "CreateNewWorkgroup")
         {
@@ -233,7 +233,7 @@ public partial class CacheConfig : UserControl
 
                 if (id != null)
                 {
-                    _Model.SetWorkgroup(id.Value);
+                    _Model.SetWorkgroup(_AccountModel, id.Value);
                 }
             }
             Cache.CacheType cacheType = Cache.CacheTypeFromString(selected ?? "private");

@@ -36,6 +36,8 @@ public class DerivativeItem
         }
     }
 
+    public bool HasPath => m_pathSegment != null;
+
     public bool Pending { get; set; }
     public bool DeletePending { get; set; }
     public BitmapSource? PendingBitmap { get; set; }
