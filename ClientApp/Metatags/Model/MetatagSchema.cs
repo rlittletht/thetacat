@@ -340,9 +340,10 @@ public class MetatagSchema
             }
         }
 
+        m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+
         EnsureBuiltinMetatagsDefined();
 
-        m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
         TriggerItemDirtied(false);
     }
 
