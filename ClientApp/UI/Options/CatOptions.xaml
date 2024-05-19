@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Thetacat.UI.Options"
         xmlns:options="clr-namespace:Thetacat.UI.Options"
         mc:Ignorable="d"
-        Title="Options" Height="450" Width="800">
+        Title="Options" Height="550" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>

@@ -565,7 +565,7 @@ public class ImageCache
                     {
                         targetBitmap = ScaleBitmap(fullImage, scaleFactor);
                         targetBitmap.Freeze();
-                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap);
+                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap, scaleFactor);
                     }
                     else
                     {

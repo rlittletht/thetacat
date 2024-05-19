@@ -21,6 +21,13 @@ public class MetatagStandards
         User,
     };
 
+    public static StandardDefinitions User =
+        new(
+            Standard.User,
+            "user",
+            Array.Empty<string>(),
+            new Dictionary<int, StandardDefinition>());
+
     public static StandardDefinitions Cat =
         new(
             Standard.Cat,
@@ -590,6 +597,7 @@ public class MetatagStandards
     public static Dictionary<Standard, StandardDefinitions> KnownStandards =
         new()
         {
+            { Standard.User, User },
             { Standard.Cat, Cat },
             { Standard.Pse, Pse },
             { Standard.Jpeg, Jpeg },

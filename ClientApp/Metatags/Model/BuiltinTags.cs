@@ -8,6 +8,7 @@ public class BuiltinTags
     // NOTE: Make sure you update EnsureBuiltinMetatagsDefined if you add a tag here!!
 
     // these are built-in mediatags. 
+    public static readonly Guid s_UserRootID = new Guid("59DAAAA6-B2C6-4F76-A687-02362B092AAE");
     public static readonly Guid s_CatRootID = new Guid("F154F44E-8075-4BAC-A9C2-167D5815C195");
     public static readonly Guid s_WidthID = new Guid("B84B3981-C69C-4C5A-9928-377B8FEC5FBC");
     public static readonly Guid s_HeightID = new Guid("FE34A67F-DD8C-41F8-A914-EE1E5628D292");

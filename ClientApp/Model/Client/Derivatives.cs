@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
@@ -61,10 +62,7 @@ public class Derivatives
 
         double scale;
 
-        if (!item.FullBitmapFidelity)
-            scale = (double)item.Image.PixelWidth / item.OriginalWidth;
-        else
-            scale = 1.0;
+        scale = item.RequestedScaleFactor;
 
         return new DerivativeItem(item.MediaKey, "image/jpeg", scale, item.TransformationsKey, item.Image);
     }
@@ -100,14 +98,14 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(work);
     }
 
-    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage)
+    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
     {
-        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey));
+        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
     }
 
     public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
     {
-        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey));
+        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey, 1.0));
     }
 
     public void DeleteMediaItem(Guid id)
@@ -237,6 +235,8 @@ public class Derivatives
         }
     }
 
+    private Guid bad = new Guid("9686e696-6cfa-46ec-99fd-baba3342c053");
+
     /*----------------------------------------------------------------------------
         %%Function: TryGetFormatDerivative
         %%Qualified: Thetacat.Model.Client.Derivatives.TryGetFormatDerivative
@@ -248,6 +248,8 @@ public class Derivatives
     ----------------------------------------------------------------------------*/
     public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
     {
+        Debug.Assert(mediaId != bad);
+
         pendingBitmap = null;
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
         {
@@ -385,6 +387,7 @@ public class Derivatives
         public WorkType Type { get; private set; }
         public int OriginalWidth { get; private set; }
         public int OriginalHeight { get; private set; }
+        public double RequestedScaleFactor { get; private set; }
         public bool FullBitmapFidelity { get; private set; }
         public BitmapSource? Image { get; private set; }
         public string TransformationsKey { get; private set; } = string.Empty;
@@ -394,7 +397,22 @@ public class Derivatives
         {
         }
 
-        public DerivativeWork(MediaItem mediaItem, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey)
+        /*----------------------------------------------------------------------------
+            %%Function: DerivativeWork
+            %%Qualified: Thetacat.Model.Client.Derivatives.DerivativeWork.DerivativeWork
+
+            We allow a specific requested scale factor because we might be resampling
+            a resampled image, which can lead to scale factors much smaller than we
+            asked for (causing us to save to the derivative cache with a difference
+            scale factor, causing us to "miss" when asked for the requested factor,
+            leading us to create a new one which (again) resamples the resample, and
+            when we go to save it, its a duplicate because the real scale factor is
+            different than the requested.
+
+            this happens for things like PSD files where we get a thumbnail for the
+            transcoded image, thus its already "resampled" to start with.
+        ----------------------------------------------------------------------------*/
+        public DerivativeWork(MediaItem mediaItem, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey, double requestedScaleFactor)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;
@@ -402,6 +420,8 @@ public class Derivatives
             MediaKey = mediaItem.ID;
             FullBitmapFidelity = fullBitmapFidelity;
             Type = fullBitmapFidelity ? WorkType.Transcode : WorkType.ResampleImage;
+            RequestedScaleFactor = requestedScaleFactor;
+            
             TransformationsKey = transformationsKey;
         }
 
@@ -414,6 +434,7 @@ public class Derivatives
             Image = t.Image;
             FullBitmapFidelity = t.FullBitmapFidelity;
             TransformationsKey = t.TransformationsKey;
+            RequestedScaleFactor = t.RequestedScaleFactor;
         }
     }
 

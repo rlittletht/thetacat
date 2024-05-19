@@ -73,7 +73,7 @@ public partial class CatOptions : Window
         if (m_model.CurrentProfile == null)
             return;
 
-        if (!CacheConfigTab.FSaveSettings(m_model.CurrentProfile.Profile.SqlConnection ?? "", AccountTab.CatalogID))
+        if (!CacheConfigTab.FSaveSettings(AccountTab._Model.SqlConnection, AccountTab.CatalogID))
             MessageBox.Show("Failed to save Cache options");
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");

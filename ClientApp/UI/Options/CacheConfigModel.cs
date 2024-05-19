@@ -181,7 +181,7 @@ public class CacheConfigModel: INotifyPropertyChanged
         return null;
     }
 
-    public void SetWorkgroup(Guid? id)
+    public void SetWorkgroup(AccountModel? accountModel, Guid? id)
     {
         if (id == null)
         {
@@ -194,7 +194,7 @@ public class CacheConfigModel: INotifyPropertyChanged
             return;
         } 
 
-        if (string.IsNullOrWhiteSpace(App.State.ActiveProfile.SqlConnection))
+        if (string.IsNullOrWhiteSpace(App.State.ActiveProfile.SqlConnection) && string.IsNullOrWhiteSpace(accountModel?.SqlConnection ?? ""))
             return;
 
         try

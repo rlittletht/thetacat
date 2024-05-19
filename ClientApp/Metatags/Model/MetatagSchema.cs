@@ -290,6 +290,7 @@ public class MetatagSchema
         lock (BuiltinTags.s_BuiltinTags)
         {
             MainWindow.LogForApp(EventType.Warning, "ensure builtin defined");
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
             GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
 
             foreach (Metatag metatag in BuiltinTags.s_BuiltinTags)
@@ -339,9 +340,10 @@ public class MetatagSchema
             }
         }
 
+        m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+
         EnsureBuiltinMetatagsDefined();
 
-        m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
         TriggerItemDirtied(false);
     }
 
