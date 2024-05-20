@@ -164,6 +164,15 @@ namespace Thetacat.Filtering.UI
                 }
             }
 
+            if (ops.Count == 0)
+            {
+                UpdateMapCount(valueCounts, "$false");
+                UpdateMapCount(valueCounts, "$true");
+
+                ops.Add(ComparisonOperator.Op.Eq);
+                ops.Add(ComparisonOperator.Op.Ne);
+            }
+
             IComparer<KeyValuePair<string, int>> comparer =
                 Comparer<KeyValuePair<string, int>>.Create(
                     (x, y) =>
@@ -303,7 +312,7 @@ namespace Thetacat.Filtering.UI
 
         private void ChooseTag(object sender, RoutedEventArgs e)
         {
-            TagPickerPopup.IsOpen = true;
+            TagPickerPopup.IsOpen = !TagPickerPopup.IsOpen;
         }
 
         private void SelectMetatag(Guid parentId)
