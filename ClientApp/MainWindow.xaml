@@ -93,6 +93,8 @@
                             <controls:SpinnerSwirl Height="32" x:Name="BackgroundActivity" HorizontalAlignment="Left"
                                                    VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
                         </StackPanel>
+                        <Button Content="Metatag Panel" Click="DoToggleMetatagPanel" Height="24" Width="96"
+                                Margin="2,0,2,0" />
                     </StackPanel>
                 </Grid>
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">

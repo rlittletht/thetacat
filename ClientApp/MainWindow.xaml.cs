@@ -670,4 +670,9 @@ public partial class MainWindow : Window
     {
         WorkgroupRepair.FixMissingWorkgroupEntries(App.State.Catalog);
     }
+
+    private void DoToggleMetatagPanel(object sender, RoutedEventArgs e)
+    {
+        Explorer.ToggleMetatagPanel();
+    }
 }

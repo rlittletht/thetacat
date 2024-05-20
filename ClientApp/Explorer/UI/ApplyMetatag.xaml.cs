@@ -130,4 +130,30 @@ public partial class ApplyMetatag : Window
 
         m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
     }
+
+    private void DoManageMetatags(object sender, RoutedEventArgs e)
+    {
+        Metatags.ManageMetadata manage = new();
+        manage.Owner = this;
+        manage.ShowDialog();
+
+        // and update the metatag panel
+        MetatagSchema schema = App.State.MetatagSchema;
+
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+
+        List<Metatag> tagsSet = new();
+        List<Metatag> tagsIndeterminate = new();
+
+        foreach (KeyValuePair<string, bool?> state in checkedUncheckedAndIndeterminateItems)
+        {
+            if (state.Value == null)
+                tagsIndeterminate.Add(schema.GetMetatagFromId(new Guid(state.Key))!);
+            if (state.Value != null && state.Value.Value)
+                tagsSet.Add(schema.GetMetatagFromId(new Guid(state.Key))!);
+        }
+
+        // get the set of set tags
+        Set(App.State.MetatagSchema, tagsSet, tagsIndeterminate);
+    }
 }

@@ -153,6 +153,19 @@ public partial class MediaExplorer : UserControl
         }
     }
 
+    public void ToggleMetatagPanel()
+    {
+        if (m_applyMetatagPanel != null)
+        {
+            m_applyMetatagPanel.Close();
+            m_applyMetatagPanel = null;
+        }
+        else
+        {
+            _ShowHideMetatagPanel(null);
+        }
+    }
+
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");

@@ -37,11 +37,19 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <controls:MetatagTreeView Checkable="True" x:Name="MetatagsApplied" Grid.Row="0" />
-                <Grid HorizontalAlignment="Right" Margin="0 0 0 5" Grid.Row="1">
+                <Grid Margin="0 0 0 5" Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button Content="Remove" IsDefault="True" Click="DoRemove" Height="24" Margin="5 0 0 0" />
+                    <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" Grid.Column="0">
+                        <Button Content="Manage..." Click="DoManageMetatags" Height="24" Margin="5 0 0 0"
+                                Width="92" />
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
+                        <Button Content="Remove" Click="DoRemove" Height="24" Margin="5 0 0 0"
+                                Width="92" />
+                    </StackPanel>
                 </Grid>
             </Grid>
         </GroupBox>
