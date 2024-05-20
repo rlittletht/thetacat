@@ -248,8 +248,6 @@ public class Derivatives
     ----------------------------------------------------------------------------*/
     public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
     {
-        Debug.Assert(mediaId != bad);
-
         pendingBitmap = null;
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
         {
