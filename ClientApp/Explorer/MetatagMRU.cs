@@ -29,7 +29,7 @@ public class MetatagMRU
         // otherwise, add this to the top
         m_recentTags.Insert(0, metatag);
         if (m_recentTags.Count > maxSize)
-            m_recentTags.RemoveRange(10, m_recentTags.Count - 9);
+            m_recentTags.RemoveRange(10, m_recentTags.Count - 10);
 
         m_vectorClock++;
     }
