@@ -98,7 +98,7 @@
                     </StackPanel>
                 </Grid>
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
-                    <Button Content="Rebuild Explorer" Click="DoRebuildTimeline" Height="24" Width="96"
+                    <Button Content="Refresh" Click="DoRebuildTimeline" Height="24" Width="96"
                             Margin="2,0,2,0" />
                     <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="2,0,2,0"
                             Width="96" IsEnabled="{Binding Path=IsDirty}"/>
