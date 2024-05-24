@@ -217,9 +217,14 @@ public partial class MetatagTreeView : UserControl
 
         if (containersMarked.Count > 0)
         {
-            MessageBox.Show(
-                $"At least one container metatag was checked. This isn't supported. No tags applied or removed. Please uncheck: {string.Join(",", containersMarked)} and try again.");
-            return new Dictionary<string, bool?>();
+            if (MessageBox.Show(
+                    $"At least one container metatag was checked. Do you want to check these containers? {string.Join(",", containersMarked)}",
+                    "Container Check",
+                    MessageBoxButton.OKCancel)
+                != MessageBoxResult.OK)
+            {
+                return new Dictionary<string, bool?>();
+            }
         }
 
         return checkedUncheckedAndIndeterminedItems;
