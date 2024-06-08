@@ -16,6 +16,7 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ExplorerContextMenuModel ExplorerContextMenu { get; set; } = new ExplorerContextMenuModel();
     public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
     public DeleteCommand? DeleteItems { get; set; }
+    public ToggleTopOfStackCommand? ToggleTopOfStackItems { get; set; }
     public ResetCacheItemsCommand? ResetCacheItems { get; set; }
     public RotateItemsRightCommand? RotateItemsRight{ get; set; }
     public MirrorItemsCommand? MirrorItems { get; set; }

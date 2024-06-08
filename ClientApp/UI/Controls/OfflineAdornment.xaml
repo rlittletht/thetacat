@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Thetacat.Controls"
-             mc:Ignorable="d" Height="19" Width="23">
+             mc:Ignorable="d" Height="24" Width="26">
     <Grid Margin="0,0,23,29">
         <Canvas Margin="0,0,768,427">
             <Canvas.LayoutTransform>
@@ -12,9 +12,9 @@
             </Canvas.LayoutTransform>
             <Canvas x:Name="canvas" Height="18" Width="23" RenderTransformOrigin="0.0,0.0">
                 <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
-                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Canvas.Left="20.2"
                       Data="M93.72,183.25C49.49,198.05,16,233.1,16,288c0,66,54,112,120,112H320.37" />
-                <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+                <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32" Canvas.Left="0.2"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                       Data="M467.82,377.74C485.24,363.3,496,341.61,496,312c0-59.82-53-85.76-96-88-8.89-89.54-71-144-144-144-26.16,0-48.79,6.93-67.6,18.14"/>
                 <Line X1="448" Y1="448" X2="64" Y2="64" Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"

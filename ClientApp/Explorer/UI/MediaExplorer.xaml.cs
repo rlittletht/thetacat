@@ -38,6 +38,7 @@ public partial class MediaExplorer : UserControl
 
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
         Model.DeleteItems = new DeleteCommand(_DeleteItems);
+        Model.ToggleTopOfStackItems = new ToggleTopOfStackCommand(_ToggleTopOfStackItems);
         Model.ResetCacheItems = new ResetCacheItemsCommand(_ClearCacheItems);
         Model.RotateItemsRight = new RotateItemsRightCommand(_RotateItemsRight);
         Model.MirrorItems = new MirrorItemsCommand(_MirrorItems);
@@ -402,6 +403,14 @@ public partial class MediaExplorer : UserControl
         }
 
         MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+    }
+
+    private void _ToggleTopOfStackItems(MediaExplorerItem? context)
+    {
+        foreach (MediaExplorerItem item in m_selector.SelectedItems)
+        {
+            item.IsTopOfStack = !item.IsTopOfStack;
+        }
     }
 
     private void _DeleteItems(MediaExplorerItem? context)

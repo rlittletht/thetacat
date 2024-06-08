@@ -15,7 +15,9 @@ public class MediaExplorerItem : INotifyPropertyChanged
     private BitmapSource? m_tileImage;
     private bool m_selected;
     private bool m_isTrashItem;
+    private bool m_isTopOfStack;
     private Visibility m_trashAdornerVisibility;
+    private Visibility m_topOfStackAdornerVisibility;
     private bool m_isOffline;
     private Visibility m_offlineAdornerVisibility;
 
@@ -26,6 +28,16 @@ public class MediaExplorerItem : INotifyPropertyChanged
         {
             SetField(ref m_isTrashItem, value);
             TrashAdornerVisibility = m_isTrashItem ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    public bool IsTopOfStack
+    {
+        get => m_isTopOfStack;
+        set
+        {
+            SetField(ref m_isTopOfStack, value);
+            TopOfStackAdornerVisibility = m_isTopOfStack ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
@@ -51,6 +63,11 @@ public class MediaExplorerItem : INotifyPropertyChanged
         private set => SetField(ref m_trashAdornerVisibility, value);
     }
 
+    public Visibility TopOfStackAdornerVisibility
+    {
+        get => m_topOfStackAdornerVisibility;
+        private set => SetField(ref m_topOfStackAdornerVisibility, value);
+    }
     public bool Selected
     {
         get => m_selected;

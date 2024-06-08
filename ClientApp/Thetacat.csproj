@@ -64,6 +64,12 @@
     <Compile Update="Explorer\UI\MediaItemDetails.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="UI\Controls\NotTopOfStackAdornment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\Controls\TopOfStackAdornment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

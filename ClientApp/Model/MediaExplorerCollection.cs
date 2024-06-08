@@ -349,6 +349,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         explorerItem.IsTrashItem = item.IsTrashItem;
         explorerItem.IsOffline = item.DontPushToCloud;
+        explorerItem.IsTopOfStack = false;
 
         item.PropertyChanged += ItemOnPropertyChanged;
         m_explorerItems.Add(item.ID, explorerItem);

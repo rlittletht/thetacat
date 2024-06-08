@@ -55,6 +55,9 @@
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
                                   CommandParameter="{Binding}"/>
+                        <MenuItem Header="Toggle Top Of Stack"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ToggleTopOfStackItems}"
+                                  CommandParameter="{Binding}"/>
                         <MenuItem Header="Reset Cache"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
                                   CommandParameter="{Binding}" />
@@ -73,10 +76,11 @@
                        Margin="5,5,5,5"
                        MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
                        MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                    <StackPanel Orientation="Horizontal" Margin="15 10" HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal" Margin="15 12" HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom" Background="White" >
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                         <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
+                        <controls:TopOfStackAdornment Visibility="{Binding Path=TopOfStackAdornerVisibility}" />
                     </StackPanel>
                 </Grid>
             </StackPanel>
