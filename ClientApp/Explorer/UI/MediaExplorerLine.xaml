@@ -76,8 +76,11 @@
                        Margin="5,5,5,5"
                        MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
                        MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                    <StackPanel Orientation="Horizontal" Margin="15 12" HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom" Background="White" >
+                    <StackPanel Orientation="Horizontal" Margin="6 6" HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom" >
+                        <StackPanel.Background>
+                            <SolidColorBrush Color="AntiqueWhite" Opacity="0.7"/>
+                        </StackPanel.Background>
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                         <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
                         <controls:TopOfStackAdornment Visibility="{Binding Path=TopOfStackAdornerVisibility}" />
