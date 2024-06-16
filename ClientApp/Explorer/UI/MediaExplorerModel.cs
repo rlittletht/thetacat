@@ -2,7 +2,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 using Thetacat.Explorer.Commands;
+using Thetacat.Logging;
 
 namespace Thetacat.Explorer.UI;
 
@@ -70,5 +73,6 @@ public class MediaExplorerModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new();
+
 
 }

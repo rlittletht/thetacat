@@ -71,7 +71,12 @@ public class CatalogMock : ICatalog
 
     public MediaStacks VersionStacks => throw new NotImplementedException();
     public MediaStacks MediaStacks => throw new NotImplementedException();
-    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
+    public void AddMediaToTopOfMediaStack(MediaStackType stackType, Guid stackId, Guid mediaId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int? index)
     {
         throw new NotImplementedException();
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.ServiceClient;
@@ -7,7 +8,7 @@ using Thetacat.Types;
 
 namespace Thetacat.Model;
 
-public class MediaStack: INotifyPropertyChanged
+public class MediaStack : INotifyPropertyChanged, INotifyCollectionChanged
 {
     public enum Op
     {
@@ -82,18 +83,59 @@ public class MediaStack: INotifyPropertyChanged
     public List<MediaStackItem> Items
     {
         get => m_items;
-        set => SetField(ref m_items, value);
+        set
+        {
+            SetField(ref m_items, value);
+            OnCollectionChanged();
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: FindMediaInStack
+        %%Qualified: Thetacat.Model.MediaStack.FindMediaInStack
+
+        NOTE: this will always traverse the entire stack (in order to get the
+        before/after count
+    ----------------------------------------------------------------------------*/
+    public MediaStackItem? FindMediaInStack(Guid itemId, out int beforeCount, out int afterCount)
+    {
+        beforeCount = 0;
+        afterCount = 0;
+
+        Dictionary<int, int> counts = new Dictionary<int, int>();
+
+        MediaStackItem? match = null;
+
+        foreach (MediaStackItem item in m_items)
+        {
+            counts.TryAdd(item.StackIndex, 0);
+            counts[item.StackIndex]++;
+
+            if (item.MediaId == itemId)
+                match = item;
+        }
+
+        if (match != null)
+        {
+            foreach (KeyValuePair<int, int> count in counts)
+            {
+                // if we are a duplicate, we will always consider ourselves to be
+                // last of the dupes
+                if (count.Key <= match.StackIndex)
+                    beforeCount += count.Value;
+                else
+                    afterCount += count.Value;
+            }
+
+            beforeCount--; // remove ourselves from the count
+        }
+
+        return match;
     }
 
     public MediaStackItem? FindMediaInStack(Guid itemId)
     {
-        foreach (MediaStackItem item in m_items)
-        {
-            if (item.MediaId == itemId)
-                return item;
-        }
-
-        return null;
+        return FindMediaInStack(itemId, out int _, out int _);
     }
 
     public void RemoveItem(MediaStackItem item)
@@ -103,6 +145,7 @@ public class MediaStack: INotifyPropertyChanged
             PendingOp = Op.Delete;
         else if (PendingOp == Op.None)
             PendingOp = Op.Update;
+        OnCollectionChanged();
     }
 
     public void PushItem(MediaStackItem item)
@@ -110,6 +153,7 @@ public class MediaStack: INotifyPropertyChanged
         m_items.Add(item);
         if (PendingOp == Op.None)
             PendingOp = Op.Update;
+        OnCollectionChanged();
     }
 
     public MediaStackItem PushNewItem(Guid mediaId)
@@ -118,6 +162,7 @@ public class MediaStack: INotifyPropertyChanged
         MediaStackItem newStackItem = new MediaStackItem(mediaId, stackIndex);
 
         PushItem(newStackItem);
+        // PushItem will notify about the collection changing
         return newStackItem;
     }
 
@@ -162,5 +207,13 @@ public class MediaStack: INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+
+    public event NotifyCollectionChangedEventHandler? CollectionChanged;
+
+    protected virtual void OnCollectionChanged()
+    {
+        // the only action we support is Reset
+        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
     }
 }
