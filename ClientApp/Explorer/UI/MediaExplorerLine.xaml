@@ -55,6 +55,9 @@
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
                                   CommandParameter="{Binding}"/>
+                        <MenuItem Header="Open item stack"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.OpenItemsStack}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Toggle Top Of Stack"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ToggleTopOfStackItems}"
                                   CommandParameter="{Binding}"/>

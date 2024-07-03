@@ -179,10 +179,8 @@ public class MediaExplorerItem : INotifyPropertyChanged
             if (!App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
                 throw new CatExceptionInternalFailure($"item has a version stack that doesn't exist");
 
-            stack.FindMediaInStack(item.ID, out int before, out _);
-
-            IsTopOfStack = before == 0;
-            IsNotTopOfStack = before != 0;
+            IsTopOfStack = stack.IsItemTopOfStack(item.ID);
+            IsNotTopOfStack = !IsTopOfStack;
 
             // remove and re-add.  Remove is a no-op if we never registered
             stack.CollectionChanged -= OnStackChanged;
@@ -194,10 +192,10 @@ public class MediaExplorerItem : INotifyPropertyChanged
             if (!App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
                 throw new CatExceptionInternalFailure($"item has a version stack that doesn't exist");
 
-            stack.FindMediaInStack(item.ID, out int before, out _);
+            bool isTopOfStack = stack.IsItemTopOfStack(item.ID);
 
-            IsTopOfStack = IsTopOfStack || before == 0;
-            IsNotTopOfStack = IsNotTopOfStack || before != 0;
+            IsTopOfStack = IsTopOfStack || isTopOfStack;
+            IsNotTopOfStack = IsNotTopOfStack || !isTopOfStack;
 
             // remove and re-add.  Remove is a no-op if we never registered
             stack.CollectionChanged -= OnStackChanged;

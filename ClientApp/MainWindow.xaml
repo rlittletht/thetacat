@@ -8,9 +8,6 @@
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded">
-    <Window.Resources>
-        <local:MathConverter x:Key="MathConverter" />
-    </Window.Resources>
     <DockPanel>
         <!--VerticalAlignment="Stretch">-->
         <Menu DockPanel.Dock="Top">
@@ -39,12 +36,13 @@
                               IsChecked="{Binding Path=ExplorerCollection.IsMediaDateTimeline, Mode=OneWay}" />
                     <MenuItem Header="Import date" IsCheckable="True" Click="ChooseImportDateTimeline"
                               IsChecked="{Binding Path=ExplorerCollection.IsImportDateTimeline, Mode=OneWay}" />
-                    <MenuItem Header="Ascending" IsCheckable="True" Click="ChooseAscending"
+                    <MenuItem Header="DateAscending" IsCheckable="True" Click="ChooseAscending"
                               IsChecked="{Binding Path=ExplorerCollection.IsTimelineAscending, Mode=OneWay}" />
-                    <MenuItem Header="Descending" IsCheckable="True" Click="ChooseDescending"
+                    <MenuItem Header="DateDescending" IsCheckable="True" Click="ChooseDescending"
                               IsChecked="{Binding Path=ExplorerCollection.IsTimelineDescending, Mode=OneWay}" />
                 </MenuItem>
                 <Separator />
+                <MenuItem Header="Expand media stacks" Click="ToggleExpandMediaStacks" />
                 <MenuItem Header="App log monitor" Click="ToggleAppLog" />
                 <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
                 <MenuItem Header="Large pictures" Click="SelectLargePreview" />

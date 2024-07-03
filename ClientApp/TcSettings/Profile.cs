@@ -32,6 +32,7 @@ public class Profile
 
     public string? TimelineType;
     public string? TimelineOrder;
+    public bool? ExpandMediaStacksInExplorers;
 
     public string? DerivativeCache;
 
@@ -67,6 +68,7 @@ public class Profile
         ShowAppLogOnStart = basedOn.ShowAppLogOnStart;
         ExplorerItemSize = basedOn.ExplorerItemSize;
         TimelineType = basedOn.TimelineType;
+        ExpandMediaStacksInExplorers = basedOn.ExpandMediaStacksInExplorers;
         TimelineOrder = basedOn.TimelineOrder;
         DerivativeCache = basedOn.DerivativeCache;
     }

@@ -91,6 +91,21 @@ public class MediaStack : INotifyPropertyChanged, INotifyCollectionChanged
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: IsItemTopOfStack
+        %%Qualified: Thetacat.Model.MediaStack.IsItemTopOfStack
+
+        Return true if the given mediaId is both in the stack, and is the top of
+        the stack
+    ----------------------------------------------------------------------------*/
+    public bool IsItemTopOfStack(Guid mediaId)
+    {
+        if (FindMediaInStack(mediaId, out int beforeCount, out _) != null)
+            return beforeCount == 0;
+
+        return false;
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: FindMediaInStack
         %%Qualified: Thetacat.Model.MediaStack.FindMediaInStack
 

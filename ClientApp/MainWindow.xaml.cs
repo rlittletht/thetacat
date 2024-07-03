@@ -212,8 +212,6 @@ public partial class MainWindow : Window
         timer.Reset();
         timer.Start();
 
-        List<MediaExplorerItem> explorerItems = new();
-
         m_model.ExplorerCollection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
         m_model.ExplorerCollection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
         m_model.ExplorerCollection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
@@ -241,7 +239,7 @@ public partial class MainWindow : Window
                 timelineOrder = App.State.ActiveProfile.TimelineOrder;
 
             if (timelineOrder.Equals(TimelineOrder.None))
-                timelineOrder = TimelineOrder.Ascending;
+                timelineOrder = TimelineOrder.DateAscending;
         }
 
         m_model.ExplorerCollection.ResetTimeline();
@@ -531,8 +529,8 @@ public partial class MainWindow : Window
     private void ChoosemMediaDateTimeline(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineType(TimelineType.MediaDate);
     private void ChooseImportDateTimeline(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineType(TimelineType.ImportDate);
 
-    private void ChooseAscending(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineOrder(TimelineOrder.Ascending);
-    private void ChooseDescending(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineOrder(TimelineOrder.Descending);
+    private void ChooseAscending(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineOrder(TimelineOrder.DateAscending);
+    private void ChooseDescending(object sender, RoutedEventArgs e) => m_model.ExplorerCollection.SetTimelineOrder(TimelineOrder.DateDescending);
 
     private void DoChooseFilter(object sender, RoutedEventArgs e)
     {
@@ -674,5 +672,10 @@ public partial class MainWindow : Window
     private void DoToggleMetatagPanel(object sender, RoutedEventArgs e)
     {
         Explorer.ToggleMetatagPanel();
+    }
+
+    private void ToggleExpandMediaStacks(object sender, RoutedEventArgs e)
+    {
+        m_model.ExplorerCollection.ToggleExpandMediaStacks();
     }
 }
