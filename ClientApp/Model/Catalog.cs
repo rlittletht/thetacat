@@ -404,6 +404,11 @@ public class Catalog : ICatalog
         }
     }
 
+    public void AddMediaToTopOfMediaStack(MediaStackType stackType, Guid stackId, Guid mediaId)
+    {
+        AddMediaToStackAtIndex(stackType, stackId, mediaId, null);
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: AddMediaToStackAtIndex
         %%Qualified: Thetacat.Model.Catalog.AddMediaToStackAtIndex
@@ -411,7 +416,7 @@ public class Catalog : ICatalog
         Add at the given index. If the index isn't already occupied, then we're
         done. otherwise, all items are pushed to make room
     ----------------------------------------------------------------------------*/
-    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int? indexRequested)
     {
         MediaStacks stacks = m_mediaStacks[stackType];
 
@@ -443,6 +448,8 @@ public class Catalog : ICatalog
 
             maxIndexSeen = Math.Max(maxIndexSeen, item.StackIndex);
         }
+
+        int index = indexRequested ?? 0;
 
         bool pushNeeded = map.ContainsKey(index);
 
@@ -501,7 +508,6 @@ public class Catalog : ICatalog
         else
             throw new CatExceptionInternalFailure("unknown stack type");
     }
-
 #endregion
 
 }

@@ -55,6 +55,9 @@
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
                                   CommandParameter="{Binding}"/>
+                        <MenuItem Header="Open item stack"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.OpenItemsStack}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Toggle Top Of Stack"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ToggleTopOfStackItems}"
                                   CommandParameter="{Binding}"/>
@@ -75,7 +78,13 @@
                     <Image Source="{Binding Path=TileImage}"
                        Margin="5,5,5,5"
                        MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
+                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" 
+                           MouseMove="OnItemMouseMove" 
+                           AllowDrop="True"
+                           DragEnter="OnItemDragEnter"
+                           DragOver="OnItemDragOver"
+                           DragLeave="OnItemDragLeave" 
+                           Drop="OnItemDragDrop"/>
                     <StackPanel Orientation="Horizontal" Margin="6 6" HorizontalAlignment="Right"
                                 VerticalAlignment="Bottom" >
                         <StackPanel.Background>
@@ -84,10 +93,16 @@
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                         <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
                         <controls:TopOfStackAdornment Visibility="{Binding Path=TopOfStackAdornerVisibility}" />
+                        <controls:NotTopOfStackAdornment Visibility="{Binding Path=NotTopOfStackAdornerVisibility}" />
                     </StackPanel>
                 </Grid>
             </StackPanel>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsActiveDropTarget}" Value="True">
+                    <DataTrigger.Setters>
+                        <Setter Property="Background" Value="Blue" TargetName="ThePanel" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Selected}" Value="True">
                     <DataTrigger.Setters>
                         <Setter Property="Background" Value="Black" TargetName="ThePanel" />

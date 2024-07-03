@@ -2,7 +2,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 using Thetacat.Explorer.Commands;
+using Thetacat.Logging;
 
 namespace Thetacat.Explorer.UI;
 
@@ -17,6 +20,7 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
     public DeleteCommand? DeleteItems { get; set; }
     public ToggleTopOfStackCommand? ToggleTopOfStackItems { get; set; }
+    public OpenItemsStackCommand? OpenItemsStack { get; set; }
     public ResetCacheItemsCommand? ResetCacheItems { get; set; }
     public RotateItemsRightCommand? RotateItemsRight{ get; set; }
     public MirrorItemsCommand? MirrorItems { get; set; }
@@ -70,5 +74,6 @@ public class MediaExplorerModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new();
+
 
 }

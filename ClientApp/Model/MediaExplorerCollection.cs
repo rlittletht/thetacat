@@ -7,6 +7,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Media.Animation;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
@@ -15,6 +17,7 @@ using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
+using MessageBox = System.Windows.MessageBox;
 
 namespace Thetacat.Model;
 
@@ -50,6 +53,12 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         set => SetField(ref m_jumpDate, value);
     }
 
+    public bool ExpandMediaStacks
+    {
+        get => m_expandMediaStacks;
+        set => SetField(ref m_expandMediaStacks, value);
+    }
+
     public TimelineOrder TimelineOrder
     {
         get => m_timelineOrder;
@@ -76,10 +85,16 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         }
     }
 
+    public MediaStack StackForOrdering
+    {
+        get => m_stackForOrdering ?? throw new Exception("No stack for ordering");
+        set => m_stackForOrdering = value;
+    }
+
     public bool IsMediaDateTimeline => TimelineType.Equals(TimelineType.MediaDate);
     public bool IsImportDateTimeline => TimelineType.Equals(TimelineType.ImportDate);
-    public bool IsTimelineAscending => TimelineOrder.Equals(TimelineOrder.Ascending);
-    public bool IsTimelineDescending => TimelineOrder.Equals(TimelineOrder.Descending);
+    public bool IsTimelineAscending => TimelineOrder.Equals(TimelineOrder.DateAscending);
+    public bool IsTimelineDescending => TimelineOrder.Equals(TimelineOrder.DateDescending);
 
     // this is the master collection of explorer items. background tasks updating images will update
     // these items
@@ -88,6 +103,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     private FilterDefinition? m_filterDefinition;
 
     public bool DontRebuildTimelineOnFilterChange { get; set; } = false;
+
     public FilterDefinition? Filter
     {
         get => m_filterDefinition;
@@ -101,6 +117,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines => m_collection.TopCollection;
     private readonly Dictionary<Guid, LineItemOffset> m_mapLineItemOffsets = new();
+    private bool m_expandMediaStacks;
 
     public double PanelHeight => m_panelItemHeight;
 
@@ -125,6 +142,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         App.State.PreviewImageCache.ImageCacheUpdated += OnImageCacheUpdated;
     }
 
+    private MediaStack? m_stackForOrdering;
     private object m_lock = new object();
     private double m_leadingLabelWidth;
     private double m_explorerWidth;
@@ -271,7 +289,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         %%Function: QueueImageCacheLoadForMediaItems
         %%Qualified: Thetacat.Model.MediaExplorerCollection.QueueImageCacheLoadForMediaItems
 
-        This queues an image load into the cache for the media item. This 
+        This queues an image load into the cache for the media item. This
     ----------------------------------------------------------------------------*/
     public static void QueueImageCacheLoadForMediaItems(IReadOnlyCollection<MediaItem> mediaItems)
     {
@@ -349,7 +367,8 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         explorerItem.IsTrashItem = item.IsTrashItem;
         explorerItem.IsOffline = item.DontPushToCloud;
-        explorerItem.IsTopOfStack = false;
+        if (item.MediaStack != null || item.VersionStack != null)
+            explorerItem.SetStackInformation(item);
 
         item.PropertyChanged += ItemOnPropertyChanged;
         m_explorerItems.Add(item.ID, explorerItem);
@@ -363,6 +382,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         {
             explorerItem.TileImage = ImageCache.CreatePlaceholderImage($"uncached: '{item.VirtualPath}'", 11.0);
         }
+
         if (startNewSegment)
         {
             m_collection.AddSegment(null);
@@ -516,62 +536,136 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             return n;
 
         n = string.CompareOrdinal(left.Leaf, right.Leaf);
-        if (n != 0) 
+        if (n != 0)
             return n;
 
         return 1;
     }
 
+    public void ToggleExpandMediaStacks()
+    {
+        m_expandMediaStacks = !m_expandMediaStacks;
+        App.State.ActiveProfile.ExpandMediaStacksInExplorers = m_expandMediaStacks;
+        App.State.Settings.WriteSettings();
+
+        BuildTimelineFromMediaCatalog();
+    }
+
     public void BuildTimelineFromMediaCatalog()
+    {
+        IEnumerable<MediaItem> collection =
+            m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
+
+        BuildTimelineForMediaCollection(collection);
+    }
+
+    public void BuildTimelineForMediaCollection(IEnumerable<MediaItem> collection)
     {
         MicroTimer timer = new MicroTimer();
         MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");
 
-        // build a group by date
-        Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = new();
-
-        IEnumerable<MediaItem> collection =
-            m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
-
-        foreach (MediaItem item in collection)
-        {
-            DateTime dateTime = GetTimelineDateFromMediaItem(item);
-            DateTime date = dateTime.Date;
-
-            if (!dateGrouping.TryGetValue(date, out ICollection<ItemShort>? items))
-            {
-                items = new List<ItemShort>();
-                dateGrouping.Add(date, items);
-            }
-
-            items.Add(new ItemShort(dateTime, item));
-        }
-
-        IComparer<DateTime> comparer =
-            TimelineOrder.Equals(TimelineOrder.Descending)
-                ? Comparer<DateTime>.Create((x, y) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1)
-                : Comparer<DateTime>.Create((y, x) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
-
-        IComparer<ItemShort> comparerKvp =
-            TimelineOrder.Equals(TimelineOrder.Descending)
-                ? Comparer<ItemShort>.Create((y, x) => ItemShortComparer(x, y))
-                : Comparer<ItemShort>.Create((x, y) => ItemShortComparer(x, y));
-
-        ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet(comparer);
-
         Clear();
 
-        foreach (DateTime date in sortedDates)
+        if (TimelineOrder.Equals(TimelineOrder.DateDescending) || TimelineOrder.Equals(TimelineOrder.DateAscending))
         {
-            bool newSegment = true;
+            // build a group by date
+            Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = new();
 
-            ICollection<ItemShort> items = dateGrouping[date].ToImmutableSortedSet(comparerKvp);
-
-            foreach (ItemShort pair in items)
+            foreach (MediaItem item in collection)
             {
-                MediaItem item = App.State.Catalog.GetMediaFromId(pair.ID);
-                AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
-                newSegment = false;
+                if (m_expandMediaStacks == false)
+                {
+                    bool? isMediaTop = null;
+                    bool? isVersionTop = null;
+
+                    // see if we should filter this out
+                    if (item.MediaStack != null)
+                    {
+                        if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
+                            isMediaTop = stack.IsItemTopOfStack(item.ID);
+                    }
+
+                    if (item.VersionStack != null)
+                    {
+                        if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
+                            isVersionTop = stack.IsItemTopOfStack(item.ID);
+                    }
+
+                    if (isMediaTop != null || isVersionTop != null)
+                    {
+                        if (isMediaTop is false && isVersionTop is not true)
+                            continue;
+
+                        if (isVersionTop is false && isMediaTop is not true)
+                            continue;
+                    }
+                }
+
+                DateTime dateTime = GetTimelineDateFromMediaItem(item);
+                DateTime date = dateTime.Date;
+
+                if (!dateGrouping.TryGetValue(date, out ICollection<ItemShort>? items))
+                {
+                    items = new List<ItemShort>();
+                    dateGrouping.Add(date, items);
+                }
+
+                items.Add(new ItemShort(dateTime, item));
+            }
+
+            IComparer<DateTime> comparer;
+            IComparer<ItemShort> comparerKvp;
+
+            if (TimelineOrder.Equals(TimelineOrder.DateDescending))
+            {
+                comparer = Comparer<DateTime>.Create((x, y) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
+                comparerKvp = Comparer<ItemShort>.Create((y, x) => ItemShortComparer(x, y));
+            }
+            else
+            {
+                comparer = Comparer<DateTime>.Create((y, x) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
+                comparerKvp = Comparer<ItemShort>.Create((x, y) => ItemShortComparer(x, y));
+            }
+
+            ImmutableSortedSet<DateTime> sortedDates = dateGrouping.Keys.ToImmutableSortedSet(comparer);
+
+            foreach (DateTime date in sortedDates)
+            {
+                bool newSegment = true;
+
+                ICollection<ItemShort> items = dateGrouping[date].ToImmutableSortedSet(comparerKvp);
+
+                foreach (ItemShort pair in items)
+                {
+                    MediaItem item = App.State.Catalog.GetMediaFromId(pair.ID);
+                    AddToExplorerCollection(item, newSegment, date.ToString("MMM dd, yyyy"));
+                    newSegment = false;
+                }
+            }
+        }
+        else if (TimelineOrder == TimelineOrder.StackOrder)
+        {
+            IComparer<MediaItem> mediaComparer = Comparer<MediaItem>.Create
+            (
+                (x, y) =>
+                {
+                    int iLeft = StackForOrdering.FindMediaInStack(x.ID)?.StackIndex ?? 0;
+                    int iRight = StackForOrdering.FindMediaInStack(y.ID)?.StackIndex ?? 0;
+
+                    int d = iLeft - iRight;
+                    return d < 0 ? d : d + 1;
+                });
+
+            ImmutableSortedSet<MediaItem> sortedItems = collection.ToImmutableSortedSet(mediaComparer);
+
+            // stack order just sorts by the stack index. no grouping
+            bool firstSegment = true;
+
+            foreach (MediaItem item in sortedItems)
+            {
+                MediaStackItem? stackItem = StackForOrdering.FindMediaInStack(item.ID);
+                AddToExplorerCollection(item, firstSegment, $"stack {StackForOrdering.Description}");
+                firstSegment = false;
             }
         }
 
@@ -581,7 +675,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     public void ResetTimeline()
     {
         TimelineType = TimelineType.None;
-        TimelineOrder = TimelineOrder.Ascending;
+        TimelineOrder = TimelineOrder.DateAscending;
         Clear();
     }
 

@@ -4,20 +4,24 @@ namespace Thetacat.Types;
 
 public class TimelineOrder
 {
-    public static readonly TimelineOrder Ascending = new TimelineOrder(s_AscendingType);
-    public static readonly TimelineOrder Descending = new TimelineOrder(s_DescendingType);
+    public static readonly TimelineOrder DateAscending = new TimelineOrder(s_DateAscendingType);
+    public static readonly TimelineOrder DateDescending = new TimelineOrder(s_DateDescendingType);
+    public static readonly TimelineOrder StackOrder = new TimelineOrder(s_StackOrder);
+
     public static readonly TimelineOrder None = new TimelineOrder(s_NoneType);
 
     public const int s_NoneType = 0;
-    public const int s_AscendingType = 1;
-    public const int s_DescendingType = 2;
+    public const int s_DateAscendingType = 1;
+    public const int s_DateDescendingType = 2;
+    public const int s_StackOrder = 3;
 
     // NOTE: If you add a type here, you have to adjust DescendingItem.Stacks[] to include an additional null
     private static readonly string[] s_timelineTypes =
     {
         "none",
         "ascending",
-        "descending"
+        "descending",
+        "stack"
     };
 
     private readonly int m_type;

@@ -51,6 +51,7 @@ public class TcSettings
                             .AddChildElement("Timeline")
                             .AddAttribute("Type", (_, context) => context!.GetDictionaryValue<string, Profile>().TimelineType, (_, value, context) => context!.GetDictionaryValue<string, Profile>().TimelineType = value)
                             .AddAttribute("Order", (_, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder, (_, value, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder = value)
+                            .AddAttribute("ExpandStackItems", (_, context) => context!.GetDictionaryValue<string, Profile>().ExpandMediaStacksInExplorers?.ToString() ?? "false", (_, value, context) => context!.GetDictionaryValue<string, Profile>().ExpandMediaStacksInExplorers = bool.Parse(value))
                             .AddElement("MetatagMru")
                                 .AddChildElement("Tag", (_, context) => (string?)context?.RepeatKey, (_, value, context) => context!.RepeatKey = value ?? "")
                                 .SetRepeating(CreateMetatagMruRepeatContext, AreRemainingMetatagMru, CommitMetatagMruRepeatItem, (settings) => settings.MetatagMruEnumerator = null)

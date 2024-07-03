@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
@@ -100,22 +101,53 @@ public class MediaItem : INotifyPropertyChanged
         null
     };
 
+    public void OnStackCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        TriggerItemDirtied();
+    }
+
+    void SetStackForStackType(ICatalog catalog, Guid? stackId, MediaStackType type)
+    {
+        if (EqualityComparer<Guid?>.Default.Equals(Stacks[type], stackId)) return;
+
+        MediaStacks catalogStacks =
+            type == MediaStackType.Version
+            ? catalog.VersionStacks
+            : catalog.MediaStacks;
+
+        // if there was already a version stack, make sure to remove any registered event
+        // handle for the collection change
+        if (Stacks[type] != null)
+        {
+            MediaStack stack = catalogStacks.Items[Stacks[type]!.Value];
+            stack.CollectionChanged -= OnStackCollectionChanged;
+        }
+
+        // and now register out  event handler for collection changes
+        if (stackId != null)
+        {
+            MediaStack stack = catalogStacks.Items[stackId.Value];
+            stack.CollectionChanged += OnStackCollectionChanged;
+        }
+
+        Stacks[type] = stackId;
+        if (type == MediaStackType.Version) 
+            OnPropertyChanged(nameof(VersionStack));
+        else
+            OnPropertyChanged(nameof(MediaStack));
+
+        if (stackId != null)
+            VerifyMediaInMediaStack(catalogStacks, stackId.Value);
+    }
+
     public void SetVersionStackVerify(ICatalog catalog, Guid? stackId)
     {
-        if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Version], stackId)) return;
-        Stacks[MediaStackType.Version] = stackId;
-        OnPropertyChanged("VersionStack");
-        if (stackId != null)
-            VerifyMediaInMediaStack(catalog.VersionStacks, stackId.Value);
+        SetStackForStackType(catalog, stackId, MediaStackType.Version);
     }
 
     public void SetMediaStackVerify(ICatalog catalog, Guid? stackId)
     {
-        if (EqualityComparer<Guid?>.Default.Equals(Stacks[MediaStackType.Media], stackId)) return;
-        Stacks[MediaStackType.Media] = stackId;
-        OnPropertyChanged("MediaStack");
-        if (stackId != null)
-            VerifyMediaInMediaStack(catalog.MediaStacks, stackId.Value);
+        SetStackForStackType(catalog, stackId, MediaStackType.Media);
     }
 
     public Guid? VersionStack
@@ -596,10 +628,6 @@ public class MediaItem : INotifyPropertyChanged
             VectorClock++;
 
         if (!identicalExisting)
-            TriggerItemDirtied();
-//            App.State.SetCollectionDirtyState(true);
-
-        if (!identicalExisting)
             OnPropertyChanged(nameof(Tags));
 
         return !identicalExisting;
@@ -753,7 +781,6 @@ public class MediaItem : INotifyPropertyChanged
 #endregion
 
 #region Stacks
-
 #endregion
 
 #region INotifyPropertyChanged
@@ -762,6 +789,7 @@ public class MediaItem : INotifyPropertyChanged
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
+        TriggerItemDirtied();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
@@ -769,6 +797,7 @@ public class MediaItem : INotifyPropertyChanged
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
+        TriggerItemDirtied();
         OnPropertyChanged(propertyName);
         return true;
     }
