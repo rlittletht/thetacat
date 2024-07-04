@@ -8,49 +8,12 @@ using Thetacat.Model;
 
 namespace Thetacat.Explorer.UI;
 
-public class MediaItemZoomModel : INotifyPropertyChanged
+public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
 {
     public ObservableCollection<MediaTag> Tags { get; } = new ObservableCollection<MediaTag>();
     private MediaItem? m_mediaItem;
     private BitmapSource? m_image;
     private string m_pruneModeCaption = "Start Pruning";
-
-    private bool m_isTrashItem;
-    private Visibility m_trashAdornerVisibility;
-    private bool m_isOffline;
-    private Visibility m_offlineAdornerVisibility;
-
-    public bool IsTrashItem
-    {
-        get => m_isTrashItem;
-        set
-        {
-            SetField(ref m_isTrashItem, value);
-            TrashAdornerVisibility = m_isTrashItem ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public bool IsOffline
-    {
-        get => m_isOffline;
-        set
-        {
-            SetField(ref m_isOffline, value);
-            OfflineAdornerVisibility = m_isOffline ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public Visibility OfflineAdornerVisibility
-    {
-        get => m_offlineAdornerVisibility;
-        private set => SetField(ref m_offlineAdornerVisibility, value);
-    }
-
-    public Visibility TrashAdornerVisibility
-    {
-        get => m_trashAdornerVisibility;
-        private set => SetField(ref m_trashAdornerVisibility, value);
-    }
 
     public string PruneModeCaption
     {
@@ -77,7 +40,7 @@ public class MediaItemZoomModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    protected override bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;

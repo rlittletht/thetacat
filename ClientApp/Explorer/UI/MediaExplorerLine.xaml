@@ -93,6 +93,7 @@
                         <StackPanel.Background>
                             <SolidColorBrush Color="AntiqueWhite" Opacity="0.7"/>
                         </StackPanel.Background>
+                        <controls:PendingUploadAdornment Visibility="{Binding Path=PendingUploadAdornerVisibility}" />
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                         <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
                         <controls:TopOfStackAdornment Visibility="{Binding Path=TopOfStackAdornerVisibility}" />

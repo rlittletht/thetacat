@@ -36,10 +36,8 @@
             </StackPanel>
             <Grid Grid.Row="1">
                 <Image Source="{Binding Path=Image}"
-                       Margin="5,5,5,5"
-                       MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                <StackPanel Orientation="Horizontal" Margin="15 10" HorizontalAlignment="Right"
+                       Margin="5,5,5,5" />
+                <StackPanel Orientation="Horizontal" Margin="25 15" HorizontalAlignment="Right"
                             VerticalAlignment="Top">
                     <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                     <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />

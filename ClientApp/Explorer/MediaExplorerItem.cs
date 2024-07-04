@@ -10,91 +10,20 @@ using Thetacat.Types;
 
 namespace Thetacat.Explorer;
 
-public class MediaExplorerItem : INotifyPropertyChanged
+public class MediaExplorerItem : UI.ItemAdorners, INotifyPropertyChanged
 {
     private Guid m_mediaId;
     private string m_tileSrc;
     public string m_tileLabel;
     private BitmapSource? m_tileImage;
     private bool m_selected;
-    private bool m_isTrashItem;
-    private bool m_isTopOfStack = false;
-    private bool m_isNotTopOfStack = false;
-    private Visibility m_trashAdornerVisibility;
-    private Visibility m_topOfStackAdornerVisibility = Visibility.Collapsed;
-    private Visibility m_notTopOfStackAdornerVisibility = Visibility.Collapsed;
-    private bool m_isOffline;
-    private Visibility m_offlineAdornerVisibility;
+
     private bool m_isActiveDropTarget = false;
 
     public bool IsActiveDropTarget
     {
         get => m_isActiveDropTarget;
         set => SetField(ref m_isActiveDropTarget, value);
-    }
-
-    public bool IsTrashItem
-    {
-        get => m_isTrashItem;
-        set
-        {
-            SetField(ref m_isTrashItem, value);
-            TrashAdornerVisibility = m_isTrashItem ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public bool IsTopOfStack
-    {
-        get => m_isTopOfStack;
-        set
-        {
-            SetField(ref m_isTopOfStack, value);
-            TopOfStackAdornerVisibility = m_isTopOfStack ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public bool IsNotTopOfStack
-    {
-        get => m_isNotTopOfStack;
-        set
-        {
-            SetField(ref m_isNotTopOfStack, value);
-            NotTopOfStackAdornerVisibility = m_isNotTopOfStack ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public bool IsOffline
-    {
-        get => m_isOffline;
-        set
-        {
-            SetField(ref m_isOffline, value);
-            OfflineAdornerVisibility = m_isOffline ? Visibility.Visible : Visibility.Collapsed;
-        }
-    }
-
-    public Visibility OfflineAdornerVisibility
-    {
-        get => m_offlineAdornerVisibility;
-        private set => SetField(ref m_offlineAdornerVisibility, value);
-    }
-
-    public Visibility TrashAdornerVisibility
-    {
-        get => m_trashAdornerVisibility;
-        private set => SetField(ref m_trashAdornerVisibility, value);
-    }
-
-    public Visibility TopOfStackAdornerVisibility
-    {
-        get => m_topOfStackAdornerVisibility;
-        private set => SetField(ref m_topOfStackAdornerVisibility, value);
-    }
-
-    public Visibility NotTopOfStackAdornerVisibility
-    {
-        get => m_notTopOfStackAdornerVisibility;
-        private set => SetField(ref m_notTopOfStackAdornerVisibility, value);
     }
 
     public bool Selected
@@ -211,7 +140,7 @@ public class MediaExplorerItem : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    protected override bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;

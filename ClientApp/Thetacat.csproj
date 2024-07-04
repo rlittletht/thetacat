@@ -52,6 +52,9 @@
     <Compile Update="UI\Controls\BackedTreeViewControl\BackedTreeView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="UI\Controls\PendingUploadAdornment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="UI\Controls\OfflineAdornment.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

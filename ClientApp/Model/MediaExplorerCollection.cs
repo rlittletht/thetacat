@@ -367,6 +367,8 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         explorerItem.IsTrashItem = item.IsTrashItem;
         explorerItem.IsOffline = item.DontPushToCloud;
+        explorerItem.IsUploadPending = item.State == MediaItemState.Pending;
+
         if (item.MediaStack != null || item.VersionStack != null)
             explorerItem.SetStackInformation(item);
 
