@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using Thetacat.Explorer.UI;
 using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Standards;
+using Thetacat.UI.Controls;
 using Thetacat.Util;
 
 namespace Thetacat.Explorer;
@@ -65,6 +67,50 @@ public partial class ApplyMetatag : Window
         return checkedAndIndeterminate;
     }
 
+    public HashSet<string> GetExpandedTreeItems(MetatagTreeView metatagTree)
+    {
+        HashSet<string> expandedTreeItems = new HashSet<string>();
+
+        foreach (object? item in metatagTree.Tree.Items)
+        {
+            if (item is IMetatagTreeItem metatagTreeItem)
+            {
+                metatagTreeItem.Preorder(
+                    null,
+                    (child, parent, depth) =>
+                    {
+                        if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem { IsExpanded: true })
+                            expandedTreeItems.Add(child.ID);
+                    },
+                    0);
+            }
+        }
+
+        return expandedTreeItems;
+    }
+
+    public void RestoreExpandedTreeItems(MetatagTreeView metatagTree, HashSet<string> expandedTreeItems)
+    {
+        foreach (object? item in metatagTree.Tree.Items)
+        {
+            if (item is IMetatagTreeItem metatagTreeItem)
+            {
+                metatagTreeItem.Preorder(
+                    null,
+                    (child, parent, depth) =>
+                    {
+                        if (expandedTreeItems.Contains(child.ID))
+                        {
+                            if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem treeItem)
+                                treeItem.IsExpanded = true;
+                        }
+                    },
+                    0);
+            }
+        }
+    }
+
+
     public static Dictionary<string, bool?> GetCheckedAndIndetermineFromMediaSet(List<MediaItem> mediaItems)
     {
         List<Metatag> tagsIndeterminate = new();
@@ -109,10 +155,19 @@ public partial class ApplyMetatag : Window
         List<Metatag> tagsIndeterminate = new();
         List<Metatag> tagsSet = new();
 
+        HashSet<string> expandedApply = GetExpandedTreeItems(Metatags);
+        HashSet<string> expandedApplied = GetExpandedTreeItems(MetatagsApplied);
+
         FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
 
         Set(schema, tagsSet, tagsIndeterminate);
         model.SelectedItemsVectorClock = vectorClock;
+
+        if (expandedApply.Count > 0)
+            RestoreExpandedTreeItems(Metatags, expandedApply);
+
+        if (expandedApplied.Count > 0)
+            RestoreExpandedTreeItems(MetatagsApplied, expandedApplied);
     }
 
     private void DoApply(object sender, RoutedEventArgs e)

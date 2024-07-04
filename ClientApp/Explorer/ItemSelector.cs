@@ -76,7 +76,7 @@ public class ItemSelector
         }
     }
 
-    void NotifySelectionChanged()
+    public void NotifySelectionChanged()
     {
         m_itemsSelectedVectorClock++;
         m_onSelectionChanged(m_itemsSelected);

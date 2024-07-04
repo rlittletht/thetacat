@@ -506,6 +506,9 @@ public partial class MediaExplorer : UserControl
         List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
 
         RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
+
+        // and now invalidate the selection to make sure we update the metatag panel
+        m_selector.NotifySelectionChanged();
     }
 
     private void ApplyMenuTagToSelectedItems(ExplorerMenuTag? menuTag)
@@ -516,5 +519,8 @@ public partial class MediaExplorer : UserControl
         List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
         MediaTag mediaTag = MediaTag.CreateMediaTag(schema, menuTag.MediaTagId, null);
         SetMediatagForMedia(mediaTag, mediaItems);
+
+        // and now invalidate the selection to make sure we update the metatag panel
+        m_selector.NotifySelectionChanged();
     }
 }
