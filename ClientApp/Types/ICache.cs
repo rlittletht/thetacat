@@ -22,4 +22,5 @@ public interface ICache
     public string? TryGetCachedFullPath(Guid id);
     public void DeleteMediaItem(Guid id);
     public string GetFullLocalPath(PathSegment itemPath);
+    public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal);
 }

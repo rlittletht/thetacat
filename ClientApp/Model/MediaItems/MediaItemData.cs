@@ -21,7 +21,7 @@ public class MediaItemData : INotifyPropertyChanged
 #pragma warning disable format // @formatter:off
 
     public string MimeType                           { get => m_mimeType;    set => SetField(ref m_mimeType, value); }
-    public Guid ID                                   { get => m_id;          private set => SetField(ref m_id, value); }
+    public Guid ID                                   { get => m_id;          set => SetField(ref m_id, value); }
     public PathSegment VirtualPath                   { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
     public string MD5                                { get => m_md5;         set => SetField(ref m_md5, value); }
     public MediaItemState State                      { get => m_state;       set => SetField(ref m_state, value); }

@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Thetacat.Model;
+using Thetacat.Types;
 using Thetacat.Util;
 
 namespace Thetacat.Explorer.UI
@@ -24,7 +25,10 @@ namespace Thetacat.Explorer.UI
     {
         private readonly SelectStackModel _model = new SelectStackModel();
 
-        private MediaItem m_itemStackingWith;
+        private MediaItem? m_itemStackingWith;
+
+        private MediaItem _ItemStackingWith => m_itemStackingWith ?? throw new CatExceptionInternalFailure("no stacking item specified");
+
 
         public SelectStack()
         {
@@ -46,15 +50,15 @@ namespace Thetacat.Explorer.UI
             {
                 bool fMediaStack = _model.CurrentType.Equals(MediaStackType.Media);
 
-                if ((fMediaStack && m_itemStackingWith.MediaStack != null)
-                    || (!fMediaStack && m_itemStackingWith.VersionStack != null))
+                if ((fMediaStack && _ItemStackingWith.MediaStack != null)
+                    || (!fMediaStack && _ItemStackingWith.VersionStack != null))
                 {
                     MediaStack existing =
                         fMediaStack
-                            ? App.State.Catalog.MediaStacks.Items[m_itemStackingWith.MediaStack!.Value]
-                            : App.State.Catalog.VersionStacks.Items[m_itemStackingWith.VersionStack!.Value];
+                            ? App.State.Catalog.MediaStacks.Items[_ItemStackingWith.MediaStack!.Value]
+                            : App.State.Catalog.VersionStacks.Items[_ItemStackingWith.VersionStack!.Value];
 
-                    MediaStackItem? existingStackItem = existing.FindMediaInStack(m_itemStackingWith.ID);
+                    MediaStackItem? existingStackItem = existing.FindMediaInStack(_ItemStackingWith.ID);
 
                     if (existingStackItem == null)
                     {

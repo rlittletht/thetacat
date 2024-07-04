@@ -20,6 +20,7 @@ public interface ICatalog
     public IEnumerable<MediaItem> GetMediaCollection();
     public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter);
     public ObservableCollection<MediaItem> GetObservableCollection();
+    public MediaItem? CreateVersionBasedOn(ICache cache, MediaItem based);
 
     public MediaStacks GetStacksFromType(MediaStackType stackType);
     public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null);

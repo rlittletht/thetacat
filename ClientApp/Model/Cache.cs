@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
@@ -17,6 +18,23 @@ using Thetacat.Util;
 
 namespace Thetacat.Model;
 
+/*----------------------------------------------------------------------------
+    %%Class: Cache
+    %%Qualified: Thetacat.Model.Cache
+
+    This is the local cache (private or workgroup -- private is NYI) for the
+    catalog. If you need to look at a copy of the real image, this is where
+    you look.
+
+    If an item is marked as "don't copy to cloud", then the cache is the only
+    copy of the item. Otherwise, these are all offline copies of what is in
+    azure storage.
+
+    TODO: In the future, we will look for local changes to files that make them
+    different than what is in azure storage -- this will allow us to notice
+    offline editing and signal that we should update metadata, hashes, and
+    upload a new copy to azure storage.
+----------------------------------------------------------------------------*/
 public class Cache : ICache
 {
     public enum CacheType
@@ -192,6 +210,9 @@ public class Cache : ICache
 
         if (Path.Exists(fullPath.Local))
         {
+            if (string.IsNullOrEmpty(md5))
+                return false;
+
             exists = true;
             // yikes. file already exists
             // last chance...is it already the file we want? (check the MD5 hash)
@@ -213,6 +234,58 @@ public class Cache : ICache
             throw new CatExceptionInternalFailure("couldn't generate unique name when guid was allowed!");
 
         return unique;
+    }
+
+    public delegate bool IsPathOkToUseDelegate(PathSegment test, string md5, out bool exists);
+
+    public static PathSegment? GetUniqueLocalNameDerivative(PathSegment existingFile, string? suffix, IsPathOkToUseDelegate? pathOk = null)
+    {
+        pathOk ??= OkToUseLocalPathForItem;
+
+        if (pathOk(existingFile, string.Empty, out _))
+            throw new CatExceptionInternalFailure("trying to get unique name for existing item that doesn't exist");
+
+        string extension = Path.GetExtension(existingFile);
+
+        PathSegment check = new PathSegment(existingFile);
+        PathSegment baseCheck;
+
+        if (string.IsNullOrEmpty(suffix))
+            suffix = "";
+        else
+            suffix = $"-{suffix}";
+
+        Regex rex = new Regex($"^(.*){suffix}\\((\\d+)\\){extension}$", RegexOptions.IgnoreCase);
+
+        MatchCollection matches = rex.Matches(check);
+
+        int nextCount = 1;
+
+        if (matches.Count == 0)
+        {
+            // no suffix yet
+            baseCheck = new PathSegment(Path.ChangeExtension(check, null));
+        }
+        else
+        {
+            if (matches[0].Groups.Count != 3)
+                throw new CatExceptionInternalFailure("bad match count");
+
+            nextCount = int.Parse(matches[0].Groups[2].Value) + 1;
+            baseCheck = new PathSegment(matches[0].Groups[1].Value);
+        }
+
+        check = new PathSegment($"{baseCheck}{suffix}({nextCount}){extension}");
+        while (!pathOk(check, string.Empty, out _) && nextCount < 100)
+        {
+            nextCount++;
+            check = new PathSegment($"{baseCheck}{suffix}({nextCount}){extension}");
+        }
+
+        if (nextCount == 100)
+            return null;
+
+        return check;
     }
 
     public static PathSegment? EnsureUniqueLocalCacheVirtualPath(
@@ -325,6 +398,11 @@ public class Cache : ICache
         return false;
     }
 
+    public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal)
+    {
+        return PathSegment.GetRelativePath(LocalPathToCacheRoot, fullLocal);
+    }
+
     public string GetFullLocalPath(PathSegment localSegment)
     {
         return PathSegment.Join(LocalPathToCacheRoot, localSegment).Local;
@@ -342,7 +420,7 @@ public class Cache : ICache
     {
         // we still have to make an entry in the cache db
         // since we are manually caching it right now, set the time to now and pending to false)
-        _Workgroup.CreateCacheEntryForItem(App.State.Cache, item, DateTime.Now, false);
+        _Workgroup.CreateCacheEntryForItem(this, item, DateTime.Now, false);
         // now get the destination path it wants us to use
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");

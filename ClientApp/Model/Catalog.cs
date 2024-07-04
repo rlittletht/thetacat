@@ -8,6 +8,7 @@ using System.Security.Permissions;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Filtering;
+using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
@@ -62,6 +63,7 @@ public class Catalog : ICatalog
         MediaStacks.Clear();
         TriggerItemDirtied(false);
     }
+
     private void TriggerItemDirtied(bool fDirty)
     {
         if (OnItemDirtied != null)
@@ -80,6 +82,123 @@ public class Catalog : ICatalog
             AddToVirtualLookup(m_virtualLookupTable, item);
 
         ThreadContext.InvokeOnUiThread(() => AddToObservableCollection(item));
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: CreateVersionBasedOn
+        %%Qualified: Thetacat.Model.Catalog.CreateVersionBasedOn
+
+        Create a new media item based on the given media item.
+
+        plan:
+            create a version stack if necessary
+            create a new media item, duplicating:
+                all metatags EXCEPT IsTrashItem, ImportDate
+            reset ImportDate to now
+            determine where in the stack the given item is
+            insert the new item into the stack right after the given item
+            add new media item to catalog
+
+        TODO: How to get it marked for upload? We've done most of the import
+        work already
+
+        TODO: Watch the filesystem for file changes? Need to be able to do this
+        quickly, so use last write time / file size before we check the hash
+        which would be slow. (Do we cache the write time / file size in the
+        workgroup DB? we need to).
+
+        If we have a mismatch, we need to reread the metatadata (specifically
+        looking for date changes and dimensions). Then we need to add all those
+        changes to the database.
+
+        This is similar to the idea of automatically adding media when the
+        directory changes, but this will only look for files that are already in the
+        database (look up the path and match it with the workgroup DB).
+
+        We *could* do the dir scan as well by just getting the contents of the dir
+        and those files that don't match an existing WG item can  be marked as "need
+        to import"
+    ----------------------------------------------------------------------------*/
+    public MediaItem? CreateVersionBasedOn(ICache cache, MediaItem based)
+    {
+        // before we do any of this, we have to have a real local copy of the file
+        string? localFile = cache.TryGetCachedFullPath(based.ID);
+
+        if (localFile == null)
+        {
+            MessageBox.Show(
+                "Can't create a new version without a local copy of the image. Please make sure the cache is up to date before trying to edit a new version");
+            return null;
+        }
+
+        PathSegment basedPath = new PathSegment(localFile);
+        PathSegment? newFile = Cache.GetUniqueLocalNameDerivative(basedPath, "edited");
+
+        if (newFile == null)
+        {
+            MessageBox.Show($"Can't create a new file for {localFile}.");
+            return null;
+        }
+
+        try
+        {
+            System.IO.File.Copy(localFile, newFile.Local);
+        }
+        catch (Exception exc)
+        {
+            MessageBox.Show($"Couldn't create new version: {newFile}. Copy failed: {exc.Message}");
+            return null;
+        }
+
+        MediaStack? stack = null;
+
+        if (based.VersionStack == null)
+        {
+            stack = new MediaStack(MediaStackType.Version, "version stack");
+            VersionStacks.AddStack(stack);
+
+            AddMediaToTopOfMediaStack(MediaStackType.Version, stack.StackId, based.ID);
+        }
+
+        if (based.VersionStack == null)
+            throw new CatExceptionInternalFailure("no version stack after creating version stack!");
+
+        stack = VersionStacks.Items[based.VersionStack.Value];
+        MediaStackItem? versionStackItem = stack.FindMediaInStack(based.ID);
+
+        if (versionStackItem == null)
+            throw new CatExceptionInternalFailure("can't find media in stack we just put it in!");
+
+        MediaItem newItem = MediaItem.CreateNewBasedOn(based);
+
+        if (based.MediaStack != null)
+        {
+            // need to add this new item to the media stack
+            MediaStack stackOther = MediaStacks.Items[based.MediaStack.Value];
+            MediaStackItem? stackItem = stackOther.FindMediaInStack(based.ID);
+
+            if (stackItem != null)
+            {
+                // remember stack indexes are just arbitrary values, and items will 'push away' if we try to insert
+                // a duplicate item. so we can safely just add 1 here.
+                AddMediaToStackAtIndex(MediaStackType.Media, stackOther.StackId, newItem.ID, stackItem.StackIndex + 1);
+            }
+        }
+
+        // now update some metatags
+        newItem.ImportDate = DateTime.Now;
+        newItem.FRemoveMediaTag(BuiltinTags.s_IsTrashItemID);
+        newItem.VirtualPath = cache.GetRelativePathToCacheRootFromFullPath(newFile);
+
+        AddNewMediaItem(newItem);
+
+        // we can't add it to the version stack until its part of the catalog
+        AddMediaToStackAtIndex(MediaStackType.Version, stack.StackId, newItem.ID, versionStackItem.StackIndex + 1);
+
+        MediaImporter.PrePopulateCacheForLocalPath(cache, newFile, newItem);
+        // be sure to push the changes to the database!
+        cache.PushChangesToDatabase(null);
+        return new MediaItem();
     }
 
     void OnMediaItemDirtied(object? sender, DirtyItemEventArgs<Guid> e)
@@ -112,8 +231,8 @@ public class Catalog : ICatalog
             item.Value.PushPendingChanges(
                 catalogID,
                 verify == null
-                ? null
-                : (count, _) => verify(count, itemType));
+                    ? null
+                    : (count, _) => verify(count, itemType));
         }
 
         TriggerItemDirtied(false);
@@ -122,10 +241,10 @@ public class Catalog : ICatalog
     private async Task<ServiceCatalog> GetFullCatalogAsync(Guid catalogID)
     {
         Task<List<ServiceMediaItem>> taskGetMedia =
-            Task.Run(()=>ServiceInterop.ReadFullCatalogMedia(catalogID));
+            Task.Run(() => ServiceInterop.ReadFullCatalogMedia(catalogID));
 
         Task<List<ServiceMediaTag>> taskGetMediaTags =
-            Task.Run(()=>ServiceInterop.ReadFullCatalogMediaTags(catalogID));
+            Task.Run(() => ServiceInterop.ReadFullCatalogMediaTags(catalogID));
 
         List<Task> tasks = new List<Task>() { taskGetMedia, taskGetMediaTags };
 
@@ -269,7 +388,7 @@ public class Catalog : ICatalog
         TriggerItemDirtied(true);
     }
 
-    #region Observable Collection Support
+#region Observable Collection Support
 
     private ObservableCollection<MediaItem>? m_observableView;
 
@@ -301,7 +420,7 @@ public class Catalog : ICatalog
 
 #endregion
 
-    #region Virtual Paths
+#region Virtual Paths
 
     private ConcurrentDictionary<string, MediaItem> m_virtualLookupTable = new ConcurrentDictionary<string, MediaItem>();
     private object m_virtualLookupTableLock = new Object();
@@ -379,9 +498,9 @@ public class Catalog : ICatalog
         return null;
     }
 
-    #endregion
+#endregion
 
-    #region Media Stacks
+#region Media Stacks
 
     private void AssociateStackWithMedia(MediaStack stack, MediaStackType stackType)
     {
@@ -508,6 +627,6 @@ public class Catalog : ICatalog
         else
             throw new CatExceptionInternalFailure("unknown stack type");
     }
-#endregion
 
+#endregion
 }

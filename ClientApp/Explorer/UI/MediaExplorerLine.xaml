@@ -49,6 +49,9 @@
                             </MenuItem.ItemTemplate>
                         </MenuItem>
                         <Separator />
+                        <MenuItem Header="Create and Edit new Version"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.EditNewVersion}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Show/Hide Metatag Panel"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
                                   CommandParameter="{Binding}"/>

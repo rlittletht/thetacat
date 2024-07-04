@@ -98,7 +98,9 @@ public class Stacks
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId}' AND catalog_id='{catalogID}'");
                 return updates;
             case MediaStack.Op.Update:
-                updates.Add($"UPDATE tcat_stacks SET description={SqlText.SqlifyQuoted(diff.Stack.Description)} WHERE id='{diff.Stack.StackId}' AND catalog_id='{catalogID}'");
+                updates.Add($"DELETE FROM tcat_stacks WHERE id='{diff.Stack.StackId}' AND catalog_id='{catalogID}'");
+                updates.Add(
+                    $"INSERT INTO tcat_stacks (catalog_id, id, stackType, description) VALUES ('{catalogID}','{diff.Stack.StackId}', {SqlText.SqlifyQuoted(diff.Stack.Type)}, {SqlText.SqlifyQuoted(diff.Stack.Description)})");
                 updates.Add($"DELETE FROM tcat_stackmedia WHERE id='{diff.Stack.StackId}' AND catalog_id='{catalogID}'");
                 AddInsertStackMediaToCommands(catalogID, diff, updates);
                 return updates;

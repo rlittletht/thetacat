@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -61,6 +62,25 @@ public class MediaItem : INotifyPropertyChanged
     public MediaItem(ServiceMediaItem item)
     {
         m_working = new MediaItemData(item);
+    }
+
+    public static MediaItem CreateNewBasedOn(MediaItem based)
+    {
+        MediaItem item = new MediaItem();
+
+        item.Data.State = MediaItemState.Pending;
+        item.Data.ID = Guid.NewGuid();
+        item.Data.MD5 = based.MD5;
+        item.Data.MimeType = based.MimeType;
+        item.Data.VirtualPath = based.VirtualPath;
+
+        // now clone the metatags
+        foreach (KeyValuePair<Guid, MediaTag> kvpTag in based.Tags)
+        {
+            item.FAddOrUpdateMediaTag(new MediaTag(kvpTag.Value.Metatag, kvpTag.Value.Value), false);
+        }
+
+        return item;
     }
 
     public void TriggerItemDirtied()

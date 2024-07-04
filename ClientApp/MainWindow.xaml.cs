@@ -161,6 +161,9 @@ public partial class MainWindow : Window
 
     public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
     {
+        if (InUnitTest)
+            return;
+
         if (_AsyncLog.ShouldLog(eventType))
         {
             ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);
@@ -172,6 +175,9 @@ public partial class MainWindow : Window
 
     public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
     {
+        if (InUnitTest)
+            return;
+
         if (_AppLog.ShouldLog(eventType))
         {
             ILogEntry entry = new LogEntry(eventType, log, correlationId?.ToString() ?? "", details);

@@ -196,6 +196,24 @@ public class MediaImporter
     #endregion
 
     #region Import Media
+
+    /*----------------------------------------------------------------------------
+        %%Function: PrePopulateCacheForLocalPath
+        %%Qualified: Thetacat.Import.MediaImporter.PrePopulateCacheForLocalPath
+
+        Same as PrePopulateCacheForItem (used in the import path), but takes a
+        path to a local file (used for created a new version based on)
+
+        REMEMBER to push the changes to the workgroup database using
+        cache.PushChangesToDatabase()
+    ----------------------------------------------------------------------------*/
+    public static void PrePopulateCacheForLocalPath(ICache cache, PathSegment fullLocal, MediaItem mediaItem)
+    {
+        cache.PrimeCacheFromImport(mediaItem, fullLocal);
+        mediaItem.NotifyCacheStatusChanged();
+    }
+
+
     /*----------------------------------------------------------------------------
         %%Function: PrePopulateCacheForItem
         %%Qualified: Thetacat.Import.MediaImporter.PrePopulateCacheForItem
@@ -204,11 +222,9 @@ public class MediaImporter
         doing the importing, we have the media already cached locally. we can
         populate the workgroup cache saving a download.
     ----------------------------------------------------------------------------*/
-    void PrePopulateCacheForItem(ImportItem item, MediaItem mediaItem)
+    public static void PrePopulateCacheForItem(ICache cache, ImportItem item, MediaItem mediaItem)
     {
-        // here we can pre-populate our cache.
-        App.State.Cache.PrimeCacheFromImport(mediaItem, PathSegment.Join(item.SourceServer, item.SourcePath));
-        mediaItem.NotifyCacheStatusChanged();
+        PrePopulateCacheForLocalPath(cache, PathSegment.Join(item.SourceServer, item.SourcePath), mediaItem);
     }
 
 
@@ -268,7 +284,8 @@ public class MediaImporter
         Guid catalogID, 
         IProgressReport report, 
         ICatalog catalog, 
-        MetatagSchema metatagSchema)
+        MetatagSchema metatagSchema,
+        ICache cache)
     {
         m_ignoreLogs.Clear();
         int total = ImportItems.Count;
@@ -328,7 +345,7 @@ public class MediaImporter
                     item.State = ImportItem.ImportState.PendingUpload;
 
                     // and handle prepopulating the cache since we have the media locally
-                    PrePopulateCacheForItem(item, mediaItem);
+                    PrePopulateCacheForItem(cache, item, mediaItem);
                 }
             }
             catch (Exception ex)
@@ -386,10 +403,10 @@ public class MediaImporter
 
         Do the actual import on a background thread with progress
     ----------------------------------------------------------------------------*/
-    public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema)
+    public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema, ICache cache)
     {
         ProgressDialog.DoWorkWithProgress(
-            (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema));
+            (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema, cache));
     }
     #endregion
 

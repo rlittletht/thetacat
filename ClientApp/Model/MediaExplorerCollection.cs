@@ -403,14 +403,26 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
     private void ItemOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (sender is MediaItem item && e.PropertyName == "Tags")
+        if (sender is MediaItem item)
         {
-            if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+            if (e.PropertyName == "Tags")
             {
-                MediaExplorerItem explorerItem = m_collection.GetItem(location.Line, location.Offset);
+                if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+                {
+                    MediaExplorerItem explorerItem = m_collection.GetItem(location.Line, location.Offset);
 
-                explorerItem.IsTrashItem = item.IsTrashItem;
-                explorerItem.IsOffline = item.DontPushToCloud;
+                    explorerItem.IsTrashItem = item.IsTrashItem;
+                    explorerItem.IsOffline = item.DontPushToCloud;
+                }
+            }
+            else if (e.PropertyName == "VersionStack" || e.PropertyName == "MediaStack")
+            {
+                if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+                {
+                    MediaExplorerItem explorerItem = m_collection.GetItem(location.Line, location.Offset);
+
+                    explorerItem.UpdateStackInformation();
+                }
             }
         }
     }

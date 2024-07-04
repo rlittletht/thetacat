@@ -15,7 +15,7 @@ public class ItemSelector
     private int m_itemsSelectedVectorClock = 0;
 
     public int VectorClock => m_itemsSelectedVectorClock;
-    public IEnumerable<MediaExplorerItem> SelectedItems => m_itemsSelected;
+    public IReadOnlyCollection<MediaExplorerItem> SelectedItems => m_itemsSelected;
 
     public ItemSelector(MediaExplorerCollection? collection, OnSelectionChangedDelegate onSelectionChanged)
     {

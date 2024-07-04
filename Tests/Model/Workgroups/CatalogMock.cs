@@ -49,6 +49,9 @@ public class CatalogMock : ICatalog
     public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter) => throw new NotImplementedException();
 
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
+    public MediaItem? CreateVersionBasedOn(ICache cache, MediaItem based) => throw new NotImplementedException();
+
+    public MediaItem CreateVersionBasedOn(MediaItem based) => throw new NotImplementedException();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
     public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)

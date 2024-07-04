@@ -17,7 +17,6 @@ public class TestCache
 
     private static void AddWorkMock(string description, BackgroundWorkerWork<bool> work)
     {
-
     }
 
 // StartBackgroundCaching is going to:
@@ -38,10 +37,14 @@ public class TestCache
         List<MediaItem> MediaItems_1_4 =
             new()
             {
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -89,10 +92,18 @@ public class TestCache
                     {
                         // there should be 2 items in this insert
                         Assert.IsTrue(new Regex($"{Match1Value},{Match1Value}").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media1.ToString()} *',[ ]*'media1.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media2.ToString()} *',[ ]*'media2.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media3.ToString()} *',[ ]*'media3.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media4.ToString()} *',[ ]*'media4.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media1.ToString()} *',[ ]*'media1.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media2.ToString()} *',[ ]*'media2.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media3.ToString()} *',[ ]*'media3.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media4.ToString()} *',[ ]*'media4.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
 
                         // make sure there aren't 5
                         Assert.IsFalse(new Regex($"{Match1Value},{Match1Value},{Match1Value},{Match1Value},{Match1Value}").IsMatch(query));
@@ -128,7 +139,7 @@ public class TestCache
             });
 
         cacheMock.QueueCacheDownloadsFromMedia(catalogMock.GetMediaCollection(), cacheMock, 4);
-        
+
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { TestMedia.mediaItem1, TestMedia.mediaItem2, TestMedia.mediaItem3, TestMedia.mediaItem4 });
     }
@@ -144,10 +155,14 @@ public class TestCache
         List<MediaItem> MediaItems_1_4 =
             new()
             {
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -195,8 +210,12 @@ public class TestCache
                     {
                         // there should be 2 items in this insert
                         Assert.IsTrue(new Regex($"{Match1Value},{Match1Value}").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media1.ToString()} *',[ ]*'media1.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media4.ToString()} *',[ ]*'media4.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)").IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media1.ToString()} *',[ ]*'media1.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media4.ToString()} *',[ ]*'media4.jpg',[ ]*' *{TestMedia.client1.ToString()}',[ ]*null,[ ]*2\\)")
+                               .IsMatch(query));
 
                         // make sure there aren't 5
                         Assert.IsFalse(new Regex($"{Match1Value},{Match1Value},{Match1Value},{Match1Value},{Match1Value}").IsMatch(query));
@@ -243,16 +262,20 @@ public class TestCache
         // in this test, the media database has 4 items. initially this client get's all 4 items to queue, but 
         // gets a coherency failure trying to update the WG DB. The DB has client2 caching the items 2 and 3,
         // which leaves us media items 1 and 4 to cache. 
-        
+
         CacheMock cacheMock = new CacheMock();
 
         List<MediaItem> MediaItems_1_4 =
             new()
             {
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -323,8 +346,12 @@ public class TestCache
                     {
                         // there should be 2 items in this insert
                         Assert.IsTrue(new Regex($"{Match1Value},{Match1Value}").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media1.ToString()}',[ ]*'media1.jpg',[ ]*'{TestMedia.client1.ToString()}',[ ]*null,[ ]*3\\)").IsMatch(query));
-                        Assert.IsTrue(new Regex($"\\('{TestMedia.media4.ToString()}',[ ]*'media4.jpg',[ ]*'{TestMedia.client1.ToString()}',[ ]*null,[ ]*3\\)").IsMatch(query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media1.ToString()}',[ ]*'media1.jpg',[ ]*'{TestMedia.client1.ToString()}',[ ]*null,[ ]*3\\)").IsMatch(
+                                query));
+                        Assert.IsTrue(
+                            new Regex($"\\('{TestMedia.media4.ToString()}',[ ]*'media4.jpg',[ ]*'{TestMedia.client1.ToString()}',[ ]*null,[ ]*3\\)").IsMatch(
+                                query));
 
                         // make sure there aren't 3
                         Assert.IsFalse(new Regex($"{Match1Value},{Match1Value},{Match1Value}").IsMatch(query));
@@ -376,10 +403,14 @@ public class TestCache
         List<MediaItem> MediaItems_1_4 =
             new()
             {
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
-                new MediaItem(new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                new MediaItem(
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -483,4 +514,47 @@ public class TestCache
         Assert.AreEqual(expected, Cache.IsCachePathLikeVirtualPath(localPathToCacheRoot, cachePath, virtualPath));
     }
 
+    [TestCase("//mock/server/dir/file.jpg", "edited", new String[] { "//mock/server/dir/file.jpg" }, "//mock/server/dir/file-edited(1).jpg")]
+    [TestCase("//mock/server/dir/file.jpg.png", "edited", new String[] { "//mock/server/dir/file.jpg.png" }, "//mock/server/dir/file.jpg-edited(1).png")]
+    [TestCase("//mock/server/dir/file(1).jpg", "edited", new String[] { "//mock/server/dir/file(1).jpg" }, "//mock/server/dir/file(1)-edited(1).jpg")]
+    [TestCase("//mock/server/dir/file-edited(1).jpg", "edited", new String[] { "//mock/server/dir/file-edited(1).jpg" }, "//mock/server/dir/file-edited(2).jpg")]
+    [TestCase("//mock/server/dir/file-edited(4).jpg", "edited", new String[] { "//mock/server/dir/file-edited(4).jpg" }, "//mock/server/dir/file-edited(5).jpg")]
+    [TestCase("//mock/server/dir/file-edited(4).jpg", "edited", new String[] { "//mock/server/dir/file-edited(4).jpg", "//mock/server/dir/file-edited(5).jpg" }, "//mock/server/dir/file-edited(6).jpg")]
+    [TestCase("//mock/server/dir/file -edited(1).jpg", "edited", new String[] { "//mock/server/dir/file -edited(1).jpg" }, "//mock/server/dir/file -edited(2).jpg")]
+    [TestCase("//mock/server/dir/file", "edited", new String[] { "//mock/server/dir/file" }, "//mock/server/dir/file-edited(1)")]
+    // and some test cases without a derivative leaf
+    [TestCase("//mock/server/dir/file.jpg", null, new String[] { "//mock/server/dir/file.jpg" }, "//mock/server/dir/file(1).jpg")]
+    [TestCase("//mock/server/dir/file.jpg.png", null, new String[] { "//mock/server/dir/file.jpg.png" }, "//mock/server/dir/file.jpg(1).png")]
+    [TestCase("//mock/server/dir/file(1).jpg", null, new String[] { "//mock/server/dir/file(1).jpg" }, "//mock/server/dir/file(2).jpg")]
+    [TestCase("//mock/server/dir/file-edited(1).jpg", null, new String[] { "//mock/server/dir/file-edited(1).jpg" }, "//mock/server/dir/file-edited(2).jpg")]
+    [TestCase("//mock/server/dir/file-edited(4).jpg", null, new String[] { "//mock/server/dir/file-edited(4).jpg" }, "//mock/server/dir/file-edited(5).jpg")]
+    [TestCase("//mock/server/dir/file-edited(4).jpg", null, new String[] { "//mock/server/dir/file-edited(4).jpg", "//mock/server/dir/file-edited(5).jpg" }, "//mock/server/dir/file-edited(6).jpg")]
+    [TestCase("//mock/server/dir/file -edited(1).jpg", null, new String[] { "//mock/server/dir/file -edited(1).jpg" }, "//mock/server/dir/file -edited(2).jpg")]
+    [TestCase("//mock/server/dir/file", null, new String[] { "//mock/server/dir/file" }, "//mock/server/dir/file(1)")]
+    [Test]
+    public static void TestGetUniqueLocalNameDerivative(string original, string? derivativeLeaf, string[] existingFiles, string expected)
+    {
+        PathSegment originalPath = new PathSegment(original);
+
+        PathSegment? derivativePath = Cache.GetUniqueLocalNameDerivative(
+            originalPath,
+            derivativeLeaf,
+            (PathSegment testPath, string md5, out bool exists) =>
+            {
+                string test = testPath;
+                foreach (string s in existingFiles)
+                {
+                    if (string.Compare(s, test, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        exists = true;
+                        return false;
+                    }
+                }
+
+                exists = false;
+                return true;
+            });
+
+        Assert.AreEqual(expected, derivativePath?.ToString() ?? "");
+    }
 }

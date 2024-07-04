@@ -344,7 +344,7 @@ public partial class MediaMigration : UserControl
                 pseItem.CatID = catalogItem.ID;
             });
 
-        importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
+        importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema, App.State.Cache);
         ProgressDialog.DoWorkWithProgress(report => DoRemainingPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
         // and lastly we have to add the items we just manually added to our cache

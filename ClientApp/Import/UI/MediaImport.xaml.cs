@@ -542,7 +542,7 @@ namespace Thetacat.Import.UI
                     }
                 });
 
-            m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
+            m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema, App.State.Cache);
 //            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
             // and lastly we have to add the items we just manually added to our cache

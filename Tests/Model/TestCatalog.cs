@@ -31,7 +31,7 @@ public class TestCatalog
         MediaStacks stacks = catalog.GetStacksFromType(MediaStackType.Version);
         MediaStack stack = stacks.CreateNewStack();
 
-        catalog.AddNewMediaItem(TestMedia.mediaItem1);
+        catalog.AddNewMediaItem(CreateItemWithStackIds(TestMedia.mediaItem1, null, null));
         catalog.AddMediaToStackAtIndex(MediaStackType.Version, stack.StackId, TestMedia.media1, 0);
 
         Dictionary<Guid, MediaStackItem> expected =

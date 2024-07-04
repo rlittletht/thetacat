@@ -14,6 +14,7 @@ using Thetacat.Types;
 using Thetacat.Explorer.Commands;
 using Thetacat.Util;
 using Thetacat.Explorer.UI;
+using Thetacat.Import;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Explorer;
@@ -32,7 +33,7 @@ public partial class MediaExplorer : UserControl
     public MediaExplorer()
     {
         InitializeComponent();
-           
+
         DataContext = Model;
         m_selector = new ItemSelector(null, UpdateMetatagPanelIfNecessary);
 
@@ -49,6 +50,7 @@ public partial class MediaExplorer : UserControl
         Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
         Model.ContextSelectPanel = new SelectPanelCommand(m_selector._ContextSelectPanel);
         Model.LaunchItem = new LaunchItemCommand(LaunchItem);
+        Model.EditNewVersion = new EditNewVersionCommand(_EditNewVersion);
         Model.RemoveMenuTag = new ProcessMenuTagCommand(RemoveMenuTagFromSelectedItems);
         Model.AddMenuTag = new ProcessMenuTagCommand(ApplyMenuTagToSelectedItems);
     }
@@ -77,13 +79,40 @@ public partial class MediaExplorer : UserControl
         return nextMediaItem;
     }
 
+    public void _EditNewVersion(MediaExplorerItem? context)
+    {
+        if (context == null)
+            return;
+
+        if (m_selector.SelectedItems.Count != 1)
+        {
+            MessageBox.Show("You must select exactly one item in order to create and edit a version");
+            return;
+        }
+
+        foreach (MediaExplorerItem item in m_selector.SelectedItems)
+        {
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
+
+            MediaItem? itemNew = App.State.Catalog.CreateVersionBasedOn(App.State.Cache, mediaItem);
+
+            if (itemNew != null)
+            {
+                // now we have to get this item into the cache and refresh the catalog
+                List<MediaItem> itemsToQueue = new() { itemNew };
+
+                MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+            }
+        }
+    }
+
     public void LaunchItem(MediaExplorerItem? context)
     {
         if (context == null)
             return;
 
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
-            
+
         MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem);
 
         zoom.Closing += OnMediaZoomClosing;
@@ -150,6 +179,7 @@ public partial class MediaExplorer : UserControl
                 m_applyMetatagPanel.Close();
                 m_applyMetatagPanel = null;
             }
+
             m_collection.Close();
             m_collection = null;
         }
@@ -230,7 +260,6 @@ public partial class MediaExplorer : UserControl
             m_applyMetatagPanel.UpdateForMedia(mediaItems, App.State.MetatagSchema, m_selector.VectorClock);
             MainWindow.LogForApp(EventType.Warning, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
         }
-
     }
 
     void RemoveMediatagFromMedia(Guid mediaTagID, IEnumerable<MediaItem> selectedItems)
@@ -289,7 +318,7 @@ public partial class MediaExplorer : UserControl
         {
             if (item.Value is true)
             {
-                if (!originalState.TryGetValue(item.Key, out bool? checkedState) 
+                if (!originalState.TryGetValue(item.Key, out bool? checkedState)
                     || checkedState == null
                     || checkedState == false)
                 {
@@ -333,7 +362,7 @@ public partial class MediaExplorer : UserControl
         foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
         {
             MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
-            
+
             try
             {
                 UnloadItemCaches(explorerItem);
@@ -420,9 +449,12 @@ public partial class MediaExplorer : UserControl
         {
             MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
 
+            MediaStack? stack =
+                    mediaItem.MediaStack != null ? App.State.Catalog.MediaStacks.Items[mediaItem.MediaStack.Value] :
+                    mediaItem.VersionStack != null ? App.State.Catalog.VersionStacks.Items[mediaItem.VersionStack.Value] : null;
 
-            StackExplorer.ShowStackExplorer(App.State.Catalog.MediaStacks.Items[mediaItem.MediaStack.Value]);
-
+            if (stack != null)
+                StackExplorer.ShowStackExplorer(stack);
         }
     }
 

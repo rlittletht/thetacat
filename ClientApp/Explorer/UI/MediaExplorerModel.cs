@@ -33,6 +33,7 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ProcessMenuTagCommand? AddMenuTag { get; set; }
 
     public LaunchItemCommand? LaunchItem { get; set; }
+    public EditNewVersionCommand? EditNewVersion { get; set; }
 
     public double PanelItemHeight
     {
