@@ -11,6 +11,7 @@ using Thetacat.Import.UI;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.UI;
@@ -41,7 +42,7 @@ public class MediaImporter
     private readonly ObservableCollection<ImportItem> ImportItems = new();
     private readonly HashSet<string> m_ignoreLogs = new();
 
-    #region Constructors
+#region Constructors
 
     /*----------------------------------------------------------------------------
         %%Function: MediaImporter.
@@ -89,10 +90,11 @@ public class MediaImporter
         Create an importer for this client -- it will have all the items that
         are pending upload and owned by this client
     ----------------------------------------------------------------------------*/
-    public MediaImporter(string clientSource)
+    public MediaImporter(ICache cache, string clientSource)
     {
         List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
         bool skippedItems = false;
+        CacheScanner scanner = new CacheScanner();
 
         foreach (ServiceImportItem item in items)
         {
@@ -120,6 +122,40 @@ public class MediaImporter
 
                 newItem.SkipWorkgroupOnlyItem = mediaItem.DontPushToCloud;
 
+                if (!newItem.SkipWorkgroupOnlyItem)
+                {
+                    // make sure the source item still exists. if it doesn't, we will try to get it from
+                    // the workgroup cache
+                    PathSegment fullPath = newItem.FullSourcePath;
+                    scanner.EnsureDirectoryLoadedForFile(fullPath);
+
+                    if (scanner.GetFileInfoForFile(fullPath) == null)
+                    {
+                        // file doesn't exist in the import location. this can happen if it was
+                        // removable media (since removed), or maybe too much time has passed from the import
+                        // and the upload.
+
+                        // try to get the file from the cache instead
+                        string? local = cache.TryGetCachedFullPath(item.ID);
+                        if (local != null)
+                        {
+                            fullPath = new PathSegment(local);
+                            scanner.EnsureDirectoryLoadedForFile(fullPath);
+                            if (scanner.GetFileInfoForFile(fullPath) == null)
+                            {
+                                // workgroup cache doesn't exist either
+                                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} in source location or cache location {fullPath}");
+                                skippedItems = true;
+                                newItem.State = ImportItem.ImportState.MissingFromCatalog;
+                            }
+                            else
+                            {
+                                newItem.SetPathsFromFullPath(fullPath);
+                            }
+                        }
+                    }
+                }
+
                 ImportItems.Add(newItem);
             }
         }
@@ -136,9 +172,11 @@ public class MediaImporter
             }
         }
     }
-    #endregion
 
-    #region Interactive
+#endregion
+
+#region Interactive
+
     /*----------------------------------------------------------------------------
         %%Function: ClearItems
         %%Qualified: Thetacat.Import.MediaImporter.ClearItems
@@ -157,8 +195,8 @@ public class MediaImporter
         Add the set of files to the importer. Interactive version
     ----------------------------------------------------------------------------*/
     public void AddMediaItemFilesToImporter(
-        IEnumerable<IMediaItemFile> files, 
-        string source, 
+        IEnumerable<IMediaItemFile> files,
+        string source,
         NotifyCatalogItemCreatedOrRepairedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
@@ -193,9 +231,10 @@ public class MediaImporter
         import.Owner = parentWindow;
         import.ShowDialog();
     }
-    #endregion
 
-    #region Import Media
+#endregion
+
+#region Import Media
 
     /*----------------------------------------------------------------------------
         %%Function: PrePopulateCacheForLocalPath
@@ -281,9 +320,9 @@ public class MediaImporter
         things in an incoherent state.
     ----------------------------------------------------------------------------*/
     private void CreateCatalogAndUpdateImportTableWork(
-        Guid catalogID, 
-        IProgressReport report, 
-        ICatalog catalog, 
+        Guid catalogID,
+        IProgressReport report,
+        ICatalog catalog,
         MetatagSchema metatagSchema,
         ICache cache)
     {
@@ -408,9 +447,11 @@ public class MediaImporter
         ProgressDialog.DoWorkWithProgress(
             (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema, cache));
     }
-    #endregion
 
-    #region Upload Media
+#endregion
+
+#region Upload Media
+
     /*----------------------------------------------------------------------------
         %%Function: UploadPendingMediaWork
         %%Qualified: Thetacat.Import.MediaImporter.UploadPendingMediaWork
@@ -432,7 +473,7 @@ public class MediaImporter
                     && !item.SourcePath.Local.EndsWith("MOV")
                     && !item.SkipWorkgroupOnlyItem)
                 {
-                    PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
+                    PathSegment path = item.FullSourcePath;
                     Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
 
                     task.Wait();
@@ -467,6 +508,10 @@ public class MediaImporter
                 }
             }
         }
+        catch (Exception ex)
+        {
+            MainWindow.LogForApp(EventType.Critical, $"Upload pending media failed: {ex.Message}");
+        }
         finally
         {
             progress.WorkCompleted();
@@ -489,5 +534,6 @@ public class MediaImporter
 
         App.State.AddBackgroundWork("Uploading pending media", UploadPendingMediaWork);
     }
-    #endregion
+
+#endregion
 }

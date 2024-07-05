@@ -47,7 +47,7 @@ public class CacheScanner
         EnsureDirectoryLoaded(dirPath, fRecurse);
     }
 
-    FileInfo? GetFileInfoForFile(PathSegment filePath)
+    public FileInfo? GetFileInfoForFile(PathSegment filePath)
     {
         PathSegment dir = filePath.GetPathDirectory();
         PathSegment? fileName = filePath.GetFilename();
@@ -102,6 +102,8 @@ public class CacheScanner
                 scanBuckets[2].Add(item);
         }
 
+        List<CacheItemDelta> deltas = new();
+
         for (int iBucket = 0; iBucket < scanBuckets.Count; iBucket++)
         {
             List<MediaItem> bucket = scanBuckets[iBucket];
@@ -122,7 +124,7 @@ public class CacheScanner
 
                 if (fileInfo == null)
                 {
-                    // record file missing here
+                    deltas.Add(new CacheItemDelta(DeltaType.Deleted, item.ID));
                     continue;
                 }
 
@@ -167,15 +169,12 @@ public class CacheScanner
                     continue;
                 }
 
-                // file changed!
-                MessageBox.Show($"File changed for {fullPath}");
-
-
-                // TODO:  Make the list of deltas to be processed (changes and deletes/missing)
+                deltas.Add(new CacheItemDelta(DeltaType.Changed, item.ID));
                 // When processing these, we need to update the metadata and MD5 for the mediaitem
                 // AND we need to update the MD5 cache for the file so the next scan is fast.
             }
         }
 
+        // at this point we have a list of all the changes in the database. need to deal with them
     }
 }

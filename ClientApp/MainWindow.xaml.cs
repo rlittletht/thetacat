@@ -292,7 +292,7 @@ public partial class MainWindow : Window
 
         try
         {
-            import = new MediaImporter(MainWindow.ClientName);
+            import = new MediaImporter(App.State.Cache, MainWindow.ClientName);
         }
         catch (CatExceptionCanceled)
         {

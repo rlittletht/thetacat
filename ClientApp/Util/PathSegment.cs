@@ -37,6 +37,8 @@ public class PathSegment
         return segment == null ? PathSegment.Empty : new PathSegment(segment);
     }
 
+    public bool IsEmpty => String.IsNullOrEmpty(m_segment);
+
     public override string ToString() => m_segment;
     public string Local => m_local ??= m_segment.Replace("/", "\\");
 
@@ -86,6 +88,9 @@ public class PathSegment
 
     public PathSegment GetRelativePath(PathSegment root)
     {
+        if (root.IsEmpty)
+            return new PathSegment(this);
+
         return new PathSegment(Path.GetRelativePath(root.Local, Local));
     }
 

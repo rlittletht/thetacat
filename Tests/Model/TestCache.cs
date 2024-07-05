@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using Tests.Model.Sql;
 using Tests.Model.Workgroups;
+using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
@@ -557,5 +558,24 @@ public class TestCache
             });
 
         Assert.AreEqual(expected, derivativePath?.ToString() ?? "");
+    }
+
+    [TestCase("C:/dir1/foo.jpg", "c:/", "dir1/foo.jpg")]
+    [TestCase("foo.jpg", "", "foo.jpg")]
+    [TestCase("//mock/server/foo.jpg", "//mock/server", "foo.jpg")]
+    [TestCase("//mock/server/sub1/sub2/foo.jpg", "//mock/server", "sub1/sub2/foo.jpg")]
+    [Test]
+    public static void TestSetPathsFromFromFullPath(string fullPath, string expectedServer, string expectedPath)
+    {
+        PathSegment full = new PathSegment(fullPath);
+        PathSegment expectedServerPath = new PathSegment(expectedServer);
+        PathSegment expectedPathPath = new PathSegment(expectedPath);
+
+        ImportItem item = new ImportItem(Guid.Empty, "test", PathSegment.Empty, PathSegment.Empty, ImportItem.ImportState.MissingFromCatalog);
+
+        item.SetPathsFromFullPath(full);
+
+        Assert.AreEqual(expectedServerPath, item.SourceServer);
+        Assert.AreEqual(expectedPathPath, item.SourcePath);
     }
 }
