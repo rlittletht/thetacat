@@ -47,27 +47,23 @@ public class Md5Cache
 
     public void CommitCacheItems()
     {
-        List<Md5CacheItem> inserts = new();
-        List<Md5CacheItem> deletes = new();
+        List<Md5CacheItem> changes = new();
 
         foreach (KeyValuePair<PathSegment, Md5CacheItem> dbItem in m_cache)
         {
-            if (dbItem.Value.Pending)
-                inserts.Add(dbItem.Value);
-            if (dbItem.Value.DeletePending)
-                deletes.Add(dbItem.Value);
+            if (dbItem.Value.ChangeState != ChangeState.None)
+                changes.Add(dbItem.Value);
         }
 
-        App.State.ClientDatabase?.ExecuteMd5CacheUpdates(deletes, inserts);
+        App.State.ClientDatabase?.ExecuteMd5CacheUpdates(changes);
 
-        foreach (Md5CacheItem item in inserts)
+        foreach (Md5CacheItem item in changes)
         {
+            bool fDelete = item.DeletePending;
             item.ChangeState = ChangeState.None;
-        }
 
-        foreach (Md5CacheItem item in deletes)
-        {
-            m_cache.TryRemove(item.Path, out Md5CacheItem? removed);
+            if (fDelete)
+                m_cache.TryRemove(item.Path, out _);
         }
     }
 
@@ -92,7 +88,7 @@ public class Md5Cache
 
         if (m_cache.TryGetValue(item.Path, out Md5CacheItem? existingItem))
         {
-            // TODO: Change DeletePending and Pending to be a state: Add/Delete/Update... then umplement that in CommitCacheItems.
+            item.ChangeState = ChangeState.Update;
             m_cache.TryUpdate(item.Path, item, existingItem);
         }
         else
@@ -150,7 +146,7 @@ public class Md5Cache
 
             item.FileInfoMatch =
                 info.Length != item.Size
-                    || Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000
+                || Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000
                     ? TriState.No
                     : TriState.Yes;
         }

@@ -136,7 +136,7 @@ public class ClientDatabase
                             reader.GetString(4)));
                 },
                 s_aliases
-                );
+            );
         }
         catch (SqlExceptionNoResults)
         {
@@ -153,7 +153,8 @@ public class ClientDatabase
 
     string BuildDerivativeDeleteCommand(DerivativeItem item)
     {
-        return $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor}";
+        return
+            $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor}";
     }
 
 
@@ -267,7 +268,13 @@ public class ClientDatabase
 
     string BuildMd5InsertCommand(Md5CacheItem item)
     {
-        return $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ({SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}, '{item.LastModified.ToUniversalTime():u}', {item.Size}) ";
+        return
+            $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ({SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}, '{item.LastModified.ToUniversalTime():u}', {item.Size}) ";
+    }
+
+    string BuildMd5UpdateCommand(Md5CacheItem item)
+    {
+        return $"UPDATE tcat_md5cache SET md5={SqlText.SqlifyQuoted(item.MD5)}, lastModified='{item.LastModified.ToUniversalTime():u}', size={item.Size} WHERE path={SqlText.SqlifyQuoted(item.Path)}";
     }
 
     string BuildMd5DeleteCommand(Md5CacheItem item)
@@ -275,31 +282,34 @@ public class ClientDatabase
         return $"DELETE FROM tcat_md5cache WHERE path={SqlText.SqlifyQuoted(item.Path)}";
     }
 
-    List<string> BuildMd5InsertCommands(IEnumerable<Md5CacheItem> items)
+    void BuildMd5Commands(
+        IEnumerable<Md5CacheItem> items,
+        out List<string> insertCommands,
+        out List<string> updateCommands,
+        out List<string> deleteCommands)
     {
-        List<string> commands = new List<string>();
+        insertCommands = new List<string>();
+        updateCommands = new List<string>();
+        deleteCommands = new List<string>();
+
         foreach (Md5CacheItem item in items)
         {
-            commands.Add(BuildMd5InsertCommand(item));
+            if (item.ChangeState == ChangeState.Create)
+                insertCommands.Add(BuildMd5InsertCommand(item));
+            else if (item.ChangeState == ChangeState.Delete)
+                deleteCommands.Add(BuildMd5DeleteCommand(item));
+            else if (item.ChangeState == ChangeState.Update)
+                updateCommands.Add(BuildMd5UpdateCommand(item));
         }
-        return commands ;
     }
 
-    List<string> BuildMd5DeleteCommands(IEnumerable<Md5CacheItem> items)
+    public void ExecuteMd5CacheUpdates(IEnumerable<Md5CacheItem> changes)
     {
-        List<string> commands = new List<string>();
-        foreach (Md5CacheItem item in items)
-        {
-            commands.Add(BuildMd5DeleteCommand(item));
-        }
-
-        return commands;
-    }
-
-    public void ExecuteMd5CacheUpdates(IEnumerable<Md5CacheItem> deletes, IEnumerable<Md5CacheItem> inserts)
-    {
-        List<string> insertCommands = BuildMd5InsertCommands(inserts);
-        List<string> deleteCommands = BuildMd5DeleteCommands(deletes);
+        BuildMd5Commands(
+            changes,
+            out List<string> insertCommands,
+            out List<string> updateCommands,
+            out List<string> deleteCommands);
 
         _Connection.BeginTransaction();
         try
@@ -315,6 +325,13 @@ public class ClientDatabase
                 _Connection,
                 "",
                 insertCommands,
+                (line) => line,
+                100,
+                ";");
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                updateCommands,
                 (line) => line,
                 100,
                 ";");
