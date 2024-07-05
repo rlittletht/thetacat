@@ -12,7 +12,6 @@ using System.ComponentModel;
 using System.Threading;
 using System.Windows.Media;
 using Thetacat.Import;
-using Thetacat.Model;
 using Thetacat.UI.Options;
 using Thetacat.Azure;
 using Thetacat.Logging;
@@ -35,6 +34,7 @@ using Thetacat.Repair;
 using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
 using FlowDirection = System.Windows.FlowDirection;
+using Thetacat.Model.Caching;
 
 namespace Thetacat;
 
@@ -683,5 +683,10 @@ public partial class MainWindow : Window
     private void ToggleExpandMediaStacks(object sender, RoutedEventArgs e)
     {
         m_model.ExplorerCollection.ToggleExpandMediaStacks();
+    }
+
+    private void ForceSyncMediaScan(object sender, RoutedEventArgs e)
+    {
+        App.State.Cache.ScanForLocalChanges(ScanCacheType.Predictive);
     }
 }

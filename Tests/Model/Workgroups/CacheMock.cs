@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.Types;
 
 namespace Tests.Model.Workgroups;

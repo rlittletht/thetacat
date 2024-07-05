@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows.Controls;
 using System.Windows.Forms;
-using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;

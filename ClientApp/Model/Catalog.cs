@@ -11,6 +11,7 @@ using Thetacat.Filtering;
 using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;

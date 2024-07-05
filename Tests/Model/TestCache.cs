@@ -2,6 +2,7 @@
 using Tests.Model.Sql;
 using Tests.Model.Workgroups;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Util;
 

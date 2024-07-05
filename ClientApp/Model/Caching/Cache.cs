@@ -16,7 +16,7 @@ using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Caching;
 
 /*----------------------------------------------------------------------------
     %%Class: Cache
@@ -71,9 +71,9 @@ public class Cache : ICache
 
     public static CacheType CacheTypeFromString(string? value)
     {
-        if (String.Compare(value, "private", StringComparison.InvariantCultureIgnoreCase) == 0)
+        if (string.Compare(value, "private", StringComparison.InvariantCultureIgnoreCase) == 0)
             return CacheType.Private;
-        else if (String.Compare(value, "workgroup", StringComparison.InvariantCultureIgnoreCase) == 0)
+        else if (string.Compare(value, "workgroup", StringComparison.InvariantCultureIgnoreCase) == 0)
             return CacheType.Workgroup;
 
         return CacheType.Unknown;
@@ -92,7 +92,7 @@ public class Cache : ICache
         throw new ArgumentException("bad cache type argument");
     }
 
-    void ConnectToWorkgroupCache(TcSettings.Profile settings)
+    void ConnectToWorkgroupCache(Profile settings)
     {
         if (Type != CacheType.Workgroup)
             throw new InvalidOperationException("intializing a non-workgroup");
@@ -154,7 +154,7 @@ public class Cache : ICache
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
 #pragma warning disable CS8618 // we set these in a method
-    public Cache(TcSettings.Profile? settings)
+    public Cache(Profile? settings)
     {
         ResetCache(settings);
     }
@@ -220,7 +220,7 @@ public class Cache : ICache
             // if the MD5 matches, then the cache is already done. its ok to use
             // this name. when we see the file already exists in the future we
             // will know its OK to assume its the same file
-            return (MediaItem.CalculateMD5Hash(fullPath.Local) == md5);
+            return MediaItem.CalculateMD5Hash(fullPath.Local) == md5;
         }
 
         return true;
@@ -674,5 +674,48 @@ public class Cache : ICache
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
     {
         _Workgroup.PushChangesToDatabase(itemsForCache);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ScanForLocalChanges
+        %%Qualified: Thetacat.Model.Cache.ScanForLocalChanges
+
+        Scan all of the cached items to see if they have changed locally, and if
+        so, record that for later.
+
+        This should be suitable for a background thread
+    ----------------------------------------------------------------------------*/
+    public void ScanForLocalChanges(ScanCacheType scanType)
+    {
+        // grab a snapshot of the item id's in the cache
+        Dictionary<int, List<MediaItem>> scanBuckets = new();
+
+        scanBuckets[0] = new List<MediaItem>();
+        scanBuckets[1] = new List<MediaItem>();
+        scanBuckets[2] = new List<MediaItem>();
+
+        // since Entries is a concurrent dictionary, this enumeration will
+        // automatically grab a snapshot
+        foreach (Guid mediaId in Entries.Keys)
+        {
+            if (!App.State.Catalog.TryGetMedia(mediaId, out MediaItem? item))
+                continue;
+
+            if (item.VersionStack != null)
+                scanBuckets[0].Add(item);
+            else if (item.MediaStack != null)
+                scanBuckets[1].Add(item);
+            else if (scanType != ScanCacheType.Predictive)
+                // don't add pri 2 items if we are doing a predictive scan
+                scanBuckets[2].Add(item);
+        }
+
+        for (int iBucket = 0; iBucket < scanBuckets.Count; iBucket++)
+        {
+            List<MediaItem> bucket = scanBuckets[iBucket];
+
+            // get the cache entry for this
+        }
+
     }
 }

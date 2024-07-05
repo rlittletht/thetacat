@@ -7,6 +7,7 @@ using Thetacat.Explorer;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Secrets;

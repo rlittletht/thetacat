@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using TCore.SqlCore;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;

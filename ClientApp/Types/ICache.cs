@@ -5,6 +5,7 @@ using Microsoft.Identity.Client;
 using Thetacat.Model;
 using Thetacat.TcSettings;
 using Thetacat.Util;
+using Thetacat.Model.Caching;
 
 namespace Thetacat.Types;
 
@@ -23,4 +24,5 @@ public interface ICache
     public void DeleteMediaItem(Guid id);
     public string GetFullLocalPath(PathSegment itemPath);
     public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal);
+    public void ScanForLocalChanges(ScanCacheType scanType);
 }
