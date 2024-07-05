@@ -687,6 +687,9 @@ public partial class MainWindow : Window
 
     private void ForceSyncMediaScan(object sender, RoutedEventArgs e)
     {
-        App.State.Cache.ScanForLocalChanges(ScanCacheType.Predictive);
+        CacheScanner scanner = new CacheScanner();
+
+        scanner.ScanForLocalChanges(App.State.Cache, App.State.Md5Cache, ScanCacheType.Predictive);
+        MessageBox.Show("Scan complete!");
     }
 }

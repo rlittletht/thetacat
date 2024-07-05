@@ -144,6 +144,16 @@ public class PathSegment
         return m_segment.Contains("/");
     }
 
+    public static PathSegment GetFilename(PathSegment path)
+    {
+        return new PathSegment(Path.GetFileName(path.Local));
+    }
+
+    public PathSegment? GetFilename()
+    {
+        return GetFilename(this);
+    }
+
     public PathSegment? GetLeafItem()
     {
         int ichLim = m_segment.Length - 1;
@@ -236,5 +246,5 @@ public class PathSegment
         return this == right;
     }
 
-    public override int GetHashCode() => $"{m_segment}".GetHashCode();
+    public override int GetHashCode() => $"{m_segment.ToUpper()}".GetHashCode();
 }

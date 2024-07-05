@@ -24,5 +24,4 @@ public interface ICache
     public void DeleteMediaItem(Guid id);
     public string GetFullLocalPath(PathSegment itemPath);
     public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal);
-    public void ScanForLocalChanges(ScanCacheType scanType);
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
 using Thetacat.ServiceClient.LocalDatabase;
@@ -82,15 +83,38 @@ public class Md5Cache
     {
         FileInfo info = new FileInfo(localPath);
 
+        AddCacheFileInfo(localPath, info, md5);
+    }
+
+    public void UpdateCacheFileInfo(string localPath, FileInfo info, string md5)
+    {
+        Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
+
+        if (m_cache.TryGetValue(item.Path, out Md5CacheItem? existingItem))
+            m_cache.TryUpdate(item.Path, item, existingItem);
+        else
+            m_cache.TryAdd(item.Path, item);
+    }
+
+    public void AddCacheFileInfo(string localPath, FileInfo info, string md5)
+    {
         Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
 
         m_cache.TryAdd(item.Path, item);
     }
 
-    public bool TryLookupMd5(string localPath, out string? md5)
+    public bool TryLookupCacheItem(string localPath, [MaybeNullWhen(false)] out Md5CacheItem cacheItem)
     {
         PathSegment path = new PathSegment(localPath.ToLowerInvariant());
-        if (m_cache.TryGetValue(path, out Md5CacheItem? item))
+        if (m_cache.TryGetValue(path, out cacheItem))
+            return true;
+
+        return false;
+    }
+
+    public bool TryLookupMd5(string localPath, out string? md5)
+    {
+        if (TryLookupCacheItem(localPath, out Md5CacheItem? item))
         {
             if (!VerifyFileInfo(item))
             {
