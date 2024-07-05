@@ -11,6 +11,7 @@ using TCore.SQLiteClient;
 using Thetacat.Model.Client;
 using Thetacat.Types;
 using Thetacat.Util;
+using Thetacat.Model.Md5Caching;
 
 namespace Thetacat.ServiceClient.LocalDatabase;
 

@@ -5,6 +5,7 @@ using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
+using Thetacat.Model.Md5Caching;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Util;
 using static Thetacat.Types.AppState;

@@ -4,7 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
-using Thetacat.Model.Client;
+using Thetacat.Model.Md5Caching;
 using Thetacat.Types;
 using Thetacat.Util;
 

@@ -10,6 +10,7 @@ using Thetacat.Model;
 using Thetacat.Model.Caching;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
+using Thetacat.Model.Md5Caching;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;

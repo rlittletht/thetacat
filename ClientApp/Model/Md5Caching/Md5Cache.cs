@@ -8,7 +8,7 @@ using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;
 
-namespace Thetacat.Model.Client;
+namespace Thetacat.Model.Md5Caching;
 
 /*----------------------------------------------------------------------------
     %%Class: Md5Cache
@@ -62,7 +62,7 @@ public class Md5Cache
 
         foreach (Md5CacheItem item in inserts)
         {
-            item.Pending = false;
+            item.ChangeState = ChangeState.None;
         }
 
         foreach (Md5CacheItem item in deletes)
@@ -76,7 +76,7 @@ public class Md5Cache
         PathSegment path = new PathSegment(localPath.ToLowerInvariant());
 
         if (m_cache.TryGetValue(path, out Md5CacheItem? remove))
-            remove.DeletePending = true;
+            remove.ChangeState = ChangeState.Delete;
     }
 
     public void AddCacheItem(string localPath, string md5)
@@ -91,9 +91,14 @@ public class Md5Cache
         Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
 
         if (m_cache.TryGetValue(item.Path, out Md5CacheItem? existingItem))
+        {
+            // TODO: Change DeletePending and Pending to be a state: Add/Delete/Update... then umplement that in CommitCacheItems.
             m_cache.TryUpdate(item.Path, item, existingItem);
+        }
         else
+        {
             m_cache.TryAdd(item.Path, item);
+        }
     }
 
     public void AddCacheFileInfo(string localPath, FileInfo info, string md5)
@@ -144,8 +149,8 @@ public class Md5Cache
             FileInfo info = new FileInfo(item.Path.Local);
 
             item.FileInfoMatch =
-                (info.Length != item.Size
-                    || (Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000))
+                info.Length != item.Size
+                    || Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000
                     ? TriState.No
                     : TriState.Yes;
         }

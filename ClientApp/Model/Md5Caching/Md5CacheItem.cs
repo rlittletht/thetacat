@@ -3,7 +3,7 @@ using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;
 
-namespace Thetacat.Model.Client;
+namespace Thetacat.Model.Md5Caching;
 
 public class Md5CacheItem
 {
@@ -12,8 +12,10 @@ public class Md5CacheItem
     public DateTime LastModified { get; init; }
     public long Size { get; init; }
     public bool SessionOnly { get; init; }
-    public bool Pending { get; set; }
-    public bool DeletePending { get; set; }
+    public ChangeState ChangeState { get; set; }
+    public bool Pending => ChangeState == ChangeState.Create;
+    public bool DeletePending => ChangeState == ChangeState.Delete;
+
     public TriState FileInfoMatch { get; set; }
 
     public Md5CacheItem(PathSegment path, string md5, DateTime lastModified, long size)
@@ -22,7 +24,7 @@ public class Md5CacheItem
         MD5 = md5;
         LastModified = lastModified;
         Size = size;
-        Pending = true;
+        ChangeState = ChangeState.Create;
         FileInfoMatch = TriState.Yes;
     }
 
@@ -32,8 +34,7 @@ public class Md5CacheItem
         MD5 = dbItem.MD5;
         LastModified = dbItem.LastModified;
         Size = dbItem.Size;
-        Pending = false;
-        DeletePending = false;
+        ChangeState = ChangeState.None;
         SessionOnly = false;
         FileInfoMatch = TriState.Maybe;
     }
