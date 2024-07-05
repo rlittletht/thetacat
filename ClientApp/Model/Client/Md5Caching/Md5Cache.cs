@@ -117,7 +117,7 @@ public class Md5Cache
     {
         if (TryLookupCacheItem(localPath, out Md5CacheItem? item))
         {
-            if (!VerifyFileInfo(item))
+            if (!VerifyItemAgainstFilesystem(item))
             {
                 m_cache.TryRemove(item.Path, out Md5CacheItem? removing);
                 md5 = null;
@@ -133,25 +133,21 @@ public class Md5Cache
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: VerifyFileInfo
-        %%Qualified: Thetacat.Model.Client.Md5Cache.VerifyFileInfo
+        %%Function: VerifyItemAgainstFilesystem
+        %%Qualified: Thetacat.Model.Client.Md5Cache.VerifyItemAgainstFilesystem
 
         Return true if we can use this item's md5
     ----------------------------------------------------------------------------*/
-    bool VerifyFileInfo(Md5CacheItem item)
+    bool VerifyItemAgainstFilesystem(Md5CacheItem item)
     {
-        if (item.FileInfoMatch == TriState.Maybe)
+        if (item.FilesystemMatched == TriState.Maybe)
         {
             FileInfo info = new FileInfo(item.Path.Local);
 
-            item.FileInfoMatch =
-                info.Length != item.Size
-                || Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000
-                    ? TriState.No
-                    : TriState.Yes;
+            item.FilesystemMatched = item.MatchFileInfo(info) ? TriState.Yes : TriState.No;
         }
 
-        return item.FileInfoMatch == TriState.Yes;
+        return item.FilesystemMatched == TriState.Yes;
     }
 
     public string GetMd5ForPathSync(string localPath)

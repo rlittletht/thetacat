@@ -131,7 +131,7 @@ public class CacheScanner
                 if (md5Cache.TryLookupCacheItem(fullPath.Local, out Md5CacheItem? md5Item))
                 {
                     // yay, there are some quick things we can compare to see if it changed
-                    if (md5Item.Size == fileInfo.Length && md5Item.LastModified.Equals(fileInfo.LastWriteTime))
+                    if (md5Item.MatchFileInfo(fileInfo))
                     {
                         // no change
                         continue;
