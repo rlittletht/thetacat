@@ -199,6 +199,13 @@ public class Catalog : ICatalog
         MediaImporter.PrePopulateCacheForLocalPath(cache, newFile, newItem);
         // be sure to push the changes to the database!
         cache.PushChangesToDatabase(null);
+
+        // and make sure there's an import item for it, otherwise it won't get uploaded to the catalog
+        ImportItem importItem = MediaImporter.CreateNewImportItemForArbitraryPath(newItem, newFile);
+        List<ImportItem> newItems = new() { importItem };
+
+        ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, newItems);
+
         return new MediaItem();
     }
 

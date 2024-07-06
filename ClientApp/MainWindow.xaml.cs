@@ -68,6 +68,7 @@ public partial class MainWindow : Window
         RebuildProfileList();
 
         Explorer.SetExplorerItemSize(App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium);
+        m_model.ExplorerCollection.SetExpandMediaStacks(App.State.ActiveProfile.ExpandMediaStacksInExplorers ?? false);
 
         // we have to load the catalog AND the pending upload list
         // we also have to confirm that all the items int he pending

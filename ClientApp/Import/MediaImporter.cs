@@ -536,6 +536,24 @@ public class MediaImporter
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: CreateNewImportItemForArbitraryPath
+        %%Qualified: Thetacat.Import.MediaImporter.CreateNewImportItemForArbitraryPath
+
+        Create an item for an arbitrary localPath + mediaItem
+    ----------------------------------------------------------------------------*/
+    public static ImportItem CreateNewImportItemForArbitraryPath(MediaItem mediaItem, PathSegment fullPath)
+    {
+        ImportItem.ImportState state = mediaItem.State == MediaItemState.Active ? ImportItem.ImportState.Complete : ImportItem.ImportState.PendingUpload;
+
+        // need to invent an import item for each missing item
+        ImportItem item = new ImportItem(mediaItem.ID, MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
+
+        item.SetPathsFromFullPath(fullPath);
+        return item;
+    }
+
+
+    /*----------------------------------------------------------------------------
         %%Function: RepairImportTables
         %%Qualified: Thetacat.Import.MediaImporter.RepairImportTables
 
@@ -580,8 +598,6 @@ public class MediaImporter
                 missingItems.Add(mediaItem.ID);
         }
 
-
-
         if (missingItems.Count == 0)
         {
             MessageBox.Show("Import tables are consistent with Catalog and Workgroup Cache.");
@@ -612,13 +628,8 @@ public class MediaImporter
                 MainWindow.LogForApp(EventType.Critical, $"media state is active for missing import ({mediaItem.VirtualPath}). weird. still fixing.");
 
             PathSegment fullPath = new PathSegment(localPath);
+            ImportItem item = CreateNewImportItemForArbitraryPath(mediaItem, fullPath);
 
-            ImportItem.ImportState state = mediaItem.State == MediaItemState.Active ? ImportItem.ImportState.Complete : ImportItem.ImportState.PendingUpload;
-
-            // need to invent an import item for each missing item
-            ImportItem item = new ImportItem(mediaId, MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
-
-            item.SetPathsFromFullPath(fullPath);
             newItems.Add(item);
         }
 

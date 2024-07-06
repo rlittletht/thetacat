@@ -556,9 +556,14 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         return 1;
     }
 
+    public void SetExpandMediaStacks(bool expanded)
+    {
+        m_expandMediaStacks = expanded;
+    }
+
     public void ToggleExpandMediaStacks()
     {
-        m_expandMediaStacks = !m_expandMediaStacks;
+        SetExpandMediaStacks(!m_expandMediaStacks);
         App.State.ActiveProfile.ExpandMediaStacksInExplorers = m_expandMediaStacks;
         App.State.Settings.WriteSettings();
 
