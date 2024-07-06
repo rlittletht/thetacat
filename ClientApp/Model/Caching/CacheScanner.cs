@@ -69,6 +69,48 @@ public class CacheScanner
 
 
     /*----------------------------------------------------------------------------
+        %%Function: ProcessCacheDeltas
+        %%Qualified: Thetacat.Model.Caching.CacheScanner.ProcessCacheDeltas
+        
+        Here's the plan. When an item changes, the content in the cache location
+        is now different (with a new MD5). Any places with derivatives or copies
+        of this picture are now wrong:
+
+        * tcat_imports - Holds info when this was imported. We are making a
+          "new import", so we have to flip the state back to upload pending
+        
+        * tcat_workgroup_media - The workgroup cache is the thing we noticed
+          changed. it does not store an MD5, so NOTHING to change here
+        
+        * tcat_media - This is the master media store reflecting the latest source
+          of truth, but MUST reflect what is in azure (if its there).
+            * If this item is "active" (in azure storage), then it must be left alone
+              to be fixed the next time the content is uploaded (this will leave the
+              MD5 with the stale value in this table)
+            * If this item is "pending" (not uploaded yet or will never get uploaded
+              because its marked DontUploadToCloud), then UPDATE the MD5 value in the
+              media item.
+        
+        PRIVATE CACHES:
+
+        * tcat_md5cache - This has already been dealt with. Other clients will lazily
+          update their MD5 cache because the file size/last modified time won't match
+        * tcat_derivatives - TODO: This table doesn't store the MD5 of the source of
+          of the derivative. It needs to so we can lazily fix the derivatives.
+    ----------------------------------------------------------------------------*/
+    void ProcessCacheDeltas(IReadOnlyCollection<CacheItemDelta> deltas)
+    {
+        foreach (CacheItemDelta delta in deltas)
+        {
+            if (delta.DeltaType == DeltaType.Changed)
+            {
+                
+            }
+        }
+    }
+
+
+    /*----------------------------------------------------------------------------
         %%Function: ScanForLocalChanges
         %%Qualified: Thetacat.Model.Cache.ScanForLocalChanges
 
@@ -176,5 +218,6 @@ public class CacheScanner
         }
 
         // at this point we have a list of all the changes in the database. need to deal with them
+        ProcessCacheDeltas(deltas);
     }
 }
