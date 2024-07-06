@@ -37,9 +37,9 @@ public class ServiceInterop
 
     public static void DeleteImportsForMediaItem(Guid catalogId, Guid id) => LocalService.Import.DeleteMediaItem(catalogId, id);
 
-    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
+    public static List<ServiceImportItem> GetImportsForClient(Guid catalogID, string sourceClient)
     {
-        return LocalService.Import.GetPendingImportsForClient(catalogID, sourceClient);
+        return LocalService.Import.GetImportsForClient(catalogID, sourceClient);
     }
 
     public static List<ServiceImportItem> GetAllImports(Guid catalogID)

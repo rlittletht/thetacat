@@ -92,7 +92,7 @@ public class MediaImporter
     ----------------------------------------------------------------------------*/
     public MediaImporter(ICache cache, string clientSource)
     {
-        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
+        List<ServiceImportItem> items = ServiceInterop.GetImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
         bool skippedItems = false;
         CacheScanner scanner = new CacheScanner();
 
@@ -533,6 +533,103 @@ public class MediaImporter
         AzureCat.EnsureCreated(App.State.AzureStorageAccount);
 
         App.State.AddBackgroundWork("Uploading pending media", UploadPendingMediaWork);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: RepairImportTables
+        %%Qualified: Thetacat.Import.MediaImporter.RepairImportTables
+
+        Find media that is in the catalog AND in the workgroup, but isn't part
+        of the import tables. (This happened for a while when CreateVersionBasedOn
+        didn't populate the import table).
+    ----------------------------------------------------------------------------*/
+    public void RepairImportTables(ICatalog catalog, ICache cache)
+    {
+        IReadOnlyCollection<ServiceImportItem> items = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
+
+        HashSet<Guid> knownItems = new HashSet<Guid>();
+
+        foreach (ServiceImportItem item in items)
+        {
+            knownItems.Add(item.ID);
+        }
+
+        HashSet<Guid> missingItems = new();
+
+        // first go through the workgroup cache
+        foreach (ICacheEntry entry in cache.Entries.Values)
+        {
+            if (!knownItems.Contains(entry.ID))
+                missingItems.Add(entry.ID);
+        }
+
+        // now go through the catalog to see if there are any missing
+        foreach (MediaItem mediaItem in catalog.GetMediaCollection())
+        {
+            if (mediaItem.DontPushToCloud)
+            {
+                // if we already added it because it was missing from the cache, remove it
+                // (since we know its never supposed to be uploaded)
+                if (missingItems.Contains(mediaItem.ID))
+                    missingItems.Remove(mediaItem.ID);
+
+                continue;
+            }
+
+            if (!knownItems.Contains(mediaItem.ID))
+                missingItems.Add(mediaItem.ID);
+        }
+
+
+
+        if (missingItems.Count == 0)
+        {
+            MessageBox.Show("Import tables are consistent with Catalog and Workgroup Cache.");
+            return;
+        }
+
+        List<ImportItem> newItems = new();
+
+        foreach (Guid mediaId in missingItems)
+        {
+            string? localPath = cache.TryGetCachedFullPath(mediaId);
+
+            if (localPath == null)
+            {
+                // can't get a local path. can't create an import item
+                MainWindow.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no workgroup cache for it. this will remain broken");
+                continue;
+            }
+
+            if (!catalog.TryGetMedia(mediaId, out MediaItem? mediaItem))
+            {
+                // can't find this item in the catalog. don't try to fix it
+                MainWindow.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no catalog item for it. this will remain broken");
+                continue;
+            }
+
+            if (mediaItem.State == MediaItemState.Active)
+                MainWindow.LogForApp(EventType.Critical, $"media state is active for missing import ({mediaItem.VirtualPath}). weird. still fixing.");
+
+            PathSegment fullPath = new PathSegment(localPath);
+
+            ImportItem.ImportState state = mediaItem.State == MediaItemState.Active ? ImportItem.ImportState.Complete : ImportItem.ImportState.PendingUpload;
+
+            // need to invent an import item for each missing item
+            ImportItem item = new ImportItem(mediaId, MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
+
+            item.SetPathsFromFullPath(fullPath);
+            newItems.Add(item);
+        }
+
+        if (MessageBox.Show(
+                $"There are {newItems.Count} items that need to be added to the imports table. Do you want to add these?",
+                "Confirm import table repair",
+                MessageBoxButton.YesNo)
+            == MessageBoxResult.Yes)
+        {
+            ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, newItems);
+        }
     }
 
 #endregion

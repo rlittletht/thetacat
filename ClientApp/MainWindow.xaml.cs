@@ -30,6 +30,7 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Filtering;
+using Thetacat.Import.UI;
 using Thetacat.Repair;
 using Thetacat.ServiceClient;
 using Thetacat.TcSettings;
@@ -691,5 +692,12 @@ public partial class MainWindow : Window
 
         scanner.ScanForLocalChanges(App.State.Cache, App.State.Md5Cache, ScanCacheType.Predictive);
         MessageBox.Show("Scan complete!");
+    }
+
+    private void DoRepairImportTables(object sender, RoutedEventArgs e)
+    {
+        MediaImporter import = new MediaImporter();
+
+        import.RepairImportTables(App.State.Catalog, App.State.Cache);
     }
 }

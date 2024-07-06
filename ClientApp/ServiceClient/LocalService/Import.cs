@@ -43,7 +43,7 @@ public class Import
             });
     }
 
-    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
+    public static List<ServiceImportItem> GetImportsForClient(Guid catalogID, string sourceClient)
     {
         return LocalServiceClient.DoGenericQueryWithAliases(
                 s_baseQuery,
