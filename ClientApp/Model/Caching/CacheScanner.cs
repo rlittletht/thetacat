@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
+using Thetacat.Logging;
 using Thetacat.Model.Md5Caching;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -13,7 +14,7 @@ namespace Thetacat.Model.Caching;
 public class CacheScanner
 {
     private Dictionary<PathSegment, IReadOnlyCollection<FileInfo>> m_dirMap = new();
-    
+
     public void EnsureDirectoryLoaded(PathSegment dir, bool fRecurse = false)
     {
         if (m_dirMap.ContainsKey(dir))
@@ -71,17 +72,17 @@ public class CacheScanner
     /*----------------------------------------------------------------------------
         %%Function: ProcessCacheDeltas
         %%Qualified: Thetacat.Model.Caching.CacheScanner.ProcessCacheDeltas
-        
+
         Here's the plan. When an item changes, the content in the cache location
         is now different (with a new MD5). Any places with derivatives or copies
         of this picture are now wrong:
 
         * tcat_imports - Holds info when this was imported. We are making a
           "new import", so we have to flip the state back to upload pending
-        
+
         * tcat_workgroup_media - The workgroup cache is the thing we noticed
           changed. it does not store an MD5, so NOTHING to change here
-        
+
         * tcat_media - This is the master media store reflecting the latest source
           of truth, but MUST reflect what is in azure (if its there).
             * If this item is "active" (in azure storage), then it must be left alone
@@ -90,7 +91,7 @@ public class CacheScanner
             * If this item is "pending" (not uploaded yet or will never get uploaded
               because its marked DontUploadToCloud), then UPDATE the MD5 value in the
               media item.
-        
+
         PRIVATE CACHES:
 
         * tcat_md5cache - This has already been dealt with. Other clients will lazily
@@ -111,7 +112,7 @@ public class CacheScanner
         {
             if (delta.DeltaType == DeltaType.Changed)
             {
-                
+                // update the 
             }
         }
     }
@@ -177,50 +178,31 @@ public class CacheScanner
                     continue;
                 }
 
-                string lastKnownMd5 = "";
+                // figure out the last md5 we knw about
+                string md5Current = "";
 
-                if (md5Cache.TryLookupCacheItem(fullPath.Local, out Md5CacheItem? md5Item))
+                if (md5Cache.TryLookupCacheItem(fullPath.Local, out Md5CacheItem? md5Item)
+                    && md5Item.MatchFileInfo(fileInfo))
                 {
-                    // yay, there are some quick things we can compare to see if it changed
-                    if (md5Item.MatchFileInfo(fileInfo))
-                    {
-                        // no change
-                        continue;
-                    }
-
                     // we'll need to do an MD5 check
-                    lastKnownMd5 = md5Item.MD5;
-                }
-
-                if (!string.IsNullOrEmpty(lastKnownMd5))
-                {
-                    // make sure the MD5 from the cache matches the media item
-                    if (lastKnownMd5 != item.MD5 && !string.IsNullOrEmpty(item.MD5))
-                    {
-                        MessageBox.Show($"MD5 mismatch cache and mediaitem");
-                        lastKnownMd5 = item.MD5;
-                    }
+                    md5Current = md5Item.MD5;
                 }
                 else
                 {
-                    // we don't have a lastKnown, so take it from the media item
-                    lastKnownMd5 = item.MD5;
+                    md5Current = Checksum.GetMD5ForPathSync(fullPath.Local);
                 }
 
-                // now calc the md5 synchronously -- don't use the cache since we are explicitly trying to
-                // see if the file changed
-
-                string md5Current = Checksum.GetMD5ForPathSync(fullPath.Local);
-
-                if (md5Current == lastKnownMd5)
+                if (md5Current != item.MD5)
                 {
-                    md5Cache.UpdateCacheFileInfo(fullPath.Local, fileInfo, md5Current);
-                    continue;
+                    // don't alert if the media didn't have an md5 before
+                    if (!string.IsNullOrEmpty(item.MD5))
+                        MainWindow.LogForApp(EventType.Error, $"md5 mismatch on scan for media: {item.VirtualPath}");
+
+                    deltas.Add(new CacheItemDelta(DeltaType.Changed, item.ID));
                 }
 
-                deltas.Add(new CacheItemDelta(DeltaType.Changed, item.ID));
-                // When processing these, we need to update the metadata and MD5 for the mediaitem
-                // AND we need to update the MD5 cache for the file so the next scan is fast.
+                // no matter what, update the md5 cache since we might have a new md5 hash
+                md5Cache.UpdateCacheFileInfoIfNecessary(fullPath.Local, fileInfo, md5Current);
             }
         }
 

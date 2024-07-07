@@ -82,12 +82,22 @@ public class Md5Cache
         AddCacheFileInfo(localPath, info, md5);
     }
 
-    public void UpdateCacheFileInfo(string localPath, FileInfo info, string md5)
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateCacheFileInfoIfNecessary
+        %%Qualified: Thetacat.Model.Md5Caching.Md5Cache.UpdateCacheFileInfoIfNecessary
+
+        Update the md5 cache for this item. if it already exists and doesn't
+        differ, then
+    ----------------------------------------------------------------------------*/
+    public void UpdateCacheFileInfoIfNecessary(string localPath, FileInfo info, string md5)
     {
         Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
 
         if (m_cache.TryGetValue(item.Path, out Md5CacheItem? existingItem))
         {
+            if (existingItem.MatchFileInfo(info) && existingItem.MD5 == md5)
+                return;
+
             item.ChangeState = ChangeState.Update;
             m_cache.TryUpdate(item.Path, item, existingItem);
         }
