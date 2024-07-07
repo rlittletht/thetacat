@@ -64,7 +64,7 @@ public class Derivatives
 
         scale = item.RequestedScaleFactor;
 
-        return new DerivativeItem(item.MediaKey, "image/jpeg", scale, item.TransformationsKey, item.Image);
+        return new DerivativeItem(item.MediaKey, "image/jpeg", scale, item.TransformationsKey, item.Image, item.MD5, false);
     }
 
     public DerivativeItem GetMatchingDerivativeItem(DerivativeItem match)
@@ -87,25 +87,6 @@ public class Derivatives
 
             throw new CatExceptionInternalFailure("can't find matching derivative item");
         }
-    }
-
-
-    void QueueDerivativeWork(DerivativeWork work)
-    {
-        DerivativeItem item = CreateDerivativeItemForWork(work);
-
-        App.State.Derivatives.AddDerivative(item);
-        m_derivativeWorkPipeline?.Producer.QueueRecord(work);
-    }
-
-    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
-    {
-        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
-    }
-
-    public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
-    {
-        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey, 1.0));
     }
 
     public void DeleteMediaItem(Guid id)
@@ -172,23 +153,31 @@ public class Derivatives
     {
         List<DerivativeItem> inserts = new();
         List<DerivativeItem> deletes = new();
+        List<DerivativeItem> updates = new();
 
         foreach (KeyValuePair<Guid, List<DerivativeItem>> dbItem in m_mediaDerivatives)
         {
             foreach (DerivativeItem item in dbItem.Value)
             {
-                if (item.Pending)
+                if (item.State == DerivativeItemState.Update)
+                    updates.Add(item);
+                else if (item.State == DerivativeItemState.Create)
                     inserts.Add(item);
-                if (item.DeletePending)
+                else if (item.State == DerivativeItemState.Delete)
                     deletes.Add(item);
             }
         }
 
-        App.State.ClientDatabase?.ExecuteDerivativeUpdates(deletes, inserts);
+        App.State.ClientDatabase?.ExecuteDerivativeUpdates(deletes, inserts, updates);
 
         foreach (DerivativeItem item in inserts)
         {
-            item.Pending = false;
+            item.State = DerivativeItemState.None;
+        }
+
+        foreach (DerivativeItem item in updates)
+        {
+            item.State = DerivativeItemState.None;
         }
 
         foreach (DerivativeItem item in deletes)
@@ -229,7 +218,7 @@ public class Derivatives
         {
             if (CompareDoubles(item.ScaleFactor, scaleFactor, 4) == 0 && item.MimeType == mimeType)
             {
-                item.DeletePending = true;
+                item.State = DerivativeItemState.Delete;
                 return;
             }
         }
@@ -246,7 +235,7 @@ public class Derivatives
 
         this requires a scaleFactor of at least 1.0
     ----------------------------------------------------------------------------*/
-    public bool TryGetFormatDerivative(Guid mediaId, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
+    public bool TryGetFormatDerivative(Guid mediaId, string MD5, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
     {
         pendingBitmap = null;
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
@@ -260,6 +249,15 @@ public class Derivatives
 
         foreach (DerivativeItem item in items)
         {
+            if (item.Expired)
+                continue;
+
+            if (item.MD5 != MD5)
+            {
+                item.Expired = true;
+                continue;
+            }
+
             if (!transformations.IsEqualTransformations(item.TransformationsKey))
                 continue;
 
@@ -300,8 +298,14 @@ public class Derivatives
 
         if an epsilon is provided, then return a scaling factor within that
         epsilon or false.
+
+        The MD5 provided is for the original media item, full fidelity. This
+        allows us to avoid derivatives based on older versions of the media.
+
+        When we encounter any derivatives with a different MD5, we will mark
+        them as 'expired' and garbage collection will clean them up
     ----------------------------------------------------------------------------*/
-    public bool TryGetResampledDerivative(Guid mediaId, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap, double? epsilon = null)
+    public bool TryGetResampledDerivative(Guid mediaId, string MD5, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap, double? epsilon = null)
     {
         pendingBitmap = null;
 
@@ -321,6 +325,15 @@ public class Derivatives
 
             foreach (DerivativeItem item in kvpItems.Value)
             {
+                if (item.Expired)
+                    continue;
+
+                if (item.MD5 != MD5)
+                {
+                    item.Expired = true;
+                    continue;
+                }
+
                 if (!transformations.IsEqualTransformations(item.TransformationsKey))
                     continue;
 
@@ -371,8 +384,53 @@ public class Derivatives
         return matched != null;
     }
 
+    public void CollectDerivativeGarbage()
+    {
+        // go through the collections and clean up everything marked as expired
+        // (will also delete the content from disk).  If we fail to delete the
+        // file from disk, we will leave the expired item intact to clean up
+        // later (in a future session presumably not holding a lock).
+
+        // need to make sure we don't treat 'file not found' as a failure to delete
+
+    }
+    /*----------------------------------------------------------------------------
+        %%Function: QueueDerivativeWork
+        %%Qualified: Thetacat.Model.Client.Derivatives.QueueDerivativeWork
+
+        We resampled or reformated the image already, but now we want to save the
+        actual bits to the disk. disk i/o can be slow, so we are going to post
+        the actual save to happen on our deriviate pipeline thread.
+    ----------------------------------------------------------------------------*/
+    void QueueDerivativeWork(DerivativeWork work)
+    {
+        DerivativeItem item = CreateDerivativeItemForWork(work);
+
+        App.State.Derivatives.AddDerivative(item);
+        m_derivativeWorkPipeline?.Producer.QueueRecord(work);
+    }
+
+    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
+    {
+        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
+    }
+
+    public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
+    {
+        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey, 1.0));
+    }
+
+
     #region Derivative Work
 
+    /*----------------------------------------------------------------------------
+        %%Class: DerivativeWork
+        %%Qualified: Thetacat.Model.Client.Derivatives.DerivativeWork
+
+        This is the unit of work that will be done in the derivative pipeline
+        
+        The work is queued using QueueDerivativeWork (via Queue
+    ----------------------------------------------------------------------------*/
     class DerivativeWork : IPipelineBase<DerivativeWork>
     {
         public enum WorkType
@@ -382,6 +440,7 @@ public class Derivatives
         }
 
         public Guid MediaKey { get; private set; }
+        public string MD5 { get; private set; } = string.Empty;
         public WorkType Type { get; private set; }
         public int OriginalWidth { get; private set; }
         public int OriginalHeight { get; private set; }
@@ -419,7 +478,8 @@ public class Derivatives
             FullBitmapFidelity = fullBitmapFidelity;
             Type = fullBitmapFidelity ? WorkType.Transcode : WorkType.ResampleImage;
             RequestedScaleFactor = requestedScaleFactor;
-            
+            MD5 = mediaItem.MD5;
+
             TransformationsKey = transformationsKey;
         }
 
@@ -433,6 +493,7 @@ public class Derivatives
             FullBitmapFidelity = t.FullBitmapFidelity;
             TransformationsKey = t.TransformationsKey;
             RequestedScaleFactor = t.RequestedScaleFactor;
+            MD5 = t.MD5;
         }
     }
 

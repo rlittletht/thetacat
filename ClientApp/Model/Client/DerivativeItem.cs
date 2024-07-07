@@ -23,9 +23,26 @@ public class DerivativeItem
 {
     private PathSegment? m_pathSegment;
 
+    public DerivativeItemState State { get; set; }
+
     public Guid MediaId { get; init; }
     public string MimeType { get; init; }
     public double ScaleFactor { get; init; }
+    public string MD5 { get; init; }
+
+    private bool m_expired = false;
+
+    public bool Expired
+    {
+        get => m_expired;
+        set
+        {
+            if (State == DerivativeItemState.None)
+                State = DerivativeItemState.Update;
+            m_expired = value;
+        }
+    }
+
     public PathSegment Path
     {
         get => m_pathSegment ?? throw new CatExceptionInternalFailure("accessing path segment for pending item");
@@ -38,8 +55,9 @@ public class DerivativeItem
 
     public bool HasPath => m_pathSegment != null;
 
-    public bool Pending { get; set; }
-    public bool DeletePending { get; set; }
+    public bool Pending => State == DerivativeItemState.Create;
+    public bool DeletePending => State == DerivativeItemState.Delete;
+
     public BitmapSource? PendingBitmap { get; set; }
     public string TransformationsKey { get; set; }
     public bool IsSaveQueued => PendingBitmap != null;
@@ -50,14 +68,16 @@ public class DerivativeItem
 
         Create a pending derivative item
     ----------------------------------------------------------------------------*/
-    public DerivativeItem(Guid mediaId, string mimeType, double scaleFactor, string transformationsKey, BitmapSource pendingBitmap)
+    public DerivativeItem(Guid mediaId, string mimeType, double scaleFactor, string transformationsKey, BitmapSource pendingBitmap, string md5, bool expired)
     {
         MediaId = mediaId;
         MimeType = mimeType;
         ScaleFactor = scaleFactor;
         PendingBitmap = pendingBitmap;
-        Pending = true;
+        State = DerivativeItemState.Create;
         TransformationsKey = transformationsKey;
+        MD5 = md5;
+        Expired = expired;
     }
 
     /*----------------------------------------------------------------------------
@@ -73,5 +93,8 @@ public class DerivativeItem
         ScaleFactor = dbItem.ScaleFactor;
         TransformationsKey = dbItem.TransformationsKey;
         m_pathSegment = new PathSegment(dbItem.Path);
+        MD5 = dbItem.MD5;
+        Expired = false;
+        State = DerivativeItemState.None;
     }
 }

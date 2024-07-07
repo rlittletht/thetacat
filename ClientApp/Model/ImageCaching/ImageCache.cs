@@ -142,6 +142,7 @@ public class ImageCache
     class ImageLoaderWork : IPipelineBase<ImageLoaderWork>
     {
         public Guid MediaKey { get; set; }
+        public string MD5 { get; set; } = string.Empty;
         public string? PathToImage { get; set; }
         public double AspectRatio { get; set; }
         public int? OriginalWidth { get; set; }
@@ -159,6 +160,7 @@ public class ImageCache
             AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
             OriginalWidth = mediaItem.ImageWidth;
             Transformations = new Transformations(mediaItem);
+            MD5 = mediaItem.MD5;
         }
 
         public void InitFrom(ImageLoaderWork t)
@@ -168,6 +170,7 @@ public class ImageCache
             AspectRatio = t.AspectRatio;
             OriginalWidth = t.OriginalWidth;
             Transformations = new Transformations(t.Transformations.TransformationsKey);
+            MD5 = t.MD5;
         }
     }
 
@@ -414,7 +417,7 @@ public class ImageCache
             { "image/jpeg", 10 },
         };
 
-    BitmapSource GetTransformedFullFidelityImage(string pathToRawImage, Guid mediaId, Transformations transformations)
+    BitmapSource GetTransformedFullFidelityImage(string pathToRawImage, Guid mediaId, string md5, Transformations transformations)
     {
         BitmapSource? fullImage = null;
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(mediaId);
@@ -426,10 +429,10 @@ public class ImageCache
         {
             BitmapSource? pendingBitmap;
 
-            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
+            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
             {
                 // check to see if we have a non-transformed version available
-                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
+                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
                 {
                     // ok, do the transformations and save them
                     if (pendingBitmap != null)
@@ -541,7 +544,7 @@ public class ImageCache
 
                 // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
                 // need to transcode)
-                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
+                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, item.MD5, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
                 {
                     if (pendingBitmap != null)
                     {
@@ -558,7 +561,7 @@ public class ImageCache
                 {
                     // we didn't find a match for what we want exactly. get a full fidelity image with the correct transformation
                     // (this might get transcoded). (this will save any interim transform steps as derivative items)
-                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.Transformations);
+                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.MD5, item.Transformations);
 
                     // and now scale it to the size we want, if necessary
                     if (scaling)

@@ -164,6 +164,8 @@ public class AppState : IAppState
         AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
         ClientDatabase = new ClientDatabase(clientDatabasePath);
 
+        ClientDatabase.AdjustDatabaseIfNecessary();
+
         Cache.ResetCache(ActiveProfile);
         Catalog.Reset();
         MetatagSchema.Reset();
