@@ -95,8 +95,15 @@ public class CacheScanner
 
         * tcat_md5cache - This has already been dealt with. Other clients will lazily
           update their MD5 cache because the file size/last modified time won't match
-        * tcat_derivatives - TODO: This table doesn't store the MD5 of the source of
-          of the derivative. It needs to so we can lazily fix the derivatives.
+        * tcat_derivatives - once the MD5 for the media item changes,  the derivatives
+          will automatically 'expire'.
+
+        RUNTIME CACHES:
+        * App.State.ImageCache
+        * App.State.PreviewImageCache
+             Both of these hold on to cached images for explorer and zoom windows.
+             We need to purge them of any changed items and force them to be
+             reloaded TODO: How to do this?
     ----------------------------------------------------------------------------*/
     void ProcessCacheDeltas(IReadOnlyCollection<CacheItemDelta> deltas)
     {

@@ -7,7 +7,7 @@
         xmlns:xpl="clr-namespace:Thetacat.Explorer"
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded">
+        Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded" Icon="/Assets/cat.ico">
     <DockPanel>
         <!--VerticalAlignment="Stretch">-->
         <Menu DockPanel.Dock="Top">
