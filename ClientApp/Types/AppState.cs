@@ -219,4 +219,9 @@ public class AppState : IAppState
             EnsureDeletedItemCollateralRemoved(item);
         }
     }
+
+    public string GetMD5ForItem(Guid id)
+    {
+        return Catalog.GetMD5ForItem(id, Cache);
+    }
 }

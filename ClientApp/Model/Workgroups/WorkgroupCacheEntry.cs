@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using TCore.SqlCore;
 using TCore;
 using TCore.SqlClient;
@@ -20,6 +21,17 @@ public class WorkgroupCacheEntry : ICacheEntry
     private WorkgroupCacheEntryData? m_baseEntry;
 
     public Guid ID => m_currentEntry.ID;
+
+    public string MD5
+    {
+        get => m_currentEntry.MD5;
+        set
+        {
+            EnsureBase();
+            m_currentEntry.MD5 = value;
+        }
+    }
+
     public PathSegment Path
     {
         get => m_currentEntry.Path;
@@ -68,9 +80,9 @@ public class WorkgroupCacheEntry : ICacheEntry
             m_baseEntry = new WorkgroupCacheEntryData(m_currentEntry);
     }
 
-    public WorkgroupCacheEntry(Guid id, PathSegment path, Guid cachedBy, DateTime? cacheDate, bool localPending, int? vectorClock)
+    public WorkgroupCacheEntry(Guid id, PathSegment path, Guid cachedBy, DateTime? cacheDate, bool localPending, int? vectorClock, string md5)
     {
-        m_currentEntry = new WorkgroupCacheEntryData(id, path, cachedBy, cacheDate, vectorClock);
+        m_currentEntry = new WorkgroupCacheEntryData(id, path, cachedBy, cacheDate, vectorClock, md5);
         LocalPending = localPending;
     }
 
@@ -83,6 +95,9 @@ public class WorkgroupCacheEntry : ICacheEntry
 
         if (string.Compare(m_baseEntry!.Path, m_currentEntry.Path, StringComparison.CurrentCultureIgnoreCase) != 0)
             updates.Add(new KeyValuePair<string, string>("path", $"{SqlText.SqlifyQuoted(m_currentEntry.Path)}"));
+
+        if (string.Compare(m_baseEntry!.MD5, m_currentEntry.MD5, StringComparison.CurrentCultureIgnoreCase) != 0)
+            updates.Add(new KeyValuePair<string, string>("md5", $"{SqlText.SqlifyQuoted(m_currentEntry.MD5)}"));
 
         if (m_baseEntry!.CachedBy != m_currentEntry.CachedBy)
             updates.Add(new KeyValuePair<string, string>("cachedBy", $"'{m_currentEntry.CachedBy.ToString()}'"));
@@ -122,6 +137,8 @@ public class WorkgroupCacheEntry : ICacheEntry
         m_currentEntry.CachedBy = item.CachedBy ?? throw new CatExceptionServiceDataFailure();
         m_currentEntry.CacheDate = item.CachedDate;
         m_currentEntry.VectorClock = item.VectorClock;
+        m_currentEntry.MD5 = item.MD5 ?? "";
+
         LocalPending = false;
     }
 
@@ -143,6 +160,12 @@ public class WorkgroupCacheEntry : ICacheEntry
             // everything is in conflict. server wins
             m_currentEntry = new WorkgroupCacheEntryData(server);
             return;
+        }
+
+        if (server.MD5 != m_baseEntry.MD5)
+        {
+            m_baseEntry.MD5 = server.MD5;
+            m_currentEntry.MD5 = server.MD5;
         }
 
         if (server.Path != m_baseEntry.Path)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -437,6 +438,25 @@ public class Cache : ICache
 
         File.Copy(importSource.Local, fullLocalPath);
     }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateCacheForMd5Change
+        %%Qualified: Thetacat.Model.Caching.Cache.UpdateCacheForMd5Change
+
+        We know the MD5 value for this item has changed locally (and hence in the
+        workgroup). mark this so we will update it
+    ----------------------------------------------------------------------------*/
+    public void UpdateEntryForMd5Change(Guid id, string md5)
+    {
+        // get the cache entry
+        if (!Entries.TryGetValue(id, out ICacheEntry? cacheEntry))
+            throw new CatExceptionInternalFailure("no cache entry for update cache entry");
+
+        cacheEntry.MD5 = md5;
+        cacheEntry.CachedBy = _Workgroup.ClientId;
+        cacheEntry.CachedDate = DateTime.Now;
+    }
+
 
     /*----------------------------------------------------------------------------
         %%Function: IsCachePathItemLikeVirtualPathItem

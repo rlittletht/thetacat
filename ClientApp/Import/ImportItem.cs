@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Model;
+using Thetacat.ServiceClient;
 using Thetacat.Util;
 
 namespace Thetacat.Import;
@@ -79,6 +80,16 @@ public class ImportItem: INotifyPropertyChanged
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
     public MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? m_onCatalogItemCreated;
     private bool m_skipWorkgroupOnlyItem;
+
+    public ImportItem(ServiceImportItem item)
+    {
+        ID = item.ID;
+        m_source = new PathSegment(item.Source ?? "");
+        m_sourceServer = new PathSegment(item.SourceServer ?? "");
+        m_sourcePath = new PathSegment(item.SourcePath ?? "");
+        m_state = StateFromString(item.State ?? "");
+        m_virtualPath = m_sourcePath;
+    }
 
     public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? onCatalogItemCreated = null)
     {

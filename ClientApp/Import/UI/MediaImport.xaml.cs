@@ -357,6 +357,13 @@ namespace Thetacat.Import.UI
             return item;
         }
 
+        /*----------------------------------------------------------------------------
+            %%Function: SearchForImportedItemsWork
+            %%Qualified: Thetacat.Import.UI.MediaImport.SearchForImportedItemsWork
+
+            This takes the checked items in the Import dialog and figures out which
+            ones are already in the catalog (using the MD5 as the arbiter)
+        ----------------------------------------------------------------------------*/
         private bool SearchForImportedItemsWork(IProgressReport progress)
         {
             try

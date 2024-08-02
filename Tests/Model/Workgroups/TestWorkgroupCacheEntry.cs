@@ -14,7 +14,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         List<KeyValuePair<string, string>> updates = entry.MakeUpdatePairs();
 
@@ -30,7 +31,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         entry.Path = new PathSegment("/foobar/foo.jpg"); // same value
 
@@ -48,7 +50,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         entry.Path = new PathSegment("/foobar/foo1.jpg"); // same value
 
@@ -68,7 +71,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         entry.CachedBy = Guid.Parse("10000000-0000-0000-0000-000000000002");
 
@@ -88,7 +92,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         entry.CachedDate = DateTime.Parse("8/21/1993");
 
@@ -108,7 +113,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             DateTime.Parse("8/21/1993"),
             true,
-            null);
+            null,
+            "");
 
         entry.CachedDate = null;
 
@@ -128,7 +134,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            null);
+            null,
+            "");
 
         entry.VectorClock = 1;
 
@@ -148,7 +155,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            1);
+            1,
+            "");
 
         entry.VectorClock = null;
 
@@ -168,7 +176,8 @@ public class TestWorkgroupCacheEntry
             Guid.Parse("10000000-0000-0000-0000-000000000001"),
             null,
             true,
-            1);
+            1,
+            "");
 
         entry.VectorClock = null;
         entry.CachedDate = DateTime.Parse("8/21/1993");

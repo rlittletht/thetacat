@@ -696,7 +696,7 @@ public partial class MainWindow : Window
 
     private void DoRepairImportTables(object sender, RoutedEventArgs e)
     {
-        MediaImporter import = new MediaImporter();
+        MediaImporter import = new MediaImporter(App.State.ActiveProfile.CatalogID);
 
         import.RepairImportTables(App.State.Catalog, App.State.Cache);
     }

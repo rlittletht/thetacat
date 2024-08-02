@@ -13,7 +13,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
         
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "");
 
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         // if we get here, we passed (just looking for a crash...)
@@ -26,7 +26,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "");
 
         int counter = 0;
 
@@ -49,7 +49,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "");
 
         int counter = 0;
 
@@ -79,7 +79,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "");
 
         int counter = 0;
 

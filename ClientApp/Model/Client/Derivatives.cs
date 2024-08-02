@@ -410,14 +410,14 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(work);
     }
 
-    public void QueueSaveResampledImage(MediaItem item, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
+    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
     {
-        QueueDerivativeWork(new DerivativeWork(item, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
+        QueueDerivativeWork(new DerivativeWork(item, md5, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
     }
 
-    public void QueueSaveReformatImage(MediaItem item, Transformations transformations, BitmapSource reformattedImage)
+    public void QueueSaveReformatImage(MediaItem item, string md5, Transformations transformations, BitmapSource reformattedImage)
     {
-        QueueDerivativeWork(new DerivativeWork(item, reformattedImage, true, transformations.TransformationsKey, 1.0));
+        QueueDerivativeWork(new DerivativeWork(item, md5, reformattedImage, true, transformations.TransformationsKey, 1.0));
     }
 
 
@@ -469,7 +469,7 @@ public class Derivatives
             this happens for things like PSD files where we get a thumbnail for the
             transcoded image, thus its already "resampled" to start with.
         ----------------------------------------------------------------------------*/
-        public DerivativeWork(MediaItem mediaItem, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey, double requestedScaleFactor)
+        public DerivativeWork(MediaItem mediaItem, string md5, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey, double requestedScaleFactor)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;
@@ -478,11 +478,14 @@ public class Derivatives
             FullBitmapFidelity = fullBitmapFidelity;
             Type = fullBitmapFidelity ? WorkType.Transcode : WorkType.ResampleImage;
             RequestedScaleFactor = requestedScaleFactor;
-            MD5 = mediaItem.MD5;
+            MD5 = md5;
 
             TransformationsKey = transformationsKey;
         }
 
+        // TODO: Need to make sure the derivative work gets the correct MD5 value for the image its creating
+        // a derivative for. Also need to find out why we are getting 1 change and 2 inserts for the derivative cache
+        // when doing this.
         public void InitFrom(DerivativeWork t)
         {
             Type = t.Type;

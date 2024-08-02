@@ -63,7 +63,8 @@ public class WorkgroupDb
     private readonly string s_createWorkgroupMedia = @"
         CREATE TABLE tcat_workgroup_media
             (media VARCHAR(36) NOT NULL PRIMARY KEY, 
-            path VARCHAR(1024) NOT NULL, 
+            path VARCHAR(1024) NOT NULL,
+            md5 NVARCHAR(32) NOT NULL,
             cachedBy VARCHAR(36) NOT NULL, 
             cachedDate NVARCHAR(64), 
             vectorClock INTEGER NOT NULL)";
@@ -88,7 +89,7 @@ public class WorkgroupDb
         WHERE $$tcat_workgroup_clients$$.name = @Name";
 
     private readonly string s_queryWorkgroupMediaClock = @"
-        SELECT $$tcat_workgroup_media$$.media,$$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cachedDate, $$tcat_workgroup_media$$.vectorClock
+        SELECT $$tcat_workgroup_media$$.media,$$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cachedDate, $$tcat_workgroup_media$$.vectorClock, $$tcat_workgroup_media$$.md5
         FROM $$#tcat_workgroup_media$$
         INNER JOIN $$#tcat_workgroup_clients$$ ON $$tcat_workgroup_media$$.cachedBy = $$tcat_workgroup_clients$$.id";
 
@@ -206,7 +207,8 @@ public class WorkgroupDb
                                         Path = reader.GetString(1),
                                         CachedBy = reader.GetGuid(2),
                                         CachedDate = reader.GetNullableDateTime(3),
-                                        VectorClock = reader.GetInt32(4)
+                                        VectorClock = reader.GetInt32(4),
+                                        MD5 = reader.GetString(5)
                                     };
 
                                 building.Media ??= new List<ServiceWorkgroupItem>();
@@ -360,10 +362,10 @@ public class WorkgroupDb
 
                 ExecutePartedCommands(
                     _Connection,
-                    "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock) VALUES ",
+                    "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock, md5) VALUES ",
                     inserts,
                     (entry) =>
-                        $"('{entry.ID.ToString()}', {SqlText.SqlifyQuoted(entry.Path.ToString())}, '{entry.CachedBy.ToString()}', {SqlText.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {SqlText.Nullable(entry.VectorClock)}) ",
+                        $"('{entry.ID.ToString()}', {SqlText.SqlifyQuoted(entry.Path.ToString())}, '{entry.CachedBy.ToString()}', {SqlText.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {SqlText.Nullable(entry.VectorClock)}, {SqlText.SqlifyQuoted(entry.MD5)}) ",
                     100,
                     ",",
                     null);

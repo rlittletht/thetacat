@@ -43,4 +43,5 @@ public interface IAppState
 
     public void EnsureDeletedItemCollateralRemoved(Guid id);
     public void EnsureDeletedItemsCollateralRemoved(List<Guid> items);
+    public string GetMD5ForItem(Guid id);
 }

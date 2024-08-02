@@ -216,6 +216,8 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
+    // this is the MD5 of the media in azure storage (or if pending, this is the
+    // MD5 of what *will be* in azure storage
     public string MD5
     {
         get => m_working.MD5;

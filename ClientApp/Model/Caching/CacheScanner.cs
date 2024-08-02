@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
+using Thetacat.Import;
 using Thetacat.Logging;
 using Thetacat.Model.Md5Caching;
 using Thetacat.Types;
@@ -81,38 +82,64 @@ public class CacheScanner
           "new import", so we have to flip the state back to upload pending
 
         * tcat_workgroup_media - The workgroup cache is the thing we noticed
-          changed. it does not store an MD5, so NOTHING to change here
+          changed. need to update the workgroup MD5 to match the new value. we do
+          this immediately so our workgroup has the updated content
 
+        (done)
         * tcat_media - This is the master media store reflecting the latest source
-          of truth, but MUST reflect what is in azure (if its there).
-            * If this item is "active" (in azure storage), then it must be left alone
-              to be fixed the next time the content is uploaded (this will leave the
-              MD5 with the stale value in this table)
-            * If this item is "pending" (not uploaded yet or will never get uploaded
-              because its marked DontUploadToCloud), then UPDATE the MD5 value in the
-              media item.
+          of truth, but MUST reflect what is in azure (if its there). If the 
 
-        PRIVATE CACHES:
 
+        PRIVATE CACHES: (done)
         * tcat_md5cache - This has already been dealt with. Other clients will lazily
           update their MD5 cache because the file size/last modified time won't match
         * tcat_derivatives - once the MD5 for the media item changes,  the derivatives
           will automatically 'expire'.
 
-        RUNTIME CACHES:
+        RUNTIME CACHES: (done)
         * App.State.ImageCache
         * App.State.PreviewImageCache
              Both of these hold on to cached images for explorer and zoom windows.
              We need to purge them of any changed items and force them to be
-             reloaded TODO: How to do this?
+             reloaded
+
+        DONE: We have to make sure that other workgroups cache the new item.
+        (GetNextItemsForQueueFromMediaCollection trys to find the next items that
+        need to be cached. Need to extend this to allow items that have already
+        been cached, but have a different MD5 -- so even if the cache item exists
+        and its not pending and the media is active, if the MD5 mismatches, then
+        we need to treat it as if it didn't exist. (Flip the cache state back
+        to pending, and set the clientID to the current client as the one responsible
+        for downloading it.  This probably means extending the "stake claim on this"
+        to not just add items to the cache, but also to reset items in the cache.
     ----------------------------------------------------------------------------*/
     void ProcessCacheDeltas(IReadOnlyCollection<CacheItemDelta> deltas)
     {
+        MediaImporter importer = new MediaImporter(App.State.ActiveProfile.CatalogID);
+
         foreach (CacheItemDelta delta in deltas)
         {
             if (delta.DeltaType == DeltaType.Changed)
             {
-                // update the 
+                // must update the workgroup item before purging caches -- otherwise
+                // we don't properly invalidate the caches (the derivative items won't
+                // notice an MD5 change)
+                App.State.Cache.UpdateEntryForMd5Change(delta.MediaItem.ID, delta.MD5);
+
+                // purge image caches for this id (force reload in this session)
+                App.State.ImageCache.ResetImageForKey(delta.MediaItem.ID);
+                App.State.PreviewImageCache.ResetImageForKey(delta.MediaItem.ID);
+
+                // find the import item for this and mark it upload pending
+                // also update the media item to be in a pending state as well
+                importer.UpdateImportItemForMd5Change(delta.MediaItem, delta.FullPath);
+
+                if (delta.MediaItem.State == MediaItemState.Pending)
+                    // it hasn't been uploaded yet. update the MD5c
+                    delta.MediaItem.MD5 = delta.MD5;
+                
+                // otherwise, leave the MD5 in the catalog alone so we can notice
+                // to update it later
             }
         }
     }
@@ -126,6 +153,19 @@ public class CacheScanner
         so, record that for later.
 
         This should be suitable for a background thread
+
+        Here's the plan. Scan every item we know about in our workgroup cache.
+        Check the local file's MD5 (via the MD5 cache, or if that isn't suitable,
+        calculate a new one and store it in the MD5 cache).
+
+        If the workgroup MD5 value doesn't match the file, then:
+        * If the local MD5 matches media MD5, then just update the workgroup DB
+          (this is weird -- somehow the workgroup DB got set wrong? maybe an
+           aborted download refreshing the media but didn't get to update the
+           the workgroup db? in any case, fix the workgroup DB)
+        * If the local MD5 is different than the media, then we need to update
+          the workgroup DB.  A future process will notice that the workgroup DB
+          does't match the media DB
     ----------------------------------------------------------------------------*/
     public void ScanForLocalChanges(ICache cache, Md5Cache md5Cache, ScanCacheType scanType)
     {
@@ -174,17 +214,16 @@ public class CacheScanner
 
                 if (fileInfo == null)
                 {
-                    deltas.Add(new CacheItemDelta(DeltaType.Deleted, item.ID));
+                    deltas.Add(new CacheItemDelta(DeltaType.Deleted, item, fullPath, string.Empty));
                     continue;
                 }
 
-                // figure out the last md5 we knw about
                 string md5Current = "";
 
                 if (md5Cache.TryLookupCacheItem(fullPath.Local, out Md5CacheItem? md5Item)
                     && md5Item.MatchFileInfo(fileInfo))
-                {
-                    // we'll need to do an MD5 check
+                { 
+                    // we can use the current MD5 from the md5cache -- don't need to recalc
                     md5Current = md5Item.MD5;
                 }
                 else
@@ -192,13 +231,14 @@ public class CacheScanner
                     md5Current = Checksum.GetMD5ForPathSync(fullPath.Local);
                 }
 
+
                 if (md5Current != item.MD5)
                 {
                     // don't alert if the media didn't have an md5 before
                     if (!string.IsNullOrEmpty(item.MD5))
                         MainWindow.LogForApp(EventType.Error, $"md5 mismatch on scan for media: {item.VirtualPath}");
 
-                    deltas.Add(new CacheItemDelta(DeltaType.Changed, item.ID));
+                    deltas.Add(new CacheItemDelta(DeltaType.Changed, item, fullPath, md5Current));
                 }
 
                 // no matter what, update the md5 cache since we might have a new md5 hash
@@ -208,5 +248,7 @@ public class CacheScanner
 
         // at this point we have a list of all the changes in the database. need to deal with them
         ProcessCacheDeltas(deltas);
+
+        App.State.Cache.PushChangesToDatabase(null /*itemsForCache*/);
     }
 }

@@ -24,4 +24,5 @@ public interface ICache
     public void DeleteMediaItem(Guid id);
     public string GetFullLocalPath(PathSegment itemPath);
     public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal);
+    public void UpdateEntryForMd5Change(Guid id, string md5);
 }

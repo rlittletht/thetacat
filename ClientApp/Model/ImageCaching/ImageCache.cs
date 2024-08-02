@@ -80,7 +80,7 @@ public class ImageCache
     }
 
 
-    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string localPath)
+    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
         MainWindow.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
@@ -100,7 +100,7 @@ public class ImageCache
         }
 
         item.IsLoadQueued = true;
-        m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, item));
+        m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, md5, item));
         return item;
     }
 
@@ -153,14 +153,14 @@ public class ImageCache
             Transformations = Transformations.Empty;
         }
 
-        public ImageLoaderWork(MediaItem mediaItem, ImageCacheItem cacheItem)
+        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem)
         {
             MediaKey = mediaItem.ID;
             PathToImage = cacheItem.LocalPath;
             AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
             OriginalWidth = mediaItem.ImageWidth;
             Transformations = new Transformations(mediaItem);
-            MD5 = mediaItem.MD5;
+            MD5 = md5;
         }
 
         public void InitFrom(ImageLoaderWork t)
@@ -449,7 +449,7 @@ public class ImageCache
                     {
                         // save the pre-transform derivative
                         fullImage.Freeze();
-                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, Transformations.Empty, fullImage);
+                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, md5, Transformations.Empty, fullImage);
 
                         // and transform it
                         fullImage = DoTransformations(fullImage, transformations);
@@ -457,7 +457,7 @@ public class ImageCache
                 }
 
                 fullImage.Freeze();
-                App.State.Derivatives.QueueSaveReformatImage(mediaItem, transformations, fullImage);
+                App.State.Derivatives.QueueSaveReformatImage(mediaItem, md5, transformations, fullImage);
             }
             else
             {
@@ -568,7 +568,7 @@ public class ImageCache
                     {
                         targetBitmap = ScaleBitmap(fullImage, scaleFactor);
                         targetBitmap.Freeze();
-                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap, scaleFactor);
+                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, item.MD5, transformations, targetBitmap, scaleFactor);
                     }
                     else
                     {

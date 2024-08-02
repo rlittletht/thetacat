@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Permissions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -634,6 +635,24 @@ public class Catalog : ICatalog
             mediaItem.SetVersionStackVerify(this, stackId);
         else
             throw new CatExceptionInternalFailure("unknown stack type");
+    }
+
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetMD5ForItem
+        %%Qualified: Thetacat.Model.Catalog.GetMD5ForItem
+
+        Get the best MD5 we have for this item, most likely from the given cache
+        but if the local cache doesn't know about it, then from the media itself
+    ----------------------------------------------------------------------------*/
+    public string GetMD5ForItem(Guid id, ICache cache)
+    {
+        if (cache.Entries.TryGetValue(id, out ICacheEntry? entry))
+        {
+            return entry.MD5;
+        }
+
+        return m_media.Items[id].MD5;
     }
 
 #endregion

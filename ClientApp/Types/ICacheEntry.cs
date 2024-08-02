@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.RightsManagement;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -14,4 +15,8 @@ public interface ICacheEntry
     public bool LocalPending { get; set; }
 
     public DateTime? CachedDate { get; set; }
+
+    public string MD5 { get; set; }
+
+    public Guid CachedBy { get; set; }
 }

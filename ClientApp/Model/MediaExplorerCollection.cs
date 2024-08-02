@@ -177,6 +177,18 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))
             {
                 explorerItem.TileImage = cacheItem.Image;
+
+                if (cacheItem.Image == null)
+                {
+                    // if cacheItem.Image is null, then someone just emptied the cache. we need to
+                    // queue another load
+                    string? path = App.State.Cache.TryGetCachedFullPath(e.MediaId);
+
+                    if (path != null && App.State.Catalog.TryGetMedia(e.MediaId, out MediaItem? mediaItem))
+                    {
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path);
+                    }
+                }
             }
         }
     }
@@ -320,7 +332,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
                     if (path != null)
                     {
-                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, path);
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path);
                     }
                 }
             });

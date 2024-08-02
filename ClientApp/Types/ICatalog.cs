@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
@@ -32,6 +33,7 @@ public interface ICatalog
     public void AddMediaToTopOfMediaStack(MediaStackType stackType, Guid stackId, Guid mediaId);
     public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int? index);
     public void DeleteItem(Guid catalogId, Guid id);
+    public string GetMD5ForItem(Guid id, ICache cache);
     public bool HasMediaItem(Guid mediaId);
     public void Reset();
 }

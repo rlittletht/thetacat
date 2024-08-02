@@ -89,6 +89,8 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
+    public string GetMD5ForItem(Guid id, ICache cache) => throw new NotImplementedException();
+
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
     public void Reset()
     {

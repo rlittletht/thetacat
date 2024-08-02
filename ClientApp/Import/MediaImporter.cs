@@ -13,6 +13,7 @@ using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
@@ -41,6 +42,7 @@ public class MediaImporter
     public delegate void NotifyCatalogItemCreatedOrRepairedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
     private readonly HashSet<string> m_ignoreLogs = new();
+    private readonly HashSet<Guid> m_knownItems = new();
 
 #region Constructors
 
@@ -110,6 +112,7 @@ public class MediaImporter
                         PathSegment.CreateFromString(item.SourceServer),
                         PathSegment.CreateFromString(item.SourcePath),
                         ImportItem.ImportState.MissingFromCatalog));
+                m_knownItems.Add(item.ID);
             }
             else
             {
@@ -119,7 +122,6 @@ public class MediaImporter
                     PathSegment.CreateFromString(item.SourceServer),
                     PathSegment.CreateFromString(item.SourcePath),
                     ImportItem.StateFromString(item.State ?? string.Empty));
-
                 newItem.SkipWorkgroupOnlyItem = mediaItem.DontPushToCloud;
 
                 if (!newItem.SkipWorkgroupOnlyItem)
@@ -157,6 +159,7 @@ public class MediaImporter
                 }
 
                 ImportItems.Add(newItem);
+                m_knownItems.Add(newItem.ID);
             }
         }
 
@@ -217,6 +220,7 @@ public class MediaImporter
             }
 
             ImportItems.Add(newItem);
+            m_knownItems.Add(newItem.ID);
         }
     }
 
@@ -489,7 +493,7 @@ public class MediaImporter
 
                     if (media.MD5 != blob.ContentMd5)
                     {
-                        MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                        MainWindow.LogForApp(EventType.Critical, $"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
                         media.MD5 = blob.ContentMd5;
                     }
 
@@ -554,6 +558,23 @@ public class MediaImporter
 
 
     /*----------------------------------------------------------------------------
+        %%Function: MediaImporter
+        %%Qualified: Thetacat.Import.MediaImporter.MediaImporter
+
+        Create an importer with all items for the given catalog
+    ----------------------------------------------------------------------------*/
+    public MediaImporter(Guid catalogID)
+    {
+        IReadOnlyCollection<ServiceImportItem> items = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
+
+        foreach (ServiceImportItem item in items)
+        {
+            ImportItems.Add(new ImportItem(item));
+            m_knownItems.Add(item.ID);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: RepairImportTables
         %%Qualified: Thetacat.Import.MediaImporter.RepairImportTables
 
@@ -563,21 +584,12 @@ public class MediaImporter
     ----------------------------------------------------------------------------*/
     public void RepairImportTables(ICatalog catalog, ICache cache)
     {
-        IReadOnlyCollection<ServiceImportItem> items = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
-
-        HashSet<Guid> knownItems = new HashSet<Guid>();
-
-        foreach (ServiceImportItem item in items)
-        {
-            knownItems.Add(item.ID);
-        }
-
         HashSet<Guid> missingItems = new();
 
         // first go through the workgroup cache
         foreach (ICacheEntry entry in cache.Entries.Values)
         {
-            if (!knownItems.Contains(entry.ID))
+            if (!m_knownItems.Contains(entry.ID))
                 missingItems.Add(entry.ID);
         }
 
@@ -594,7 +606,7 @@ public class MediaImporter
                 continue;
             }
 
-            if (!knownItems.Contains(mediaItem.ID))
+            if (!m_knownItems.Contains(mediaItem.ID))
                 missingItems.Add(mediaItem.ID);
         }
 
@@ -643,5 +655,20 @@ public class MediaImporter
         }
     }
 
+    public void UpdateImportItemForMd5Change(MediaItem mediaItem, PathSegment fullPath)
+    {
+        if (m_knownItems.Contains(mediaItem.ID))
+        {
+            // we need to change it to be in a pending state
+            ServiceInterop.ResetImportToPendingForItem(App.State.ActiveProfile.CatalogID, mediaItem.ID, MainWindow.ClientName);
+        }
+        else
+        {
+            ImportItem item = CreateNewImportItemForArbitraryPath(mediaItem, fullPath);
+
+            mediaItem.State = MediaItemState.Pending;
+            ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, new List<ImportItem> { item });
+        }
+    }
 #endregion
 }

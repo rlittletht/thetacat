@@ -42,6 +42,11 @@ public class ServiceInterop
         return LocalService.Import.GetImportsForClient(catalogID, sourceClient);
     }
 
+    public static List<ServiceImportItem> GetAllImportsPendingUpload(Guid catalogID)
+    {
+        return LocalService.Import.GetAllImportsPendingUpload(catalogID);
+    }
+
     public static List<ServiceImportItem> GetAllImports(Guid catalogID)
     {
         return LocalService.Import.GetAllImports(catalogID);
@@ -62,6 +67,11 @@ public class ServiceInterop
     public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
         LocalService.Import.CompleteImportForItem(catalogID, id);
+    }
+
+    public static void ResetImportToPendingForItem(Guid catalogID, Guid id, string clientName)
+    {
+        LocalService.Import.ResetImportToPendingForItem(catalogID, id, clientName);
     }
 
     public static void DeleteImportItem(Guid catalogID, Guid id)

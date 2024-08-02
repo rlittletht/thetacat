@@ -220,18 +220,18 @@ public class ClientDatabase
             WorkgroupDb.ExecutePartedCommands(
                 _Connection,
                 "",
-                insertCommands,
-                (line) => line,
-                100,
-                ";");
-            WorkgroupDb.ExecutePartedCommands(
-                _Connection,
-                "",
                 updateCommands,
                 (line) => line,
                 100,
                 ";");
             _Connection.Commit();
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                insertCommands,
+                (line) => line,
+                100,
+                ";");
             return;
         }
         catch
