@@ -8,10 +8,18 @@
         mc:Ignorable="d"
         Title="MediaItemZoom" Height="450" Width="800">
     <Window.Resources>
-        <Style x:Key="Heading" TargetType="{x:Type TextBlock}">
+        <Style x:Key="HeadingTextBlock" TargetType="{x:Type TextBlock}">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="750" />
             <Setter Property="Margin" Value="1 0 1 0" />
+        </Style>
+        <Style x:Key="HeadingTextBox" TargetType="{x:Type TextBox}">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="750" />
+            <Setter Property="Margin" Value="1 0 1 0" />
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="IsReadOnly" Value="True"/>
         </Style>
     </Window.Resources>
     <DockPanel>
@@ -30,9 +38,9 @@
                 <RowDefinition Height="3*" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
-                <TextBlock Text="{Binding Path=MediaItem.ID}" Style="{StaticResource Heading}" />
-                <TextBlock Text=":" Style="{StaticResource Heading}" />
-                <TextBlock Text="{Binding Path=MediaItem.VirtualPath}" Style="{StaticResource Heading}" />
+                <TextBox Text="{Binding Path=MediaItem.ID, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
+                <TextBlock Text=":" Style="{StaticResource HeadingTextBlock}" />
+                <TextBox Text="{Binding Path=MediaItem.VirtualPath, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
             </StackPanel>
             <Grid Grid.Row="1">
                 <Image Source="{Binding Path=Image}"
