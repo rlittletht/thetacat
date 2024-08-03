@@ -500,10 +500,13 @@ public class Derivatives
         }
     }
 
-    void DoDerivativeWork(IEnumerable<DerivativeWork> workItems)
+    void DoDerivativeWork(IEnumerable<DerivativeWork> workItems, Consumer<DerivativeWork>.ShouldAbortDelegate shouldAbort)
     {
         foreach (DerivativeWork item in workItems)
         {
+            if (shouldAbort())
+                return;
+
             if ((item.Type != DerivativeWork.WorkType.ResampleImage && item.Type != DerivativeWork.WorkType.Transcode)
                 || item.Image == null)
             {

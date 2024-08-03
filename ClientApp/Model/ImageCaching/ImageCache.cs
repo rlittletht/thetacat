@@ -508,10 +508,13 @@ public class ImageCache
         we could free and reload. or just live with the awful memory consumption
         until you close and reopen the app...
     ----------------------------------------------------------------------------*/
-    void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems)
+    void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems, Consumer<ImageLoaderWork>.ShouldAbortDelegate shouldAbort)
     {
         foreach (ImageLoaderWork item in workItems)
         {
+            if (shouldAbort())
+                return;
+
             if (item.PathToImage == null)
             {
                 MainWindow.LogForApp(EventType.Warning, $"skipping null path");
