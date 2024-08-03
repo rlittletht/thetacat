@@ -45,6 +45,7 @@ public class AppState : IAppState
     public Md5Cache Md5Cache { get; init; }
     public Derivatives Derivatives { get; init; }
     public MetatagMRU MetatagMRU { get; init; }
+    public WindowManager WindowManager { get; init; }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
@@ -144,6 +145,7 @@ public class AppState : IAppState
         Derivatives = new Derivatives(ClientDatabase);
         MetatagMRU = new MetatagMRU();
         ProfileChanged += OnProfileChanged;
+        WindowManager = new WindowManager();
     }
 
     /*----------------------------------------------------------------------------

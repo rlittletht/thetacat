@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Converters;
 using Thetacat.Explorer.UI;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
@@ -29,6 +31,10 @@ public partial class MediaItemZoom : Window
 
     private MediaItemZoomModel m_model = new();
 
+    /*----------------------------------------------------------------------------
+        %%Function: OnImageCacheUpdated
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnImageCacheUpdated
+    ----------------------------------------------------------------------------*/
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
     {
         ImageCache? cache = sender as ImageCache;
@@ -40,6 +46,10 @@ public partial class MediaItemZoom : Window
             EnsureZoomImageFromCache(null, cache, m_model.MediaItem);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: OnMediaItemUpdated
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnMediaItemUpdated
+    ----------------------------------------------------------------------------*/
     private void OnMediaItemUpdated(object? sender, PropertyChangedEventArgs args)
     {
         if (args.PropertyName == "Tags")
@@ -48,12 +58,20 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: OnCloseReleaseWatchers
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnCloseReleaseWatchers
+    ----------------------------------------------------------------------------*/
     private void OnCloseReleaseWatchers(object? sender, CancelEventArgs e)
     {
         App.State.ImageCache.ImageCacheUpdated -= OnImageCacheUpdated;
         m_model.MediaItem!.PropertyChanged -= OnMediaItemUpdated;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: EnsureZoomImageFromCache
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.EnsureZoomImageFromCache
+    ----------------------------------------------------------------------------*/
     private void EnsureZoomImageFromCache(ImageCache? lowResCache, ImageCache cache, MediaItem item)
     {
         ImageCacheItem? cacheItem = cache.GetAnyExistingItem(item.ID);
@@ -71,6 +89,10 @@ public partial class MediaItemZoom : Window
         m_model.Image = cacheItem?.Image;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: PopulateTags
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.PopulateTags
+    ----------------------------------------------------------------------------*/
     void PopulateTags()
     {
         m_model.Tags.Clear();
@@ -84,6 +106,25 @@ public partial class MediaItemZoom : Window
         }
     }
 
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateMetatagPanelIfNecessary
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.UpdateMetatagPanelIfNecessary
+    ----------------------------------------------------------------------------*/
+    void UpdateMetatagPanelIfNecessary()
+    {
+        if (m_model.MediaItem != null)
+            App.State.WindowManager.ApplyMetatagPanel?.UpdateForMedia(
+                new MediaItem[] { m_model.MediaItem },
+                App.State.MetatagSchema,
+                m_model.VectorClock,
+                ApplyMetatagChangesFromPanel);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: SetMediaItem
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.SetMediaItem
+    ----------------------------------------------------------------------------*/
     void SetMediaItem(MediaItem item)
     {
         m_model.MediaItem = item;
@@ -99,22 +140,66 @@ public partial class MediaItemZoom : Window
         m_model.IsOffline = item.DontPushToCloud;
 
         EnsureZoomImageFromCache(App.State.PreviewImageCache, App.State.ImageCache, item);
+        m_model.VectorClock++;
+        UpdateMetatagPanelIfNecessary();
+    }
+
+    void ApplyMetatagChangesFromPanel(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
+    {
+        if (m_model.MediaItem == null)
+            return;
+
+        MetatagSchema schema = App.State.MetatagSchema;
+
+        if (m_model.VectorClock != vectorClock)
+        {
+            MessageBox.Show("Can't apply tags. Vector clock mismatch. Sorry.");
+            return;
+        }
+
+        App.State.WindowManager.ApplyMetatagPanel?.UpdateMediaForMetatagChanges(
+            checkedUncheckedAndIndeterminate,
+            new MediaItem[] { m_model.MediaItem },
+            schema);
     }
 
 
-    public MediaItemZoom(MediaItem item, GetNextMediaItem? getNextDelegate, GetPreviousMediaItem? getPreviousDelegate)
+    /*----------------------------------------------------------------------------
+        %%Function: MediaItemZoom
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.MediaItemZoom
+    ----------------------------------------------------------------------------*/
+    public MediaItemZoom(
+        MediaItem item, GetNextMediaItem? getNextDelegate, GetPreviousMediaItem? getPreviousDelegate, int vectorClockBase)
     {
         m_nextDelegate = getNextDelegate;
         m_previousDelegate = getPreviousDelegate;
 
-        Closing += OnCloseReleaseWatchers;
+        m_model.VectorClock = vectorClockBase;
+
+        Activated += OnActivated;
         this.KeyDown += DoMediaZoomKeyUp;
         InitializeComponent();
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
 
         SetMediaItem(item);
+        UpdateMetatagPanelIfNecessary();
     }
 
+
+    /*----------------------------------------------------------------------------
+        %%Function: OnGotFocus
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnGotFocus
+    ----------------------------------------------------------------------------*/
+    private void OnActivated(object? sender, EventArgs e)
+    {
+        if (m_model.MediaItem != null)
+            UpdateMetatagPanelIfNecessary();
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: DoToggleImageTrashed
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoToggleImageTrashed
+    ----------------------------------------------------------------------------*/
     void DoToggleImageTrashed()
     {
         if (m_model.MediaItem != null)
@@ -124,6 +209,10 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoMediaZoomKeyUp
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoMediaZoomKeyUp
+    ----------------------------------------------------------------------------*/
     private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
@@ -139,6 +228,10 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: TogglePruneMode
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.TogglePruneMode
+    ----------------------------------------------------------------------------*/
     private void TogglePruneMode(object sender, RoutedEventArgs e)
     {
         if (m_pruning)
@@ -153,6 +246,10 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoNextImage
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoNextImage
+    ----------------------------------------------------------------------------*/
     void DoNextImage()
     {
         if (m_nextDelegate != null)
@@ -163,6 +260,10 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoPreviousImage
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoPreviousImage
+    ----------------------------------------------------------------------------*/
     void DoPreviousImage()
     {
         if (m_previousDelegate != null)
@@ -173,16 +274,28 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: NextImage
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.NextImage
+    ----------------------------------------------------------------------------*/
     private void NextImage(object sender, RoutedEventArgs e)
     {
         DoNextImage();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ToggleImageTrashed
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.ToggleImageTrashed
+    ----------------------------------------------------------------------------*/
     private void ToggleImageTrashed(object sender, RoutedEventArgs e)
     {
         DoToggleImageTrashed();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: PreviousImage
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.PreviousImage
+    ----------------------------------------------------------------------------*/
     private void PreviousImage(object sender, RoutedEventArgs e)
     {
         DoPreviousImage();

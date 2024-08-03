@@ -64,6 +64,7 @@ public partial class MainWindow : Window
         App.OnMainWindowCreated();
         App.State.RegisterWindowPlace(this, "MainWindow");
         m_model.PropertyChanged += MainWindowPropertyChanged;
+        Activated += OnMainWindowActivated;
         RebuildProfileList();
 
         Explorer.SetExplorerItemSize(App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium);
@@ -84,6 +85,11 @@ public partial class MainWindow : Window
         App.State.DpiScale = VisualTreeHelper.GetDpi(this);
         App.State.Catalog.OnItemDirtied += SetCollectionDirtyState;
         App.State.MetatagSchema.OnItemDirtied += SetSchemaDirtyState;
+    }
+
+    private void OnMainWindowActivated(object? sender, EventArgs e)
+    {
+        Explorer.OnParentWindowActivated();
     }
 
     private void MainWindowPropertyChanged(object? sender, PropertyChangedEventArgs e)

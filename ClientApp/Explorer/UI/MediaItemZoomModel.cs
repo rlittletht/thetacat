@@ -14,6 +14,7 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
     private MediaItem? m_mediaItem;
     private BitmapSource? m_image;
     private string m_pruneModeCaption = "Start Pruning";
+    public int VectorClock { get; set; } = 0;
 
     public string PruneModeCaption
     {

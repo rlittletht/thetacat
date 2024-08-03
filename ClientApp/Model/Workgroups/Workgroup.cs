@@ -232,7 +232,7 @@ public class Workgroup : IWorkgroup
                 {
                     File.Delete(localPath);
                 }
-                catch (IOException exc)
+                catch
                 {
                     // we couldn't delete the file because it was in use (likely).
                     MessageBox.Show($"Can't delete media {localPath}. This file will be orphaned");

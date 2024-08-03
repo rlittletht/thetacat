@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Explorer;
 
-public delegate void OnSelectionChangedDelegate(IEnumerable<MediaExplorerItem> selectedItems);
+public delegate void OnSelectionChangedDelegate(IReadOnlyCollection<MediaItem> selectedItems);
 
 public class ItemSelector
 {
@@ -76,10 +77,23 @@ public class ItemSelector
         }
     }
 
+    public static List<MediaItem> GetSelectedMediaItems(IEnumerable<MediaExplorerItem> selectedItems)
+    {
+        List<MediaItem> mediaItems = new();
+        ICatalog catalog = App.State.Catalog;
+
+        foreach (MediaExplorerItem item in selectedItems)
+        {
+            mediaItems.Add(catalog.GetMediaFromId(item.MediaId));
+        }
+
+        return mediaItems;
+    }
+
     public void NotifySelectionChanged()
     {
         m_itemsSelectedVectorClock++;
-        m_onSelectionChanged(m_itemsSelected);
+        m_onSelectionChanged(GetSelectedMediaItems(m_itemsSelected));
     }
 
     /*----------------------------------------------------------------------------

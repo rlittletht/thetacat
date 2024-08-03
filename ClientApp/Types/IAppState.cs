@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using Thetacat.Explorer;
 using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Md5Caching;
@@ -20,6 +21,8 @@ public interface IAppState
     ICatalog Catalog { get; }
     TcSettings.TcSettings Settings { get; }
     TcSettings.Profile ActiveProfile { get; }
+    WindowManager WindowManager { get; }
+
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
     ClientDatabase? ClientDatabase { get; }
@@ -29,7 +32,7 @@ public interface IAppState
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }
     public DpiScale DpiScale { get; set; }
-
+    
     void RegisterWindowPlace(Window window, string key);
     void RefreshMetatagSchema(Guid catalogID);
     void CloseAsyncLogMonitor(bool skipClose);

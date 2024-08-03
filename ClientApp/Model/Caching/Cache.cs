@@ -1,5 +1,4 @@
 ﻿using System;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
-using TCore;
 using TCore.SqlCore;
 using Thetacat.Azure;
 using Thetacat.Logging;
