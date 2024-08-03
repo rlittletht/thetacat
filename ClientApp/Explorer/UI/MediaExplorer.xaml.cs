@@ -55,8 +55,6 @@ public partial class MediaExplorer : UserControl
         Model.AddMenuTag = new ProcessMenuTagCommand(ApplyMenuTagToSelectedItems);
     }
 
-    private readonly List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
-
     MediaItem? GetNextItem(MediaItem item)
     {
         MediaExplorerItem? nextItem = m_collection?.GetNextItem(item);
@@ -120,9 +118,7 @@ public partial class MediaExplorer : UserControl
         MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem, m_nextZoomVectorClockBase);
         m_nextZoomVectorClockBase += s_zoomVectorClockRange;
 
-        zoom.Closing += OnMediaZoomClosing;
-
-        m_zooms.Add(zoom);
+        App.State.WindowManager.AddZoom(zoom);
         zoom.Show();
     }
 
@@ -163,20 +159,8 @@ public partial class MediaExplorer : UserControl
         UpdateCollectionDimensions();
     }
 
-    private void OnMediaZoomClosing(object? sender, CancelEventArgs e)
-    {
-        if (sender != null)
-            m_zooms.Remove((MediaItemZoom)sender);
-    }
-
     public void Close()
     {
-        foreach (MediaItemZoom zoom in m_zooms)
-        {
-            zoom.Closing -= OnMediaZoomClosing;
-            zoom.Close();
-        }
-
         if (m_collection != null)
         {
             App.State.WindowManager.OnCloseCollection();
@@ -392,10 +376,7 @@ public partial class MediaExplorer : UserControl
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)
     {
         if (App.State.WindowManager.ApplyMetatagPanel == null)
-        {
             App.State.WindowManager.ApplyMetatagPanel = new ApplyMetatag(ApplySyncMetatags);
-            App.State.WindowManager.ApplyMetatagPanel.Closing += ((_, _) => App.State.WindowManager.ApplyMetatagPanel = null);
-        }
 
         if (App.State.WindowManager.ApplyMetatagPanel.IsVisible)
         {
