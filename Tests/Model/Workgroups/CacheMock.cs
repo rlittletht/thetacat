@@ -11,8 +11,6 @@ public class CacheMock : Cache, ICache
 
     public override IWorkgroup _Workgroup => m_workgroupOverride ?? throw new CatExceptionInitializationFailure();
 
-    public override CacheType Type => CacheType.Workgroup;
-
     public void SetWorkgroup(IWorkgroup workgroup)
     {
         m_workgroupOverride = workgroup;

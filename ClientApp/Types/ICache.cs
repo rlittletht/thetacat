@@ -11,7 +11,6 @@ namespace Thetacat.Types;
 
 public interface ICache
 {
-    public Cache.CacheType Type { get; }
     public void ResetCache(Profile profile);
     public IWorkgroup _Workgroup { get; }
     public PathSegment LocalPathToCacheRoot { get; }

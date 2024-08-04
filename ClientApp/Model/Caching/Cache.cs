@@ -36,15 +36,6 @@ namespace Thetacat.Model.Caching;
 ----------------------------------------------------------------------------*/
 public class Cache : ICache
 {
-    public enum CacheType
-    {
-        Private,
-        Workgroup,
-        Unknown
-    }
-
-    public virtual CacheType Type { get; private set; }
-
     public virtual IWorkgroup _Workgroup
     {
         get
@@ -68,34 +59,8 @@ public class Cache : ICache
         LocalPathToCacheRoot = new PathSegment("//mock/server/mockroot");
     }
 
-    public static CacheType CacheTypeFromString(string? value)
-    {
-        if (string.Compare(value, "private", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Private;
-        else if (string.Compare(value, "workgroup", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Workgroup;
-
-        return CacheType.Unknown;
-    }
-
-    public static string StringFromCacheType(CacheType cacheType)
-    {
-        switch (cacheType)
-        {
-            case CacheType.Private:
-                return "private";
-            case CacheType.Workgroup:
-                return "workgroup";
-        }
-
-        throw new ArgumentException("bad cache type argument");
-    }
-
     void ConnectToWorkgroupCache(Profile settings)
     {
-        if (Type != CacheType.Workgroup)
-            throw new InvalidOperationException("intializing a non-workgroup");
-
         if (!Guid.TryParse(settings.WorkgroupId, out Guid id))
             return;
 
@@ -165,17 +130,12 @@ public class Cache : ICache
 
         if (settings == null)
         {
-            Type = CacheType.Unknown;
             LocalPathToCacheRoot = PathSegment.Empty;
             m_workgroup = null;
             return;
         }
 
-        CacheType cacheType = CacheTypeFromString(settings.CacheType);
-
-        Type = cacheType;
-
-        if (Type == CacheType.Workgroup && settings.WorkgroupId != null)
+        if (settings.WorkgroupId != null)
         {
             try
             {
@@ -337,12 +297,6 @@ public class Cache : ICache
 
     public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
     {
-        if (Type != CacheType.Workgroup)
-        {
-            MessageBox.Show("Private caching NYI");
-            return;
-        }
-
         _Workgroup.RefreshWorkgroupMedia(Entries);
 
         // first, find items in the WG DB that belong to our client and haven't been download
