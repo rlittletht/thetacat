@@ -139,7 +139,7 @@ public class Derivatives
 
         if (!MainWindow.InUnitTest)
         {
-            m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(null, DoDerivativeWork);
+            m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(5, null, DoDerivativeWork);
             m_derivativeWorkPipeline.Start();
         }
     }

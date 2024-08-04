@@ -51,7 +51,7 @@ public class ImageCache
         if (!MainWindow.InUnitTest)
         {
             // this will start the thread which will just wait for work to do...
-            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
+            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(5, null, DoImageLoaderWork);
             m_imageLoaderPipeline.Start();
         }
 
