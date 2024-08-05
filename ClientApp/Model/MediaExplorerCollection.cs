@@ -234,11 +234,22 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             return -1;
         }
 
-        // scan through our items to find the first greater or equal to the date
-        return m_collection.GetNearestLineGreaterOrEqualMatching(
-                0,
-                (line) => GetTimelineDateFromItem(line.Items[0]) >= date)
-           .lineNumber;
+        if (TimelineOrder == TimelineOrder.DateAscending)
+        {
+            // scan through our items to find the first greater or equal to the date
+            return m_collection.GetNearestLineGreaterOrEqualMatching(
+                    0,
+                    (line) => GetTimelineDateFromItem(line.Items[0]) >= date)
+               .lineNumber;
+        }
+        else
+        {
+            // scan through our items to find the first greater or equal to the date
+            return m_collection.GetNearestLineGreaterOrEqualMatching(
+                    0,
+                    (line) => GetTimelineDateFromItem(line.Items[0]) <= date)
+               .lineNumber;
+        }
     }
 
     public void NotifyTopVisibleItem(int row)

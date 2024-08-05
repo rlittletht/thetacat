@@ -24,9 +24,12 @@ public class WindowManager
         get => m_applyMetatag;
         set
         {
-            m_applyMetatag = value;
             if (value != null && value != m_applyMetatag)
-                value.Closing += ((_, _) => App.State.WindowManager.ApplyMetatagPanel = null);
+                value.Closing += ((_, _) =>
+                                  {
+                                      App.State.WindowManager.ApplyMetatagPanel = null;
+                                  });
+            m_applyMetatag = value;
         }
     }
 

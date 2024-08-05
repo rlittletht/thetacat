@@ -178,7 +178,7 @@ public partial class MediaExplorerLine : UserControl
 
                 MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
                 if (mediaItem.VersionStack != null)
-                    stackItems.Add(App.State.Catalog.MediaStacks.Items[mediaItem.VersionStack.Value]);
+                    stackItems.Add(App.State.Catalog.VersionStacks.Items[mediaItem.VersionStack.Value]);
                 if (mediaItem.MediaStack != null)
                     stackItems.Add(App.State.Catalog.MediaStacks.Items[mediaItem.MediaStack.Value]);
 

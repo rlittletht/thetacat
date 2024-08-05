@@ -8,9 +8,9 @@ namespace Thetacat.Explorer;
 
 public class MetatagMRU
 {
-    private static int maxSize = 10;
+    private static readonly int maxSize = 30;
 
-    private List<Metatag> m_recentTags = new();
+    private readonly List<Metatag> m_recentTags = new();
     private int m_vectorClock = 0;
 
     public int VectorClock => m_vectorClock;
@@ -29,7 +29,7 @@ public class MetatagMRU
         // otherwise, add this to the top
         m_recentTags.Insert(0, metatag);
         if (m_recentTags.Count > maxSize)
-            m_recentTags.RemoveRange(10, m_recentTags.Count - 10);
+            m_recentTags.RemoveRange(maxSize, m_recentTags.Count - maxSize);
 
         m_vectorClock++;
     }

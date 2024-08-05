@@ -34,6 +34,17 @@ namespace Thetacat.Explorer.UI
         {
             DataContext = _model;
             InitializeComponent();
+            _model.PropertyChanged += ModelOnPropertyChanged;
+        }
+
+        private void ModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "CurrentStack")
+            {
+                _model.CurrentType = _model.CurrentStack?.Type ?? MediaStackType.Media;
+                _model.Description = _model.CurrentStack?.Description ?? "";
+                _model.StackId = _model.CurrentStack?.StackId.ToString() ?? string.Empty;
+            }
         }
 
         private void CreateStack(object sender, RoutedEventArgs e)
