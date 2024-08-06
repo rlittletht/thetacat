@@ -139,7 +139,7 @@ public class Derivatives
 
         if (!MainWindow.InUnitTest)
         {
-            m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(5, null, DoDerivativeWork);
+            m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(5, DoDerivativeWork, 2);
             m_derivativeWorkPipeline.Start();
         }
     }
@@ -431,7 +431,7 @@ public class Derivatives
         
         The work is queued using QueueDerivativeWork (via Queue
     ----------------------------------------------------------------------------*/
-    class DerivativeWork : IPipelineBase<DerivativeWork>
+    class DerivativeWork : IPipelineWorkItemBase<DerivativeWork>
     {
         public enum WorkType
         {
@@ -439,6 +439,7 @@ public class Derivatives
             Transcode
         }
 
+        public Guid Cookie => MediaKey;
         public Guid MediaKey { get; private set; }
         public string MD5 { get; private set; } = string.Empty;
         public WorkType Type { get; private set; }

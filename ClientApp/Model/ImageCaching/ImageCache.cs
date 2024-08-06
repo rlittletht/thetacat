@@ -51,7 +51,7 @@ public class ImageCache
         if (!MainWindow.InUnitTest)
         {
             // this will start the thread which will just wait for work to do...
-            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(5, null, DoImageLoaderWork);
+            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(5, DoImageLoaderWork, 5);
             m_imageLoaderPipeline.Start();
         }
 
@@ -94,13 +94,20 @@ public class ImageCache
             }
 
             if (existingItem.IsLoadQueued || existingItem.Image != null)
+            {
+                if (existingItem.IsLoadQueued)
+                {
+                    // accelearate the item...
+                    m_imageLoaderPipeline?.Producer.Accelerate(mediaItem.ID);
+                }
                 return existingItem;
+            }
 
             item = existingItem;
         }
 
         item.IsLoadQueued = true;
-        m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, md5, item));
+        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, item));
         return item;
     }
 
@@ -139,8 +146,9 @@ public class ImageCache
 
 #region Image Loading/Threading
 
-    class ImageLoaderWork : IPipelineBase<ImageLoaderWork>
+    class ImageLoaderWork : IPipelineWorkItemBase<ImageLoaderWork>
     {
+        public Guid Cookie => MediaKey;
         public Guid MediaKey { get; set; }
         public string MD5 { get; set; } = string.Empty;
         public string? PathToImage { get; set; }

@@ -271,6 +271,14 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         WindowDateRange = first == last ? first : $"{first} - {last}";
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: EnsureImagesForSurroundingRows
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.EnsureImagesForSurroundingRows
+
+        When we queue items to be cached, we will insert them into the front
+        of the queue. this means, paradoxically, we want to insert the current page
+        *last*
+    ----------------------------------------------------------------------------*/
     public void EnsureImagesForSurroundingRows(int row)
     {
         if (m_collection.TopCollection.Count == 0)
@@ -278,18 +286,34 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         MicroTimer timer = new MicroTimer();
         timer.Start();
-        int minRow = Math.Max(row - RowsPerExplorer, 0);
-        int maxRow = Math.Min(row + (2 * RowsPerExplorer), m_collection.TopCollection.Count - 1);
+
+        int maxRow = m_collection.TopCollection.Count - 1;
+        int firstRow = Math.Max(row - RowsPerExplorer, 0);
+        int lastRow = Math.Min(row + (2 * RowsPerExplorer), maxRow);
+
         ICatalog catalog = App.State.Catalog;
         ICache cache = App.State.Cache;
 
-        MainWindow.LogForApp(EventType.Information, $"starting ensure images: {minRow}-{maxRow}");
+        MainWindow.LogForApp(EventType.Information, $"starting ensure images: {firstRow}-{lastRow}");
 
         List<MediaExplorerLineModel> linesToCache = new List<MediaExplorerLineModel>();
-        while (minRow <= maxRow)
+
+        // first group to add are the items offscren
+        int firstOffscreen = Math.Min(firstRow + RowsPerExplorer, maxRow);
+        int current = firstOffscreen;
+
+        while (current <= lastRow)
         {
-            linesToCache.Add(m_collection.TopCollection[minRow]);
-            minRow++;
+            linesToCache.Add(m_collection.TopCollection[current]);
+            current++;
+        }
+
+        current = firstRow;
+
+        while (current <= firstOffscreen)
+        {
+            linesToCache.Add(m_collection.TopCollection[current]);
+            current++;
         }
 
         List<MediaItem> itemsToQueue = new();
@@ -337,7 +361,18 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         ThreadPool.QueueUserWorkItem(
             stateInfo =>
             {
+                MediaItem[] reversed = new MediaItem[mediaItems.Count];
+
+                int i = mediaItems.Count - 1;
+
                 foreach (MediaItem mediaItem in mediaItems)
+                {
+                    reversed[i--] = mediaItem;
+                }
+
+                // queue these in reverse order since we are going to insert them at the front of the
+                // queue one by one
+                foreach (MediaItem mediaItem in reversed)
                 {
                     string? path = cache.TryGetCachedFullPath(mediaItem.ID);
 

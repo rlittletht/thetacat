@@ -26,7 +26,7 @@
     <PackageReference Include="TCore.Exceptions" Version="1.1.1" />
     <PackageReference Include="TCore.MetadataExtractor" Version="1.0.2" />
     <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
-    <PackageReference Include="TCore.Pipeline" Version="2.1.1" />
+    <PackageReference Include="TCore.Pipeline" Version="3.0.0" />
     <PackageReference Include="TCore.PostfixText" Version="1.4.0" />
     <PackageReference Include="TCore.SqlClient" Version="1.4.0" />
     <PackageReference Include="TCore.SqlCore" Version="1.3.0" />
