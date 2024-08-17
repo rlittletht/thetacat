@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using Emgu.CV;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -27,7 +28,6 @@ public partial class MediaExplorer : UserControl
     private MediaExplorerCollection? m_collection;
 
     public MediaExplorerModel Model { get; set; } = new();
-    private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
     private readonly ItemSelector m_selector;
 
     public MediaExplorer()
@@ -198,6 +198,7 @@ public partial class MediaExplorer : UserControl
         {
             { ExplorerItemSize.Medium, 1.0 },
             { ExplorerItemSize.Large, 1.75 },
+            { ExplorerItemSize.ExtraLarge, 2.5 },
             { ExplorerItemSize.Small, 0.66 }
         };
 
@@ -214,8 +215,8 @@ public partial class MediaExplorer : UserControl
 
     public void SetExplorerItemSize(ExplorerItemSize itemSize)
     {
-        m_itemSize = itemSize;
-        SetModelFromExplorerItemSize(m_itemSize);
+        Model.ItemSize = itemSize;
+        SetModelFromExplorerItemSize(Model.ItemSize);
         App.State.ActiveProfile.ExplorerItemSize = itemSize;
     }
 

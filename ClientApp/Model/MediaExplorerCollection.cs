@@ -616,7 +616,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
     public void SetExpandMediaStacks(bool expanded)
     {
-        m_expandMediaStacks = expanded;
+        ExpandMediaStacks = expanded;
     }
 
     public void ToggleExpandMediaStacks()

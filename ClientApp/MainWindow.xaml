@@ -32,6 +32,16 @@
                 <MenuItem Header="_Filter" Click="DoChooseFilter" />
                 <Separator />
                 <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo" />
+                <MenuItem Header="_Preview size">
+                    <MenuItem Header="ExtraLarge" Click="SelectExtraLargePreview"
+                              IsChecked="{Binding Path=IsExtraLargePreview, Mode=OneWay}" />
+                    <MenuItem Header="Large" Click="SelectLargePreview"
+                              IsChecked="{Binding Path=IsLargePreview, Mode=OneWay}" />
+                    <MenuItem Header="Medium" Click="SelectMediumPreview"
+                              IsChecked="{Binding Path=IsMediumPreview, Mode=OneWay}" />
+                    <MenuItem Header="Small" Click="SelectSmallPreview"
+                              IsChecked="{Binding Path=IsSmallPreview, Mode=OneWay}" />
+                </MenuItem>
                 <MenuItem Header="Timeline" Name="TimelineMenu">
                     <MenuItem Header="Creation date" IsCheckable="True" Click="ChoosemMediaDateTimeline"
                               IsChecked="{Binding Path=ExplorerCollection.IsMediaDateTimeline, Mode=OneWay}" />
@@ -43,12 +53,9 @@
                               IsChecked="{Binding Path=ExplorerCollection.IsTimelineDescending, Mode=OneWay}" />
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Expand media stacks" Click="ToggleExpandMediaStacks" />
+                <MenuItem Header="Expand media stacks" Click="ToggleExpandMediaStacks" IsChecked="{Binding Path=ExplorerCollection.ExpandMediaStacks}"/>
                 <MenuItem Header="App log monitor" Click="ToggleAppLog" />
                 <MenuItem Header="Async log monitor" Click="ToggleAsyncLog" />
-                <MenuItem Header="Large pictures" Click="SelectLargePreview" />
-                <MenuItem Header="Medium pictures" Click="SelectMediumPreview" />
-                <MenuItem Header="Small pictures" Click="SelectSmallPreview" />
             </MenuItem>
             <MenuItem Header="_Debug">
                 <MenuItem Header="Test Render Image" Click="TestRenderImage" />

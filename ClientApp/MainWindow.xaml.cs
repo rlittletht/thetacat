@@ -67,7 +67,8 @@ public partial class MainWindow : Window
         Activated += OnMainWindowActivated;
         RebuildProfileList();
 
-        Explorer.SetExplorerItemSize(App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium);
+        m_model.ItemSize = App.State.ActiveProfile.ExplorerItemSize ?? ExplorerItemSize.Medium;
+        Explorer.SetExplorerItemSize(m_model.ItemSize);
         m_model.ExplorerCollection.SetExpandMediaStacks(App.State.ActiveProfile.ExpandMediaStacksInExplorers ?? false);
 
         // we have to load the catalog AND the pending upload list
@@ -381,19 +382,28 @@ public partial class MainWindow : Window
         App.State.MetatagSchema.UpdateServer(App.State.ActiveProfile.CatalogID);
     }
 
+    private void SelectExtraLargePreview(object sender, RoutedEventArgs e)
+    {
+        m_model.ItemSize = ExplorerItemSize.ExtraLarge;
+        Explorer.SetExplorerItemSize(m_model.ItemSize);
+    }
+
     private void SelectLargePreview(object sender, RoutedEventArgs e)
     {
-        Explorer.SetExplorerItemSize(ExplorerItemSize.Large);
+        m_model.ItemSize = ExplorerItemSize.Large;
+        Explorer.SetExplorerItemSize(m_model.ItemSize);
     }
 
     private void SelectMediumPreview(object sender, RoutedEventArgs e)
     {
-        Explorer.SetExplorerItemSize(ExplorerItemSize.Medium);
+        m_model.ItemSize = ExplorerItemSize.Medium;
+        Explorer.SetExplorerItemSize(m_model.ItemSize);
     }
 
     private void SelectSmallPreview(object sender, RoutedEventArgs e)
     {
-        Explorer.SetExplorerItemSize(ExplorerItemSize.Small);
+        m_model.ItemSize = ExplorerItemSize.Small;
+        Explorer.SetExplorerItemSize(m_model.ItemSize);
     }
 
     void DoWork(IProgressReport report)

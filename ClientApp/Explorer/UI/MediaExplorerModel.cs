@@ -35,6 +35,12 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public LaunchItemCommand? LaunchItem { get; set; }
     public EditNewVersionCommand? EditNewVersion { get; set; }
 
+    public ExplorerItemSize ItemSize
+    {
+        get => m_itemSize;
+        set => SetField(ref m_itemSize, value);
+    }
+
     public double PanelItemHeight
     {
         get => m_panelItemHeight;
@@ -75,6 +81,5 @@ public class MediaExplorerModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new();
-
-
+    private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 }
