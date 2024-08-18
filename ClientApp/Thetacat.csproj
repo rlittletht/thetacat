@@ -41,12 +41,17 @@
   <ItemGroup>
     <Folder Include="Azure\" />
     <Folder Include="Model\Metatags\" />
+    <Folder Include="App\" />
     <Folder Include="Properties\" />
     <Folder Include="Secrets\" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <ItemGroup>
