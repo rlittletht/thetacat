@@ -195,7 +195,7 @@ public partial class MediaMigration : UserControl
             ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Stop();
             SetVerifyResult();
             verifyTimer?.Stop();
-            MainWindow.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer?.Elapsed()}");
+            App.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer?.Elapsed()}");
             App.State.Md5Cache.CommitCacheItems();
         }
     }
@@ -337,7 +337,7 @@ public partial class MediaMigration : UserControl
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
         MediaImporter importer = new MediaImporter(
             checkedItems, 
-            MainWindow.ClientName,
+            MainApp.MainWindow.ClientName,
             (itemFile, catalogItem) =>
             {
                 PseMediaItem pseItem = itemFile as PseMediaItem ?? throw new CatExceptionInternalFailure("file item isn't a PseMediaItem");

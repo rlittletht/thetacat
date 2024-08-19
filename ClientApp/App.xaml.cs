@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows;
 using HeyRed.Mime;
 using RestoreWindowPlace;
+using Thetacat.Logging;
 using Thetacat.Types;
 
 namespace Thetacat
@@ -25,6 +26,16 @@ namespace Thetacat
 
                 return m_appState;
             }
+        }
+
+        public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            MainApp.MainWindow.LogForAsync(eventType, log, details, correlationId);
+        }
+
+        public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            MainApp.MainWindow.LogForApp(eventType, log, details, correlationId);
         }
 
         public static void OnMainWindowCreated()

@@ -41,7 +41,6 @@
   <ItemGroup>
     <Folder Include="Azure\" />
     <Folder Include="Model\Metatags\" />
-    <Folder Include="App\" />
     <Folder Include="Properties\" />
     <Folder Include="Secrets\" />
   </ItemGroup>

@@ -102,13 +102,13 @@ public class StacksMigrate
 
             if (pseItem == null)
             {
-                MainWindow.LogForApp(EventType.Error, $"pseItem {item.MediaID} not found for stack");
+                App.LogForApp(EventType.Error, $"pseItem {item.MediaID} not found for stack");
                 continue;
             }
 
             if (!App.State.Catalog.TryGetMedia(pseItem.CatID, out MediaItem? mediaItem))
             {
-                MainWindow.LogForApp(EventType.Error, $"pseItem {pseItem.ID} ({pseItem.FullPath}) has not catalog item. migrate not done?");
+                App.LogForApp(EventType.Error, $"pseItem {pseItem.ID} ({pseItem.FullPath}) has not catalog item. migrate not done?");
                 continue;
             }
 

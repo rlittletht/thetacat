@@ -102,7 +102,7 @@ public partial class MediaTagMigrateSummary : UserControl
             // and move on
             if (existing.Value != null && existing.Value != value)
             {
-                MainWindow.LogForApp(
+                App.LogForApp(
                 EventType.Warning,
                     $"metadata for {item.FullPath}:{metatag.Description} {existing.Value} != {value}");
                 identical = false;
@@ -142,7 +142,7 @@ public partial class MediaTagMigrateSummary : UserControl
         AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Width, item.ImageWidth.ToString());
         AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Height, item.ImageHeight.ToString());
         if (item.FileDateOriginal == null)
-            MainWindow.LogForApp(EventType.Error, $"no original media data for item: {item.FullPath}");
+            App.LogForApp(EventType.Error, $"no original media data for item: {item.FullPath}");
         else
             AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_OriginalMediaDate, item.FileDateOriginal.Value.ToUniversalTime().ToString("u"));
 
@@ -196,7 +196,7 @@ public partial class MediaTagMigrateSummary : UserControl
         {
             if (!App.State.Catalog.TryGetMedia(item.MediaID, out MediaItem? catItem))
             {
-                MainWindow.LogForApp(EventType.Warning, $"can't find media item {item}");
+                App.LogForApp(EventType.Warning, $"can't find media item {item}");
             }
             else
             {

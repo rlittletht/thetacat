@@ -14,7 +14,7 @@ namespace Thetacat.UI
         public AppLogMonitor()
         {
             InitializeComponent();
-            AppLogView.LogEntries.ItemsSource = MainWindow._AppLog.Entries.AsObservable;
+            AppLogView.LogEntries.ItemsSource = MainApp.MainWindow._AppLog.Entries.AsObservable;
             BindingOperations.EnableCollectionSynchronization(AppLogView.LogEntries.ItemsSource, lockObject);
             System.Diagnostics.PresentationTraceSources.SetTraceLevel(
                 AppLogView.LogEntries.ItemContainerGenerator,

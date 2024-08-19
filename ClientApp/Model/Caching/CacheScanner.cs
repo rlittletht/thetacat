@@ -236,7 +236,7 @@ public class CacheScanner
                 {
                     // don't alert if the media didn't have an md5 before
                     if (!string.IsNullOrEmpty(item.MD5))
-                        MainWindow.LogForApp(EventType.Error, $"md5 mismatch on scan for media: {item.VirtualPath}");
+                        App.LogForApp(EventType.Error, $"md5 mismatch on scan for media: {item.VirtualPath}");
 
                     deltas.Add(new CacheItemDelta(DeltaType.Changed, item, fullPath, md5Current));
                 }

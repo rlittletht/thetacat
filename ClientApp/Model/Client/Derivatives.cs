@@ -137,7 +137,7 @@ public class Derivatives
     {
         ResetDerivatives(client);
 
-        if (!MainWindow.InUnitTest)
+        if (!MainApp.MainWindow.InUnitTest)
         {
             m_derivativeWorkPipeline = new ProducerConsumer<DerivativeWork>(5, DoDerivativeWork, 2);
             m_derivativeWorkPipeline.Start();

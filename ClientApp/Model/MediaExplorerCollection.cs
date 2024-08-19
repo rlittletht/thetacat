@@ -171,7 +171,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
         {
-            MainWindow.LogForAsync(EventType.Critical, $"Done caching {cacheItem.MediaId}");
+            App.LogForAsync(EventType.Critical, $"Done caching {cacheItem.MediaId}");
 
             cacheItem.IsLoadQueued = false;
             if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))
@@ -294,7 +294,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         ICatalog catalog = App.State.Catalog;
         ICache cache = App.State.Cache;
 
-        MainWindow.LogForApp(EventType.Information, $"starting ensure images: {firstRow}-{lastRow}");
+        App.LogForApp(EventType.Information, $"starting ensure images: {firstRow}-{lastRow}");
 
         List<MediaExplorerLineModel> linesToCache = new List<MediaExplorerLineModel>();
 
@@ -326,10 +326,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             }
         }
 
-        MainWindow.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
         QueueImageCacheLoadForMediaItems(itemsToQueue);
 
-        MainWindow.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
     }
 
     /*----------------------------------------------------------------------------
@@ -639,7 +639,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     public void BuildTimelineForMediaCollection(IEnumerable<MediaItem> collection)
     {
         MicroTimer timer = new MicroTimer();
-        MainWindow.LogForApp(EventType.Information, "Beginning building timeline collection");
+        App.LogForApp(EventType.Information, "Beginning building timeline collection");
 
         Clear();
 
@@ -746,7 +746,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             }
         }
 
-        MainWindow.LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"Done building. {timer.Elapsed()}");
     }
 
     public void ResetTimeline()

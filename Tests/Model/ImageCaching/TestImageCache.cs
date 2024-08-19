@@ -1,5 +1,5 @@
 ﻿using System.Windows.Media.Imaging;
-using Thetacat;
+using Thetacat.MainApp;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 

@@ -48,7 +48,7 @@ public class ImageCache
     public ImageCache(bool fFullFidelity = false)
     {
         // don't start the pipeline thread if we're under a unit test.
-        if (!MainWindow.InUnitTest)
+        if (!MainApp.MainWindow.InUnitTest)
         {
             // this will start the thread which will just wait for work to do...
             m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(5, DoImageLoaderWork, 5);
@@ -83,7 +83,7 @@ public class ImageCache
     public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
-        MainWindow.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
+        App.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
 
         if (!Items.TryAdd(mediaItem.ID, item))
         {
@@ -525,7 +525,7 @@ public class ImageCache
 
             if (item.PathToImage == null)
             {
-                MainWindow.LogForApp(EventType.Warning, $"skipping null path");
+                App.LogForApp(EventType.Warning, $"skipping null path");
                 continue;
             }
 
@@ -596,7 +596,7 @@ public class ImageCache
             }
             catch (Exception e)
             {
-                MainWindow.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
+                App.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
                 BitmapSource error = CreatePlaceholderImage($"cache failed");
                 InternalSetBitmapForItem(item.MediaKey, error);
             }

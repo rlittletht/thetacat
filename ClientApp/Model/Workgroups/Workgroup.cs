@@ -147,7 +147,7 @@ public class Workgroup : IWorkgroup
 
         m_db ??= new WorkgroupDb(Database);
 
-        ServiceWorkgroupClient? client = m_db.GetClientDetails(MainWindow.ClientName);
+        ServiceWorkgroupClient? client = m_db.GetClientDetails(MainApp.MainWindow.ClientName);
 
         if (client == null)
         {
@@ -155,7 +155,7 @@ public class Workgroup : IWorkgroup
                 new ServiceWorkgroupClient()
                 {
                     ClientId = Guid.NewGuid(),
-                    ClientName = MainWindow.ClientName,
+                    ClientName = MainApp.MainWindow.ClientName,
                     VectorClock = 0
                 };
 

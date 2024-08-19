@@ -625,7 +625,7 @@ public class MediaItem : INotifyPropertyChanged
                 {
                     if (!allowPropertyOverride)
                     {
-                        MainWindow.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                        App.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                         log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                     }
 
@@ -788,7 +788,7 @@ public class MediaItem : INotifyPropertyChanged
             }
             catch
             {
-                MainWindow.LogForApp(EventType.Warning, $"Could not get date from metadata for {file}");
+                App.LogForApp(EventType.Warning, $"Could not get date from metadata for {file}");
                 dateTimeString = null;
             }
         }

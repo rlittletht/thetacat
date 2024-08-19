@@ -102,7 +102,7 @@ public class MediaImporter
         {
             if (!App.State.Catalog.TryGetMedia(item.ID, out MediaItem? mediaItem))
             {
-                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
+                App.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
 
                 skippedItems = true;
                 ImportItems.Add(
@@ -146,7 +146,7 @@ public class MediaImporter
                             if (scanner.GetFileInfoForFile(fullPath) == null)
                             {
                                 // workgroup cache doesn't exist either
-                                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} in source location or cache location {fullPath}");
+                                App.LogForApp(EventType.Error, $"import item {item.ID} in source location or cache location {fullPath}");
                                 skippedItems = true;
                                 newItem.State = ImportItem.ImportState.MissingFromCatalog;
                             }
@@ -484,7 +484,7 @@ public class MediaImporter
 
                     if (task.IsCanceled || task.IsFaulted)
                     {
-                        MainWindow.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
+                        App.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
                         return false;
                     }
 
@@ -493,7 +493,7 @@ public class MediaImporter
 
                     if (media.MD5 != blob.ContentMd5)
                     {
-                        MainWindow.LogForApp(EventType.Critical, $"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                        App.LogForApp(EventType.Critical, $"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
                         media.MD5 = blob.ContentMd5;
                     }
 
@@ -502,19 +502,19 @@ public class MediaImporter
                     item.UploadDate = DateTime.Now;
 
                     ServiceInterop.CompleteImportForItem(App.State.ActiveProfile.CatalogID, item.ID);
-                    MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+                    App.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
                 }
 
                 if (item.State == ImportItem.ImportState.MissingFromCatalog)
                 {
                     ServiceInterop.DeleteImportItem(App.State.ActiveProfile.CatalogID, item.ID);
-                    MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
+                    App.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
                 }
             }
         }
         catch (Exception ex)
         {
-            MainWindow.LogForApp(EventType.Critical, $"Upload pending media failed: {ex.Message}");
+            App.LogForApp(EventType.Critical, $"Upload pending media failed: {ex.Message}");
         }
         finally
         {
@@ -550,7 +550,7 @@ public class MediaImporter
         ImportItem.ImportState state = mediaItem.State == MediaItemState.Active ? ImportItem.ImportState.Complete : ImportItem.ImportState.PendingUpload;
 
         // need to invent an import item for each missing item
-        ImportItem item = new ImportItem(mediaItem.ID, MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
+        ImportItem item = new ImportItem(mediaItem.ID, MainApp.MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
 
         item.SetPathsFromFullPath(fullPath);
         return item;
@@ -625,19 +625,19 @@ public class MediaImporter
             if (localPath == null)
             {
                 // can't get a local path. can't create an import item
-                MainWindow.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no workgroup cache for it. this will remain broken");
+                App.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no workgroup cache for it. this will remain broken");
                 continue;
             }
 
             if (!catalog.TryGetMedia(mediaId, out MediaItem? mediaItem))
             {
                 // can't find this item in the catalog. don't try to fix it
-                MainWindow.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no catalog item for it. this will remain broken");
+                App.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no catalog item for it. this will remain broken");
                 continue;
             }
 
             if (mediaItem.State == MediaItemState.Active)
-                MainWindow.LogForApp(EventType.Critical, $"media state is active for missing import ({mediaItem.VirtualPath}). weird. still fixing.");
+                App.LogForApp(EventType.Critical, $"media state is active for missing import ({mediaItem.VirtualPath}). weird. still fixing.");
 
             PathSegment fullPath = new PathSegment(localPath);
             ImportItem item = CreateNewImportItemForArbitraryPath(mediaItem, fullPath);
@@ -660,7 +660,7 @@ public class MediaImporter
         if (m_knownItems.Contains(mediaItem.ID))
         {
             // we need to change it to be in a pending state
-            ServiceInterop.ResetImportToPendingForItem(App.State.ActiveProfile.CatalogID, mediaItem.ID, MainWindow.ClientName);
+            ServiceInterop.ResetImportToPendingForItem(App.State.ActiveProfile.CatalogID, mediaItem.ID, MainApp.MainWindow.ClientName);
         }
         else
         {

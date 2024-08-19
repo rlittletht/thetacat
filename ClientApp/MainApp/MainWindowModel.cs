@@ -7,7 +7,7 @@ using Thetacat.Filtering;
 using Thetacat.Model;
 using Thetacat.TcSettings;
 
-namespace Thetacat;
+namespace Thetacat.MainApp;
 
 public class MainWindowModel: INotifyPropertyChanged
 {

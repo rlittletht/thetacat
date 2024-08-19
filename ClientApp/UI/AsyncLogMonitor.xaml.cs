@@ -14,7 +14,7 @@ namespace Thetacat.UI
         public AsyncLogMonitor()
         {
             InitializeComponent();
-            AsyncLogView.LogEntries.ItemsSource = MainWindow._AsyncLog.Entries.AsObservable;
+            AsyncLogView.LogEntries.ItemsSource =  MainApp.MainWindow._AsyncLog.Entries.AsObservable;
             BindingOperations.EnableCollectionSynchronization(AsyncLogView.LogEntries.ItemsSource, lockObject);
             System.Diagnostics.PresentationTraceSources.SetTraceLevel(
                 AsyncLogView.LogEntries.ItemContainerGenerator,

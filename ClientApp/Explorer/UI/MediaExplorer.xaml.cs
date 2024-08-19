@@ -185,7 +185,7 @@ public partial class MediaExplorer : UserControl
 
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
+        App.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
         m_collection?.NotifyTopVisibleItem((int)e.VerticalOffset);
         m_collection?.EnsureImagesForSurroundingRows((int)e.VerticalOffset);
     }
@@ -419,7 +419,7 @@ public partial class MediaExplorer : UserControl
                 }
             }
 
-            MainWindow.LogForApp(EventType.Information, $"hit test result: {item.TileSrc}, {item.TileLabel}");
+            App.LogForApp(EventType.Information, $"hit test result: {item.TileSrc}, {item.TileLabel}");
         }
 
         if (Model.ExplorerContextMenu.RecentTagVectorClock != App.State.MetatagMRU.VectorClock)

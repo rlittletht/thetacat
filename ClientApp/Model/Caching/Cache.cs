@@ -344,7 +344,7 @@ public class Cache : ICache
         if (item.IsCachePending && item.State != MediaItemState.Pending)
         {
             TcBlob blob = await AzureCat._Instance.DownloadMedia(destination, item.ID.ToString(), item.MD5);
-            MainWindow.LogForAsync(EventType.Information, $"downloaded {item.ID} to {destination}");
+            App.LogForAsync(EventType.Information, $"downloaded {item.ID} to {destination}");
             return true;
         }
 
@@ -507,7 +507,7 @@ public class Cache : ICache
 
                 if (!App.State.Catalog.TryGetMedia(entry.ID, out MediaItem? item))
                 {
-                    MainWindow.LogForApp(EventType.Critical, $"Could not find item: {entry.ID} in catalog for repath check. skipping");
+                    App.LogForApp(EventType.Critical, $"Could not find item: {entry.ID} in catalog for repath check. skipping");
                     continue;
                 }
 
@@ -609,7 +609,7 @@ public class Cache : ICache
                     task.Wait();
                     if (task.IsCanceled || task.IsFaulted)
                     {
-                        MainWindow.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
+                        App.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
                         _Workgroup.PushChangesToDatabase(null);
                         return false;
                     }

@@ -210,7 +210,7 @@ public class AppState : IAppState
         }
         catch
         {
-            MainWindow.LogForApp(EventType.Warning, $"Couldn't remove collateral for item {item}. Will try again later.");
+            App.LogForApp(EventType.Warning, $"Couldn't remove collateral for item {item}. Will try again later.");
         }
     }
 

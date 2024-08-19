@@ -20,7 +20,7 @@ public class BindingProxy : Freezable
     {
         get
         {
-            MainWindow.LogForApp(EventType.Warning, "got data");
+            App.LogForApp(EventType.Warning, "got data");
             return (object)GetValue(DataProperty);
         }
         set { SetValue(DataProperty, value); }
@@ -107,7 +107,7 @@ public partial class MediaExplorerLine : UserControl
 
                 mediaItem.PropertyChanged -= item.OnMediaItemChanged;
 
-                MainWindow.LogForApp(EventType.Information, $"mouse move for image");
+                App.LogForApp(EventType.Information, $"mouse move for image");
             }
         }
     }

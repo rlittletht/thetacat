@@ -532,7 +532,7 @@ namespace Thetacat.Import.UI
             m_importer.ClearItems();
             m_importer.AddMediaItemFilesToImporter(
                 checkedItems,
-                MainWindow.ClientName,
+                MainApp.MainWindow.ClientName,
                 (itemFile, catalogItem) =>
                 {
                     ImportNode node = itemFile as ImportNode ?? throw new CatExceptionInternalFailure("file item isn't an ImportNode?");
