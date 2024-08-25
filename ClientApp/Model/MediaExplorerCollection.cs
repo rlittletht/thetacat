@@ -171,7 +171,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
         if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
         {
-            App.LogForAsync(EventType.Critical, $"Done caching {cacheItem.MediaId}");
+            App.LogForAsync(EventType.Verbose, $"Done caching {cacheItem.MediaId}");
 
             cacheItem.IsLoadQueued = false;
             if (m_explorerItems.TryGetValue(e.MediaId, out MediaExplorerItem? explorerItem))

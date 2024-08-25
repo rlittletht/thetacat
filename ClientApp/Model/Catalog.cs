@@ -274,7 +274,7 @@ public class Catalog : ICatalog
 
         ServiceCatalog catalog = await GetFullCatalogAsync(catalogID);
 
-        App.LogForApp(EventType.Warning, $"ServiceInterop.ReadFullCatalog: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"ServiceInterop.ReadFullCatalog: {timer.Elapsed()}");
 
         timer.Reset();
         timer.Start();
@@ -294,7 +294,7 @@ public class Catalog : ICatalog
             dict.TryAdd(mediaItem.ID, mediaItem);
         }
 
-        App.LogForApp(EventType.Warning, $"Populate Media Dictionary: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"Populate Media Dictionary: {timer.Elapsed()}");
         timer.Reset();
         timer.Start();
 
@@ -318,7 +318,7 @@ public class Catalog : ICatalog
             m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
         }
 
-        App.LogForApp(EventType.Warning, $"MediaTags added: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"MediaTags added: {timer.Elapsed()}");
         timer.Reset();
         timer.Start();
 
@@ -337,7 +337,7 @@ public class Catalog : ICatalog
             AssociateStackWithMedia(mediaStack, stackType);
         }
 
-        App.LogForApp(EventType.Warning, $"Stacks associated: {timer.Elapsed()}");
+        App.LogForApp(EventType.Verbose, $"Stacks associated: {timer.Elapsed()}");
         timer.Reset();
         timer.Start();
 
@@ -348,7 +348,7 @@ public class Catalog : ICatalog
             m_observableView.ReplaceCollection(GetMediaCollection());
         }
 
-        App.LogForApp(EventType.Warning, $"ObservableView populated: {timer.Elapsed()}");
+        App.LogForApp(EventType.Information, $"ObservableView populated: {timer.Elapsed()}");
     }
 
     /*----------------------------------------------------------------------------
@@ -482,7 +482,7 @@ public class Catalog : ICatalog
                 timer.Start();
 
                 BuildVirtualLookup();
-                App.LogForApp(EventType.Warning, $"BuildVirtualLookup: {timer.Elapsed()}");
+                App.LogForApp(EventType.Information, $"BuildVirtualLookup: {timer.Elapsed()}");
             }
         }
 

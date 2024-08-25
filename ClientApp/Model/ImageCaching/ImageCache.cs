@@ -83,7 +83,7 @@ public class ImageCache
     public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
-        App.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
+        App.LogForAsync(EventType.Verbose, $"queuing item {item.MediaId}");
 
         if (!Items.TryAdd(mediaItem.ID, item))
         {

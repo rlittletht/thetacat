@@ -18,16 +18,12 @@ public class BindingProxy : Freezable
 
     public object Data
     {
-        get
-        {
-            App.LogForApp(EventType.Warning, "got data");
-            return (object)GetValue(DataProperty);
-        }
-        set { SetValue(DataProperty, value); }
+        get => (object)GetValue(DataProperty);
+        set => SetValue(DataProperty, value);
     }
 
     public static readonly DependencyProperty DataProperty =
-        DependencyProperty.Register("Data", typeof(object), typeof(BindingProxy), new UIPropertyMetadata(null));
+        DependencyProperty.Register(nameof(Data), typeof(object), typeof(BindingProxy), new UIPropertyMetadata(null));
 }
 
 /// <summary>
@@ -107,7 +103,7 @@ public partial class MediaExplorerLine : UserControl
 
                 mediaItem.PropertyChanged -= item.OnMediaItemChanged;
 
-                App.LogForApp(EventType.Information, $"mouse move for image");
+                App.LogForApp(EventType.Verbose, $"mouse move for image");
             }
         }
     }

@@ -195,7 +195,7 @@ public partial class MediaMigration : UserControl
             ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Stop();
             SetVerifyResult();
             verifyTimer?.Stop();
-            App.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer?.Elapsed()}");
+            App.LogForApp(EventType.Information, $"VerifyPaths: {verifyTimer?.Elapsed()}");
             App.State.Md5Cache.CommitCacheItems();
         }
     }

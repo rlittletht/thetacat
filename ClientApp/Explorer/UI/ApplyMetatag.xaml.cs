@@ -48,7 +48,7 @@ public partial class ApplyMetatag : Window
         MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
         MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_DontPushToCloud, initialState);
         MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_IsTrashItem, initialState);
-        App.LogForApp(EventType.Warning, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
+        App.LogForApp(EventType.Verbose, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 
     public static Dictionary<string, bool?> GetCheckedAndSetFromSetsAndIndeterminates(List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
@@ -186,7 +186,7 @@ public partial class ApplyMetatag : Window
         if (expandedApplied.Count > 0)
             RestoreExpandedTreeItems(MetatagsApplied, expandedApplied);
 
-        App.LogForApp(EventType.Warning, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
+        App.LogForApp(EventType.Verbose, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
         if (applyDelegate != null)
             m_applyDelegate = applyDelegate;
     }

@@ -23,7 +23,7 @@ public class LaunchItemCommand : ICommand
         if (parameter is MediaExplorerItem item)
             m_launchDelegate(item);
 
-        App.LogForApp(EventType.Information, $"Invoke LaunchItem");
+        App.LogForApp(EventType.Verbose, $"Invoke LaunchItem");
     }
 
 #pragma warning disable CS0067

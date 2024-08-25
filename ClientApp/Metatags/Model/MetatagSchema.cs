@@ -289,7 +289,7 @@ public class MetatagSchema
     {
         lock (BuiltinTags.s_BuiltinTags)
         {
-            App.LogForApp(EventType.Warning, "ensure builtin defined");
+            App.LogForApp(EventType.Verbose, "ensure builtin defined");
             GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
             GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
 
@@ -297,12 +297,12 @@ public class MetatagSchema
             {
                 if (GetMetatagFromId(metatag.ID) == null)
                 {
-                    App.LogForApp(EventType.Warning, $"adding {metatag.Description}: {metatag.ID}");
+                    App.LogForApp(EventType.Verbose, $"adding {metatag.Description}: {metatag.ID}");
                     AddMetatag(metatag);
                 }
             }
 
-            App.LogForApp(EventType.Warning, "ensure builtin done");
+            App.LogForApp(EventType.Verbose, "ensure builtin done");
         }
     }
 

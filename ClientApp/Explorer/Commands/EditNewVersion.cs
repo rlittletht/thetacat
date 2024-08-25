@@ -23,7 +23,7 @@ public class EditNewVersionCommand : ICommand
         if (parameter is MediaExplorerItem item)
             m_editNewVersionDelegate(item);
 
-        App.LogForApp(EventType.Information, $"Invoke EditNewVersion");
+        App.LogForApp(EventType.Verbose, $"Invoke EditNewVersion");
     }
 
 #pragma warning disable CS0067
