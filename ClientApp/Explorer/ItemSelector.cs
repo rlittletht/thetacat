@@ -24,6 +24,11 @@ public class ItemSelector
         m_onSelectionChanged = onSelectionChanged;
     }
 
+    public void ResetSelection()
+    {
+        m_itemsSelected.Clear();
+    }
+
     public void ResetCollection(MediaExplorerCollection? collection)
     {
         m_collection = collection;

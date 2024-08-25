@@ -109,7 +109,7 @@ public partial class MainWindow : Window, IMainCommands
         s_appLog = new CatLog(EventType.Information);
     }
 
-    #region Event Handlers
+#region Event Handlers
 
     /*----------------------------------------------------------------------------
         %%Function: OnClosing
@@ -191,6 +191,8 @@ public partial class MainWindow : Window, IMainCommands
     {
         RebuildFilterList();
         m_model.ExplorerCollection.Clear();
+        Explorer.ClearSelection();
+
         if (App.State?.ActiveProfile?.DefaultFilterName != null)
         {
             if (App.State.ActiveProfile.Filters.TryGetValue(App.State.ActiveProfile.DefaultFilterName, out FilterDefinition? filter))
@@ -355,16 +357,28 @@ public partial class MainWindow : Window, IMainCommands
         m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: SetTimelineType
+        %%Qualified: Thetacat.MainApp.MainWindow.SetTimelineType
+    ----------------------------------------------------------------------------*/
     public void SetTimelineType(TimelineType type)
     {
         m_model.ExplorerCollection.SetTimelineType(type);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: SetTimelineOrder
+        %%Qualified: Thetacat.MainApp.MainWindow.SetTimelineOrder
+    ----------------------------------------------------------------------------*/
     public void SetTimelineOrder(TimelineOrder order)
     {
         m_model.ExplorerCollection.SetTimelineOrder(order);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ChooseFilterOrCurrent
+        %%Qualified: Thetacat.MainApp.MainWindow.ChooseFilterOrCurrent
+    ----------------------------------------------------------------------------*/
     public void ChooseFilterOrCurrent(string? filterName)
     {
         filterName = filterName ?? m_model.ExplorerCollection.Filter?.FilterName;
@@ -402,6 +416,10 @@ public partial class MainWindow : Window, IMainCommands
 
 #region Logging
 
+    /*----------------------------------------------------------------------------
+        %%Function: LogForAsync
+        %%Qualified: Thetacat.MainApp.MainWindow.LogForAsync
+    ----------------------------------------------------------------------------*/
     public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
     {
         if (InUnitTest)
@@ -416,6 +434,10 @@ public partial class MainWindow : Window, IMainCommands
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: LogForApp
+        %%Qualified: Thetacat.MainApp.MainWindow.LogForApp
+    ----------------------------------------------------------------------------*/
     public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
     {
         if (InUnitTest)
@@ -433,71 +455,91 @@ public partial class MainWindow : Window, IMainCommands
 
     private ProgressListDialog? m_backgroundProgressDialog;
 
-    #region UI Commands
+#region UI Commands
+
+    private async void ConnectToDatabase(object sender, RoutedEventArgs e)
+    {
+        App.State.AddBackgroundWork($"Connecting to catalog", ConnectToDatabaseWork);
+    }
 
     /*----------------------------------------------------------------------------
         %%Function: ConnectToDatabase
         %%Qualified: Thetacat.MainApp.MainWindow.ConnectToDatabase
     ----------------------------------------------------------------------------*/
-    private async void ConnectToDatabase(object sender, RoutedEventArgs e)
+    private bool ConnectToDatabaseWork(IProgressReport progressReport)
     {
-        LogForApp(EventType.Information, "Beginning read catalog");
-        MicroTimer timer = new MicroTimer();
+        progressReport.SetIndeterminate();
 
-        List<Guid> deletedItems = ServiceInterop.GetDeletedMediaItems(App.State.ActiveProfile.CatalogID);
-
-        App.State.EnsureDeletedItemsCollateralRemoved(deletedItems);
-        await App.State.Catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, App.State.MetatagSchema);
-        // good time to refresh the MRU now that we loaded the catalog and the schema
-        App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
-        SetCollectionDirtyState(null, new DirtyItemEventArgs<bool>(false));
-
-        LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
-        timer.Reset();
-        timer.Start();
-
-        m_model.ExplorerCollection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
-        m_model.ExplorerCollection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
-        m_model.ExplorerCollection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
-        m_model.ExplorerCollection.AdjustExplorerHeight(Explorer.ExplorerBox.ActualHeight);
-        m_model.ExplorerCollection.UpdateItemsPerLine();
-
-        LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
-        timer.Reset();
-        timer.Start();
-
-        TimelineType timelineType = m_model.ExplorerCollection.TimelineType;
-        if (timelineType.Equals(TimelineType.None))
+        try
         {
-            if (App.State.ActiveProfile.TimelineType != null)
-                timelineType = App.State.ActiveProfile.TimelineType;
+            LogForApp(EventType.Information, "Beginning read catalog");
+            MicroTimer timer = new MicroTimer();
 
+            List<Guid> deletedItems = ServiceInterop.GetDeletedMediaItems(App.State.ActiveProfile.CatalogID);
+
+            App.State.EnsureDeletedItemsCollateralRemoved(deletedItems);
+            App.State.Catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, App.State.MetatagSchema).Wait();
+            // good time to refresh the MRU now that we loaded the catalog and the schema
+            App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);
+            SetCollectionDirtyState(null, new DirtyItemEventArgs<bool>(false));
+
+            LogForApp(EventType.Information, $"Done after ReadFullCatalogFromServer. {timer.Elapsed()}");
+            timer.Reset();
+            timer.Start();
+
+            m_model.ExplorerCollection.AdjustPanelItemWidth(Explorer.Model.PanelItemWidth);
+            m_model.ExplorerCollection.AdjustPanelItemHeight(Explorer.Model.PanelItemHeight);
+            m_model.ExplorerCollection.AdjustExplorerWidth(Explorer.ExplorerBox.ActualWidth);
+            m_model.ExplorerCollection.AdjustExplorerHeight(Explorer.ExplorerBox.ActualHeight);
+            m_model.ExplorerCollection.UpdateItemsPerLine();
+
+            LogForApp(EventType.Information, $"Done reading catalog. {timer.Elapsed()}");
+            timer.Reset();
+            timer.Start();
+
+            TimelineType timelineType = m_model.ExplorerCollection.TimelineType;
             if (timelineType.Equals(TimelineType.None))
-                timelineType = TimelineType.MediaDate;
-        }
+            {
+                if (App.State.ActiveProfile.TimelineType != null)
+                    timelineType = App.State.ActiveProfile.TimelineType;
 
-        TimelineOrder timelineOrder = m_model.ExplorerCollection.TimelineOrder;
-        if (timelineOrder.Equals(TimelineOrder.None))
-        {
-            if (App.State.ActiveProfile.TimelineOrder != null)
-                timelineOrder = App.State.ActiveProfile.TimelineOrder;
+                if (timelineType.Equals(TimelineType.None))
+                    timelineType = TimelineType.MediaDate;
+            }
 
+            TimelineOrder timelineOrder = m_model.ExplorerCollection.TimelineOrder;
             if (timelineOrder.Equals(TimelineOrder.None))
-                timelineOrder = TimelineOrder.DateAscending;
+            {
+                if (App.State.ActiveProfile.TimelineOrder != null)
+                    timelineOrder = App.State.ActiveProfile.TimelineOrder;
+
+                if (timelineOrder.Equals(TimelineOrder.None))
+                    timelineOrder = TimelineOrder.DateAscending;
+            }
+
+            ThreadContext.InvokeOnUiThread(
+                () =>
+                {
+                    m_model.ExplorerCollection.ResetTimeline();
+                    m_model.ExplorerCollection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
+                });
+
+            LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
+
+            timer.Reset();
+            timer.Start();
+            LogForApp(EventType.Information, "Beginning reset content");
+            ThreadContext.InvokeOnUiThread(() => Explorer.ResetContent(m_model.ExplorerCollection)); // explorerItems);
+
+            AzureCat.EnsureCreated(App.State.AzureStorageAccount);
+            LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+        }
+        finally
+        {
+            progressReport.WorkCompleted();
         }
 
-        m_model.ExplorerCollection.ResetTimeline();
-        m_model.ExplorerCollection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
-
-        LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
-
-        timer.Reset();
-        timer.Start();
-        LogForApp(EventType.Information, "Beginning reset content");
-        Explorer.ResetContent(m_model.ExplorerCollection); // explorerItems);
-
-        AzureCat.EnsureCreated(App.State.AzureStorageAccount);
-        LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+        return true;
     }
 
     /*----------------------------------------------------------------------------

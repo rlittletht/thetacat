@@ -135,6 +135,11 @@ public partial class MediaExplorer : UserControl
     {
     }
 
+    public void ClearSelection()
+    {
+        m_selector.ResetSelection();
+    }
+
     public void ResetContent(MediaExplorerCollection collection)
     {
         m_collection = collection;
