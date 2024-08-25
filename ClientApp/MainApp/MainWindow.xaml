@@ -8,9 +8,17 @@
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Closing="OnClosing" Loaded="OnLoaded" Icon="/Assets/cat.ico">
+    <Window.Resources>
+        <Style x:Key="ControlRegion" TargetType="Grid">
+            <Setter Property="Background" Value="WhiteSmoke"/>
+        </Style>
+        <Style x:Key="ControlRegionStack" TargetType="StackPanel">
+            <Setter Property="Background" Value="WhiteSmoke" />
+        </Style>
+    </Window.Resources>
     <DockPanel>
         <!--VerticalAlignment="Stretch">-->
-        <local:AppMenuBar DockPanel.Dock="Top" DataContext="{Binding}" x:Name="AppMenuBar"/>
+        <local:AppMenuBar DockPanel.Dock="Top" DataContext="{Binding}" x:Name="AppMenuBar" />
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
@@ -18,20 +26,21 @@
                 <RowDefinition Height="0" />
                 <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal" Margin="5" >
-                <TextBlock Text="Profile: " Margin="0 2 0 0" />
+            <StackPanel Orientation="Horizontal" Style="{StaticResource ControlRegionStack}" >
+                <TextBlock Text="Profile: " Margin="8 11 0 4" />
                 <ComboBox ItemsSource="{Binding Path=AvailableProfiles}"
-                          SelectedItem="{Binding Path=CurrentProfile}" Width="96" />
-                <TextBlock Text="Filter: " Margin="0 2 0 0"/>
-                <ComboBox ItemsSource="{Binding Path=AvailableFilters}" SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="96"/>
-                <TextBlock Text="Jump to date:" Margin="10 2 0 0" />
-                <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Margin="5 0 0 0"/>
-                <Button Content="Show" Click="JumpToDate" Margin="5 0 5 0" Width="64"/>
-                <TextBlock Margin="5 2 0 0">Showing:</TextBlock>
-                <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Margin="5 2 0 0"/>
+                          SelectedItem="{Binding Path=CurrentProfile}" Width="96" Margin="3 7 3 3"/>
+                <TextBlock Text="Filter: " Margin="4 11 0 0" />
+                <ComboBox ItemsSource="{Binding Path=AvailableFilters}"
+                          SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="96" Margin="3 7 3 3"/>
+                <TextBlock Text="Jump to date:" Margin="10 11 0 0" />
+                <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Margin="5 7 0 2" />
+                <Button Content="Show" Click="JumpToDate" Margin="5 7 5 2" Width="64" />
+                <TextBlock Margin="5 11 0 0">Showing:</TextBlock>
+                <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Margin="5 11 0 0" />
             </StackPanel>
             <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="3" Style="{StaticResource ControlRegion}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="192" />
                     <ColumnDefinition Width="10*" />
@@ -45,15 +54,15 @@
                                                    VerticalAlignment="Top" Margin="2,3,0,0" Visibility="Collapsed" />
                         </StackPanel>
                         <Button Content="Metatag Panel" Click="DoToggleMetatagPanel" Height="24" Width="96"
-                                Margin="2,0,2,0" />
+                                Margin="2,2,2,2" />
                     </StackPanel>
                 </Grid>
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
                     <Button Content="Refresh" Click="DoRebuildTimeline" Height="24" Width="96"
-                            Margin="2,0,2,0" />
-                    <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="2,0,2,0"
-                            Width="96" IsEnabled="{Binding Path=IsDirty}"/>
-                    <Button Content="Connect" Click="ConnectToDatabase" Height="24" Margin="2,0,2,0" Width="96" />
+                            Margin="4" />
+                    <Button Content="Commit Changes" Click="CommitPendingChanges" Height="24" Margin="4"
+                            Width="96" IsEnabled="{Binding Path=IsDirty}" />
+                    <Button Content="Connect" Click="ConnectToDatabase" Height="24" Margin="4,4,18,4" Width="96" />
                 </StackPanel>
             </Grid>
         </Grid>
