@@ -13,7 +13,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0">Applicatino log entries</TextBlock>
+        <TextBlock Grid.Row="0">Application log entries</TextBlock>
         <controls:LogView Grid.Row="1" x:Name="AppLogView" />
     </Grid>
 </Window>

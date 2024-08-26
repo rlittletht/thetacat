@@ -10,38 +10,51 @@
     <Window.Resources>
         <Style x:Key="HeadingTextBlock" TargetType="{x:Type TextBlock}">
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="750" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Margin" Value="1 0 1 0" />
         </Style>
         <Style x:Key="HeadingTextBox" TargetType="{x:Type TextBox}">
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="750" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Margin" Value="1 0 1 0" />
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="IsReadOnly" Value="True" />
+        </Style>
+        <Style x:Key="ControlRegion" TargetType="Grid">
+            <Setter Property="Background" Value="WhiteSmoke" />
+            <Setter Property="Margin" Value="1 0 1 0" />
         </Style>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Zoom">
-                <MenuItem Header="{Binding Path=PruneModeCaption}" Click="TogglePruneMode" />
+                <MenuItem Header="Prune mode" Click="TogglePruneMode"
+                          IsChecked="{Binding Path=IsPruning, Mode=OneWay}" />
                 <MenuItem Header="_Next" Click="NextImage" />
                 <MenuItem Header="_Previous" Click="PreviousImage" />
                 <MenuItem Header="_Toggle Trashed" Click="ToggleImageTrashed" />
             </MenuItem>
         </Menu>
-        <Grid Margin="5" KeyUp="DoMediaZoomKeyUp">
+        <Grid Margin="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="7*" />
                 <RowDefinition Height="3*" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
-                <TextBox Text="{Binding Path=MediaItem.ID, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
-                <TextBlock Text=":" Style="{StaticResource HeadingTextBlock}" />
-                <TextBox Text="{Binding Path=MediaItem.VirtualPath, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
-            </StackPanel>
+            <Grid Grid.Row="0" Style="{StaticResource ControlRegion}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
+                    <TextBox Text="{Binding Path=MediaItem.ID, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
+                    <TextBlock Text=":" Style="{StaticResource HeadingTextBlock}" />
+                    <TextBox Text="{Binding Path=MediaItem.VirtualPath, Mode=OneWay}"
+                             Style="{StaticResource HeadingTextBox}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="PRUNING" VerticalAlignment="Center" Visibility="{Binding Path=PruningVisibility, Mode=OneWay}" Background="Red" Style="{StaticResource HeadingTextBlock}"/>
+            </Grid>
             <Grid Grid.Row="1">
                 <Image Source="{Binding Path=Image}"
                        Margin="5,5,5,5" />

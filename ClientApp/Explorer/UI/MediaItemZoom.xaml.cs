@@ -25,7 +25,6 @@ public partial class MediaItemZoom : Window
 
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
-    private bool m_pruning = false;
     private GetNextMediaItem? m_nextDelegate;
     private GetPreviousMediaItem? m_previousDelegate;
 
@@ -164,6 +163,13 @@ public partial class MediaItemZoom : Window
     }
 
 
+    public MediaItemZoom()
+    {
+        m_nextDelegate = null;
+        m_previousDelegate = null;
+        InitializeComponent();
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: MediaItemZoom
         %%Qualified: Thetacat.Explorer.MediaItemZoom.MediaItemZoom
@@ -179,7 +185,7 @@ public partial class MediaItemZoom : Window
         Activated += OnActivated;
         this.KeyDown += DoMediaZoomKeyUp;
         InitializeComponent();
-        m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
+        //m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
 
         SetMediaItem(item);
         UpdateMetatagPanelIfNecessary();
@@ -221,7 +227,7 @@ public partial class MediaItemZoom : Window
             DoNextImage();
         else if (e.Key == Key.P || e.Key == Key.Left)
             DoPreviousImage();
-        else if (e.Key == Key.D && m_pruning)
+        else if (e.Key == Key.D && m_model.IsPruning)
         {
             DoToggleImageTrashed();
             DoNextImage();
@@ -234,15 +240,15 @@ public partial class MediaItemZoom : Window
     ----------------------------------------------------------------------------*/
     private void TogglePruneMode(object sender, RoutedEventArgs e)
     {
-        if (m_pruning)
+        if (m_model.IsPruning)
         {
             m_model.PruneModeCaption = "Stop Pruning";
-            m_pruning = false;
+            m_model.IsPruning = false;
         }
         else
         {
             m_model.PruneModeCaption = "Start Pruning";
-            m_pruning = true;
+            m_model.IsPruning = true;
         }
     }
 

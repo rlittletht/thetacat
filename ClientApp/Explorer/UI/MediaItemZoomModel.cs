@@ -14,6 +14,8 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
     private MediaItem? m_mediaItem;
     private BitmapSource? m_image;
     private string m_pruneModeCaption = "Start Pruning";
+    private bool m_isPruning = false;
+
     public int VectorClock { get; set; } = 0;
 
     public string PruneModeCaption
@@ -21,6 +23,18 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
         get => m_pruneModeCaption;
         set => SetField(ref m_pruneModeCaption, value);
     }
+
+    public bool IsPruning
+    {
+        get => m_isPruning;
+        set
+        {
+            SetField(ref m_isPruning, value);
+            OnPropertyChanged(nameof(PruningVisibility));
+        }
+    }
+
+    public Visibility PruningVisibility => m_isPruning ? Visibility.Visible : Visibility.Collapsed;
 
     public BitmapSource? Image
     {
