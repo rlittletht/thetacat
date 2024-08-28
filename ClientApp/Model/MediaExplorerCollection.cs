@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
@@ -15,6 +16,7 @@ using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 using Thetacat.Util;
 using MessageBox = System.Windows.MessageBox;
@@ -630,18 +632,42 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
     public void BuildTimelineFromMediaCatalog()
     {
-        IEnumerable<MediaItem> collection =
+        IReadOnlyCollection<MediaItem> collection =
             m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
 
         BuildTimelineForMediaCollection(collection);
     }
 
-    public void BuildTimelineForMediaCollection(IEnumerable<MediaItem> collection)
+    public void BuildTimelineForMediaCollection(IReadOnlyCollection<MediaItem> collection)
     {
         MicroTimer timer = new MicroTimer();
         App.LogForApp(EventType.Information, "Beginning building timeline collection");
 
         Clear();
+
+        // we're going to need to know which stacks have their top item showing
+        HashSet<Guid> StacksWithTopLevelItems = new HashSet<Guid>();
+
+        foreach (MediaItem item in collection)
+        {
+            if (item.VersionStack != null && !StacksWithTopLevelItems.Contains(item.VersionStack.Value))
+            {
+                if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
+                {
+                    if (stack.IsItemTopOfStack(item.ID))
+                        StacksWithTopLevelItems.Add(item.VersionStack.Value);
+                }
+            }
+
+            if (item.MediaStack != null && !StacksWithTopLevelItems.Contains(item.MediaStack.Value))
+            {
+                if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
+                {
+                    if (stack.IsItemTopOfStack(item.ID))
+                        StacksWithTopLevelItems.Add(item.MediaStack.Value);
+                }
+            }
+        }
 
         if (TimelineOrder.Equals(TimelineOrder.DateDescending) || TimelineOrder.Equals(TimelineOrder.DateAscending))
         {
@@ -658,14 +684,32 @@ public class MediaExplorerCollection : INotifyPropertyChanged
                     // see if we should filter this out
                     if (item.MediaStack != null)
                     {
-                        if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
-                            isMediaTop = stack.IsItemTopOfStack(item.ID);
+                        if (!StacksWithTopLevelItems.Contains(item.MediaStack.Value))
+                        {
+                            // the top of this stack isn't in the timeline, so don't hide anything in
+                            // this stack. do this by just making this the top of the stack
+                            isMediaTop = true;
+                        }
+                        else
+                        {
+                            if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
+                                isMediaTop = stack.IsItemTopOfStack(item.ID);
+                        }
                     }
 
                     if (item.VersionStack != null)
                     {
-                        if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
-                            isVersionTop = stack.IsItemTopOfStack(item.ID);
+                        if (!StacksWithTopLevelItems.Contains(item.VersionStack.Value))
+                        {
+                            // the top of this stack isn't in the timeline, so don't hide anything in
+                            // this stack. do this by just making this the top of the stack
+                            isVersionTop = true;
+                        }
+                        else
+                        {
+                            if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
+                                isVersionTop = stack.IsItemTopOfStack(item.ID);
+                        }
                     }
 
                     if (isMediaTop != null || isVersionTop != null)

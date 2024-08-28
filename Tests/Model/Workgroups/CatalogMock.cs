@@ -45,7 +45,7 @@ public class CatalogMock : ICatalog
     public MediaItem GetMediaFromId(string id) => m_media.Items[Guid.Parse(id)];
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
 
-    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public IReadOnlyCollection<MediaItem> GetMediaCollection() => m_media.Items.Values.AsReadOnly();
     public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter) => throw new NotImplementedException();
 
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();

@@ -18,7 +18,7 @@ public interface ICatalog
     public MediaItem GetMediaFromId(string id);
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem);
 
-    public IEnumerable<MediaItem> GetMediaCollection();
+    public IReadOnlyCollection<MediaItem> GetMediaCollection();
     public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter);
     public ObservableCollection<MediaItem> GetObservableCollection();
     public MediaItem? CreateVersionBasedOn(ICache cache, MediaItem based);

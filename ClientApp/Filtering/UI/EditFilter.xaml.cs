@@ -247,6 +247,12 @@ namespace Thetacat.Filtering.UI
                 return;
             }
 
+            if (m_model.ComparisonOpForClause == null)
+            {
+                MessageBox.Show("Must select a comparison operator");
+                return;
+            }
+
             string valueText = m_model.ValueTextForClause;
             Value value;
 

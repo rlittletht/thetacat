@@ -39,7 +39,7 @@ public class Catalog : ICatalog
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
 
     // BE CAREFUL WITH THIS! It will create a snapshot of the underlying data, which could be SLOW
-    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public IReadOnlyCollection<MediaItem> GetMediaCollection() => m_media.Items.Values.AsReadOnly();
     public int GetMediaCount => m_media.Items.Count;
 
     public MediaStacks VersionStacks => m_mediaStacks[MediaStackType.Version];

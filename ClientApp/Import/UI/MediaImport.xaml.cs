@@ -615,8 +615,7 @@ namespace Thetacat.Import.UI
 
             AvailableMetatagsTree.Initialize(
                 App.State.MetatagSchema.WorkingTree.Children,
-                App.State.MetatagSchema.SchemaVersionWorking,
-                MetatagStandards.Standard.Cat);
+                App.State.MetatagSchema.SchemaVersionWorking);
         }
 
         private FilterModelMetatagItem? GetTagFromId(Guid id)
