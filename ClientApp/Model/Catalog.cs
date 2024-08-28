@@ -383,17 +383,25 @@ public class Catalog : ICatalog
     {
         MediaItem item = GetMediaFromId(id);
 
-        // delete from the service
-        ServiceInterop.DeleteMediaItem(catalogId, id);
+        try
+        {
+            // delete from the service
+            ServiceInterop.DeleteMediaItem(catalogId, id);
 
-        // now delete all remnants from ourselves
-        if (item.MediaStack != null)
-            MediaStacks.RemoveFromStack(item.MediaStack.Value, item);
+            // now delete all remnants from ourselves
+            if (item.MediaStack != null)
+                MediaStacks.RemoveFromStack(item.MediaStack.Value, item);
 
-        if (item.VersionStack != null)
-            VersionStacks.RemoveFromStack(item.VersionStack.Value, item);
+            if (item.VersionStack != null)
+                VersionStacks.RemoveFromStack(item.VersionStack.Value, item);
 
-        m_media.DeleteMediaItem(item);
+            m_media.DeleteMediaItem(item);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to completed delete item: {id}: {item.VirtualPath}. Delete may be incomplete (stacks may have orphaned items)");
+        }
+
         TriggerItemDirtied(true);
     }
 
