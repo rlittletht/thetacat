@@ -250,10 +250,29 @@ public class Catalog : ICatalog
     private async Task<ServiceCatalog> GetFullCatalogAsync(Guid catalogID)
     {
         Task<List<ServiceMediaItem>> taskGetMedia =
-            Task.Run(() => ServiceInterop.ReadFullCatalogMedia(catalogID));
+            Task.Run(
+                () =>
+                {
+                    MicroTimer timer = new MicroTimer();
+
+                    List<ServiceMediaItem> catalog = ServiceInterop.ReadFullCatalogMedia(catalogID);
+
+                    App.LogForApp(EventType.Information, $"ReadFullCatalogMedia elapsed: {timer.Elapsed()}");
+                    return catalog;
+                });
 
         Task<List<ServiceMediaTag>> taskGetMediaTags =
-            Task.Run(() => ServiceInterop.ReadFullCatalogMediaTags(catalogID));
+            Task.Run(
+                () =>
+                {
+                    MicroTimer timer = new MicroTimer();
+
+                    List<ServiceMediaTag> tags = ServiceInterop.ReadFullCatalogMediaTags(catalogID);
+
+                    App.LogForApp(EventType.Information, $"GetMediaTags elapsed: {timer.Elapsed()}");
+
+                    return tags;
+                });
 
         List<Task> tasks = new List<Task>() { taskGetMedia, taskGetMediaTags };
 
