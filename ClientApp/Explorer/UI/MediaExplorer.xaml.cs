@@ -99,7 +99,7 @@ public partial class MediaExplorer : UserControl
                 // now we have to get this item into the cache and refresh the catalog
                 List<MediaItem> itemsToQueue = new() { itemNew };
 
-                MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+                MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
             }
         }
     }
@@ -289,7 +289,7 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _RotateItemsRight(MediaExplorerItem? context)
@@ -321,7 +321,7 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _MirrorItems(MediaExplorerItem? context)
@@ -346,7 +346,7 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _ToggleTopOfStackItems(MediaExplorerItem? context)

@@ -329,25 +329,25 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         }
 
         App.LogForApp(EventType.Information, $"done making line list: {timer.Elapsed()}");
-        QueueImageCacheLoadForMediaItems(itemsToQueue);
+        QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
 
         App.LogForApp(EventType.Information, $"done launching parallel: {timer.Elapsed()}");
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: QueueImageCacheLoadForMediaItems
-        %%Qualified: Thetacat.Model.MediaExplorerCollection.QueueImageCacheLoadForMediaItems
+        %%Function: QueuePreviewImageCacheLoadForMediaItems
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems
 
         This queues an image load into the cache for the media item. This
     ----------------------------------------------------------------------------*/
-    public static void QueueImageCacheLoadForMediaItems(IReadOnlyCollection<MediaItem> mediaItems)
+    public static void QueuePreviewImageCacheLoadForMediaItems(IReadOnlyCollection<MediaItem> mediaItems)
     {
         ICache cache = App.State.Cache;
 
         // these are pushed onto the pool with no guarantee about what order they
         // will get run with respect to other pushes to the pool.
 
-        // we know that the work willbe done as a unit, but it might get done at the same time 
+        // we know that the work wil lbe done as a unit, but it might get done at the same time 
         // as other work, which means the QueueBackgroundLoadToCache might happen at the same time
         // as other BackgroundLoadToCache items
 
