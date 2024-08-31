@@ -57,6 +57,7 @@ public partial class MediaItemZoom : Window
             PopulateTags();
             m_model.IsTrashItem = m_model.MediaItem?.IsTrashItem ?? false;
             m_model.IsOffline = m_model.MediaItem?.DontPushToCloud ?? false;
+            RebuildMruButtons();
         }
     }
 
@@ -168,6 +169,8 @@ public partial class MediaItemZoom : Window
             checkedUncheckedAndIndeterminate,
             new MediaItem[] { m_model.MediaItem },
             schema);
+
+        this.Activate();
     }
 
     /*----------------------------------------------------------------------------
@@ -301,6 +304,13 @@ public partial class MediaItemZoom : Window
         }
     }
 
+    private void DoTagListKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        e.Handled = false;
+        return;
+    }
+
+    
     /*----------------------------------------------------------------------------
         %%Function: DoMediaZoomKeyUp
         %%Qualified: Thetacat.Explorer.MediaItemZoom.DoMediaZoomKeyUp
@@ -332,9 +342,23 @@ public partial class MediaItemZoom : Window
                 DoToggleImageTrashed();
                 DoNextImage();
             }
-            else if (e.Key >= Key.D0 && e.Key <= Key.D9)
+            else if ((e.Key >= Key.D0 && e.Key <= Key.D9)
+                     || (e.Key >= Key.A && e.Key <= Key.W))
             {
-                int tagIndex = e.Key - Key.D0;
+                int tagIndex;
+
+                if (e.Key <= Key.D9)
+                    tagIndex = e.Key - Key.D0;
+                else if (e.Key < Key.D)
+                    tagIndex = 10 + e.Key - Key.A;
+                else if (e.Key < Key.N)
+                    tagIndex = 13 + e.Key - Key.E;
+                else if (e.Key < Key.P)
+                    tagIndex = 22 + e.Key - Key.O;
+                else if (e.Key <= Key.W)
+                    tagIndex = 24 + e.Key - Key.Q;
+                else
+                    throw new CatExceptionInternalFailure($"key out of range: {e.Key}");
 
                 ZoomTag zoomTag = m_model.ZoomTags[tagIndex];
                 if (zoomTag.Tag == null)
@@ -459,6 +483,8 @@ public partial class MediaItemZoom : Window
             m_model.MediaItem!.FRemoveMediaTag(tag.ID);
         else
             m_model.MediaItem?.FAddOrUpdateMediaTag(mediaTag, true);
+
+        UpdateMetatagPanelIfNecessary();
     }
 
     public void Tag1Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(0);
@@ -471,4 +497,24 @@ public partial class MediaItemZoom : Window
     public void Tag8Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(7);
     public void Tag9Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(8);
     public void Tag10Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(9);
+    public void Tag11Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(10);
+    public void Tag12Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(11);
+    public void Tag13Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(12);
+    public void Tag14Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(13);
+    public void Tag15Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(14);
+    public void Tag16Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(15);
+    public void Tag17Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(16);
+    public void Tag18Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(17);
+    public void Tag19Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(18);
+    public void Tag20Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(19);
+    public void Tag21Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(20);
+    public void Tag22Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(21);
+    public void Tag23Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(22);
+    public void Tag24Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(23);
+    public void Tag25Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(24);
+    public void Tag26Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(25);
+    public void Tag27Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(26);
+    public void Tag28Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(27);
+    public void Tag29Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(28);
+    public void Tag30Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(29);
 }
