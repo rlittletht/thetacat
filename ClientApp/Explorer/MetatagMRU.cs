@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
@@ -8,6 +9,8 @@ namespace Thetacat.Explorer;
 
 public class MetatagMRU
 {
+    public event EventHandler<PropertyChangedEventArgs>? OnPropertyChanged;
+
     private static readonly int maxSize = 30;
 
     private readonly List<Metatag> m_recentTags = new();
@@ -32,6 +35,7 @@ public class MetatagMRU
             m_recentTags.RemoveRange(maxSize, m_recentTags.Count - maxSize);
 
         m_vectorClock++;
+        TriggerPropertyChanged(nameof(RecentTags));
     }
 
     public void Set(IEnumerable<string> mru)
@@ -49,5 +53,13 @@ public class MetatagMRU
 
             m_recentTags.Add(tag);
         }
+
+        TriggerPropertyChanged(nameof(RecentTags));
+    }
+
+    public void TriggerPropertyChanged(string name)
+    {
+        if (OnPropertyChanged != null)
+            OnPropertyChanged(this, new PropertyChangedEventArgs(name));
     }
 }

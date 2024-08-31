@@ -14,6 +14,7 @@ using Thetacat.Logging;
 using Thetacat.Model.Client;
 using Thetacat.Types;
 using Path = System.IO.Path;
+using System.Security.Cryptography;
 
 namespace Thetacat.Model.ImageCaching;
 
@@ -80,7 +81,28 @@ public class ImageCache
     }
 
 
-    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath)
+    public ImageCacheItem QueuePurgeAndReloadToCache(MediaItem mediaItem, string md5, ImageCacheItem existing)
+    {
+        if (existing.IsLoadQueued || existing.Image == null)
+        {
+            App.LogForApp(EventType.Critical, $"trying to purge and reload an item that isn't loaded {existing.MediaId}");
+            return existing;
+        }
+
+        existing.Image = null;
+        existing.ImageInternal = null;
+
+        existing.IsLoadQueued = true;
+        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, existing));
+        return existing;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: TryQueueBackgroundLoadToCache
+        %%Qualified: Thetacat.Model.ImageCaching.ImageCache.TryQueueBackgroundLoadToCache
+        
+    ----------------------------------------------------------------------------*/
+    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
         App.LogForAsync(EventType.Verbose, $"queuing item {item.MediaId}");
@@ -107,7 +129,7 @@ public class ImageCache
         }
 
         item.IsLoadQueued = true;
-        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, item));
+        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, item, false, onDerivativeWorkComplete));
         return item;
     }
 
@@ -148,6 +170,7 @@ public class ImageCache
 
     class ImageLoaderWork : IPipelineWorkItemBase<ImageLoaderWork>
     {
+        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
         public Guid Cookie => MediaKey;
         public Guid MediaKey { get; set; }
         public string MD5 { get; set; } = string.Empty;
@@ -155,13 +178,14 @@ public class ImageCache
         public double AspectRatio { get; set; }
         public int? OriginalWidth { get; set; }
         public Transformations Transformations { get; set; }
+        public bool PurgeAndReload { get; set; }
 
         public ImageLoaderWork()
         {
             Transformations = Transformations.Empty;
         }
 
-        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem)
+        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem, bool isPurgeAndReload = false, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete = null)
         {
             MediaKey = mediaItem.ID;
             PathToImage = cacheItem.LocalPath;
@@ -169,15 +193,18 @@ public class ImageCache
             OriginalWidth = mediaItem.ImageWidth;
             Transformations = new Transformations(mediaItem);
             MD5 = md5;
+            OnDerivativeWorkComplete = onDerivativeWorkComplete;
         }
 
         public void InitFrom(ImageLoaderWork t)
         {
+            PurgeAndReload = t.PurgeAndReload;
             MediaKey = t.MediaKey;
             PathToImage = t.PathToImage;
             AspectRatio = t.AspectRatio;
             OriginalWidth = t.OriginalWidth;
             Transformations = new Transformations(t.Transformations.TransformationsKey);
+            OnDerivativeWorkComplete = t.OnDerivativeWorkComplete;
             MD5 = t.MD5;
         }
     }
@@ -579,7 +606,7 @@ public class ImageCache
                     {
                         targetBitmap = ScaleBitmap(fullImage, scaleFactor);
                         targetBitmap.Freeze();
-                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, item.MD5, transformations, targetBitmap, scaleFactor);
+                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, item.MD5, transformations, targetBitmap, scaleFactor, item.OnDerivativeWorkComplete);
                     }
                     else
                     {

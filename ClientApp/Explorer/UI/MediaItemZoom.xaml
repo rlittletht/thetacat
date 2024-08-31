@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Thetacat.Explorer"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
-        Title="MediaItemZoom" Height="450" Width="800">
+        Title="MediaItemZoom" Height="661" Width="800">
     <Window.Resources>
         <Style x:Key="HeadingTextBlock" TargetType="{x:Type TextBlock}">
             <Setter Property="FontSize" Value="16" />
@@ -24,6 +24,23 @@
         <Style x:Key="ControlRegion" TargetType="Grid">
             <Setter Property="Background" Value="WhiteSmoke" />
             <Setter Property="Margin" Value="1 0 1 0" />
+        </Style>
+        <Style x:Key="TagToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="DarkSeaGreen" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
     <DockPanel>
@@ -69,31 +86,60 @@
                     <ColumnDefinition Width="5*" />
                     <ColumnDefinition Width="5*" />
                 </Grid.ColumnDefinitions>
-                <GroupBox Grid.Column="0">
-                    <GroupBox.Header>Builtin Properties</GroupBox.Header>
-                    <Grid>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Image Width" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
-                            <TextBlock Text="Image Height" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
-                            <TextBlock Text="Mime Type" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Original File Date" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
-                            <TextBlock Text="Import Date" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
-                            <TextBlock Text="MD5 Hash" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
-                        </StackPanel>
+                        <ToggleButton IsChecked="{Binding Path=IsTag1Checked}" Content="{Binding Path=Tag1Label}" Click="Tag1Click" Grid.Column="0" Grid.Row="0" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag2Checked}"  Content="{Binding Path=Tag2Label}" Click="Tag2Click" Grid.Column="1" Grid.Row="0" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag3Checked}"  Content="{Binding Path=Tag3Label}" Click="Tag3Click" Grid.Column="2" Grid.Row="0" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag4Checked}"  Content="{Binding Path=Tag4Label}" Click="Tag4Click" Grid.Column="3" Grid.Row="0" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag5Checked}"  Content="{Binding Path=Tag5Label}" Click="Tag5Click" Grid.Column="4" Grid.Row="0" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag6Checked}"  Content="{Binding Path=Tag6Label}" Click="Tag6Click" Grid.Column="0" Grid.Row="1" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag7Checked}"  Content="{Binding Path=Tag7Label}" Click="Tag7Click" Grid.Column="1" Grid.Row="1" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag8Checked}"  Content="{Binding Path=Tag8Label}" Click="Tag8Click" Grid.Column="2" Grid.Row="1" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag9Checked}"  Content="{Binding Path=Tag9Label}" Click="Tag9Click" Grid.Column="3" Grid.Row="1" Style="{StaticResource TagToggleStyle}"/>
+                        <ToggleButton IsChecked="{Binding Path=IsTag10Checked}" Content="{Binding Path=Tag10Label}" Click="Tag10Click" Grid.Column="4" Grid.Row="1" Style="{StaticResource TagToggleStyle}"/>
                     </Grid>
-                </GroupBox>
+                    <GroupBox Grid.Row="1">
+                        <GroupBox.Header>Builtin Properties</GroupBox.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Image Width" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
+                                <TextBlock Text="Image Height" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
+                                <TextBlock Text="Mime Type" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Original File Date" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
+                                <TextBlock Text="Import Date" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
+                                <TextBlock Text="MD5 Hash" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
                 <GroupBox Grid.Column="1">
                     <GroupBox.Header>
                         MediaTags set on this item

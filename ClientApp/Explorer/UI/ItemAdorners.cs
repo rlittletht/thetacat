@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using Thetacat.Types;
 
@@ -96,7 +98,6 @@ public class ItemAdorners
         get => m_notTopOfStackAdornerVisibility;
         private set => SetField(ref m_notTopOfStackAdornerVisibility, value);
     }
-
 
     protected virtual bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

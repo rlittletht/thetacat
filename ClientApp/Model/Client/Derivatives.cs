@@ -235,7 +235,9 @@ public class Derivatives
 
         this requires a scaleFactor of at least 1.0
     ----------------------------------------------------------------------------*/
-    public bool TryGetFormatDerivative(Guid mediaId, string MD5, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap)
+    public bool TryGetFormatDerivative(
+        Guid mediaId, string MD5, Dictionary<string, int> mimeTypesAccepted, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched,
+        out BitmapSource? pendingBitmap)
     {
         pendingBitmap = null;
         if (!m_mediaDerivatives.TryGetValue(mediaId, out List<DerivativeItem>? items))
@@ -305,7 +307,9 @@ public class Derivatives
         When we encounter any derivatives with a different MD5, we will mark
         them as 'expired' and garbage collection will clean them up
     ----------------------------------------------------------------------------*/
-    public bool TryGetResampledDerivative(Guid mediaId, string MD5, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched, out BitmapSource? pendingBitmap, double? epsilon = null)
+    public bool TryGetResampledDerivative(
+        Guid mediaId, string MD5, double scaleFactor, Transformations transformations, [MaybeNullWhen(false)] out DerivativeItem matched,
+        out BitmapSource? pendingBitmap, double? epsilon = null)
     {
         pendingBitmap = null;
 
@@ -392,8 +396,8 @@ public class Derivatives
         // later (in a future session presumably not holding a lock).
 
         // need to make sure we don't treat 'file not found' as a failure to delete
-
     }
+
     /*----------------------------------------------------------------------------
         %%Function: QueueDerivativeWork
         %%Qualified: Thetacat.Model.Client.Derivatives.QueueDerivativeWork
@@ -410,9 +414,9 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(work);
     }
 
-    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor)
+    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
     {
-        QueueDerivativeWork(new DerivativeWork(item, md5, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor));
+        QueueDerivativeWork(new DerivativeWork(item, md5, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor, onDerivativeWorkComplete));
     }
 
     public void QueueSaveReformatImage(MediaItem item, string md5, Transformations transformations, BitmapSource reformattedImage)
@@ -421,14 +425,14 @@ public class Derivatives
     }
 
 
-    #region Derivative Work
+#region Derivative Work
 
     /*----------------------------------------------------------------------------
         %%Class: DerivativeWork
         %%Qualified: Thetacat.Model.Client.Derivatives.DerivativeWork
 
         This is the unit of work that will be done in the derivative pipeline
-        
+
         The work is queued using QueueDerivativeWork (via Queue
     ----------------------------------------------------------------------------*/
     class DerivativeWork : IPipelineWorkItemBase<DerivativeWork>
@@ -439,6 +443,7 @@ public class Derivatives
             Transcode
         }
 
+        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
         public Guid Cookie => MediaKey;
         public Guid MediaKey { get; private set; }
         public string MD5 { get; private set; } = string.Empty;
@@ -470,7 +475,14 @@ public class Derivatives
             this happens for things like PSD files where we get a thumbnail for the
             transcoded image, thus its already "resampled" to start with.
         ----------------------------------------------------------------------------*/
-        public DerivativeWork(MediaItem mediaItem, string md5, BitmapSource resampledImage, bool fullBitmapFidelity, string transformationsKey, double requestedScaleFactor)
+        public DerivativeWork(
+            MediaItem mediaItem,
+            string md5,
+            BitmapSource resampledImage,
+            bool fullBitmapFidelity,
+            string transformationsKey,
+            double requestedScaleFactor,
+            Action<OnDerivativeWorkCompleteArgs>? onWorkComplete = null)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;
@@ -480,7 +492,7 @@ public class Derivatives
             Type = fullBitmapFidelity ? WorkType.Transcode : WorkType.ResampleImage;
             RequestedScaleFactor = requestedScaleFactor;
             MD5 = md5;
-
+            OnDerivativeWorkComplete = onWorkComplete;
             TransformationsKey = transformationsKey;
         }
 
@@ -498,6 +510,7 @@ public class Derivatives
             TransformationsKey = t.TransformationsKey;
             RequestedScaleFactor = t.RequestedScaleFactor;
             MD5 = t.MD5;
+            OnDerivativeWorkComplete = t.OnDerivativeWorkComplete;
         }
     }
 
@@ -539,19 +552,21 @@ public class Derivatives
 
             try
             {
-                   using FileStream stream = new(destination.Local, FileMode.Create);
+                using FileStream stream = new(destination.Local, FileMode.Create);
 
-                    JpegBitmapEncoder encoder =
-                        new()
-                        {
-                            QualityLevel = quality
-                        };
-                    encoder.Frames.Add(BitmapFrame.Create(item.Image));
-                    encoder.Save(stream);
+                JpegBitmapEncoder encoder =
+                    new()
+                    {
+                        QualityLevel = quality
+                    };
+                encoder.Frames.Add(BitmapFrame.Create(item.Image));
+                encoder.Save(stream);
 
-                    DerivativeItem match = GetMatchingDerivativeItem(derivative);
-                    // this is no longer pending save
-                    match.Path = destination;
+                DerivativeItem match = GetMatchingDerivativeItem(derivative);
+                // this is no longer pending save
+                match.Path = destination;
+
+                item.OnDerivativeWorkComplete?.Invoke(new OnDerivativeWorkCompleteArgs(item.MediaKey, item.MD5));
             }
             catch (Exception ex)
             {

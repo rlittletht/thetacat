@@ -8,12 +8,15 @@ using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Media.Animation;
+using System.Xml;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
 using Thetacat.Logging;
+using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
@@ -165,6 +168,35 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         // PreviewImageCache.Close is now handled in MainWindow
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ReloadDerivativeForFullFidelityPreview
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.ReloadDerivativeForFullFidelityPreview
+
+        We just finished saving a resampled image for a preview item. We want
+        to free the preview item we have and reload it from the derivative cache
+        (which will free the very large image from the preview cache and replace
+        it with the much smaller derivative).
+
+        this is only an issue the very first time we preview an item and we have
+        to populate the resampled derivative
+    ----------------------------------------------------------------------------*/
+    private static void ReloadDerivativeForFullFidelityPreview(OnDerivativeWorkCompleteArgs args)
+    {
+        if (App.State.PreviewImageCache.Items.TryGetValue(args.MediaId, out ImageCacheItem? cacheItem))
+        {
+            if (cacheItem.IsLoadQueued || cacheItem.Image == null)
+            {
+                App.LogForApp(EventType.Critical, $"trying to purge and reload an item that isn't loaded {args.MediaId}");
+                return;
+            }
+
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(args.MediaId);
+
+            App.State.PreviewImageCache.QueuePurgeAndReloadToCache(mediaItem, args.Md5, cacheItem);
+        }
+    }
+
+
     private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
     {
         ImageCache? cache = sender as ImageCache;
@@ -188,7 +220,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
                     if (path != null && App.State.Catalog.TryGetMedia(e.MediaId, out MediaItem? mediaItem))
                     {
-                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path);
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path, ReloadDerivativeForFullFidelityPreview);
                     }
                 }
             }
@@ -380,7 +412,8 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
                     if (path != null)
                     {
-                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path);
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path,
+                            ReloadDerivativeForFullFidelityPreview);
                     }
                 }
             });
@@ -638,12 +671,15 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         BuildTimelineForMediaCollection(collection);
     }
 
-    public void BuildTimelineForMediaCollection(IReadOnlyCollection<MediaItem> collection)
-    {
-        MicroTimer timer = new MicroTimer();
-        App.LogForApp(EventType.Information, "Beginning building timeline collection");
+    /*----------------------------------------------------------------------------
+        %%Function: BuildDateGrouping
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.BuildDateGrouping
 
-        Clear();
+        Build the date groupings for the timeline
+    ----------------------------------------------------------------------------*/
+    Dictionary<DateTime, ICollection<ItemShort>> BuildDateGrouping(IReadOnlyCollection<MediaItem> collection)
+    {
+        Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = new();
 
         // we're going to need to know which stacks have their top item showing
         HashSet<Guid> StacksWithTopLevelItems = new HashSet<Guid>();
@@ -669,70 +705,86 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             }
         }
 
+        foreach (MediaItem item in collection)
+        {
+            if (m_expandMediaStacks == false)
+            {
+                bool? isMediaTop = null;
+                bool? isVersionTop = null;
+
+                // see if we should filter this out
+                if (item.MediaStack != null)
+                {
+                    if (!StacksWithTopLevelItems.Contains(item.MediaStack.Value))
+                    {
+                        // the top of this stack isn't in the timeline, so don't hide anything in
+                        // this stack. do this by just making this the top of the stack
+                        isMediaTop = true;
+                    }
+                    else
+                    {
+                        if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
+                            isMediaTop = stack.IsItemTopOfStack(item.ID);
+                    }
+                }
+
+                if (item.VersionStack != null)
+                {
+                    if (!StacksWithTopLevelItems.Contains(item.VersionStack.Value))
+                    {
+                        // the top of this stack isn't in the timeline, so don't hide anything in
+                        // this stack. do this by just making this the top of the stack
+                        isVersionTop = true;
+                    }
+                    else
+                    {
+                        if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
+                            isVersionTop = stack.IsItemTopOfStack(item.ID);
+                    }
+                }
+
+                if (isMediaTop != null || isVersionTop != null)
+                {
+                    if (isMediaTop is false && isVersionTop is not true)
+                        continue;
+
+                    if (isVersionTop is false && isMediaTop is not true)
+                        continue;
+                }
+            }
+
+            DateTime dateTime = GetTimelineDateFromMediaItem(item);
+            DateTime date = dateTime.Date;
+
+            if (!dateGrouping.TryGetValue(date, out ICollection<ItemShort>? items))
+            {
+                items = new List<ItemShort>();
+                dateGrouping.Add(date, items);
+            }
+
+            items.Add(new ItemShort(dateTime, item));
+        }
+
+        return dateGrouping;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: BuildTimelineForMediaCollection
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.BuildTimelineForMediaCollection
+
+        Build the timeline for the collection
+    ----------------------------------------------------------------------------*/
+    public void BuildTimelineForMediaCollection(IReadOnlyCollection<MediaItem> collection)
+    {
+        MicroTimer timer = new MicroTimer();
+        App.LogForApp(EventType.Information, "Beginning building timeline collection");
+
+        Clear();
+
         if (TimelineOrder.Equals(TimelineOrder.DateDescending) || TimelineOrder.Equals(TimelineOrder.DateAscending))
         {
             // build a group by date
-            Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = new();
-
-            foreach (MediaItem item in collection)
-            {
-                if (m_expandMediaStacks == false)
-                {
-                    bool? isMediaTop = null;
-                    bool? isVersionTop = null;
-
-                    // see if we should filter this out
-                    if (item.MediaStack != null)
-                    {
-                        if (!StacksWithTopLevelItems.Contains(item.MediaStack.Value))
-                        {
-                            // the top of this stack isn't in the timeline, so don't hide anything in
-                            // this stack. do this by just making this the top of the stack
-                            isMediaTop = true;
-                        }
-                        else
-                        {
-                            if (App.State.Catalog.MediaStacks.Items.TryGetValue(item.MediaStack.Value, out MediaStack? stack))
-                                isMediaTop = stack.IsItemTopOfStack(item.ID);
-                        }
-                    }
-
-                    if (item.VersionStack != null)
-                    {
-                        if (!StacksWithTopLevelItems.Contains(item.VersionStack.Value))
-                        {
-                            // the top of this stack isn't in the timeline, so don't hide anything in
-                            // this stack. do this by just making this the top of the stack
-                            isVersionTop = true;
-                        }
-                        else
-                        {
-                            if (App.State.Catalog.VersionStacks.Items.TryGetValue(item.VersionStack.Value, out MediaStack? stack))
-                                isVersionTop = stack.IsItemTopOfStack(item.ID);
-                        }
-                    }
-
-                    if (isMediaTop != null || isVersionTop != null)
-                    {
-                        if (isMediaTop is false && isVersionTop is not true)
-                            continue;
-
-                        if (isVersionTop is false && isMediaTop is not true)
-                            continue;
-                    }
-                }
-
-                DateTime dateTime = GetTimelineDateFromMediaItem(item);
-                DateTime date = dateTime.Date;
-
-                if (!dateGrouping.TryGetValue(date, out ICollection<ItemShort>? items))
-                {
-                    items = new List<ItemShort>();
-                    dateGrouping.Add(date, items);
-                }
-
-                items.Add(new ItemShort(dateTime, item));
-            }
+            Dictionary<DateTime, ICollection<ItemShort>> dateGrouping = BuildDateGrouping(collection);
 
             IComparer<DateTime> comparer;
             IComparer<ItemShort> comparerKvp;
@@ -740,7 +792,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             if (TimelineOrder.Equals(TimelineOrder.DateDescending))
             {
                 comparer = Comparer<DateTime>.Create((x, y) => y.CompareTo(x) < 0 ? y.CompareTo(x) : y.CompareTo(x) + 1);
-                comparerKvp = Comparer<ItemShort>.Create((y, x) => ItemShortComparer(x, y));
+                comparerKvp = Comparer<ItemShort>.Create((x, y) => ItemShortComparer(x, y));
             }
             else
             {

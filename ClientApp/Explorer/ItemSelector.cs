@@ -89,7 +89,8 @@ public class ItemSelector
 
         foreach (MediaExplorerItem item in selectedItems)
         {
-            mediaItems.Add(catalog.GetMediaFromId(item.MediaId));
+            if (catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
+                mediaItems.Add(mediaItem);
         }
 
         return mediaItems;

@@ -19,6 +19,9 @@ public class BuiltinTags
     public static readonly Guid s_IsTrashItemID = new Guid("C48CE79C-F357-43F4-8F3E-56A25F6E2520");
     public static readonly Guid s_DontPushToCloudID = new Guid("BAE1A21E-4637-4E6F-95EB-11720C78EC8B");
 
+    // VirtualPath isn't a builtin tag 
+    public static readonly Guid s_VirtualPathID = new Guid("7EE164AF-57A7-4B86-8E76-7143CA0D176E");
+
     public static readonly Metatag s_Width = Metatag.Create(s_CatRootID, "width", "width", MetatagStandards.Standard.Cat, s_WidthID);
     public static readonly Metatag s_Height = Metatag.Create(s_CatRootID, "height", "height", MetatagStandards.Standard.Cat, s_HeightID);
     public static readonly Metatag s_OriginalMediaDate = Metatag.Create(s_CatRootID, "originalMediaDate", "originalMediaDate", MetatagStandards.Standard.Cat, s_OriginalMediaDateID);
