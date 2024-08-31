@@ -19,14 +19,15 @@ public class BuiltinTags
     public static readonly Guid s_IsTrashItemID = new Guid("C48CE79C-F357-43F4-8F3E-56A25F6E2520");
     public static readonly Guid s_DontPushToCloudID = new Guid("BAE1A21E-4637-4E6F-95EB-11720C78EC8B");
 
-    // VirtualPath isn't a builtin tag 
+    // VirtualPath isn't a builtin tag that can be set in the database -- its only for filtering
+    // (thus s_BuiltinTags doesn't include it)
     public static readonly Guid s_VirtualPathID = new Guid("7EE164AF-57A7-4B86-8E76-7143CA0D176E");
 
     public static readonly Metatag s_Width = Metatag.Create(s_CatRootID, "width", "width", MetatagStandards.Standard.Cat, s_WidthID);
     public static readonly Metatag s_Height = Metatag.Create(s_CatRootID, "height", "height", MetatagStandards.Standard.Cat, s_HeightID);
     public static readonly Metatag s_OriginalMediaDate = Metatag.Create(s_CatRootID, "originalMediaDate", "originalMediaDate", MetatagStandards.Standard.Cat, s_OriginalMediaDateID);
     public static readonly Metatag s_ImportDate = Metatag.Create(s_CatRootID, "importDate", "importDate", MetatagStandards.Standard.Cat, s_ImportDateID);
-
+    
     // transforms
     public static readonly Metatag s_TransformRotate = Metatag.Create(s_CatRootID, "transformRotate", "transformRotate", MetatagStandards.Standard.Cat, s_TransformRotateID);
     public static readonly Metatag s_TransformMirror = Metatag.Create(s_CatRootID, "transformMirror", "transformMirror", MetatagStandards.Standard.Cat, s_TransformMirrorID);
@@ -37,6 +38,9 @@ public class BuiltinTags
     // this item shouldn't be pushed to the cloud -- should only live in the local workgroup (other workgroups will see this is
     // forever "cache pending")
     public static readonly Metatag s_DontPushToCloud = Metatag.Create(s_CatRootID, "dontPushToCloud", "local workgroup only", MetatagStandards.Standard.Cat, s_DontPushToCloudID);
+
+    // this is just for querying virtual path
+    public static readonly Metatag s_VirtualPath = Metatag.Create(s_CatRootID, "virtualPath", "virtual path", MetatagStandards.Standard.Cat, s_VirtualPathID);
 
     public static readonly Metatag[] s_BuiltinTags =
     {
