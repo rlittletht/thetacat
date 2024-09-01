@@ -267,11 +267,10 @@ public partial class MediaItemZoom : Window
         m_model.VectorClock = vectorClockBase;
 
         Activated += OnActivated;
-        this.KeyDown += DoMediaZoomKeyUp;
+        this.KeyDown += DoMediaZoomKeyDown;
         this.Closing += OnCloseReleaseWatchers;
 
         InitializeComponent();
-        //m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
 
         App.State.MetatagMRU.OnPropertyChanged += OnMruPropertyChanged;
         SetMediaItem(item);
@@ -304,18 +303,11 @@ public partial class MediaItemZoom : Window
         }
     }
 
-    private void DoTagListKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        e.Handled = false;
-        return;
-    }
-
-    
     /*----------------------------------------------------------------------------
-        %%Function: DoMediaZoomKeyUp
-        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoMediaZoomKeyUp
+        %%Function: DoMediaZoomKeyDown
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoMediaZoomKeyDown
     ----------------------------------------------------------------------------*/
-    private void DoMediaZoomKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+    private void DoMediaZoomKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
         {
