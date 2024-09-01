@@ -2,6 +2,7 @@
 using MetadataExtractor;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Explorer.UI;
 
@@ -26,6 +27,9 @@ public class ZoomTag
 
     public void UpdateState(MediaItem mediaItem)
     {
+        if (Tag == null)
+            throw new CatExceptionInternalFailure("tag not set on updatestate");
+
         IsSet = mediaItem.Tags.TryGetValue(Tag.ID, out _);
     }
 }

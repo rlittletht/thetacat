@@ -457,7 +457,7 @@ public partial class MainWindow : Window, IMainCommands
 
 #region UI Commands
 
-    private async void ConnectToDatabase(object sender, RoutedEventArgs e)
+    private void ConnectToDatabase(object sender, RoutedEventArgs e)
     {
         App.State.AddBackgroundWork($"Connecting to catalog", ConnectToDatabaseWork);
     }

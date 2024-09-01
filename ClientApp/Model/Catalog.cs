@@ -418,7 +418,7 @@ public class Catalog : ICatalog
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to completed delete item: {id}: {item.VirtualPath}. Delete may be incomplete (stacks may have orphaned items)");
+            MessageBox.Show($"Failed to completely delete item: {id}: {item.VirtualPath}. Delete may be incomplete (stacks may have orphaned items) ({ex.Message})");
         }
 
         TriggerItemDirtied(true);

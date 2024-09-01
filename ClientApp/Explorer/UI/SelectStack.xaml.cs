@@ -59,6 +59,9 @@ namespace Thetacat.Explorer.UI
         {
             if (_model.CurrentStack == null)
             {
+                if (m_itemStackingWith == null)
+                    throw new CatExceptionInternalFailure("saving stack with nothing stacked with");
+
                 bool fMediaStack = _model.CurrentType.Equals(MediaStackType.Media);
 
                 if ((fMediaStack && _ItemStackingWith.MediaStack != null)
