@@ -405,11 +405,11 @@ public partial class MediaExplorer : UserControl
 
             if (App.State.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
             {
-                foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
+                foreach (MediaTag tag in mediaItem.MediaTags)
                 {
-                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User
-                        && tag.Value.Metatag.ID != BuiltinTags.s_DontPushToCloudID
-                        && tag.Value.Metatag.ID != BuiltinTags.s_IsTrashItemID)
+                    if (MetatagStandards.GetStandardFromStandardTag(tag.Metatag.Standard) != MetatagStandards.Standard.User
+                        && tag.Metatag.ID != BuiltinTags.s_DontPushToCloudID
+                        && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID)
                     {
                         continue;
                     }
@@ -417,9 +417,9 @@ public partial class MediaExplorer : UserControl
                     Model.ExplorerContextMenu.AppliedTags.Add(
                         new ExplorerMenuTag()
                         {
-                            MediaTagId = tag.Value.Metatag.ID,
-                            TagDescription = tag.Value.Metatag.Description,
-                            TagName = tag.Value.Metatag.Name
+                            MediaTagId = tag.Metatag.ID,
+                            TagDescription = tag.Metatag.Description,
+                            TagName = tag.Metatag.Name
                         });
                 }
             }

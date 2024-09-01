@@ -94,7 +94,7 @@ public partial class MediaTagMigrateSummary : UserControl
     void AddMetadataValueItemIfNotPresent(PseMediaItem item, MediaItem catItem, Metatag metatag, string value)
     {
         // see if this tag is already set on the media item
-        if (catItem.Tags.TryGetValue(metatag.ID, out MediaTag? existing))
+        if (catItem.TryGetMediaTag(metatag.ID, out MediaTag? existing))
         {
             bool identical = true;
 
@@ -130,7 +130,7 @@ public partial class MediaTagMigrateSummary : UserControl
                 throw new CatExceptionInternalFailure($"can't find metatag {mediaTagValue.CatID.Value}");
 
             // see if this tag is already set on the media item. if it is, just skip (there are no values for these tags)
-            if (catItem.Tags.TryGetValue(metatag.ID, out MediaTag? existing))
+            if (catItem.TryGetMediaTag(metatag.ID, out _))
                 continue;
 
             m_mediatagMigrationItems.Add(new MediaTagMigrateItem(catItem, metatag, null));

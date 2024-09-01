@@ -117,7 +117,7 @@ namespace Thetacat.Filtering.UI
 
             foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
             {
-                if (item.Tags.TryGetValue(metatag.ID, out MediaTag? mediaTag))
+                if (item.TryGetMediaTag(metatag.ID, out MediaTag? mediaTag))
                 {
                     if (mediaTag.Value == null)
                     {

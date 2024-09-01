@@ -30,6 +30,6 @@ public class ZoomTag
         if (Tag == null)
             throw new CatExceptionInternalFailure("tag not set on updatestate");
 
-        IsSet = mediaItem.Tags.TryGetValue(Tag.ID, out _);
+        IsSet = mediaItem.TryGetMediaTag(Tag.ID, out _);
     }
 }

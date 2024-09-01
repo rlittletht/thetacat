@@ -66,7 +66,7 @@ public class Media
                 items,
                 item =>
                 {
-                    foreach (Model.MediaTag tag in item.Tags.Values)
+                    foreach (Model.MediaTag tag in item.MediaTags)
                     {
                         tagsToInsert.Add(
                             new ServiceMediaTag()

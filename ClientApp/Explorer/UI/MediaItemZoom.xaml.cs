@@ -103,7 +103,7 @@ public partial class MediaItemZoom : Window
         if (m_model.MediaItem == null)
             return;
 
-        foreach (MediaTag tag in m_model.MediaItem.Tags.Values)
+        foreach (MediaTag tag in m_model.MediaItem.MediaTags)
         {
             m_model.Tags.Add(tag);
         }
@@ -471,7 +471,7 @@ public partial class MediaItemZoom : Window
 
         MediaTag mediaTag = MediaTag.CreateMediaTag(App.State.MetatagSchema, tag.ID, null);
 
-        if (m_model.MediaItem?.Tags.TryGetValue(tag.ID, out MediaTag? existing) ?? false)
+        if (m_model.MediaItem?.TryGetMediaTag(tag.ID, out _) ?? false)
             m_model.MediaItem!.FRemoveMediaTag(tag.ID);
         else
             m_model.MediaItem?.FAddOrUpdateMediaTag(mediaTag, true);

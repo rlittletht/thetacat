@@ -93,18 +93,18 @@ public class MediaItemDiff: INotifyPropertyChanged
 
         bool tagDifferences = false;
         // find the inserts and the updates
-        foreach (KeyValuePair<Guid, MediaTag> tag in item.Tags)
+        foreach (MediaTag tag in item.MediaTags)
         {
-            if (!item.Base.Tags.ContainsKey(tag.Key))
+            if (!item.Base.Tags.ContainsKey(tag.Metatag.ID))
             {
-                diff.TagDiffs.Add(MediaTagDiff.CreateInsert(tag.Value));
+                diff.TagDiffs.Add(MediaTagDiff.CreateInsert(tag));
                 tagDifferences = true;
             }
             else
             {
-                if (string.Compare(tag.Value.Value, item.Base.Tags[tag.Key].Value, StringComparison.CurrentCultureIgnoreCase) != 0)
+                if (string.Compare(tag.Value, item.Base.Tags[tag.Metatag.ID].Value, StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
-                    diff.TagDiffs.Add(MediaTagDiff.CreateUpdate(tag.Value));
+                    diff.TagDiffs.Add(MediaTagDiff.CreateUpdate(tag));
                     tagDifferences = true;
                 }
             }
@@ -113,7 +113,7 @@ public class MediaItemDiff: INotifyPropertyChanged
         // find the deletes
         foreach (KeyValuePair<Guid, MediaTag> tag in item.Base.Tags)
         {
-            if (!item.Tags.ContainsKey(tag.Key))
+            if (!item.HasMediaTag(tag.Key))
             {
                 diff.TagDiffs.Add(MediaTagDiff.CreateDelete(tag.Key));
                 tagDifferences = true;

@@ -24,6 +24,7 @@ using Thetacat.Types;
 using Thetacat.Util;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.ImageCaching;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Thetacat.Model;
 
@@ -89,7 +90,7 @@ public class MediaItem : INotifyPropertyChanged
             OnItemDirtied(this, new DirtyItemEventArgs<Guid>(ID));
     }
 
-    #region Public Data / Accessors
+#region Public Data / Accessors
 
     // the vector clock changes whenever a change is made to the data. we use this
     // clock to determine if a diffitem (when committed) should clear any changes to
@@ -132,8 +133,8 @@ public class MediaItem : INotifyPropertyChanged
 
         MediaStacks catalogStacks =
             type == MediaStackType.Version
-            ? catalog.VersionStacks
-            : catalog.MediaStacks;
+                ? catalog.VersionStacks
+                : catalog.MediaStacks;
 
         // if there was already a version stack, make sure to remove any registered event
         // handle for the collection change
@@ -151,7 +152,7 @@ public class MediaItem : INotifyPropertyChanged
         }
 
         Stacks[type] = stackId;
-        if (type == MediaStackType.Version) 
+        if (type == MediaStackType.Version)
             OnPropertyChanged(nameof(VersionStack));
         else
             OnPropertyChanged(nameof(MediaStack));
@@ -241,7 +242,7 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
-    public ConcurrentDictionary<Guid, MediaTag> Tags
+    private ConcurrentDictionary<Guid, MediaTag> Tags
     {
         get => m_working.Tags;
         set
@@ -250,6 +251,18 @@ public class MediaItem : INotifyPropertyChanged
             VectorClock++;
             m_working.Tags = value;
         }
+    }
+
+    public IEnumerable<MediaTag> MediaTags => m_working.Tags.Values;
+
+    public bool TryGetMediaTag(Guid guid, [NotNullWhen(true)] out MediaTag? mediaTag)
+    {
+        return Tags.TryGetValue(guid, out mediaTag);
+    }
+
+    public bool HasMediaTag(Guid guid)
+    {
+        return Tags.ContainsKey(guid);
     }
 
     public int? ImageWidth
@@ -321,7 +334,7 @@ public class MediaItem : INotifyPropertyChanged
     }
 
     private T? GetBuiltinTagValue<T>(Metatag metatag, Func<string, T> parser)
-        where T: struct // restrict this to value types (int, string, bool)
+        where T : struct // restrict this to value types (int, string, bool)
     {
         if (Tags.TryGetValue(metatag.ID, out MediaTag? tag))
             return tag.Value == null ? null : parser(tag.Value);
@@ -392,9 +405,9 @@ public class MediaItem : INotifyPropertyChanged
         set => SetBuiltinTagToggleTag(BuiltinTags.s_TransformMirror, value);
     }
 
-    #endregion
+#endregion
 
-    #region Changes/Versions
+#region Changes/Versions
 
     public bool MaybeHasChanges => m_base != null;
 
@@ -419,9 +432,9 @@ public class MediaItem : INotifyPropertyChanged
             return false;
         if (other.VirtualPath.Equals(VirtualPath))
             return false;
-        if (other.MD5 != MD5) 
+        if (other.MD5 != MD5)
             return false;
-        if (other.MimeType != MimeType) 
+        if (other.MimeType != MimeType)
             return false;
 
         foreach (MediaTag tag in Tags.Values)
@@ -441,7 +454,7 @@ public class MediaItem : INotifyPropertyChanged
         m_base = other?.Data;
 
         if (m_base == null)
-             PendingOp = Op.Create;
+            PendingOp = Op.Create;
         else
             PendingOp = Op.MaybeUpdate;
     }
@@ -603,6 +616,26 @@ public class MediaItem : INotifyPropertyChanged
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: AddOrUpdateMediaTagInternal
+        %%Qualified: Thetacat.Model.MediaItem.AddOrUpdateMediaTagInternal
+
+       This circumvents the normal dirtying of the item -- DO NOT use this
+       directly unless you know what you are really doing (e.g. you are reading
+       from the database which means its by definition not a dirtying action)
+    ----------------------------------------------------------------------------*/
+    public void AddOrUpdateMediaTagInternal(MediaTag tag)
+    {
+        Tags.AddOrUpdate(
+            tag.Metatag.ID,
+            tag,
+            (key, oldTag) =>
+            {
+                oldTag.Value = tag.Value;
+                return oldTag;
+            });
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: FAddOrUpdateMediaTag
         %%Qualified: Thetacat.Model.MediaItem.FAddOrUpdateMediaTag
 
@@ -733,7 +766,7 @@ public class MediaItem : INotifyPropertyChanged
 
         string file = localFilePath;
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
-            
+
         // load exif and other data from this item.
 
 //        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
@@ -803,6 +836,7 @@ public class MediaItem : INotifyPropertyChanged
 #endregion
 
 #region Stacks
+
 #endregion
 
 #region INotifyPropertyChanged

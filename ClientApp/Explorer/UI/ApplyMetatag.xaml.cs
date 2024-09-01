@@ -130,15 +130,15 @@ public partial class ApplyMetatag : Window
 
         foreach (MediaItem mediaItem in mediaItems)
         {
-            foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
+            foreach (MediaTag tag in mediaItem.MediaTags)
             {
-                if (!tagsCounts.TryGetValue(tag.Value.Metatag, out int count))
+                if (!tagsCounts.TryGetValue(tag.Metatag, out int count))
                 {
                     count = 0;
-                    tagsCounts.Add(tag.Value.Metatag, count);
+                    tagsCounts.Add(tag.Metatag, count);
                 }
 
-                tagsCounts[tag.Value.Metatag] = count + 1;
+                tagsCounts[tag.Metatag] = count + 1;
             }
         }
 

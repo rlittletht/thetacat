@@ -99,17 +99,9 @@ public class Media
     ----------------------------------------------------------------------------*/
     public void AddMediaTagInternal(Guid id, MediaTag tag)
     {
-        if (!m_items.ContainsKey(id))
+        if (!m_items.TryGetValue(id, out MediaItem? item))
             throw new Exception("media not present");
 
-        m_items[id]
-           .Tags.AddOrUpdate(
-                tag.Metatag.ID,
-                tag,
-                (key, oldTag) =>
-                {
-                    oldTag.Value = tag.Value;
-                    return oldTag;
-                });
+        item.AddOrUpdateMediaTagInternal(tag);
     }
 }

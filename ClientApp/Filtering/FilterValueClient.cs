@@ -30,7 +30,7 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
         {
             // get the tree item for this metatag
             
@@ -50,7 +50,7 @@ public class FilterValueClient: PostfixText.IValueClient
                 {
                     if (Guid.TryParse(item.ID, out Guid itemID))
                     {
-                        matched |= m_mediaItem.Tags.ContainsKey(itemID);
+                        matched |= m_mediaItem.HasMediaTag(itemID);
                     }
                 },
                 0);
@@ -72,7 +72,7 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
             return null;
 
         // try to coerce the value to a number
@@ -91,7 +91,7 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
             return null;
 
         if (mediaTag.Value == null)
@@ -116,7 +116,7 @@ public class FilterValueClient: PostfixText.IValueClient
             if (!Guid.TryParse(field, out Guid metatagID))
                 return Value.ValueType.String;
 
-            if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
+            if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
                 return Value.ValueType.String;
 
             value = mediaTag.Value;
