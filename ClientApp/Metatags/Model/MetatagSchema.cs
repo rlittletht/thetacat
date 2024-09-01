@@ -21,6 +21,21 @@ public class MetatagSchema
     public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
     public bool DontBuildTree = false;
 
+    public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
+
+    public MetatagSchema()
+    {
+    }
+
+    public MetatagSchema(MetatagSchema source)
+    {
+        m_schemaWorking = source.m_schemaWorking.Clone();
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: EnsureBaseAndVersion
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.EnsureBaseAndVersion
+    ----------------------------------------------------------------------------*/
     void EnsureBaseAndVersion()
     {
         if (m_schemaBase == null)
@@ -30,8 +45,10 @@ public class MetatagSchema
         }
     }
 
-    public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
-
+    /*----------------------------------------------------------------------------
+        %%Function: FindFirstMatchingItemInSchemaDefinition
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.FindFirstMatchingItemInSchemaDefinition
+    ----------------------------------------------------------------------------*/
     static Metatag? FindFirstMatchingItemInSchemaDefinition(MetatagSchemaDefinition schemaDef, IMetatagMatcher<IMetatag> matcher)
     {
         foreach (Metatag metatag in schemaDef.Metatags)
@@ -161,6 +178,7 @@ public class MetatagSchema
 
         return m_schemaWorking.FRemoveMetatag(metatagId);
     }
+
     /*----------------------------------------------------------------------------
         %%Function: AddStandardRoot
         %%Qualified: Thetacat.Model.MetatagSchema.AddStandardRoot
@@ -254,10 +272,10 @@ public class MetatagSchema
         %%Function: GetOrBuildDirectoryTag
         %%Qualified: Thetacat.Model.Metatags.MetatagSchema.GetOrBuildDirectoryTag
 
-        Get a directory tag (a tag that is needed as a parent for a tag), or 
+        Get a directory tag (a tag that is needed as a parent for a tag), or
         create it if it doesn't exist.
 
-        If this tag must use a predefined static id, pass that in (this is only 
+        If this tag must use a predefined static id, pass that in (this is only
         true for builtin tags like width/height/originalFileDate)
     ----------------------------------------------------------------------------*/
     public Metatag GetOrBuildDirectoryTag(
@@ -284,6 +302,41 @@ public class MetatagSchema
 
         return dirTag;
     }
+
+    /*----------------------------------------------------------------------------
+        %%Function: BuildLineageMap
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.BuildLineageMap
+    ----------------------------------------------------------------------------*/
+    public Dictionary<Guid, string> BuildLineageMap()
+    {
+        Dictionary<Guid, string> lineage = new();
+
+        App.State.MetatagSchema.WorkingTree.Preorder(
+            null,
+            (treeItem, parent, depth) =>
+            {
+                string dropdownName;
+
+                if (parent != null && !string.IsNullOrEmpty(parent.ID))
+                {
+                    Guid parentID = Guid.Parse(parent.ID);
+
+                    lineage.TryAdd(parentID, parent.Name);
+                    dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
+                }
+                else
+                {
+                    dropdownName = treeItem.Name;
+                }
+
+                if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
+                    lineage.Add(treeItemID, dropdownName);
+            },
+            0);
+
+        return lineage;
+    }
+
 
     public void EnsureBuiltinMetatagsDefined()
     {
@@ -330,7 +383,7 @@ public class MetatagSchema
     {
         m_schemaBase = null;
         m_schemaWorking.Clear();
-        
+
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
@@ -386,9 +439,9 @@ public class MetatagSchema
         MetatagSchemaDiffOp op = MetatagSchemaDiffOp.CreateUpdate3WM(metatagBase!, metatagServer!, metatagLocal!);
 
         // check if this is an update with no values being updated
-        if (op is { Action: MetatagSchemaDiffOp.ActionType.Update, IsParentChanged: false } 
-            && !op.IsDescriptionChanged 
-            && !op.IsNameChanged 
+        if (op is { Action: MetatagSchemaDiffOp.ActionType.Update, IsParentChanged: false }
+            && !op.IsDescriptionChanged
+            && !op.IsNameChanged
             && !op.IsStandardChanged)
         {
             return null;

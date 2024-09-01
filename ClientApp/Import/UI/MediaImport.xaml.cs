@@ -27,7 +27,8 @@ namespace Thetacat.Import.UI
     public partial class MediaImport : Window
     {
         private readonly MediaImportModel m_model = new();
-        private MediaImporter m_importer;
+        private readonly MediaImporter m_importer;
+        private readonly Dictionary<Guid, string> m_metatagLineageMap;
 
         public MediaImportModel Model => m_model;
 
@@ -41,6 +42,7 @@ namespace Thetacat.Import.UI
             m_importBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
             App.State.RegisterWindowPlace(this, "media-import");
             InitializeVirtualRoots();
+            m_metatagLineageMap = App.State.MetatagSchema.BuildLineageMap();
             InitializeAvailableParents();
         }
 
@@ -597,13 +599,8 @@ namespace Thetacat.Import.UI
             m_model.ImportStatus = status;
         }
 
-        private Dictionary<Guid, string>? m_metatagLineageMap;
-
         void InitializeAvailableParents()
         {
-            if (m_metatagLineageMap == null)
-                m_metatagLineageMap = EditFilter.BuildLineageMap();
-
             IComparer<KeyValuePair<Guid, string>> comparer =
                 Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
             ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);

@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TCore.PostfixText;
+using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -30,42 +31,19 @@ namespace Thetacat.Filtering.UI
     {
         private readonly EditFilterModel m_model = new EditFilterModel();
 
-        private Dictionary<Guid, string>? m_metatagLineageMap;
+        private readonly Dictionary<Guid, string> m_metatagLineageMap;
+        private readonly MetatagSchema m_filterSchema;
 
-        public static Dictionary<Guid, string> BuildLineageMap()
-        {
-            Dictionary<Guid, string> lineage = new();
+        /*----------------------------------------------------------------------------
+            %%Function: InitializeAvailableTags
+            %%Qualified: Thetacat.Filtering.UI.EditFilter.InitializeAvailableTags
 
-            App.State.MetatagSchema.WorkingTree.Preorder(
-                null,
-                (treeItem, parent, depth) =>
-                {
-                    string dropdownName;
-
-                    if (parent != null && !string.IsNullOrEmpty(parent.ID))
-                    {
-                        Guid parentID = Guid.Parse(parent.ID);
-
-                        lineage.TryAdd(parentID, parent.Name);
-                        dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
-                    }
-                    else
-                    {
-                        dropdownName = treeItem.Name;
-                    }
-
-                    if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
-                        lineage.Add(treeItemID, dropdownName);
-                },
-                0);
-
-            return lineage;
-        }
-
+            Initialize the available tags in the dialog, both the dropdown and the
+            popup tree
+        ----------------------------------------------------------------------------*/
         private void InitializeAvailableTags()
         {
-            if (m_metatagLineageMap == null)
-                m_metatagLineageMap = BuildLineageMap();
+            App.LogForApp(EventType.Verbose, "ensure builtin done");
 
             IComparer<KeyValuePair<Guid, string>> comparer =
                 Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
@@ -77,15 +55,20 @@ namespace Thetacat.Filtering.UI
             }
 
             TagMetatagsTree.Initialize(
-                App.State.MetatagSchema.WorkingTree.Children,
-                App.State.MetatagSchema.SchemaVersionWorking);
+                m_filterSchema.WorkingTree.Children,
+                m_filterSchema.SchemaVersionWorking);
         }
 
-        public EditFilter(FilterDefinition? definition = null, Dictionary<Guid, string>? lineageMap = null)
+        /*----------------------------------------------------------------------------
+            %%Function: EditFilter
+            %%Qualified: Thetacat.Filtering.UI.EditFilter.EditFilter
+        ----------------------------------------------------------------------------*/
+        public EditFilter(MetatagSchema filterSchema, Dictionary<Guid, string> lineageMap, FilterDefinition ? definition = null)
         {
             DataContext = m_model;
             InitializeComponent();
 
+            m_filterSchema = filterSchema;
             m_metatagLineageMap = lineageMap;
             if (definition != null)
             {

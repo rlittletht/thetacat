@@ -15,6 +15,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Accessibility;
 using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
 using Thetacat.Filtering.UI;
@@ -32,7 +33,8 @@ namespace Thetacat.Explorer;
 public partial class ManageFilters : Window
 {
     private ChooseFilterModel m_model = new();
-    private Dictionary<Guid, string>? m_metatagLineageMap;
+    private Dictionary<Guid, string> m_metatagLineageMap;
+    private MetatagSchema m_filterSchema;
 
     void FillAvailableFilters()
     {
@@ -43,6 +45,29 @@ public partial class ManageFilters : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: BuildFilterSchema
+        %%Qualified: Thetacat.Explorer.ManageFilters.BuildFilterSchema
+    ----------------------------------------------------------------------------*/
+    MetatagSchema BuildFilterSchema()
+    {
+        MetatagSchema filterSchema = new MetatagSchema(App.State.MetatagSchema);
+
+        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
+        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+
+        foreach (Metatag tag in BuiltinTags.s_NonSchemaBuiltinTags)
+        {
+            filterSchema.AddMetatag(tag);
+        }
+
+        return filterSchema;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ManageFilters
+        %%Qualified: Thetacat.Explorer.ManageFilters.ManageFilters
+    ----------------------------------------------------------------------------*/
     public ManageFilters(FilterDefinition? currentFilter)
     {
         InitializeComponent();
@@ -55,10 +80,17 @@ public partial class ManageFilters : Window
 
         FillAvailableFilters();
         App.State.RegisterWindowPlace(this, "FilterCatalogWindow");
-        m_metatagLineageMap = EditFilter.BuildLineageMap();
+
+        BuildFilterSchema();
+        m_filterSchema = BuildFilterSchema();
+        m_metatagLineageMap = m_filterSchema.BuildLineageMap();
         m_model.PropertyChanged += OnModelChanged;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateQueryClauses
+        %%Qualified: Thetacat.Explorer.ManageFilters.UpdateQueryClauses
+    ----------------------------------------------------------------------------*/
     void UpdateQueryClauses()
     {
         m_model.QueryText.Clear();
@@ -69,7 +101,7 @@ public partial class ManageFilters : Window
             m_model.SelectedFilterDefinition.Expression.ToStrings(
                 (field) =>
                 {
-                    if (m_metatagLineageMap != null && Guid.TryParse(field, out Guid metatagId))
+                    if (Guid.TryParse(field, out Guid metatagId))
                     {
                         if (m_metatagLineageMap.TryGetValue(metatagId, out string? lineage))
                             return $"[{lineage}]";
@@ -121,7 +153,7 @@ public partial class ManageFilters : Window
 
     private void DoEditFilter(object sender, RoutedEventArgs e)
     {
-        EditFilter editFilter = new EditFilter(m_model.SelectedFilterDefinition, m_metatagLineageMap);
+        EditFilter editFilter = new EditFilter(m_filterSchema, m_metatagLineageMap, m_model.SelectedFilterDefinition);
 
         editFilter.Owner = this;
         editFilter.ShowDialog();
@@ -137,7 +169,7 @@ public partial class ManageFilters : Window
 
     private void DoNewFilter(object sender, RoutedEventArgs e)
     {
-        EditFilter editFilter = new EditFilter(null, m_metatagLineageMap);
+        EditFilter editFilter = new EditFilter(m_filterSchema, m_metatagLineageMap);
 
         editFilter.Owner = this;
         editFilter.ShowDialog();

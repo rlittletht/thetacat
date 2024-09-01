@@ -53,4 +53,9 @@ public class BuiltinTags
         s_IsTrashItem,
         s_DontPushToCloud
     };
+
+    public static readonly Metatag[] s_NonSchemaBuiltinTags =
+    {
+        s_VirtualPath
+    };
 }
