@@ -665,8 +665,12 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
     public void BuildTimelineFromMediaCatalog()
     {
+        MicroTimer timer = new MicroTimer();
+
         IReadOnlyCollection<MediaItem> collection =
             m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
+
+        App.LogForApp(EventType.Information, $"elapsed time for building catalog collection: {timer.Elapsed()}");
 
         BuildTimelineForMediaCollection(collection);
     }

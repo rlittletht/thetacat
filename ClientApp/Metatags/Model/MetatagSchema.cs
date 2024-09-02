@@ -13,7 +13,7 @@ public class MetatagSchema
     public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
     private readonly MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
-
+  
     public MetatagTree WorkingTree => m_schemaWorking.Tree;
     public IEnumerable<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
     public int MetatagCount => m_schemaWorking.Count;
@@ -58,6 +58,28 @@ public class MetatagSchema
         }
 
         return null;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetTreeItemIfContainer
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.GetTreeItemIfContainer
+
+        return the IMetatagTree item in the working tree for this metatagID
+        ONLY if this metatag has children. Cache the result
+    ----------------------------------------------------------------------------*/
+    public IMetatagTreeItem? GetTreeItemIfContainer(Guid metatagID)
+    {
+        if (!m_schemaWorking.ContainerCache.TryGetValue(metatagID, out IMetatagTreeItem? metatagTreeItem))
+        {
+            // just in case this is a parent metatag...
+            metatagTreeItem = WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagID), -1);
+            if (metatagTreeItem != null && metatagTreeItem.Children.Count == 0)
+                metatagTreeItem = null;
+
+            m_schemaWorking.ContainerCache[metatagID] = metatagTreeItem;
+        }
+
+        return metatagTreeItem;
     }
 
     /*----------------------------------------------------------------------------
@@ -311,7 +333,7 @@ public class MetatagSchema
     {
         Dictionary<Guid, string> lineage = new();
 
-        App.State.MetatagSchema.WorkingTree.Preorder(
+        WorkingTree.Preorder(
             null,
             (treeItem, parent, depth) =>
             {

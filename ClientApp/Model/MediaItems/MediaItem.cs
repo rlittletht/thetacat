@@ -257,11 +257,22 @@ public class MediaItem : INotifyPropertyChanged
 
     public bool TryGetMediaTag(Guid guid, [NotNullWhen(true)] out MediaTag? mediaTag)
     {
+        if (guid == BuiltinTags.s_VirtualPathID)
+        {
+            // synthesize a mediatag for virtual path
+            mediaTag = new MediaTag(BuiltinTags.s_VirtualPath, VirtualPath);
+            return true;
+        }
+
         return Tags.TryGetValue(guid, out mediaTag);
     }
 
     public bool HasMediaTag(Guid guid)
     {
+        // first check to see if its a builtin non-schema tag
+        if (guid == BuiltinTags.s_VirtualPathID)
+            return true;
+
         return Tags.ContainsKey(guid);
     }
 

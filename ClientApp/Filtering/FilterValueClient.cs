@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms.Design;
 using TCore.PostfixText;
 using Thetacat.Metatags;
@@ -9,7 +10,7 @@ namespace Thetacat.Filtering;
 
 public class FilterValueClient: PostfixText.IValueClient
 {
-    private MediaItem m_mediaItem;
+    private readonly MediaItem m_mediaItem;
 
     public FilterValueClient(MediaItem mediaItem)
     {
@@ -33,9 +34,8 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
         {
             // get the tree item for this metatag
-            
-            // just in case this is a parent metatag...
-            IMetatagTreeItem? metatagTreeItem = App.State.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagID), -1);
+
+            IMetatagTreeItem? metatagTreeItem = App.State.MetatagSchema.GetTreeItemIfContainer(metatagID);
 
             if (metatagTreeItem == null)
             {

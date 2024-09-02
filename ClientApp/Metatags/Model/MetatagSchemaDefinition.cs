@@ -26,6 +26,13 @@ public class MetatagSchemaDefinition
 
     public MetatagTree Tree => m_tree ??= new MetatagTree(Metatags);
 
+    // a mediatag can be a container tag (in the schema), so we will cache this information
+    // so we don't search the schema over and over. this will get reset when the schema is modified
+
+    private Dictionary<Guid, IMetatagTreeItem?>? m_containerCache;
+
+    public Dictionary<Guid, IMetatagTreeItem?> ContainerCache => m_containerCache ??= new Dictionary<Guid, IMetatagTreeItem?>();
+
     private readonly ConcurrentDictionary<Guid, Metatag> m_metatagLookup = new();
 
     public MetatagSchemaDefinition(){}
@@ -61,12 +68,16 @@ public class MetatagSchemaDefinition
     {
         m_metatags.Clear();
         m_tree = null;
+        m_containerCache = null;
         SchemaVersion = 0;
         m_metatagLookup.Clear();
     }
 
     public void AddMetatag(Metatag metatag)
     {
+        // this is a cheap rebuild, so just reset
+        m_containerCache = null;
+
         m_metatags.Add(metatag);
         if (!m_metatagLookup.TryAdd(metatag.ID, metatag))
             throw new CatExceptionInternalFailure($"failed to add metatag {metatag} to lookup table. duplicate ID?");
@@ -99,6 +110,10 @@ public class MetatagSchemaDefinition
 
         m_metatags.Remove(tag);
         parent.Children.Remove(treeItem);
+
+        // this is a cheap rebuild, so just reset
+        m_containerCache = null;
+
         return true;
     }
 
@@ -106,6 +121,7 @@ public class MetatagSchemaDefinition
     {
         m_metatags.Clear();
         m_metatagLookup.Clear();
+        m_containerCache = null;
         m_tree = null;
     }
 

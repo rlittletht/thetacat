@@ -51,7 +51,7 @@ namespace Thetacat.Filtering.UI
 
             foreach (KeyValuePair<Guid, string> item in sorted)
             {
-                m_model.AvailableTags.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
+                m_model.AvailableTags.Add(new FilterModelMetatagItem(m_filterSchema.GetMetatagFromId(item.Key)!, item.Value));
             }
 
             TagMetatagsTree.Initialize(
@@ -132,12 +132,14 @@ namespace Thetacat.Filtering.UI
                         // don't add more than 20 different values
                         UpdateMapCount(valueCounts, mediaTag.Value);
                         ops.Add(ComparisonOperator.Op.Eq);
+                        ops.Add(ComparisonOperator.Op.Rex);
                         ops.Add(ComparisonOperator.Op.Ne);
                         ops.Add(ComparisonOperator.Op.Gt);
                         ops.Add(ComparisonOperator.Op.Gte);
                         ops.Add(ComparisonOperator.Op.Lt);
                         ops.Add(ComparisonOperator.Op.Lte);
                         ops.Add(ComparisonOperator.Op.SEq);
+                        ops.Add(ComparisonOperator.Op.SRex);
                         ops.Add(ComparisonOperator.Op.SNe);
                         ops.Add(ComparisonOperator.Op.SGt);
                         ops.Add(ComparisonOperator.Op.SGte);
@@ -199,7 +201,7 @@ namespace Thetacat.Filtering.UI
                 m_model.Expression.ToStrings(
                     (field) =>
                     {
-                        if (m_metatagLineageMap != null && Guid.TryParse(field, out Guid metatagId))
+                        if (Guid.TryParse(field, out Guid metatagId))
                         {
                             if (m_metatagLineageMap.TryGetValue(metatagId, out string? lineage))
                                 return $"[{lineage}]";
