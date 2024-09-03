@@ -24,7 +24,7 @@ There are now two vector clocks (for two domains of data):
 * Filter Clock - this manages the filter definitions
 
 Everything described below mostly applies to both clocks, but each of them should be considered
-independent of each other. 
+independent of each other.
 
 The Filter clock is simpler -- there is no Workgroup-Wide filter clock (as there is no need to
 maintain integrity across the collection of filters). instead there is only a clock for each filter
@@ -184,6 +184,8 @@ public class Workgroup : IWorkgroup
         CacheRoot = PathSegment.CreateFromString(serviceWorkgroup.CacheRoot) ?? throw new InvalidOperationException("no name from server");
 
         m_db ??= new WorkgroupDb(Database);
+
+        m_db.AdjustDatabaseIfNecessary();
 
         ServiceWorkgroupClient? client = m_db.GetClientDetails(MainApp.MainWindow.ClientName);
 
@@ -546,12 +548,12 @@ public class Workgroup : IWorkgroup
         }
     }
 
-/*----------------------------------------------------------------------------
-    %%Function: PushChangesToDatabase
-    %%Qualified: Thetacat.Model.Workgroups.Workgroup.PushChangesToDatabase
+    /*----------------------------------------------------------------------------
+        %%Function: PushChangesToDatabase
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.PushChangesToDatabase
 
-    Build up a set of changes we need to make on the server
-----------------------------------------------------------------------------*/
+        Build up a set of changes we need to make on the server
+    ----------------------------------------------------------------------------*/
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache)
     {
         PushChangesToDatabaseWithCache(App.State.Cache, itemsForCache);
@@ -566,5 +568,14 @@ public class Workgroup : IWorkgroup
     public void DeleteMediaItem(Guid id)
     {
         _Database.DeleteMediaItemFromWorkgroup(id);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetLatestWorkgroupFilters
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.GetLatestWorkgroupFilters
+    ----------------------------------------------------------------------------*/
+    public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters()
+    {
+        return _Database.GetLatestWorkgroupFilters();
     }
 }

@@ -20,7 +20,8 @@ public class WorkgroupDb
             new()
             {
                 { "tcat_workgroup_media", "TWM" },
-                { "tcat_workgroup_clients", "TWC" }
+                { "tcat_workgroup_clients", "TWC" },
+                { "tcat_workgroup_filters", "TWF" }
             });
 
     private readonly PathSegment m_database;
@@ -91,9 +92,6 @@ public class WorkgroupDb
     private readonly string s_initializeVectorClock = @"
         INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('workgroup-clock', 0)";
 
-    private readonly string s_initializeFilterVectorClock = @"
-        INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('filter-clock', 0)";
-
     private readonly string s_queryWorkgroupClientDetailsByName = @"
         SELECT $$tcat_workgroup_clients$$.id, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.vectorClock
         FROM $$#tcat_workgroup_clients$$
@@ -149,7 +147,6 @@ public class WorkgroupDb
         connection.ExecuteNonQuery(s_createWorkgroupClients);
         connection.ExecuteNonQuery(s_createWorkgroupVClock);
         connection.ExecuteNonQuery(s_initializeVectorClock);
-        connection.ExecuteNonQuery(s_initializeFilterVectorClock);
 
         connection.Close();
 
@@ -263,10 +260,6 @@ public class WorkgroupDb
         %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetLatestWorkgroupFilters
 
         Get the complete set of filter definitions for this workgroup
-
-    TODO: keep implementing WG filters. ALSO, update the workgroup database for cat-cache-localTest
-    (each catalog has its own workgroup cache, so we don't have to worry about mixing them in the
-    same workgroup db)
     ----------------------------------------------------------------------------*/
     public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters()
     {
@@ -478,5 +471,28 @@ public class WorkgroupDb
 
                 return true;
             });
+    }
+
+    void CheckFiltersTable()
+    {
+        // first figure out if we've got everything we need
+        TableInfo info = TableInfo.CreateTableInfo(_Connection, "tcat_workgroup_filters");
+
+        if (info.IsTableDefined)
+            return;
+
+        _Connection.ExecuteNonQuery(s_createWorkgroupFilters);
+
+        // and make sure they stick
+        info = TableInfo.CreateTableInfo(_Connection, "tcat_workgroup_filters");
+
+
+        if (!info.IsTableDefined)
+            throw new CatExceptionInternalFailure("could not create filters table");
+    }
+
+    public void AdjustDatabaseIfNecessary()
+    {
+        CheckFiltersTable();
     }
 }

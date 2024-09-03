@@ -26,6 +26,7 @@ public interface IAppState
     MetatagSchema MetatagSchema { get; }
     ICache Cache { get; }
     ClientDatabase? ClientDatabase { get; }
+    IWorkgroup? Workgroup { get; }
     Md5Cache Md5Cache { get; }
     Derivatives Derivatives { get; }
     MetatagMRU MetatagMRU { get; }

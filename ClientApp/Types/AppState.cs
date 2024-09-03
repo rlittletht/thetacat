@@ -146,6 +146,7 @@ public class AppState : IAppState
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(true);
         ClientDatabase = null;
+        Workgroup = null;
         Md5Cache = new Md5Cache(ClientDatabase);
         Derivatives = new Derivatives(ClientDatabase);
         MetatagMRU = new MetatagMRU();

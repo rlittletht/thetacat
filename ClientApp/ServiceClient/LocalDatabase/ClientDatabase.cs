@@ -379,9 +379,7 @@ public class ClientDatabase
         _Connection.ExecuteNonQuery(new SqlCommandTextInit("DROP TABLE tcat_derivatives_old"));
     }
 
-    // make a class to get the results from the table info, then execute a query reader into it, then
-    // check if it has the md5 column. if not, call the adjust derivatives and we should be good to go. to sleep.
-    public void AdjustDatabaseIfNecessary()
+    void CheckDerivativeTable()
     {
         // first figure out if we've got everything we need
         TableInfo info = TableInfo.CreateTableInfo(_Connection, "tcat_derivatives");
@@ -396,5 +394,12 @@ public class ClientDatabase
 
         if (!info.IsColumnDefined("md5"))
             throw new CatExceptionInternalFailure("md5 column not defined even after we altered the table!");
+    }
+
+    // make a class to get the results from the table info, then execute a query reader into it, then
+    // check if it has the md5 column. if not, call the adjust derivatives and we should be good to go. to sleep.
+    public void AdjustDatabaseIfNecessary()
+    {
+        CheckDerivativeTable();
     }
 }

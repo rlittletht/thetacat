@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Thetacat.Model;
+using Thetacat.Model.Workgroups;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -21,4 +22,5 @@ public interface IWorkgroup
     public void PushChangesToDatabase(Dictionary<Guid, MediaItem>? itemsForCache);
     public void CreateCacheEntryForItem(ICache cache, MediaItem item, DateTime? cachedDate, bool pending);
     public void DeleteMediaItem(Guid id);
+    public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters();
 }
