@@ -8,14 +8,20 @@ namespace Thetacat.Filtering;
 public class Filter
 {
     public FilterDefinition Definition;
-
-    public Filter(FilterDefinition definition)
+    public FilterType FilterType { get; set; }
+    public Guid Id { get; set; }
+    
+    public Filter(FilterDefinition definition, FilterType filterType, Guid? id)
     {
+        FilterType = filterType;
+        Id = id ?? Guid.Empty;
         Definition = definition;
     }
 
     public Filter(string name, string description, string expression)
     {
+        FilterType = FilterType.Local;
+        Id = Guid.Empty;
         Definition = new FilterDefinition(name, description, expression);
     }
 

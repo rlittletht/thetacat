@@ -11,7 +11,7 @@ namespace Thetacat.Types;
 
 public interface ICache
 {
-    public void ResetCache(Profile profile);
+    public void ResetCache(Profile profile, IWorkgroup? workgroup);
     public IWorkgroup _Workgroup { get; }
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }

@@ -10,6 +10,7 @@ using Thetacat.Import;
 using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 using Thetacat.Util;
 
@@ -17,6 +18,18 @@ namespace Thetacat.Model.Workgroups;
 
 /*
 VECTOR CLOCKS:
+
+There are now two vector clocks (for two domains of data):
+* Vector Clock - this is the OG clock - it manages the media cache
+* Filter Clock - this manages the filter definitions
+
+Everything described below mostly applies to both clocks, but each of them should be considered
+independent of each other. You sync filter data and the filter clock (and base filter clock, etc)
+all apply. Same for the OG vector clock.
+
+The Filter clock is simpler -- there is no Workgroup-Wide filter clock (as there is no need to
+maintain integrity across the collection of filters). instead there is only a clock for each filter
+definition.
 
 A note on how we use them. VC are used to enforce data coherency. We don't want to change the DB
 if the version of the content is different than the version we think we are changing. (i.e. if
@@ -130,6 +143,32 @@ public class Workgroup : IWorkgroup
         Name = "mock-workgroup";
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: CreateWorkgroupNoCaching
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.CreateWorkgroupNoCaching
+    ----------------------------------------------------------------------------*/
+    public static Workgroup? CreateWorkgroupNoCaching(Guid catalogID, string? workgroupID)
+    {
+        if (workgroupID == null)
+            return null;
+
+        if (!Guid.TryParse(workgroupID, out Guid id))
+            return null;
+
+        try
+        {
+            return new Workgroup(catalogID, id);
+        }
+        catch (SqlExceptionNoResults e)
+        {
+            throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: Workgroup
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.Workgroup
+    ----------------------------------------------------------------------------*/
     public Workgroup(Guid catalogID, Guid id)
     {
         m_id = id;
@@ -156,7 +195,7 @@ public class Workgroup : IWorkgroup
                 {
                     ClientId = Guid.NewGuid(),
                     ClientName = MainApp.MainWindow.ClientName,
-                    VectorClock = 0
+                    VectorClock = 0,
                 };
 
             m_db.CreateWorkgroupClient(client);

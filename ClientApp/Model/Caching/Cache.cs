@@ -59,19 +59,9 @@ public class Cache : ICache
         LocalPathToCacheRoot = new PathSegment("//mock/server/mockroot");
     }
 
-    void ConnectToWorkgroupCache(Profile settings)
+    void ConnectToWorkgroupCache(IWorkgroup workgroup)
     {
-        if (!Guid.TryParse(settings.WorkgroupId, out Guid id))
-            return;
-
-        try
-        {
-            m_workgroup = new Workgroup(settings.CatalogID, id);
-        }
-        catch (SqlExceptionNoResults e)
-        {
-            throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
-        }
+        m_workgroup = workgroup;
 
         // make sure the directory exists
         Directory.CreateDirectory(_Workgroup.FullyQualifiedPath);
@@ -118,13 +108,13 @@ public class Cache : ICache
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
 #pragma warning disable CS8618 // we set these in a method
-    public Cache(Profile? settings)
+    public Cache(Profile? settings, IWorkgroup? workgroup)
     {
-        ResetCache(settings);
+        ResetCache(settings, workgroup);
     }
 #pragma warning restore CS8618
 
-    public void ResetCache(Profile? settings)
+    public void ResetCache(Profile? settings, IWorkgroup? workgroup)
     {
         Entries.Clear();
 
@@ -135,11 +125,11 @@ public class Cache : ICache
             return;
         }
 
-        if (settings.WorkgroupId != null)
+        if (workgroup != null)
         {
             try
             {
-                ConnectToWorkgroupCache(settings);
+                ConnectToWorkgroupCache(workgroup);
                 LocalPathToCacheRoot = new PathSegment(_Workgroup.FullPathToCacheRoot);
             }
             catch (CatExceptionWorkgroupNotFound)

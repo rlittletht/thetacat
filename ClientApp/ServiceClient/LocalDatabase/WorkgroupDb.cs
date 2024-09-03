@@ -69,6 +69,14 @@ public class WorkgroupDb
             cachedDate NVARCHAR(64), 
             vectorClock INTEGER NOT NULL)";
 
+    private readonly string s_createWorkgroupFilters = @"
+        CREATE TABLE tcat_workgroup_filters
+            (id VARCHAR(36) NOT NULL PRIMARY KEY, 
+            name VARCHAR(64) NOT NULL,
+            description VARCHAR(256) NOT NULL,
+            expression VARCHAR(1024) NOT NULL, 
+            vectorClock INTEGER NOT NULL)";
+
     private readonly string s_createWorkgroupVClock = @"
         CREATE TABLE tcat_workgroup_vectorclock(
             clock VARCHAR(24) NOT NULL PRIMARY KEY, 
@@ -83,6 +91,9 @@ public class WorkgroupDb
     private readonly string s_initializeVectorClock = @"
         INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('workgroup-clock', 0)";
 
+    private readonly string s_initializeFilterVectorClock = @"
+        INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('filter-clock', 0)";
+
     private readonly string s_queryWorkgroupClientDetailsByName = @"
         SELECT $$tcat_workgroup_clients$$.id, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.vectorClock
         FROM $$#tcat_workgroup_clients$$
@@ -92,6 +103,10 @@ public class WorkgroupDb
         SELECT $$tcat_workgroup_media$$.media,$$tcat_workgroup_media$$.path, $$tcat_workgroup_media$$.cachedBy, $$tcat_workgroup_media$$.cachedDate, $$tcat_workgroup_media$$.vectorClock, $$tcat_workgroup_media$$.md5
         FROM $$#tcat_workgroup_media$$
         INNER JOIN $$#tcat_workgroup_clients$$ ON $$tcat_workgroup_media$$.cachedBy = $$tcat_workgroup_clients$$.id";
+
+    private readonly string s_queryWorkgroupFilters = @"
+        SELECT $$tcat_workgroup_filters$$.id,$$tcat_workgroup_filters$$.name, $$tcat_workgroup_filters$$.description, $$tcat_workgroup_filters$$.expression, $$tcat_workgroup_filters$$.vectorClock
+        FROM $$#tcat_workgroup_filters$$";
 
     private readonly string s_queryWorkgroupClock = @"
         SELECT value FROM tcat_workgroup_vectorclock WHERE clock = 'workgroup-clock'";
@@ -130,9 +145,11 @@ public class WorkgroupDb
         ISql connection = OpenDatabase();
 
         connection.ExecuteNonQuery(s_createWorkgroupMedia);
+        connection.ExecuteNonQuery(s_createWorkgroupFilters);
         connection.ExecuteNonQuery(s_createWorkgroupClients);
         connection.ExecuteNonQuery(s_createWorkgroupVClock);
         connection.ExecuteNonQuery(s_initializeVectorClock);
+        connection.ExecuteNonQuery(s_initializeFilterVectorClock);
 
         connection.Close();
 
@@ -148,6 +165,10 @@ public class WorkgroupDb
         m_connection?.Close();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetClientDetails
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetClientDetails
+    ----------------------------------------------------------------------------*/
     public ServiceWorkgroupClient? GetClientDetails(string clientName)
     {
         try
@@ -177,6 +198,10 @@ public class WorkgroupDb
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DeleteMediaItemFromWorkgroup
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.DeleteMediaItemFromWorkgroup
+    ----------------------------------------------------------------------------*/
     public void DeleteMediaItemFromWorkgroup(Guid itemId)
     {
         _Connection.ExecuteNonQuery(
@@ -185,6 +210,10 @@ public class WorkgroupDb
             s_aliases);
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetLatestWorkgroupMediaWithClock
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetLatestWorkgroupMediaWithClock
+    ----------------------------------------------------------------------------*/
     public ServiceWorkgroupMediaClock GetLatestWorkgroupMediaWithClock()
     {
         // sqlite can't do multiple recordsets, so we have to wrap this in an exclusive
@@ -229,6 +258,58 @@ public class WorkgroupDb
             });
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetLatestWorkgroupFilters
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetLatestWorkgroupFilters
+
+        Get the complete set of filter definitions for this workgroup
+
+    TODO: keep implementing WG filters. ALSO, update the workgroup database for cat-cache-localTest
+    (each catalog has its own workgroup cache, so we don't have to worry about mixing them in the
+    same workgroup db)
+    ----------------------------------------------------------------------------*/
+    public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters()
+    {
+        // sqlite can't do multiple recordsets, so we have to wrap this in an exclusive
+        // transaction
+        return DoExclusiveDatabaseWork(
+            () =>
+            {
+                try
+                {
+                    List<ServiceWorkgroupFilter> filters =
+                        _Connection.ExecuteDelegatedQuery(
+                            Guid.NewGuid(),
+                            s_queryWorkgroupFilters,
+                            (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupFilter> building) =>
+                            {
+                                ServiceWorkgroupFilter item =
+                                    new()
+                                    {
+                                        Id = reader.GetGuid(0),
+                                        Name = reader.GetString(1),
+                                        Description = reader.GetString(2),
+                                        Expression = reader.GetString(3),
+                                        FilterClock = reader.GetInt32(4)
+                                    };
+
+                                building.Add(item);
+                            },
+                            s_aliases);
+
+                    return filters;
+                }
+                catch (SqlExceptionNoResults)
+                {
+                    return new List<ServiceWorkgroupFilter>();
+                }
+            });
+    }
+    
+    /*----------------------------------------------------------------------------
+        %%Function: CreateWorkgroupClient
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.CreateWorkgroupClient
+    ----------------------------------------------------------------------------*/
     public void CreateWorkgroupClient(ServiceWorkgroupClient client)
     {
         _Connection.ExecuteNonQuery(
@@ -241,6 +322,10 @@ public class WorkgroupDb
             });
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateClientClock
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.UpdateClientClock
+    ----------------------------------------------------------------------------*/
     public void UpdateClientClock(ServiceWorkgroupClient client, int newClock)
     {
         _Connection.ExecuteNonQuery(
@@ -252,6 +337,10 @@ public class WorkgroupDb
             });
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoExclusiveDatabaseWork
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.DoExclusiveDatabaseWork<T>
+    ----------------------------------------------------------------------------*/
     T DoExclusiveDatabaseWork<T>(Func<T> work)
     {
         _Connection.BeginExclusiveTransaction();
@@ -305,6 +394,10 @@ public class WorkgroupDb
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateInsertCacheEntries
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.UpdateInsertCacheEntries
+    ----------------------------------------------------------------------------*/
     public void UpdateInsertCacheEntries(
         int baseClock,
         Guid clientId,

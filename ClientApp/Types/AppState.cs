@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Thetacat.Explorer;
+using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -11,9 +12,11 @@ using Thetacat.Model.Caching;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Md5Caching;
+using Thetacat.Model.Workgroups;
 using Thetacat.Secrets;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.TcSettings;
 using Thetacat.Util;
 
@@ -37,6 +40,7 @@ public class AppState : IAppState
     public ImageCache PreviewImageCache { get; private set; }
     public ImageCache ImageCache { get; private set; }
     public ICatalog Catalog { get; private set; }
+    public Filters Filters { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
     public string AzureStorageAccount => App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
@@ -46,6 +50,7 @@ public class AppState : IAppState
     public Derivatives Derivatives { get; init; }
     public MetatagMRU MetatagMRU { get; init; }
     public WindowManager WindowManager { get; init; }
+    public IWorkgroup? Workgroup { get; private set; }
 
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate)
     {
@@ -133,7 +138,7 @@ public class AppState : IAppState
 
         Catalog = new Catalog();
         MetatagSchema = new MetatagSchema();
-        Cache = new Cache(null);
+        Cache = new Cache(null, null);
         m_closeAsyncLog = null;
         m_closeAppLog = null;
         m_addBackgroundWork = null;
@@ -146,6 +151,7 @@ public class AppState : IAppState
         MetatagMRU = new MetatagMRU();
         ProfileChanged += OnProfileChanged;
         WindowManager = new WindowManager();
+        Filters = new Filters(this);
     }
 
     /*----------------------------------------------------------------------------
@@ -166,9 +172,11 @@ public class AppState : IAppState
         AppSecrets.MasterSqlConnectionString = ActiveProfile.SqlConnection ?? String.Empty;
         ClientDatabase = new ClientDatabase(clientDatabasePath);
 
+        Workgroup = Thetacat.Model.Workgroups.Workgroup.CreateWorkgroupNoCaching(ActiveProfile.CatalogID, ActiveProfile.WorkgroupId);
+
         ClientDatabase.AdjustDatabaseIfNecessary();
 
-        Cache.ResetCache(ActiveProfile);
+        Cache.ResetCache(ActiveProfile, Workgroup);
         Catalog.Reset();
         MetatagSchema.Reset();
         Derivatives.ResetDerivatives(ClientDatabase);
