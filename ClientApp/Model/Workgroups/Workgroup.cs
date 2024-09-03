@@ -24,8 +24,7 @@ There are now two vector clocks (for two domains of data):
 * Filter Clock - this manages the filter definitions
 
 Everything described below mostly applies to both clocks, but each of them should be considered
-independent of each other. You sync filter data and the filter clock (and base filter clock, etc)
-all apply. Same for the OG vector clock.
+independent of each other. 
 
 The Filter clock is simpler -- there is no Workgroup-Wide filter clock (as there is no need to
 maintain integrity across the collection of filters). instead there is only a clock for each filter
