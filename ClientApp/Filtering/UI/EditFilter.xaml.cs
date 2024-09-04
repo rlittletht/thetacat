@@ -19,6 +19,7 @@ using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Standards;
+using Thetacat.Types;
 using Thetacat.Util;
 using Expression = TCore.PostfixText.Expression;
 
@@ -63,27 +64,34 @@ namespace Thetacat.Filtering.UI
             %%Function: EditFilter
             %%Qualified: Thetacat.Filtering.UI.EditFilter.EditFilter
         ----------------------------------------------------------------------------*/
-        public EditFilter(MetatagSchema filterSchema, Dictionary<Guid, string> lineageMap, FilterDefinition ? definition = null)
+        public EditFilter(MetatagSchema filterSchema, Dictionary<Guid, string> lineageMap, Filter? filter = null)
         {
             DataContext = m_model;
             InitializeComponent();
 
             m_filterSchema = filterSchema;
             m_metatagLineageMap = lineageMap;
-            if (definition != null)
+            if (filter!= null)
             {
-                m_model.Expression = definition.Expression;
-                m_model.FilterName = definition.FilterName;
-                m_model.Description = definition.Description;
+                m_model.Expression = filter.Definition.Expression;
+                m_model.FilterName = filter.Definition.FilterName;
+                m_model.Description = filter.Definition.Description;
+                m_model.Id = filter.Id;
+                m_model.IsTypeAvailable = false;
+                m_model.SelectedType = filter.FilterType == FilterType.Workgroup ? "Workgroup" : "Local";
             }
             else
             {
-                m_model.Expression = definition?.Expression ?? new PostfixText();
+                m_model.Expression = new PostfixText();
+                m_model.IsTypeAvailable = true;
+                m_model.Id = Guid.NewGuid();
             }
 
             InitializeAvailableTags();
             UpdateQueryClauses();
             m_model.PropertyChanged += OnModelPropertyChanged;
+            m_model.Types.Add("Local");
+            m_model.Types.Add("Workgroup");
         }
 
         private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -262,6 +270,18 @@ namespace Thetacat.Filtering.UI
         {
             Close();
         }
+
+        public FilterType GetFilterType()
+        {
+            if (m_model.SelectedType == "Local")
+                return FilterType.Local;
+            else if (m_model.SelectedType == "Workgroup")
+                return FilterType.Workgroup;
+            else
+                throw new CatExceptionInternalFailure("Unknown filter type");
+        }
+
+        public Guid GetId() => m_model.Id;
 
         public FilterDefinition GetDefinition()
         {

@@ -46,7 +46,7 @@ public class TableInfo
 
             return new TableInfo(columns);
         }
-        catch (SqlExceptionNoResults _)
+        catch (SqlExceptionNoResults)
         {
             return new TableInfo();
         }

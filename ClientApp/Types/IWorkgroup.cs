@@ -23,4 +23,7 @@ public interface IWorkgroup
     public void CreateCacheEntryForItem(ICache cache, MediaItem item, DateTime? cachedDate, bool pending);
     public void DeleteMediaItem(Guid id);
     public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters();
+    public void ExecuteFilterAddsAndDeletes(IEnumerable<WorkgroupFilter> deletes, IEnumerable<WorkgroupFilter> inserts);
+    public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id);
+    public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock);
 }

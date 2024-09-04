@@ -4,6 +4,7 @@ using TCore;
 using TCore.SqlCore;
 using TCore.SqlClient;
 using Thetacat.Model;
+using Thetacat.Model.Workgroups;
 
 namespace Thetacat.ServiceClient.LocalService;
 

@@ -128,6 +128,7 @@ public partial class MainWindow : Window, IMainCommands
             }
         }
 
+        App.State.Filters.CommitFilters();
         App.State.Derivatives.CommitDerivatives();
         App.State.Derivatives.Close();
         App.State.ActiveProfile.ShowAsyncLogOnStart = m_asyncLogMonitor != null;
@@ -195,7 +196,7 @@ public partial class MainWindow : Window, IMainCommands
 
         if (App.State?.ActiveProfile?.DefaultFilterName != null)
         {
-            if (App.State.ActiveProfile.Filters.TryGetValue(App.State.ActiveProfile.DefaultFilterName, out FilterDefinition? filter))
+            if (App.State.Filters.TryGetDefaultFilter(App.State.ActiveProfile.DefaultFilterName, out Filter? filter))
                 m_model.ExplorerCollection.SetFilter(filter);
         }
     }
@@ -223,7 +224,7 @@ public partial class MainWindow : Window, IMainCommands
 #region Public Commands
 
     public Window Window => (Window)this;
-    public FilterDefinition? CurrentFilterDefinition => m_model.ExplorerCollection.Filter;
+    public Filter? CurrentFilter => m_model.ExplorerCollection.Filter;
     public MediaExplorer MediaExplorer => Explorer;
 
     /*----------------------------------------------------------------------------
@@ -323,9 +324,9 @@ public partial class MainWindow : Window, IMainCommands
     void RebuildFilterList()
     {
         m_model.AvailableFilters.Clear();
-        foreach (string filterName in App.State.ActiveProfile.Filters.Keys.ToImmutableSortedSet())
+        foreach(Filter filter in App.State.Filters)
         {
-            m_model.AvailableFilters.Add(App.State.ActiveProfile.Filters[filterName]);
+            m_model.AvailableFilters.Add(filter);
         }
     }
 
@@ -379,22 +380,34 @@ public partial class MainWindow : Window, IMainCommands
         %%Function: ChooseFilterOrCurrent
         %%Qualified: Thetacat.MainApp.MainWindow.ChooseFilterOrCurrent
     ----------------------------------------------------------------------------*/
-    public void ChooseFilterOrCurrent(string? filterName)
+    public void ChooseFilterOrCurrent(Filter? filter)
     {
-        filterName = filterName ?? m_model.ExplorerCollection.Filter?.FilterName;
+        FilterType selectedType = FilterType.None;
+        string selectedName = "";
+        Guid selectedId = Guid.Empty;
 
-        if (filterName == null)
-        {
-            filterName = m_model.ExplorerCollection.Filter?.FilterName;
+        if (filter == null || filter == m_model.ExplorerCollection.Filter)
             m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = true; // we are just going to set it to the same filter
+
+        filter ??= m_model.ExplorerCollection.Filter;
+
+        if (filter != null)
+        {
+            selectedType = filter.FilterType;
+            if (selectedType == FilterType.Workgroup)
+                selectedId = filter.Id;
+            else
+                selectedName = filter.Definition.FilterName;
         }
 
         // regardless, rebuild from the settings (they might night be applying a new filter, but they
         // might have redefined some filters)
         RebuildFilterList();
 
-        if (filterName != null)
-            m_model.ExplorerCollection.Filter = App.State.ActiveProfile.Filters[filterName];
+        if (selectedType == FilterType.Workgroup)
+            m_model.ExplorerCollection.Filter = App.State.Filters.GetWorkgroupFilter(selectedId);
+        else if (selectedType == FilterType.Local)
+            m_model.ExplorerCollection.Filter = App.State.Filters.GetLocalFilter(selectedName);
 
         m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = false; // reset it (regardless of whether we set it)
     }

@@ -105,16 +105,16 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     // these items
     private readonly Dictionary<Guid, MediaExplorerItem> m_explorerItems = new();
     private readonly DistributedObservableCollection<MediaExplorerLineModel, MediaExplorerItem> m_collection;
-    private FilterDefinition? m_filterDefinition;
+    private Filter? m_filter;
 
     public bool DontRebuildTimelineOnFilterChange { get; set; } = false;
 
-    public FilterDefinition? Filter
+    public Filter? Filter
     {
-        get => m_filterDefinition;
+        get => m_filter;
         set
         {
-            SetField(ref m_filterDefinition, value);
+            SetField(ref m_filter, value);
             if (!DontRebuildTimelineOnFilterChange)
                 BuildTimelineFromMediaCatalog();
         }
@@ -668,7 +668,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         MicroTimer timer = new MicroTimer();
 
         IReadOnlyCollection<MediaItem> collection =
-            m_filterDefinition == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filterDefinition);
+            m_filter == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filter.Definition);
 
         App.LogForApp(EventType.Information, $"elapsed time for building catalog collection: {timer.Elapsed()}");
 
@@ -904,7 +904,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         BuildTimelineFromMediaCatalog();
     }
 
-    public void SetFilter(FilterDefinition filter)
+    public void SetFilter(Filter filter)
     {
         Filter = filter;
         BuildTimelineFromMediaCatalog();

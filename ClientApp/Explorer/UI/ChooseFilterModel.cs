@@ -10,15 +10,15 @@ namespace Thetacat.Explorer.UI;
 
 public class ChooseFilterModel: INotifyPropertyChanged
 {
-    public ObservableCollection<FilterDefinition> AvailableFilters { get; set; }= new();
+    public ObservableCollection<Filter> AvailableFilters { get; set; }= new();
     private string m_name = string.Empty;
     private string m_description = string.Empty;
-    private FilterDefinition? m_selectedFilterDefinition;
+    private Filter ? m_selectedFilter;
 
-    public FilterDefinition? SelectedFilterDefinition
+    public Filter? SelectedFilter
     {
-        get => m_selectedFilterDefinition;
-        set => SetField(ref m_selectedFilterDefinition, value);
+        get => m_selectedFilter;
+        set => SetField(ref m_selectedFilter, value);
     }
 
     public ObservableCollection<string> QueryText { get; set; } = new();

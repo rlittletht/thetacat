@@ -17,7 +17,7 @@ public class MainWindowModel: INotifyPropertyChanged
     private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 
     public MediaExplorerCollection ExplorerCollection { get; } = new(14.0);
-    public ObservableCollection<FilterDefinition> AvailableFilters { get; } = new ();
+    public ObservableCollection<Filter> AvailableFilters { get; } = new ();
     public ObservableCollection<Profile> AvailableProfiles { get; } = new ();
 
     public bool IsExtraLargePreview => m_itemSize.Equals(ExplorerItemSize.ExtraLarge);

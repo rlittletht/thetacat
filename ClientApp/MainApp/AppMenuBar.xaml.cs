@@ -241,13 +241,18 @@ public partial class AppMenuBar : UserControl
     ----------------------------------------------------------------------------*/
     private void DoChooseFilter(object sender, RoutedEventArgs e)
     {
-        ManageFilters filter = new ManageFilters(m_commands?.CurrentFilterDefinition);
+        ManageFilters filter = new ManageFilters(m_commands?.CurrentFilter);
 
         filter.Owner = m_commands?.Window;
 
         if (filter.ShowDialog() is true)
         {
-            m_commands?.ChooseFilterOrCurrent(filter.GetFilterName());
+            m_commands?.ChooseFilterOrCurrent(filter.GetFilter());
+        }
+        else
+        {
+            // still want to refresh the list
+            m_commands?.ChooseFilterOrCurrent(m_commands?.CurrentFilter);
         }
     }
 

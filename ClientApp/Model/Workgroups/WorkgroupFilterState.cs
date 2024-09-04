@@ -5,5 +5,5 @@ public enum WorkgroupFilterState
     None,
     Create,
     Delete,
-    Update
+    MaybeUpdate
 }

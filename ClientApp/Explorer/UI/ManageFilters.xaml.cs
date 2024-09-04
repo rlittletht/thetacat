@@ -36,12 +36,16 @@ public partial class ManageFilters : Window
     private Dictionary<Guid, string> m_metatagLineageMap;
     private MetatagSchema m_filterSchema;
 
+    /*----------------------------------------------------------------------------
+        %%Function: FillAvailableFilters
+        %%Qualified: Thetacat.Explorer.ManageFilters.FillAvailableFilters
+    ----------------------------------------------------------------------------*/
     void FillAvailableFilters()
     {
         m_model.AvailableFilters.Clear();
-        foreach (KeyValuePair<string, FilterDefinition> def in App.State.ActiveProfile.Filters)
+        foreach (Filter filter in App.State.Filters)
         {
-            m_model.AvailableFilters.Add(def.Value);
+            m_model.AvailableFilters.Add(filter);
         }
     }
 
@@ -68,14 +72,14 @@ public partial class ManageFilters : Window
         %%Function: ManageFilters
         %%Qualified: Thetacat.Explorer.ManageFilters.ManageFilters
     ----------------------------------------------------------------------------*/
-    public ManageFilters(FilterDefinition? currentFilter)
+    public ManageFilters(Filter? currentFilter)
     {
         InitializeComponent();
         DataContext = m_model;
 
         if (currentFilter != null)
         {
-            m_model.Name = currentFilter.FilterName;
+            m_model.Name = currentFilter.Definition.FilterName;
         }
 
         FillAvailableFilters();
@@ -94,11 +98,11 @@ public partial class ManageFilters : Window
     void UpdateQueryClauses()
     {
         m_model.QueryText.Clear();
-        if (m_model.SelectedFilterDefinition == null)
+        if (m_model.SelectedFilter == null)
             return;
 
         m_model.QueryText.AddRange(
-            m_model.SelectedFilterDefinition.Expression.ToStrings(
+            m_model.SelectedFilter.Definition.Expression.ToStrings(
                 (field) =>
                 {
                     if (Guid.TryParse(field, out Guid metatagId))
@@ -111,12 +115,20 @@ public partial class ManageFilters : Window
                 }));
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: OnModelChanged
+        %%Qualified: Thetacat.Explorer.ManageFilters.OnModelChanged
+    ----------------------------------------------------------------------------*/
     private void OnModelChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == "SelectedFilterDefinition")
+        if (e.PropertyName == "SelectedFilter")
             UpdateQueryClauses();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoApply
+        %%Qualified: Thetacat.Explorer.ManageFilters.DoApply
+    ----------------------------------------------------------------------------*/
     private void DoApply(object sender, RoutedEventArgs e)
     {
         this.DialogResult = true;
@@ -131,29 +143,41 @@ public partial class ManageFilters : Window
             return;
         }
 
-        FilterDefinition def = m_model.SelectedFilterDefinition ?? throw new CatExceptionInternalFailure("no selected filter definition on save?");
+        Filter filter = m_model.SelectedFilter ?? throw new CatExceptionInternalFailure("no selected filter definition on save?");
 
-        if (App.State.ActiveProfile.Filters.TryGetValue(def.FilterName, out FilterDefinition? filter))
+        if (filter.FilterType == FilterType.Local)
         {
-            filter.Description = def.Description;
-            filter.Expression = def.Expression;
-        }
-        else
-        {
-            App.State.ActiveProfile.Filters.Add(def.FilterName, def);
-        }
+            if (App.State.ActiveProfile.Filters.TryGetValue(filter.Definition.FilterName, out FilterDefinition? filterDef))
+            {
+                filterDef.Description = filter.Definition.Description;
+                filterDef.Expression = filter.Definition.Expression;
+            }
+            else
+            {
+                App.State.ActiveProfile.Filters.Add(filter.Definition.FilterName, filter.Definition);
+                App.State.Filters.ResetLocalFilters();
+            }
 
-        App.State.Settings.WriteSettings();
+            App.State.Settings.WriteSettings();
+        }
     }
 
-    public string? GetFilterName()
+    /*----------------------------------------------------------------------------
+        %%Function: GetFilter
+        %%Qualified: Thetacat.Explorer.ManageFilters.GetFilter
+    ----------------------------------------------------------------------------*/
+    public Filter? GetFilter()
     {
-        return m_model.SelectedFilterDefinition?.FilterName;
+        return m_model.SelectedFilter;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoEditFilter
+        %%Qualified: Thetacat.Explorer.ManageFilters.DoEditFilter
+    ----------------------------------------------------------------------------*/
     private void DoEditFilter(object sender, RoutedEventArgs e)
     {
-        EditFilter editFilter = new EditFilter(m_filterSchema, m_metatagLineageMap, m_model.SelectedFilterDefinition);
+        EditFilter editFilter = new EditFilter(m_filterSchema, m_metatagLineageMap, m_model.SelectedFilter);
 
         editFilter.Owner = this;
         editFilter.ShowDialog();
@@ -161,12 +185,19 @@ public partial class ManageFilters : Window
         {
             FilterDefinition def = editFilter.GetDefinition();
 
-            App.State.ActiveProfile.Filters[def.FilterName] = def;
-            App.State.Settings.WriteSettings();
+            if (editFilter.GetFilterType() == FilterType.Local)
+                App.State.Filters.UpdateLocalFilter(def);
+            else
+                App.State.Filters.UpdateWorkgroupFilter(editFilter.GetId(), def);
+
             FillAvailableFilters();
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoNewFilter
+        %%Qualified: Thetacat.Explorer.ManageFilters.DoNewFilter
+    ----------------------------------------------------------------------------*/
     private void DoNewFilter(object sender, RoutedEventArgs e)
     {
         EditFilter editFilter = new EditFilter(m_filterSchema, m_metatagLineageMap);
@@ -177,21 +208,32 @@ public partial class ManageFilters : Window
         {
             FilterDefinition def = editFilter.GetDefinition();
 
-            App.State.ActiveProfile.Filters[def.FilterName] = def;
-            App.State.Settings.WriteSettings();
+            if (editFilter.GetFilterType() == FilterType.Local)
+                App.State.Filters.CreateLocalFilter(def);
+            else
+                App.State.Filters.CreateWorkgroupFilter(editFilter.GetId(), def);
+
             FillAvailableFilters();
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DoSetAsDefault
+        %%Qualified: Thetacat.Explorer.ManageFilters.DoSetAsDefault
+    ----------------------------------------------------------------------------*/
     private void DoSetAsDefault(object sender, RoutedEventArgs e)
     {
-        if (m_model.SelectedFilterDefinition == null)
+        if (m_model.SelectedFilter == null)
         {
             MessageBox.Show("Choose a filter to make the default");
             return;
         }
 
-        App.State.ActiveProfile.DefaultFilterName = m_model.SelectedFilterDefinition.FilterName;
+        if (m_model.SelectedFilter.FilterType == FilterType.Local)
+            App.State.ActiveProfile.DefaultFilterName = m_model.SelectedFilter.Definition.FilterName;
+        else
+            App.State.ActiveProfile.DefaultFilterName = m_model.SelectedFilter.Id.ToString();
+
         App.State.Settings.WriteSettings();
     }
 }

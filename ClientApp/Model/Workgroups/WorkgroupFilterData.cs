@@ -20,6 +20,15 @@ public class WorkgroupFilterData
         FilterClock = filterClock;
     }
 
+    public WorkgroupFilterData(ServiceWorkgroupFilter filter)
+    {
+        Id = filter.Id!.Value;
+        Name = filter.Name!;
+        Description = filter.Description!;
+        Expression = filter.Expression!;
+        FilterClock = filter.FilterClock!.Value;
+    }
+
     public WorkgroupFilterData(WorkgroupFilterData source)
     {
         Id = source.Id;

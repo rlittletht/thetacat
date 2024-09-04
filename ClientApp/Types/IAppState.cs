@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using Thetacat.Explorer;
+using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
@@ -30,6 +31,7 @@ public interface IAppState
     Md5Cache Md5Cache { get; }
     Derivatives Derivatives { get; }
     MetatagMRU MetatagMRU { get; }
+    Filters Filters { get; }
     public string AzureStorageAccount {get;}
     public string StorageContainer { get; }
     public DpiScale DpiScale { get; set; }

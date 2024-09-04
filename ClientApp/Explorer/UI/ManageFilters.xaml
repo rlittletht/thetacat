@@ -15,11 +15,11 @@
         </Grid.RowDefinitions>
         <GroupBox Grid.Row="0">
             <GroupBox.Header>Choose a filter</GroupBox.Header>
-            <ListBox ItemsSource="{Binding Path=AvailableFilters}" SelectedItem="{Binding Path=SelectedFilterDefinition}">
+            <ListBox ItemsSource="{Binding Path=AvailableFilters}" SelectedItem="{Binding Path=SelectedFilter}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel>
-                            <TextBlock Text="{Binding FilterName}"/>
+                            <TextBlock Text="{Binding Definition.FilterName}"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -30,13 +30,18 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="48" />
+                    <RowDefinition Height="auto" />
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <TextBlock Text="Description" Grid.Row="0"/>
-                <TextBox Text="{Binding Path=SelectedFilterDefinition.Description, Mode=OneWay}" TextWrapping="Wrap" Grid.Row="1"/>
-                <TextBlock Text="Filter Query" Grid.Row="2"/>
-                <ListBox ItemsSource="{Binding QueryText}" Grid.Row="3">
+                <TextBox Text="{Binding Path=SelectedFilter.Definition.Description, Mode=OneWay}" TextWrapping="Wrap" Grid.Row="1"/>
+                <StackPanel Orientation="Horizontal" Grid.Row="2">
+                    <TextBlock Text="Source: "/>
+                    <TextBlock Text="{Binding Path=SelectedFilter.FilterType}" Margin="0"/>
+                </StackPanel>
+                <TextBlock Text="Filter Query" Grid.Row="3"/>
+                <ListBox ItemsSource="{Binding QueryText}" Grid.Row="4">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>

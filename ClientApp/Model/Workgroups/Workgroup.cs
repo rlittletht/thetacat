@@ -578,4 +578,31 @@ public class Workgroup : IWorkgroup
     {
         return _Database.GetLatestWorkgroupFilters();
     }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ExecuteFilterAddsAndDeletes
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.ExecuteFilterAddsAndDeletes
+    ----------------------------------------------------------------------------*/
+    public void ExecuteFilterAddsAndDeletes(IEnumerable<WorkgroupFilter> deletes, IEnumerable<WorkgroupFilter> inserts)
+    {
+        _Database.ExecuteFilterAddsAndDeletes(deletes, inserts);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetWorkgroupFilter
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.GetWorkgroupFilter
+    ----------------------------------------------------------------------------*/
+    public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id)
+    {
+        return _Database.GetWorkgroupFilter(id);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateWorkgroupFilter
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.UpdateWorkgroupFilter
+    ----------------------------------------------------------------------------*/
+    public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock)
+    {
+        _Database.UpdateWorkgroupFilter(filter, baseClock);
+    }
 }

@@ -9,7 +9,7 @@ namespace Thetacat.MainApp;
 public interface IMainCommands
 {
     Window Window { get; }
-    FilterDefinition? CurrentFilterDefinition { get; }
+    Filter? CurrentFilter { get; }
     MediaExplorer MediaExplorer { get; }
     MediaExplorerCollection MediaExplorerCollection { get; }
 
@@ -20,7 +20,7 @@ public interface IMainCommands
     public void RebuildTimeline();
     public void SetTimelineType(TimelineType type);
     public void SetTimelineOrder(TimelineOrder order);
-    public void ChooseFilterOrCurrent(string? filterName);
+    public void ChooseFilterOrCurrent(Filter? filter);
     public void EmptyTrash();
 
 }

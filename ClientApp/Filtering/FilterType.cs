@@ -2,6 +2,7 @@
 
 public enum FilterType
 {
+    None = -1,
     Local = 0,
     Workgroup = 1
 }

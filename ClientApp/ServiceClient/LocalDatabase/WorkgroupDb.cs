@@ -10,6 +10,7 @@ using TCore.SQLiteClient;
 using Thetacat.Model.Workgroups;
 using Thetacat.Types;
 using Thetacat.Util;
+using Thetacat.Model.Client;
 
 namespace Thetacat.ServiceClient.LocalDatabase;
 
@@ -106,6 +107,11 @@ public class WorkgroupDb
         SELECT $$tcat_workgroup_filters$$.id,$$tcat_workgroup_filters$$.name, $$tcat_workgroup_filters$$.description, $$tcat_workgroup_filters$$.expression, $$tcat_workgroup_filters$$.vectorClock
         FROM $$#tcat_workgroup_filters$$";
 
+    private readonly string s_queryWorkgroupFilter = @"
+        SELECT $$tcat_workgroup_filters$$.id,$$tcat_workgroup_filters$$.name, $$tcat_workgroup_filters$$.description, $$tcat_workgroup_filters$$.expression, $$tcat_workgroup_filters$$.vectorClock
+        FROM $$#tcat_workgroup_filters$$
+        WHERE $$tcat_workgroup_filters$$.id=@Id";
+
     private readonly string s_queryWorkgroupClock = @"
         SELECT value FROM tcat_workgroup_vectorclock WHERE clock = 'workgroup-clock'";
 
@@ -120,6 +126,9 @@ public class WorkgroupDb
 
     private readonly string s_deleteMediaItemFromWorkgroup = @"
         DELETE FROM tcat_workgroup_media WHERE media = @MediaId";
+
+    private readonly string s_updateFilter = @"
+        UPDATE tcat_workgroup_filters SET name=@Name, description=@Description, expression=@Expression, vectorClock=@VectorClock WHERE id=@Id";
 
     /*----------------------------------------------------------------------------
         %%Function: OpenDatabase
@@ -263,42 +272,54 @@ public class WorkgroupDb
     ----------------------------------------------------------------------------*/
     public List<ServiceWorkgroupFilter> GetLatestWorkgroupFilters()
     {
-        // sqlite can't do multiple recordsets, so we have to wrap this in an exclusive
-        // transaction
-        return DoExclusiveDatabaseWork(
-            () =>
-            {
-                try
-                {
-                    List<ServiceWorkgroupFilter> filters =
-                        _Connection.ExecuteDelegatedQuery(
-                            Guid.NewGuid(),
-                            s_queryWorkgroupFilters,
-                            (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupFilter> building) =>
+        try
+        {
+            List<ServiceWorkgroupFilter> filters =
+                _Connection.ExecuteDelegatedQuery(
+                    Guid.NewGuid(),
+                    s_queryWorkgroupFilters,
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupFilter> building) =>
+                    {
+                        ServiceWorkgroupFilter item =
+                            new()
                             {
-                                ServiceWorkgroupFilter item =
-                                    new()
-                                    {
-                                        Id = reader.GetGuid(0),
-                                        Name = reader.GetString(1),
-                                        Description = reader.GetString(2),
-                                        Expression = reader.GetString(3),
-                                        FilterClock = reader.GetInt32(4)
-                                    };
+                                Id = reader.GetGuid(0),
+                                Name = reader.GetString(1),
+                                Description = reader.GetString(2),
+                                Expression = reader.GetString(3),
+                                FilterClock = reader.GetInt32(4)
+                            };
 
-                                building.Add(item);
-                            },
-                            s_aliases);
+                        building.Add(item);
+                    },
+                    s_aliases);
 
-                    return filters;
-                }
-                catch (SqlExceptionNoResults)
-                {
-                    return new List<ServiceWorkgroupFilter>();
-                }
-            });
+            return filters;
+        }
+        catch (SqlExceptionNoResults)
+        {
+            return new List<ServiceWorkgroupFilter>();
+        }
     }
-    
+
+    public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id)
+    {
+        return 
+            _Connection.ExecuteDelegatedQuery(
+            Guid.NewGuid(),
+            s_queryWorkgroupFilter,
+            (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupFilter building) =>
+            {
+                building.Id = reader.GetGuid(0);
+                building.Name = reader.GetString(1);
+                building.Description = reader.GetString(2);
+                building.Expression = reader.GetString(3);
+                building.FilterClock = reader.GetInt32(4);
+            },
+            s_aliases,
+            (cmd) => cmd.AddParameterWithValue("@Id", id.ToString()));
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: CreateWorkgroupClient
         %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.CreateWorkgroupClient
@@ -387,6 +408,31 @@ public class WorkgroupDb
         }
     }
 
+    public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock)
+    {
+        DoExclusiveDatabaseWork(
+            () =>
+            {
+                int currectVector = _Connection.NExecuteScalar(
+                    new SqlCommandTextInit($"SELECT vectorClock FROM tcat_workgroup_filters WHERE id={SqlText.SqlifyQuoted(filter.Id.ToString())}"));
+
+                if (currectVector != baseClock)
+                    throw new CatExceptionDataCoherencyFailure();
+
+                _Connection.ExecuteNonQuery(s_updateFilter,
+                    (cmd) =>
+                    {
+                        cmd.AddParameterWithValue("@Id", filter.Id.ToString());
+                        cmd.AddParameterWithValue("@Name", filter.Name);
+                        cmd.AddParameterWithValue("@Description", filter.Description);
+                        cmd.AddParameterWithValue("@Expression", filter.Expression);
+                        cmd.AddParameterWithValue("@VectorClock", baseClock + 1);
+                    });
+
+                return true;
+            });
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: UpdateInsertCacheEntries
         %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.UpdateInsertCacheEntries
@@ -473,6 +519,72 @@ public class WorkgroupDb
             });
     }
 
+    string BuildFilterInsertCommand(WorkgroupFilter item)
+    {
+        return
+            $"INSERT INTO tcat_workgroup_filters (id, name, description, expression, vectorClock) VALUES ({SqlText.SqlifyQuoted(item.Id.ToString())}, {SqlText.SqlifyQuoted(item.Name)}, {SqlText.SqlifyQuoted(item.Description)}, {SqlText.SqlifyQuoted(item.Expression)}, {item.FilterClock}) ";
+    }
+
+    string BuildFilterDeleteCommand(WorkgroupFilter item)
+    {
+        return
+            $"DELETE FROM tcat_workgroup_filters WHERE id={SqlText.SqlifyQuoted(item.Id.ToString())}";
+    }
+
+    List<string> BuildFilterInsertCommands(IEnumerable<WorkgroupFilter> items)
+    {
+        List<string> commands = new List<string>();
+        foreach (WorkgroupFilter item in items)
+        {
+            commands.Add(BuildFilterInsertCommand(item));
+        }
+
+        return commands;
+    }
+
+    List<string> BuildFilterDeleteCommands(IEnumerable<WorkgroupFilter> items)
+    {
+        List<string> commands = new List<string>();
+        foreach (WorkgroupFilter item in items)
+        {
+            commands.Add(BuildFilterDeleteCommand(item));
+        }
+
+        return commands;
+    }
+
+    public void ExecuteFilterAddsAndDeletes(IEnumerable<WorkgroupFilter> deletes, IEnumerable<WorkgroupFilter> inserts)
+    {
+        List<string> insertCommands = BuildFilterInsertCommands(inserts);
+        List<string> deleteCommands = BuildFilterDeleteCommands(deletes);
+
+        _Connection.BeginTransaction();
+        try
+        {
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                deleteCommands,
+                (line) => line,
+                100,
+                ";");
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                insertCommands,
+                (line) => line,
+                100,
+                ";");
+        }
+        catch
+        {
+            _Connection.Rollback();
+            throw;
+        }
+
+        _Connection.Commit();
+    }
+
     void CheckFiltersTable()
     {
         // first figure out if we've got everything we need
@@ -495,4 +607,6 @@ public class WorkgroupDb
     {
         CheckFiltersTable();
     }
+
+
 }
