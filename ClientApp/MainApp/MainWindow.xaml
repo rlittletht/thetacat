@@ -32,7 +32,7 @@
                           SelectedItem="{Binding Path=CurrentProfile}" Width="96" Margin="3 7 3 3"/>
                 <TextBlock Text="Filter: " Margin="4 11 0 0" />
                 <ComboBox ItemsSource="{Binding Path=AvailableFilters}"
-                          SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="96" Margin="3 7 3 3"/>
+                          SelectedItem="{Binding Path=ExplorerCollection.Filter}" Width="128" Margin="3 7 3 3"/>
                 <TextBlock Text="Jump to date:" Margin="10 11 0 0" />
                 <TextBox Text="{Binding Path=ExplorerCollection.JumpDate}" Width="128" Margin="5 7 0 2" />
                 <Button Content="Show" Click="JumpToDate" Margin="5 7 5 2" Width="64" />

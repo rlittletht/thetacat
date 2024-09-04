@@ -131,6 +131,35 @@ public class Filters : IEnumerable<Filter>
         throw new CatExceptionInternalFailure("filter not found");
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: DeleteFilter
+        %%Qualified: Thetacat.Filtering.Filters.DeleteFilter
+    ----------------------------------------------------------------------------*/
+    public void DeleteFilter(Filter filter)
+    {
+        if (filter.FilterType == FilterType.Local)
+        {
+            if (!App.State.ActiveProfile.Filters.ContainsKey(filter.Definition.FilterName))
+                return;
+
+            App.State.ActiveProfile.Filters.Remove(filter.Definition.FilterName);
+            App.State.Settings.WriteSettings();
+
+            ResetLocalFilters();
+        }
+        else
+        {
+            if (!m_workgroupFilters.TryGetValue(filter.Id, out WorkgroupFilter? workgroupFilter))
+                return;
+
+            workgroupFilter.MarkDeleted();
+
+            Filter filterInList = GetMatchingWorkgroupFilter(workgroupFilter.Id);
+            m_workgroupFiltersList.Remove(filterInList);
+
+            CommitFilters();
+        }
+    }
 
     /*----------------------------------------------------------------------------
         %%Function: GetMatchingLocalFilter

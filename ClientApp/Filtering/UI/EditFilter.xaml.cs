@@ -347,5 +347,23 @@ namespace Thetacat.Filtering.UI
 
             TagPickerPopup.IsOpen = false;
         }
+
+        private void EditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.ExpressionEditing = m_model.Expression.ToString();
+            m_model.IsEditingExpression = true;
+        }
+
+        private void CancelEditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.IsEditingExpression = false;
+        }
+
+        private void SaveEditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.Expression = PostfixText.CreateFromParserClient(new StringParserClient(m_model.ExpressionEditing));
+            UpdateQueryClauses();
+            m_model.IsEditingExpression = false;
+        }
     }
 }

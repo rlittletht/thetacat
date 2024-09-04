@@ -57,6 +57,15 @@ public class WorkgroupFilter
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: MarkDeleted
+        %%Qualified: Thetacat.Model.Workgroups.WorkgroupFilter.MarkDeleted
+    ----------------------------------------------------------------------------*/
+    public void MarkDeleted()
+    {
+        State = WorkgroupFilterState.Delete;
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: WorkgroupFilter
         %%Qualified: Thetacat.Model.Workgroups.WorkgroupFilter.WorkgroupFilter
     ----------------------------------------------------------------------------*/

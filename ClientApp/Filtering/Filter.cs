@@ -95,6 +95,26 @@ public class Filter
         }
     }
 
-    public string DisplayName => $"{(FilterType == FilterType.Workgroup ? "*" : "")}{Definition.FilterName}";
+    /*----------------------------------------------------------------------------
+        %%Function: IsDefault
+        %%Qualified: Thetacat.Filtering.Filter.IsDefault
+    ----------------------------------------------------------------------------*/
+    bool IsDefault()
+    {
+        string defaultFilter = App.State.ActiveProfile.DefaultFilterName ?? "";
+
+        if (defaultFilter == Definition.FilterName || defaultFilter == Id.ToString())
+            return true;
+
+        return false;
+    }
+
+    public string DialogDisplayName => $"{Definition.FilterName}{(FilterType == FilterType.Workgroup ? "*" : "")}{(IsDefault() ? " [default]" : "")}";
+
+    public string DisplayName => $"{Definition.FilterName}{(FilterType == FilterType.Workgroup ? "*" : "")}";
     public override string ToString() => DisplayName;
+
+    // this isn't a perfect match (it guesses that Guid strings are workgroup Ids), but its pretty good
+    public string LooseId => FilterType == FilterType.Local ? Definition.FilterName : Id.ToString();
+    public bool MatchLooseId(string looseId) => string.Compare(LooseId, looseId, StringComparison.OrdinalIgnoreCase) == 0;
 }

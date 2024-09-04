@@ -42,10 +42,16 @@ public partial class ManageFilters : Window
     ----------------------------------------------------------------------------*/
     void FillAvailableFilters()
     {
+        string selectedFilter = m_model.SelectedFilter?.LooseId ?? "";
+
+        m_model.SelectedFilter = null;
+
         m_model.AvailableFilters.Clear();
         foreach (Filter filter in App.State.Filters)
         {
             m_model.AvailableFilters.Add(filter);
+            if (filter.MatchLooseId(selectedFilter))
+                m_model.SelectedFilter = filter;
         }
     }
 
@@ -135,31 +141,22 @@ public partial class ManageFilters : Window
         this.Close();
     }
 
-    private void SaveFilter(object sender, RoutedEventArgs e)
+    private void DeleteFilter(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(m_model.Name))
+        Filter filter = m_model.SelectedFilter ?? throw new CatExceptionInternalFailure("no selected filter definition for delete?");
+
+        if (MessageBox.Show(
+                this,
+                $"Are you sure you want to delete the {filter.FilterType} filter {filter.Definition.FilterName}?",
+                "Confirm delete",
+                MessageBoxButton.YesNo)
+            != MessageBoxResult.Yes)
         {
-            MessageBox.Show("Must specify a name for the filter");
             return;
         }
 
-        Filter filter = m_model.SelectedFilter ?? throw new CatExceptionInternalFailure("no selected filter definition on save?");
-
-        if (filter.FilterType == FilterType.Local)
-        {
-            if (App.State.ActiveProfile.Filters.TryGetValue(filter.Definition.FilterName, out FilterDefinition? filterDef))
-            {
-                filterDef.Description = filter.Definition.Description;
-                filterDef.Expression = filter.Definition.Expression;
-            }
-            else
-            {
-                App.State.ActiveProfile.Filters.Add(filter.Definition.FilterName, filter.Definition);
-                App.State.Filters.ResetLocalFilters();
-            }
-
-            App.State.Settings.WriteSettings();
-        }
+        App.State.Filters.DeleteFilter(filter);
+        FillAvailableFilters();
     }
 
     /*----------------------------------------------------------------------------
@@ -235,5 +232,7 @@ public partial class ManageFilters : Window
             App.State.ActiveProfile.DefaultFilterName = m_model.SelectedFilter.Id.ToString();
 
         App.State.Settings.WriteSettings();
+
+        FillAvailableFilters();
     }
 }

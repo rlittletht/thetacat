@@ -5,8 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         xmlns:local="clr-namespace:Thetacat.Filtering"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         Title="EditFilter" Height="450" Width="800">
+    <Window.Resources>
+        <system:Double x:Key="ButtonWidthSolo">116</system:Double>
+        <system:Double x:Key="ButtonWidth">48</system:Double>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="72" />
@@ -32,8 +37,8 @@
                         </Grid.ColumnDefinitions>
                         <Grid Grid.Column="0" Margin="2 0 4 0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="auto" />
                             </Grid.ColumnDefinitions>
                             <Popup Name="TagPickerPopup" PlacementTarget="{Binding ElementName=ChooseTagButton}">
                                 <controls:MetatagTreeView Checkable="False"
@@ -50,7 +55,8 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <Button Name="ChooseTagButton" Content="..." Grid.Column="1" Width="18" Margin="2 0 0 0" Click="ChooseTag" />
+                            <Button Name="ChooseTagButton" Content="..." Grid.Column="1" Width="18" Margin="2 0 0 0"
+                                    Click="ChooseTag" />
                         </Grid>
                         <ComboBox ItemsSource="{Binding Path=ComparisonOperators}" Grid.Column="1"
                                   SelectedItem="{Binding Path=ComparisonOpForClause}">
@@ -107,15 +113,35 @@
             </GroupBox>
         </Grid>
         <GroupBox Header="Filter Expression" Grid.Row="1">
-            <ListBox ItemsSource="{Binding Path=ExpressionClauses}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel>
-                            <TextBlock Text="{Binding}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <TextBox Text="{Binding Path=ExpressionEditing}" Grid.Row="0"
+                         Visibility="{Binding Path=ExpressionEditorVisibility}" TextWrapping="Wrap"/>
+                <ListBox ItemsSource="{Binding Path=ExpressionClauses}" Grid.Row="0"
+                         Visibility="{Binding Path=ExpressionViewVisibility}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Click="CancelEditExpression"
+                            Visibility="{Binding Path=ExpressionEditorVisibility}" Margin="5 0 0 0"
+                            Width="{StaticResource ButtonWidth}" />
+                    <Button Content="Save" Click="SaveEditExpression"
+                            Visibility="{Binding Path=ExpressionEditorVisibility}" Margin="5 0 0 0"
+                            Width="{StaticResource ButtonWidth}" />
+                    <Button Content="Edit Expression..." Click="EditExpression"
+                            Visibility="{Binding Path=ExpressionViewVisibility}" Margin="5 0 0 0"
+                            Width="{StaticResource ButtonWidthSolo}" />
+                </StackPanel>
+            </Grid>
         </GroupBox>
         <Grid Grid.Row="2" Margin="4">
             <Grid.ColumnDefinitions>
@@ -125,9 +151,10 @@
                 <ColumnDefinition Width="auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
-                <TextBlock Text="Type"/>
+                <TextBlock Text="Type" />
                 <ComboBox ItemsSource="{Binding Path=Types}"
-                          SelectedItem="{Binding Path=SelectedType}" x:Name="TypeBox" IsEnabled="{Binding IsTypeAvailable}">
+                          SelectedItem="{Binding Path=SelectedType}" x:Name="TypeBox"
+                          IsEnabled="{Binding IsTypeAvailable}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
@@ -137,18 +164,19 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
             </StackPanel>
-            <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+            <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="5 0 0 0">
                 <TextBlock Text="Filter Name" />
-                <TextBox Text="{Binding FilterName}" Height="{Binding ActualHeight, ElementName=TypeBox}"/>
+                <TextBox Text="{Binding FilterName}" Height="{Binding ActualHeight, ElementName=TypeBox}" />
             </StackPanel>
-            <StackPanel Grid.Column="2" VerticalAlignment="Bottom">                
+            <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="5 0 0 0">
                 <TextBlock Text="Description" />
                 <TextBox Text="{Binding Description}" Height="{Binding ActualHeight, ElementName=TypeBox}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Column="3" VerticalAlignment="Bottom">
-                <Button Content="Cancel" Width="48" Click="DoCancel"
-                        Height="{Binding ActualHeight, ElementName=TypeBox}" />
-                <Button Content="Save" Width="48" IsDefault="True" Click="DoSave"
+                <Button Content="Cancel" Width="{StaticResource ButtonWidth}" Click="DoCancel"
+                        Height="{Binding ActualHeight, ElementName=TypeBox}" Margin="5 0 0 0" />
+                <Button Content="Save" Width="{StaticResource ButtonWidth}" Margin="5 0 0 0" IsDefault="True"
+                        Click="DoSave"
                         Height="{Binding ActualHeight, ElementName=TypeBox}" />
             </StackPanel>
         </Grid>
