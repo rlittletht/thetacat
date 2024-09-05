@@ -335,11 +335,14 @@ public partial class MediaItemZoom : Window
                 DoNextImage();
             }
             else if ((e.Key >= Key.D0 && e.Key <= Key.D9)
-                     || (e.Key >= Key.A && e.Key <= Key.W))
+                     || (e.Key >= Key.A && e.Key <= Key.W)
+                     || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
             {
                 int tagIndex;
 
-                if (e.Key <= Key.D9)
+                if (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9)
+                    tagIndex = e.Key - Key.NumPad0;
+                else if (e.Key <= Key.D9)
                     tagIndex = e.Key - Key.D0;
                 else if (e.Key < Key.D)
                     tagIndex = 10 + e.Key - Key.A;
@@ -348,7 +351,7 @@ public partial class MediaItemZoom : Window
                 else if (e.Key < Key.P)
                     tagIndex = 22 + e.Key - Key.O;
                 else if (e.Key <= Key.W)
-                    tagIndex = 24 + e.Key - Key.Q;
+                    tagIndex = 23 + e.Key - Key.Q;
                 else
                     throw new CatExceptionInternalFailure($"key out of range: {e.Key}");
 
