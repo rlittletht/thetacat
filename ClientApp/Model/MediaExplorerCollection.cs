@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NUnit.Framework.Constraints;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -21,6 +22,7 @@ using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
+using Thetacat.UI;
 using Thetacat.Util;
 using MessageBox = System.Windows.MessageBox;
 
@@ -220,7 +222,11 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
                     if (path != null && App.State.Catalog.TryGetMedia(e.MediaId, out MediaItem? mediaItem))
                     {
-                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path, ReloadDerivativeForFullFidelityPreview);
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(
+                            mediaItem,
+                            App.State.GetMD5ForItem(mediaItem.ID),
+                            path,
+                            ReloadDerivativeForFullFidelityPreview);
                     }
                 }
             }
@@ -313,17 +319,23 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         of the queue. this means, paradoxically, we want to insert the current page
         *last*
     ----------------------------------------------------------------------------*/
-    public void EnsureImagesForSurroundingRows(int row)
+    public void EnsureImagesForSurroundingRows(int row, int prevCache = Int32.MaxValue, int nextCache = Int32.MaxValue)
     {
         if (m_collection.TopCollection.Count == 0)
             return;
+
+        if (prevCache == Int32.MaxValue)
+            prevCache = RowsPerExplorer;
+
+        if (nextCache == Int32.MaxValue)
+            nextCache = 2 * RowsPerExplorer;
 
         MicroTimer timer = new MicroTimer();
         timer.Start();
 
         int maxRow = m_collection.TopCollection.Count - 1;
-        int firstRow = Math.Max(row - RowsPerExplorer, 0);
-        int lastRow = Math.Min(row + (2 * RowsPerExplorer), maxRow);
+        int firstRow = Math.Max(row - prevCache, 0);
+        int lastRow = Math.Min(row + nextCache, maxRow);
 
         ICatalog catalog = App.State.Catalog;
         ICache cache = App.State.Cache;
@@ -412,7 +424,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
 
                     if (path != null)
                     {
-                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(mediaItem, App.State.GetMD5ForItem(mediaItem.ID), path,
+                        App.State.PreviewImageCache.TryQueueBackgroundLoadToCache(
+                            mediaItem,
+                            App.State.GetMD5ForItem(mediaItem.ID),
+                            path,
                             ReloadDerivativeForFullFidelityPreview);
                     }
                 }
@@ -433,7 +448,11 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
         {
             // now get the next item
-            return m_collection.GetNextItem(location.Line, location.Offset);
+            MediaExplorerItem? next = m_collection.GetNextItem(location.Line, location.Offset, out int newLineNumber);
+            if (newLineNumber != location.Line)
+                EnsureImagesForSurroundingRows(newLineNumber, -2, 4);
+
+            return next;
         }
 
         return null;
@@ -445,7 +464,10 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         if (m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
         {
             // now get the previous item
-            return m_collection.GetPreviousItem(location.Line, location.Offset);
+            MediaExplorerItem? prev = m_collection.GetPreviousItem(location.Line, location.Offset, out int newLineNumber);
+            if (newLineNumber != location.Line)
+                EnsureImagesForSurroundingRows(newLineNumber, -4, 2);
+            return prev;
         }
 
         return null;
@@ -958,7 +980,35 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         return true;
     }
 
-    public bool FDoDeleteItems(IReadOnlyCollection<MediaItem> mediaItems)
+    void DeleteItemsWork(IProgressReport report, IReadOnlyCollection<MediaItem> mediaItems)
+    {
+        int i = 0;
+        int iMax = mediaItems.Count;
+
+        try
+        {
+            foreach (MediaItem item in mediaItems)
+            {
+                report.UpdateProgress((i++ * 100.0) / iMax);
+                try
+                {
+                    App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
+                    ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
+                    App.State.EnsureDeletedItemCollateralRemoved(item.ID);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
+                }
+            }
+        }
+        finally
+        {
+            report.WorkCompleted();
+        }
+    }
+
+    public bool FDoDeleteItems(IReadOnlyCollection<MediaItem> mediaItems, Window ?parent = null)
     {
         if (mediaItems.Count == 0)
             return false;
@@ -969,20 +1019,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             return false;
         }
 
-        foreach (MediaItem item in mediaItems)
-        {
-            try
-            {
-                App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
-                ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
-                App.State.EnsureDeletedItemCollateralRemoved(item.ID);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not delete item: {item.ID}: {item.VirtualPath}: {ex}");
-            }
-        }
-
+        ProgressDialog.DoWorkWithProgress(report => DeleteItemsWork(report, mediaItems), parent);
         return true;
     }
 }

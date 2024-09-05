@@ -69,7 +69,7 @@ public class EditFilterModel: INotifyPropertyChanged
     private bool m_isTypeAvailable;
     private Guid m_id;
     private bool m_isEditingExpression = false;
-    private string m_expressionEditing;
+    private string m_expressionEditing = "";
 
     public PostfixText Expression { get; set; } = new PostfixText();
 

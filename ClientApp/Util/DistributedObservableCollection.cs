@@ -366,9 +366,11 @@ public class DistributedObservableCollection<T, T1>
         m_segments = null;
     }
 
-    public T1? GetNextItem(int lineNumber, int offset)
+    public T1? GetNextItem(int lineNumber, int offset, out int newLineNumber)
     {
         T line = m_collection[lineNumber];
+
+        newLineNumber = lineNumber;
 
         if (offset >= line.Items.Count - 1)
         {
@@ -377,15 +379,17 @@ public class DistributedObservableCollection<T, T1>
                 return null;
 
             line = m_collection[lineNumber + 1];
+            newLineNumber = lineNumber + 1;
             return line.Items[0];
         }
 
         return line.Items[offset + 1];
     }
 
-    public T1? GetPreviousItem(int lineNumber, int offset)
+    public T1? GetPreviousItem(int lineNumber, int offset, out int newLineNumber)
     {
         T line = m_collection[lineNumber];
+        newLineNumber = lineNumber;
 
         if (offset == 0)
         {
@@ -393,6 +397,8 @@ public class DistributedObservableCollection<T, T1>
                 return null;
 
             line = m_collection[lineNumber - 1];
+
+            newLineNumber = lineNumber - 1;
             return line.Items[line.Items.Count - 1];
         }
 

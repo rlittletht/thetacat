@@ -421,7 +421,7 @@ public partial class MainWindow : Window, IMainCommands
         // get a collection of all the items marked for the trash
         FilterDefinition trashFilter = new FilterDefinition("", "", $"[{BuiltinTags.s_IsTrashItemID:B}] == '$true'");
 
-        if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter)))
+        if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter), this))
             m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
     }
 
@@ -476,8 +476,8 @@ public partial class MainWindow : Window, IMainCommands
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: ConnectToDatabase
-        %%Qualified: Thetacat.MainApp.MainWindow.ConnectToDatabase
+        %%Function: ConnectToDatabaseWork
+        %%Qualified: Thetacat.MainApp.MainWindow.ConnectToDatabaseWork
     ----------------------------------------------------------------------------*/
     private bool ConnectToDatabaseWork(IProgressReport progressReport)
     {
