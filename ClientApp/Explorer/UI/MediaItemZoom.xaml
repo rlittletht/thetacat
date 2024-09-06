@@ -75,6 +75,7 @@
                 <MenuItem Header="_Next" Click="NextImage" />
                 <MenuItem Header="_Previous" Click="PreviousImage" />
                 <MenuItem Header="_Toggle Trashed" Click="ToggleImageTrashed" />
+                <MenuItem Header="_Sync catalog window" Click="DoSyncCatalog"/>
             </MenuItem>
         </Menu>
         <Grid Margin="0">

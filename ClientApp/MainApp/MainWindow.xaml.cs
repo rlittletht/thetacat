@@ -624,13 +624,7 @@ public partial class MainWindow : Window, IMainCommands
         int line = m_model.ExplorerCollection.GetLineToScrollTo(m_model.ExplorerCollection.JumpDate);
 
         if (line != -1)
-        {
-            if (VisualTreeHelper.GetChild(Explorer.ExplorerBox, 0) is ScrollViewer scrollViewer)
-            {
-                double scrollTo = line;
-                scrollViewer.ScrollToVerticalOffset(scrollTo);
-            }
-        }
+            Explorer.JumpToLine(line);
     }
 
 #endregion

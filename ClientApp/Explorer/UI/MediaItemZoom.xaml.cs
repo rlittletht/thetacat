@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq.Expressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Converters;
 using Thetacat.Explorer.UI;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -21,15 +19,17 @@ namespace Thetacat.Explorer;
 public partial class MediaItemZoom : Window
 {
     public delegate void OnZoomClosingDelegate(MediaItemZoom zoom);
-    public delegate MediaItem? GetNextMediaItem(MediaItem item);
-    public delegate MediaItem? GetPreviousMediaItem(MediaItem item);
+    public delegate MediaItem? GetNextMediaItemDelegate(MediaItem item);
+    public delegate MediaItem? GetPreviousMediaItemDelegate(MediaItem item);
+    public delegate void SyncCatalogDelegate(MediaItem item);
 
     private readonly SortableListViewSupport m_sortableListViewSupport;
     private void SortType(object sender, RoutedEventArgs e) => m_sortableListViewSupport.Sort(sender as GridViewColumnHeader);
-    private GetNextMediaItem? m_nextDelegate;
-    private GetPreviousMediaItem? m_previousDelegate;
+    private readonly GetNextMediaItemDelegate? m_getNextMediaItem;
+    private readonly GetPreviousMediaItemDelegate? m_getPreviousMediaItem;
+    private readonly SyncCatalogDelegate? m_syncCatalog;
 
-    private MediaItemZoomModel m_model = new();
+    private readonly MediaItemZoomModel m_model = new();
 
     /*----------------------------------------------------------------------------
         %%Function: OnImageCacheUpdated
@@ -179,8 +179,8 @@ public partial class MediaItemZoom : Window
     ----------------------------------------------------------------------------*/
     public MediaItemZoom()
     {
-        m_nextDelegate = null;
-        m_previousDelegate = null;
+        m_getNextMediaItem = null;
+        m_getPreviousMediaItem = null;
         InitializeComponent();
         m_sortableListViewSupport = new SortableListViewSupport(MetadataListView);
     }
@@ -259,10 +259,11 @@ public partial class MediaItemZoom : Window
         %%Qualified: Thetacat.Explorer.MediaItemZoom.MediaItemZoom
     ----------------------------------------------------------------------------*/
     public MediaItemZoom(
-        MediaItem item, GetNextMediaItem? getNextDelegate, GetPreviousMediaItem? getPreviousDelegate, int vectorClockBase)
+        MediaItem item, GetNextMediaItemDelegate? getGetNextMediaItem, GetPreviousMediaItemDelegate? getGetPreviousMediaItem, SyncCatalogDelegate? syncCatalog, int vectorClockBase)
     {
-        m_nextDelegate = getNextDelegate;
-        m_previousDelegate = getPreviousDelegate;
+        m_getNextMediaItem = getGetNextMediaItem;
+        m_getPreviousMediaItem = getGetPreviousMediaItem;
+        m_syncCatalog = syncCatalog;
 
         m_model.VectorClock = vectorClockBase;
 
@@ -393,14 +394,23 @@ public partial class MediaItemZoom : Window
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: DoSyncCatalog
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.DoSyncCatalog
+    ----------------------------------------------------------------------------*/
+    private void DoSyncCatalog(object sender, RoutedEventArgs e)
+    {
+        m_syncCatalog?.Invoke(m_model.MediaItem!);
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: DoNextImage
         %%Qualified: Thetacat.Explorer.MediaItemZoom.DoNextImage
     ----------------------------------------------------------------------------*/
     void DoNextImage()
     {
-        if (m_nextDelegate != null)
+        if (m_getNextMediaItem != null)
         {
-            MediaItem? next = m_nextDelegate(m_model.MediaItem!);
+            MediaItem? next = m_getNextMediaItem(m_model.MediaItem!);
             if (next != null)
                 SetMediaItem(next);
         }
@@ -412,9 +422,9 @@ public partial class MediaItemZoom : Window
     ----------------------------------------------------------------------------*/
     void DoPreviousImage()
     {
-        if (m_previousDelegate != null)
+        if (m_getPreviousMediaItem != null)
         {
-            MediaItem? next = m_previousDelegate(m_model.MediaItem!);
+            MediaItem? next = m_getPreviousMediaItem(m_model.MediaItem!);
             if (next != null)
                 SetMediaItem(next);
         }

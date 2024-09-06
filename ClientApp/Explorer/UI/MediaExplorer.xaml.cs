@@ -17,6 +17,7 @@ using Thetacat.Util;
 using Thetacat.Explorer.UI;
 using Thetacat.Import;
 using Thetacat.ServiceClient;
+using System.Windows.Media;
 
 namespace Thetacat.Explorer;
 
@@ -77,6 +78,35 @@ public partial class MediaExplorer : UserControl
         return nextMediaItem;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: JumpToLine
+        %%Qualified: Thetacat.Explorer.MediaExplorer.JumpToLine
+    ----------------------------------------------------------------------------*/
+    public void JumpToLine(int line)
+    {
+        if (line != -1)
+        {
+            if (VisualTreeHelper.GetChild(ExplorerBox, 0) is ScrollViewer scrollViewer)
+            {
+                double scrollTo = line;
+                scrollViewer.ScrollToVerticalOffset(scrollTo);
+            }
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: SyncCatalog
+        %%Qualified: Thetacat.Explorer.MediaExplorer.SyncCatalog
+    ----------------------------------------------------------------------------*/
+    void SyncCatalog(MediaItem item)
+    {
+        int? line = m_collection?.GetLineForItem(item);
+
+        if (line != null)
+            JumpToLine(line.Value);
+    }
+
+
     public void _EditNewVersion(MediaExplorerItem? context)
     {
         if (context == null)
@@ -115,7 +145,7 @@ public partial class MediaExplorer : UserControl
 
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
 
-        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem, m_nextZoomVectorClockBase);
+        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem, SyncCatalog, m_nextZoomVectorClockBase);
         m_nextZoomVectorClockBase += s_zoomVectorClockRange;
 
         App.State.WindowManager.AddZoom(zoom);

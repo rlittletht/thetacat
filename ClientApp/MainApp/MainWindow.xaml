@@ -38,6 +38,8 @@
                 <Button Content="Show" Click="JumpToDate" Margin="5 7 5 2" Width="64" />
                 <TextBlock Margin="5 11 0 0">Showing:</TextBlock>
                 <TextBlock Text="{Binding Path=ExplorerCollection.WindowDateRange}" Margin="5 11 0 0" />
+                <TextBlock Margin="5 11 0 0">Item count:</TextBlock>
+                <TextBlock Text="{Binding Path=ExplorerCollection.ItemCount}" Margin="5 11 0 0" />
             </StackPanel>
             <xpl:MediaExplorer x:Name="Explorer" Grid.Row="1" />
             <Grid Grid.Row="3" Style="{StaticResource ControlRegion}">

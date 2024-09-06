@@ -48,6 +48,12 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         set => SetField(ref m_isDirty, value);
     }
 
+    public string ItemCount
+    {
+        get => m_itemCount;
+        set => SetField(ref m_itemCount, value);
+    }
+
     public string WindowDateRange
     {
         get => m_windowDateRange;
@@ -161,6 +167,7 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     private TimelineType m_timelineType = TimelineType.None;
     private TimelineOrder m_timelineOrder = TimelineOrder.None;
     private bool m_isDirty = false;
+    private string m_itemCount = "";
 
     private int ColumnsPerExplorer => (int)Math.Round(m_explorerWidth / m_panelItemWidth);
     private int RowsPerExplorer => (int)Math.Round(m_explorerHeight / m_panelItemHeight);
@@ -458,6 +465,18 @@ public class MediaExplorerCollection : INotifyPropertyChanged
         return null;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetLineForItem
+        %%Qualified: Thetacat.Model.MediaExplorerCollection.GetLineForItem
+    ----------------------------------------------------------------------------*/
+    public int? GetLineForItem(MediaItem item)
+    {
+        if (!m_mapLineItemOffsets.TryGetValue(item.ID, out LineItemOffset? location))
+            return null;
+
+        return location.Line;
+    }
+
     public MediaExplorerItem? GetPreviousItem(MediaItem item)
     {
         // find this item in the collection and get the next item
@@ -693,6 +712,8 @@ public class MediaExplorerCollection : INotifyPropertyChanged
             m_filter == null ? App.State.Catalog.GetMediaCollection() : App.State.Catalog.GetFilteredMediaItems(m_filter.Definition);
 
         App.LogForApp(EventType.Information, $"elapsed time for building catalog collection: {timer.Elapsed()}");
+
+        ItemCount = collection.Count.ToString("##,###,###");
 
         BuildTimelineForMediaCollection(collection);
     }
