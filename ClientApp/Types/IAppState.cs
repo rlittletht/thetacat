@@ -8,6 +8,7 @@ using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Md5Caching;
+using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Util;
 using static Thetacat.Types.AppState;
@@ -47,7 +48,6 @@ public interface IAppState
     public void PushTemporarySqlConnection(string connectionString);
     public void PopTemporarySqlConnection();
 
-    public void EnsureDeletedItemCollateralRemoved(Guid id);
-    public void EnsureDeletedItemsCollateralRemoved(List<Guid> items);
+    public bool EnsureDeletedItemCollateralRemoved(Guid id);
     public string GetMD5ForItem(Guid id);
 }

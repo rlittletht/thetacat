@@ -28,9 +28,9 @@
     <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
     <PackageReference Include="TCore.Pipeline" Version="3.0.0" />
     <PackageReference Include="TCore.PostfixText" Version="1.5.0" />
-    <PackageReference Include="TCore.SqlClient" Version="1.4.0" />
-    <PackageReference Include="TCore.SqlCore" Version="1.3.0" />
-    <PackageReference Include="TCore.SQLiteClient" Version="1.4.0" />
+    <PackageReference Include="TCore.SqlClient" Version="1.5.0" />
+    <PackageReference Include="TCore.SqlCore" Version="1.4.1" />
+    <PackageReference Include="TCore.SQLiteClient" Version="1.5.0" />
     <PackageReference Include="TCore.XMLIO" Version="1.4.0" />
     <PackageReference Include="TCore.XmlSettings" Version="1.7.0" />
 <!--    <PackageReference Include="TCore.SqlCore" Version="1.2.0" />

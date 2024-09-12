@@ -118,18 +118,18 @@ public class Media
             (ISqlReader reader, Guid correlationId, ref List<ServiceMediaItem> building) =>
             {
                 Guid mediaId = reader.GetGuid(0);
-                    building.Add(
-                        new ServiceMediaItem()
-                        {
-                            Id = mediaId,
-                            VirtualPath = reader.GetString(1),
-                            MimeType = reader.GetString(2),
-                            State = reader.GetString(3),
-                            MD5 = reader.GetString(4)
-                        });
+                building.Add(
+                    new ServiceMediaItem()
+                    {
+                        Id = mediaId,
+                        VirtualPath = reader.GetString(1),
+                        MimeType = reader.GetString(2),
+                        State = reader.GetString(3),
+                        MD5 = reader.GetString(4)
+                    });
             },
             s_aliases,
-            cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
     static readonly string s_queryFullMediaTags = @"
@@ -205,7 +205,7 @@ public class Media
                 }
             },
             s_aliases,
-            cmd=>cmd.AddParameterWithValue("@CatalogID", catalogID));
+            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
     static string BuildInsertItemSql(Guid catalogID, MediaItemDiff diffOp)
@@ -215,7 +215,7 @@ public class Media
 
         if (diffOp.DiffOp != MediaItemDiff.Op.Insert)
             throw new CatExceptionInternalFailure($"insert mediaitem not Op.Insert: {diffOp.DiffOp}");
-        
+
         string id = diffOp.ID.ToString();
         string virtualPath = SqlText.Sqlify(diffOp.ItemData.VirtualPath);
         string mimeType = SqlText.Sqlify(diffOp.ItemData.MimeType);
@@ -276,14 +276,16 @@ public class Media
     {
         string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
-        return $"INSERT INTO tcat_mediatags (catalog_id, id, metatag, value) VALUES ('{catalogID}', '{mediaId}', '{mediaTag.Metatag.ID}', {SqlText.Nullable(value)}) ";
+        return
+            $"INSERT INTO tcat_mediatags (catalog_id, id, metatag, value) VALUES ('{catalogID}', '{mediaId}', '{mediaTag.Metatag.ID}', {SqlText.Nullable(value)}) ";
     }
 
     static string BuildMediaTagUpdate(Guid catalogID, Guid mediaId, MediaTag mediaTag)
     {
         string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
-        return $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
+        return
+            $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
     }
 
     static List<string> BuildUpdateItemTagsSql(Guid catalogID, MediaItemDiff diffOp)
@@ -326,10 +328,18 @@ public class Media
                             sets.Add(BuildMediaTagDelete(catalogID, diffOp.ID, tagDiff.ID));
                             break;
                         case MediaTagDiff.Op.Insert:
-                            sets.Add(BuildMediaTagInsert(catalogID, diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            sets.Add(
+                                BuildMediaTagInsert(
+                                    catalogID,
+                                    diffOp.ID,
+                                    tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
                             break;
                         case MediaTagDiff.Op.Update:
-                            sets.Add(BuildMediaTagUpdate(catalogID, diffOp.ID, tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
+                            sets.Add(
+                                BuildMediaTagUpdate(
+                                    catalogID,
+                                    diffOp.ID,
+                                    tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
                             break;
                         default:
                             throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
@@ -393,23 +403,158 @@ public class Media
     }
 
     private static readonly string s_queryAllDeletedItems = @"
-        SELECT id FROM tcat_deletedmedia WHERE catalog_id = @CatalogID";
+        SELECT id, min_workgroup_clock FROM tcat_deletedmedia WHERE catalog_id = @CatalogID";
 
-    public static List<Guid> GetDeletedMediaItems(Guid catalogId)
+    private static readonly string s_getDeletedItemsVectorClock = @"
+        SELECT value FROM tcat_vector_clocks WHERE catalog_id = @CatalogId";
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetDeletedMediaItems
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.GetDeletedMediaItems
+    ----------------------------------------------------------------------------*/
+    public static ServiceDeletedItemsClock GetDeletedMediaItems(Guid catalogId)
     {
-        return LocalServiceClient.DoGenericQueryWithAliases(
-            s_queryAllDeletedItems,
-            (ISqlReader reader, Guid _, ref List<Guid> building) => building.Add(reader.GetGuid(0)),
-            s_aliases,
-            cmd => cmd.AddParameterWithValue("@CatalogID", catalogId));
+        string sQuery = $"{s_queryAllDeletedItems} {s_getDeletedItemsVectorClock}";
+        ISql sql = LocalServiceClient.GetConnection();
+
+        try
+        {
+            return sql.ExecuteMultiSetDelegatedQuery(
+                Guid.NewGuid(),
+                sQuery,
+                (ISqlReader reader, Guid _, int recordset, ref ServiceDeletedItemsClock building) =>
+                {
+                    if (recordset == 0)
+                    {
+                        ServiceDeletedItem deletedItem =
+                            new()
+                            {
+                                Id = reader.GetGuid(0),
+                                MinVectorClock = reader.GetInt32(1)
+                            };
+                        building.DeletedItems.Add(deletedItem);
+                    }
+                    else if (recordset == 1)
+                    {
+                        building.VectorClock = reader.GetInt32(0);
+                    }
+                    else
+                    {
+                        throw new CatExceptionServiceDataFailure();
+                    }
+                },
+                s_aliases,
+                cmd => cmd.AddParameterWithValue("@CatalogID", catalogId));
+        }
+        catch
+        {
+            return new ServiceDeletedItemsClock()
+                   {
+                       VectorClock = sql.NExecuteScalar(
+                           new SqlCommandTextInit(s_getDeletedItemsVectorClock),
+                           cmd => cmd.AddParameterWithValue("@CatalogID", catalogId))
+                   };
+        }
+        finally
+        {
+            sql.Close();
+        }
     }
 
+
+    public static readonly string s_expireDeletedMediaItems = @"
+        DECLARE @MinClock INT = (SELECT MIN(deletedMediaClock) FROM tcat_workgroups)
+        DELETE from tcat_deletedmedia
+        WHERE min_workgroup_clock <= @MinClock AND catalog_id=@CatalogId";
+
+    public static void ExpireDeletedMediaItems(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_expireDeletedMediaItems,
+            s_aliases,
+            (cmd) => { cmd.AddParameterWithValue("@CatalogId", catalogID); });
+    }
+
+    private static readonly string s_updateAllUnsetClocksOnDeletedMediaItems = @"
+        DECLARE @CurClock INT = (SELECT value FROM tcat_vector_clocks WHERE name='workgroup-deleted-media' AND catalog_id=@Catalog)
+
+        UPDATE tcat_deletedmedia
+        SET min_workgroup_clock = @CurClock + 1 
+        WHERE catalog_id=@Catalog AND min_workgroup_clock = 0";
+
+
+    // yes, this could have a race condition and two clients would end up incrementing
+    // to the same value. that's fine as both clients already updated their deletedMedia
+    // to the value they expected.  This would be a fatal flaw if this wasn't a monotonically
+    // increasing counter
+    private static readonly string s_incrementWorkgroupDeletedMediaVectorClock = @"
+        UPDATE tcat_vector_clocks 
+        SET value = value + 1
+        WHERE name='workgroup-deleted-media' AND catalog_id=@Catalog";
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateDeletedMediaWithNoClockAndIncrementVectorClock
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.UpdateDeletedMediaWithNoClockAndIncrementVectorClock
+
+        for every deleted media item that has a minclock of 0, update it to be
+        the currentclock + 1. Then ensure the current clock is incremented. the
+        current clock doesn't need to match what we just set the clocks to, it
+        just has to be AT LEAST that value.
+    ----------------------------------------------------------------------------*/
+    public static void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        ISql? sql = null;
+
+        string sQuery = $@"
+            {s_updateAllUnsetClocksOnDeletedMediaItems}
+            IF @@ROWCOUNT > 0
+                {s_incrementWorkgroupDeletedMediaVectorClock}";
+
+        try
+        {
+            sql = LocalServiceClient.GetConnection();
+            sql.BeginTransaction();
+
+            sql.ExecuteNonQuery(
+                new SqlCommandTextInit(sQuery),
+                cmd => cmd.AddParameterWithValue("@Catalog", catalogID));
+
+            sql.Commit();
+        }
+        catch
+        {
+            sql?.Rollback();
+        }
+        finally
+        {
+            sql?.Close();
+        }
+    }
+
+
+    public static void InsertedDeletedMediaAndIncremementWorkgroupDeletedMediaVectorClockIncremementWorkgroupDeletedMediaVectorClock(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllMediaAndMediaTagsAndStacks,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+                cmd.CommandTimeout = 0;
+            });
+    }
+
+
+    /*----------------------------------------------------------------------------
+        %%Function: DeleteAllMediaAndMediaTagsAndStacks
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks
+    ----------------------------------------------------------------------------*/
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID)
     {
         LocalServiceClient.DoGenericCommandWithAliases(
-            s_deleteAllMediaAndMediaTagsAndStacks, 
-            s_aliases, 
-            cmd=>
+            s_deleteAllMediaAndMediaTagsAndStacks,
+            s_aliases,
+            cmd =>
             {
                 cmd.AddParameterWithValue("@CatalogID", catalogID);
                 cmd.CommandTimeout = 0;
@@ -417,7 +562,7 @@ public class Media
     }
 
     private static readonly string s_insertDeletedMedia = @"
-        INSERT INTO tcat_deletedmedia (catalog_id, id) VALUES (@CatalogID, @MediaID)";
+        INSERT INTO tcat_deletedmedia (catalog_id, id, min_workgroup_clock) VALUES (@CatalogID, @MediaID, 0)";
 
     private static readonly string s_deleteMediaTagsForMedia = @"
         DELETE FROM tcat_mediatags
@@ -444,7 +589,9 @@ public class Media
                 },
                 s_aliases);
         }
-        catch { }
+        catch
+        {
+        }
 
         sql.BeginTransaction();
         try

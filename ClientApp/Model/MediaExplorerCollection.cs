@@ -1015,6 +1015,8 @@ public class MediaExplorerCollection : INotifyPropertyChanged
                 {
                     App.State.Catalog.DeleteItem(App.State.ActiveProfile.CatalogID, item.ID);
                     ServiceInterop.DeleteImportsForMediaItem(App.State.ActiveProfile.CatalogID, item.ID);
+
+                    // we COULD avoid the whole 
                     App.State.EnsureDeletedItemCollateralRemoved(item.ID);
                 }
                 catch (Exception ex)

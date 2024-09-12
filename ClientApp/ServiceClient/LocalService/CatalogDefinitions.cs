@@ -13,11 +13,11 @@ public class CatalogDefinitions
                 { "tcat_catalogs", "TC" },
             });
 
-    public static string s_queryAllCatalogs = @"
+    public static readonly string s_queryAllCatalogs = @"
         SELECT $$tcat_catalogs$$.id, $$tcat_catalogs$$.name, $$tcat_catalogs$$.description
         FROM $$#tcat_catalogs$$";
 
-    public static string s_createCatalogDefinition = @"
+    public static readonly string s_createCatalogDefinition = @"
         INSERT INTO tcat_catalogs (id, name, description) VALUES (@ID, @Name, @Description)
         INSERT INTO tcat_schemaversions (catalog_id, metatag_schema_version) VALUES (@ID, 0)";
 

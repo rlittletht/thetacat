@@ -36,4 +36,5 @@ public interface ICatalog
     public string GetMD5ForItem(Guid id, ICache cache);
     public bool HasMediaItem(Guid mediaId);
     public void Reset();
+    public void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID);
 }

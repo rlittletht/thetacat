@@ -28,7 +28,7 @@ public class ServiceInterop
         LocalService.Media.UpdateMediaItems(catalogID, diffs);
     }
 
-    public static List<Guid> GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
+    public static ServiceDeletedItemsClock GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
 
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
@@ -122,6 +122,21 @@ public class ServiceInterop
     public static void UpdateMediaStacks(Guid catalogID, List<MediaStackDiff> diffs)
     {
         LocalService.Stacks.UpdateMediaStacks(catalogID, diffs);
+    }
+
+    public static void UpdateWorkgroupDeleteMediaClockToAtLeast(Guid catalogID, Guid id, int newClock)
+    {
+        LocalService.Workgroup.UpdateWorkgroupDeleteMediaClockToAtLeast(catalogID, id, newClock);
+    }
+
+    public static void ExpireDeletedMediaItems(Guid catalogID)
+    {
+        LocalService.Media.ExpireDeletedMediaItems(catalogID);
+    }
+
+    public static void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        LocalService.Media.UpdateDeletedMediaWithNoClockAndIncrementVectorClock(catalogID);
     }
 
 #if WG_ON_SQL

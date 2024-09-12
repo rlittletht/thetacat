@@ -19,9 +19,10 @@ namespace Thetacat.Model.Workgroups;
 /*
 VECTOR CLOCKS:
 
-There are now two vector clocks (for two domains of data):
+There are now multiple vector clocks (for different domains of data):
 * Vector Clock - this is the OG clock - it manages the media cache
 * Filter Clock - this manages the filter definitions
+* Deleted Media Clock - this manages which deletedMediaItems a workgroup has dealt with
 
 Everything described below mostly applies to both clocks, but each of them should be considered
 independent of each other.
@@ -29,6 +30,9 @@ independent of each other.
 The Filter clock is simpler -- there is no Workgroup-Wide filter clock (as there is no need to
 maintain integrity across the collection of filters). instead there is only a clock for each filter
 definition.
+
+See Thetacat.MainApp.MainWindow.DealWithPendingDeletedItems for the deleted items vector
+clock
 
 A note on how we use them. VC are used to enforce data coherency. We don't want to change the DB
 if the version of the content is different than the version we think we are changing. (i.e. if
@@ -100,10 +104,13 @@ public class Workgroup : IWorkgroup
 
     public Guid ClientId => m_clientId;
 
+    public Guid Id => m_id;
+
     // the VC is the last version of the WG cache that we know about. if others have updated their notion
     // of the cache, then it will be different than ours. 
     protected int m_baseVectorClock;
     private int m_clientVectorClock;
+    private int m_deletedMediaVectorClock;
 
     private WorkgroupDb _Database
     {
@@ -204,6 +211,7 @@ public class Workgroup : IWorkgroup
 
         m_clientId = client.ClientId ?? throw new CatExceptionServiceDataFailure();
         m_clientVectorClock = client.VectorClock ?? throw new CatExceptionServiceDataFailure();
+        m_deletedMediaVectorClock = client.DeletedMediaClock ?? throw new CatExceptionServiceDataFailure();
     }
 
     private readonly WorkgroupDb? m_db;
@@ -605,4 +613,25 @@ public class Workgroup : IWorkgroup
     {
         _Database.UpdateWorkgroupFilter(filter, baseClock);
     }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateClientDeletedMediaClockToAtLeast
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.UpdateClientDeletedMediaClockToAtLeast
+    ----------------------------------------------------------------------------*/
+    public void UpdateClientDeletedMediaClockToAtLeast(int newClock)
+    {
+        _Database.UpdateClientDeletedMediaClockToAtLeast(MainApp.MainWindow.ClientName, newClock);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetMinWorkgroupDeletedMediaClock
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.GetMinWorkgroupDeletedMediaClock
+
+        get the minimum deleted media clock for all of our clients
+    ----------------------------------------------------------------------------*/
+    public int GetMinWorkgroupDeletedMediaClock()
+    {
+        return _Database.GetMinWorkgroupDeletedMediaClock();
+    }
+
 }

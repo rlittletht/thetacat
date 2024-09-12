@@ -43,7 +43,10 @@ public class AppState : IAppState
     public Filters Filters { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
-    public string AzureStorageAccount => App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
+
+    public string AzureStorageAccount =>
+        App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
+
     public string StorageContainer => App.State.ActiveProfile.StorageContainer ?? throw new CatExceptionInitializationFailure("no storage container set");
     public ClientDatabase? ClientDatabase { get; private set; }
     public Md5Cache Md5Cache { get; init; }
@@ -60,7 +63,8 @@ public class AppState : IAppState
 
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate)
     {
-        m_addBackgroundWork = addWorkDelegate;;
+        m_addBackgroundWork = addWorkDelegate;
+        ;
     }
 
     public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work, OnWorkCompletedDelegate? onWorkCompleted = null)
@@ -160,7 +164,7 @@ public class AppState : IAppState
         %%Qualified: Thetacat.Types.AppState.OnProfileChanged
 
         This is our own private OnProfileChanged. Resets our AppSecrets
-        and the 
+        and the
     ----------------------------------------------------------------------------*/
     private void OnProfileChanged(object? sender, ProfileChangedEventArgs e)
     {
@@ -210,25 +214,21 @@ public class AppState : IAppState
         ((App)Application.Current).WindowPlace.Register(window, key);
     }
 
-    public void EnsureDeletedItemCollateralRemoved(Guid item)
+    public bool EnsureDeletedItemCollateralRemoved(Guid item)
     {
         try
         {
             Cache.DeleteMediaItem(item);
             Derivatives.DeleteMediaItem(item);
+
+            return true;
         }
         catch
         {
             App.LogForApp(EventType.Warning, $"Couldn't remove collateral for item {item}. Will try again later.");
         }
-    }
 
-    public void EnsureDeletedItemsCollateralRemoved(List<Guid> items)
-    {
-        foreach (Guid item in items)
-        {
-            EnsureDeletedItemCollateralRemoved(item);
-        }
+        return false;
     }
 
     public string GetMD5ForItem(Guid id)

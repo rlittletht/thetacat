@@ -53,7 +53,7 @@ public class SqlSim: ISql
     public T ExecuteMultiSetDelegatedQuery<T>(Guid crids, string sQuery, ISqlReader.DelegateMultiSetReader<T> delegateReader, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) where T : new() => throw new NotImplementedException();
     public ISqlReader ExecuteQuery(Guid crids, string query, TableAliases? aliases = null, CustomizeCommandDelegate? customizeDelegate = null) => throw new NotImplementedException();
 
-    public string SExecuteScalar(SqlCommandTextInit cmdText) => throw new NotImplementedException();
+    public string SExecuteScalar(SqlCommandTextInit cmdText, CustomizeCommandDelegate? _) => throw new NotImplementedException();
 
     public T ExecuteDelegatedQuery<T>(
         Guid crids, string query, ISqlReader.DelegateReader<T> delegateReader,
@@ -117,12 +117,15 @@ public class SqlSim: ISql
         throw new InvalidOperationException("no match for query");
     }
 
-    public int NExecuteScalar(SqlCommandTextInit cmdText)
+    public int NExecuteScalar(SqlCommandTextInit cmdText, CustomizeCommandDelegate? customize = null)
     {
+        if (customize != null)
+            throw new InvalidOperationException("customize command delegate NYI in simulator");
+
         return NExecuteScalar(cmdText.CommandText, cmdText.Aliases);
     }
 
-    public DateTime DttmExecuteScalar(SqlCommandTextInit cmdText) => throw new NotImplementedException();
+    public DateTime DttmExecuteScalar(SqlCommandTextInit cmdText, CustomizeCommandDelegate? _) => throw new NotImplementedException();
 
     public void BeginExclusiveTransaction()
     {

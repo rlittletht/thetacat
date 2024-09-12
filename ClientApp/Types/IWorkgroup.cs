@@ -13,6 +13,7 @@ public interface IWorkgroup
     public PathSegment Server { get; }
     public PathSegment CacheRoot { get; }
     public Guid ClientId {get; }
+    public Guid Id { get; }
     public PathSegment FullPathToCacheRoot { get; }
     public string FullyQualifiedPath { get; }
     public void RefreshWorkgroupMedia(ConcurrentDictionary<Guid, ICacheEntry> entries);
@@ -26,4 +27,6 @@ public interface IWorkgroup
     public void ExecuteFilterAddsAndDeletes(IEnumerable<WorkgroupFilter> deletes, IEnumerable<WorkgroupFilter> inserts);
     public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id);
     public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock);
+    public void UpdateClientDeletedMediaClockToAtLeast(int newClock);
+    public int GetMinWorkgroupDeletedMediaClock();
 }

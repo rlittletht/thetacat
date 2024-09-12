@@ -285,11 +285,17 @@ public class Catalog : ICatalog
                };
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: ReadFullCatalogFromServer
+        %%Qualified: Thetacat.Model.Catalog.ReadFullCatalogFromServer
+    ----------------------------------------------------------------------------*/
     public async Task ReadFullCatalogFromServer(Guid catalogID, MetatagSchema schema)
     {
         MicroTimer timer = new MicroTimer();
         timer.Reset();
         timer.Start();
+
+        DealWithPendingDeletedItems(catalogID);
 
         ServiceCatalog catalog = await GetFullCatalogAsync(catalogID);
 
@@ -422,6 +428,185 @@ public class Catalog : ICatalog
         }
 
         TriggerItemDirtied(true);
+    }
+
+
+    /*----------------------------------------------------------------------------
+        %%Function: EnsureDeletedItemsCollateralRemoved
+        %%Qualified: Thetacat.Types.AppState.EnsureDeletedItemsCollateralRemoved
+
+        ensure all the collateral for all of these items are removed.
+
+        if anything goes wrong for ANY item, then return false. Regardless, do
+        our best. (if we return false it just means we'll try again in the
+        future)
+    ----------------------------------------------------------------------------*/
+    bool EnsureDeletedItemsCollateralRemoved(List<ServiceDeletedItem> items)
+    {
+        bool fAllSucceeded = true;
+
+        foreach (ServiceDeletedItem item in items)
+        {
+            if (!App.State.EnsureDeletedItemCollateralRemoved(item.Id!.Value))
+                fAllSucceeded = false;
+        }
+
+        return fAllSucceeded;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: DealWithPendingDeletedItems
+        %%Qualified: Thetacat.Model.Catalog.DealWithPendingDeletedItems
+
+       SO, we can only bump a workgroups vector clock to the current (or rather, to
+       the deleted items current -- the value that comes back from the atomic
+       "get deleted items with clock" -- we can only update that clock IFF the
+       min client deleted-media-vector-clock also meets the requirements.
+
+           we don't want the pending deleted items to grow forever, so we need to be
+           able to delete them once all the workgroups have dealt with it. we do this
+           using a vector clock. Each deleted item has a vector-clock value. If a
+           workgroup's deleted-media vector clock is equal or greater, it means that
+           workgroup has successfully dealt with it.
+
+           when a workgroup connects to the database, it will query all of the
+           deleted media. it will then deal with any items that have a vectorClock
+           greater than the workgroups vector clock. if ALL of the items are
+           dealt with, then the workgroup updates its vector clock in the catalog.
+
+           RACE CONDITIONS:
+           we have to be careful that deleted items that are added by another client
+           AFTER we get the workgroup vector clock, but BEFORE we have finished
+           dealing with the items get the correct clock AND our we have to make sure
+           our workgroup clock isn't bumped up too far.
+
+           To address this, we will get the catalog deleted-items clock from the
+           catalog in an atomic operation with fetching the deleted-items. this is
+           the clock we will use as the bases for updating OUR vector clock if we
+           successfully deal with all the items.
+
+           The next issue is what vector clock to assign to deleted items as they
+           are added. We have to make sure we assign a clock that will be GREATER
+           than the value another client will set when they are in-flight dealing
+           with deleted items. We should be OK since the in-flight client will just
+           use the clock value it got with its deleted items, and the deleting
+           client will use the current clock + 1 and then set the new workgroup
+           clock to current + 1.
+
+           To accommodate deleting items one by one but still having the vector
+           clock, when we delete an item it will get a vector clock of 0 (which means
+           it can't be expired) (IMPLEMENT THIS). then we will have a single
+           atomic "update workgroup vector clock and update deleted items clocks"
+           (BUT WHAT if two clients are actively deleting? they both have pending items
+           and BOTH could execute the same update.  ANSWER: it doesn't matter. BOTH
+           updates will set the vector clock to something larger than the original
+           vector clock, which means its either +1 (or +n for n conflicting clients),
+           but all of them are > original clock. So let the collision occur.
+
+
+           Here's the plan:
+
+           STORAGE:
+
+           The workgroup db stores a deletedMediaClock for each client.
+           
+           This is the max clock that THIS client has dealt with. Any clock value
+           greater hasn't been (successfully) processed by this client.
+
+           Each catalog stores a deletedMediaClock for each workgroup.
+           This is the max clock that this WORKGROUP has dealt with.
+
+           Each catalog stores a vector_clock for deleted media (global). This is in
+           the vector-clocks table, key = deleted-media. This is the
+           current vector clock for deletedMedia (presumably the max vector clock
+           used in the deletedMedia table). When new deletedMedia is added, they will
+           be added with this value + 1, and then this value will get incremented.
+
+
+           Each DeletedMediaItem has a vector-clock value that. Any client or workgroup
+           with a value LESS than this vector-clock has not successfully dealt with the
+           item.
+
+           The workgroup deletedMediaClock is the min of all the clients connected to
+           the workgroup.
+
+           Once every workgroup clock is greater or equal to a deletedMediaItems's clock,
+           the deletedMediaItem can be removed.
+
+           ON CONNECT:
+           Client will connect to workgroupDB and get its own vector clock.
+
+           Client will fetch all deletedMedia AND the current deleted media clock from
+           the catalog (CURCLOCK). If the client successfully processes ALL deleted media items
+           with no errors, then the client sets its own deletedMediaClock to
+           CURCLOCK.
+           
+           The client also updates the workgroup's deletedMediaClock to the min of all
+           of the client deletedMediaClocks.
+
+           The client also deletes all deletedMediaItems that have a clock less than or
+           equal to the min of all workgroup deletedMediaClocks. (this is the expiring
+           step)
+
+           ADD:
+
+           To add new deleted media items, first add the item with a vector clock of 0.
+
+           Then set the clock for all deleted media items with a clock == 0 -- set the
+           clock to the global deleted media vector clock from the catalog + 1, and
+           increment the deleted media vector clock. This does not need to be an
+           exclusive action -- if the increment happens in a race condition, then it may
+           get double incremented. That's fine -- the important point is each item gets
+           set to AT LEAST the old global value + 1.
+    ----------------------------------------------------------------------------*/
+    public void DealWithPendingDeletedItems(Guid catalogID)
+    {
+        // before we do this, let's all deletedItems have a vectorClock stamped on them
+        UpdateDeletedMediaWithNoClockAndIncrementVectorClock(catalogID);
+
+        ServiceDeletedItemsClock deletedItems = ServiceInterop.GetDeletedMediaItems(catalogID);
+
+        if (deletedItems.DeletedItems.Count == 0)
+            return;
+
+        if (!EnsureDeletedItemsCollateralRemoved(deletedItems.DeletedItems))
+            return;
+
+        // if the global vectorclock is 0, nothing we can do (we will have to wait until
+        // a new deleted item is added
+        if ((deletedItems.VectorClock ?? 0) == 0)
+            return;
+
+        // now some bookkeeping
+
+        // update this client's deleted media clock
+        App.State.Workgroup?.UpdateClientDeletedMediaClockToAtLeast(deletedItems.VectorClock!.Value);
+
+        int nMinClockForAllClients = App.State.Workgroup?.GetMinWorkgroupDeletedMediaClock() ?? 0;
+
+        if (nMinClockForAllClients > 0)
+        {
+            ServiceInterop.UpdateWorkgroupDeleteMediaClockToAtLeast(
+                catalogID,
+                App.State.Workgroup!.Id,
+                deletedItems.VectorClock!.Value);
+
+            ServiceInterop.ExpireDeletedMediaItems(catalogID);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateDeletedMediaWithNoClockAndIncrementVectorClock
+        %%Qualified: Thetacat.Model.Catalog.UpdateDeletedMediaWithNoClockAndIncrementVectorClock
+
+        Call this whenever you think there are deletemedia items that have been
+        added with no vector clock.
+
+        If any items are updated, then the vector clock will get incremented
+    ----------------------------------------------------------------------------*/
+    public void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        ServiceInterop.UpdateDeletedMediaWithNoClockAndIncrementVectorClock(catalogID);
     }
 
 #region Observable Collection Support

@@ -94,7 +94,7 @@ public class WorkgroupDb
         INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('workgroup-clock', 0)";
 
     private readonly string s_queryWorkgroupClientDetailsByName = @"
-        SELECT $$tcat_workgroup_clients$$.id, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.vectorClock
+        SELECT $$tcat_workgroup_clients$$.id, $$tcat_workgroup_clients$$.name, $$tcat_workgroup_clients$$.vectorClock, $$tcat_workgroup_clients$$.deletedMediaClock
         FROM $$#tcat_workgroup_clients$$
         WHERE $$tcat_workgroup_clients$$.name = @Name";
 
@@ -129,6 +129,14 @@ public class WorkgroupDb
 
     private readonly string s_updateFilter = @"
         UPDATE tcat_workgroup_filters SET name=@Name, description=@Description, expression=@Expression, vectorClock=@VectorClock WHERE id=@Id";
+
+    private readonly string s_updateClientDeletedMediaClockToAtLeast = @"
+        UPDATE tcat_workgroup_clients 
+        SET deletedMediaClock = 
+            MAX((SELECT deletedMediaClock FROM tcat_workgroup_clients WHERE Name=@Name), @NewValue) WHERE Name=@Name";
+
+    private readonly string s_queryMinDeletedMediaClockInWorkgroup = @"
+        SELECT MIN(deletedMediaClock) FROM tcat_workgroup_clients";
 
     /*----------------------------------------------------------------------------
         %%Function: OpenDatabase
@@ -188,10 +196,10 @@ public class WorkgroupDb
                         _client.ClientId = reader.GetGuid(0);
                         _client.ClientName = reader.GetString(1);
                         _client.VectorClock = reader.GetInt32(2);
+                        _client.DeletedMediaClock = reader.GetInt32(3);
                     },
                     s_aliases,
-                    cmd => { cmd.AddParameterWithValue("@Name", clientName); }
-                    );
+                    cmd => cmd.AddParameterWithValue("@Name", clientName));
 
             if (client.ClientId == null)
                 return null;
@@ -257,9 +265,9 @@ public class WorkgroupDb
                 catch (SqlExceptionNoResults)
                 {
                     return new ServiceWorkgroupMediaClock()
-                    {
-                        VectorClock = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock)),
-                    };
+                           {
+                               VectorClock = _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryWorkgroupClock)),
+                           };
                 }
             });
     }
@@ -304,20 +312,20 @@ public class WorkgroupDb
 
     public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id)
     {
-        return 
+        return
             _Connection.ExecuteDelegatedQuery(
-            Guid.NewGuid(),
-            s_queryWorkgroupFilter,
-            (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupFilter building) =>
-            {
-                building.Id = reader.GetGuid(0);
-                building.Name = reader.GetString(1);
-                building.Description = reader.GetString(2);
-                building.Expression = reader.GetString(3);
-                building.FilterClock = reader.GetInt32(4);
-            },
-            s_aliases,
-            (cmd) => cmd.AddParameterWithValue("@Id", id.ToString()));
+                Guid.NewGuid(),
+                s_queryWorkgroupFilter,
+                (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupFilter building) =>
+                {
+                    building.Id = reader.GetGuid(0);
+                    building.Name = reader.GetString(1);
+                    building.Description = reader.GetString(2);
+                    building.Expression = reader.GetString(3);
+                    building.FilterClock = reader.GetInt32(4);
+                },
+                s_aliases,
+                (cmd) => cmd.AddParameterWithValue("@Id", id.ToString()));
     }
 
     /*----------------------------------------------------------------------------
@@ -373,7 +381,8 @@ public class WorkgroupDb
         }
     }
 
-    public static void ExecutePartedCommands<T>(ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases = null)
+    public static void ExecutePartedCommands<T>(
+        ISql sql, string commandBase, IEnumerable<T> items, Func<T, string> buildLine, int partLimit, string joinString, TableAliases? aliases = null)
     {
         StringBuilder sb = new StringBuilder();
         int current = 0;
@@ -408,6 +417,10 @@ public class WorkgroupDb
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateWorkgroupFilter
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.UpdateWorkgroupFilter
+    ----------------------------------------------------------------------------*/
     public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock)
     {
         DoExclusiveDatabaseWork(
@@ -419,7 +432,8 @@ public class WorkgroupDb
                 if (currectVector != baseClock)
                     throw new CatExceptionDataCoherencyFailure();
 
-                _Connection.ExecuteNonQuery(s_updateFilter,
+                _Connection.ExecuteNonQuery(
+                    s_updateFilter,
                     (cmd) =>
                     {
                         cmd.AddParameterWithValue("@Id", filter.Id.ToString());
@@ -431,6 +445,34 @@ public class WorkgroupDb
 
                 return true;
             });
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateDeletedMediaClockToAtLeast
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.UpdateDeletedMediaClockToAtLeast
+
+        update the deletedMediaClock for this client to be AT LEAST newClock
+        (uses max to ensure we don't clobber another clients change... even
+        though that shouldn't be possible since one-client, one-connection
+    ----------------------------------------------------------------------------*/
+    public void UpdateClientDeletedMediaClockToAtLeast(string clientName, int newClock)
+    {
+        _Connection.ExecuteNonQuery(
+            s_updateClientDeletedMediaClockToAtLeast,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@Name", clientName);
+                cmd.AddParameterWithValue("@NewValue", newClock);
+            });
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetMinWorkgroupDeletedMediaClock
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetMinWorkgroupDeletedMediaClock
+    ----------------------------------------------------------------------------*/
+    public int GetMinWorkgroupDeletedMediaClock()
+    {
+        return _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryMinDeletedMediaClockInWorkgroup));
     }
 
     /*----------------------------------------------------------------------------
@@ -607,6 +649,4 @@ public class WorkgroupDb
     {
         CheckFiltersTable();
     }
-
-
 }

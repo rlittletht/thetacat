@@ -423,6 +423,10 @@ public partial class MainWindow : Window, IMainCommands
 
         if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter), this))
             m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();
+
+
+        // and lastly, make sure they all get a new vector clock
+        App.State.Catalog.UpdateDeletedMediaWithNoClockAndIncrementVectorClock(App.State.ActiveProfile.CatalogID);
     }
 
 #endregion
@@ -475,6 +479,7 @@ public partial class MainWindow : Window, IMainCommands
         App.State.AddBackgroundWork($"Connecting to catalog", ConnectToDatabaseWork);
     }
 
+
     /*----------------------------------------------------------------------------
         %%Function: ConnectToDatabaseWork
         %%Qualified: Thetacat.MainApp.MainWindow.ConnectToDatabaseWork
@@ -488,9 +493,6 @@ public partial class MainWindow : Window, IMainCommands
             LogForApp(EventType.Information, "Beginning read catalog");
             MicroTimer timer = new MicroTimer();
 
-            List<Guid> deletedItems = ServiceInterop.GetDeletedMediaItems(App.State.ActiveProfile.CatalogID);
-
-            App.State.EnsureDeletedItemsCollateralRemoved(deletedItems);
             App.State.Catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, App.State.MetatagSchema).Wait();
             // good time to refresh the MRU now that we loaded the catalog and the schema
             App.State.MetatagMRU.Set(App.State.ActiveProfile.MetatagMru);

@@ -97,6 +97,16 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
+    public void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void DealWithPendingDeletedItems(Guid catalogID)
+    {
+        throw new NotImplementedException();
+    }
+
     protected virtual void OnOnItemDirtied(DirtyItemEventArgs<bool> e)
     {
         OnItemDirtied?.Invoke(this, e);
