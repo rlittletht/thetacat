@@ -2,7 +2,9 @@
 using static Thetacat.TcSettings.TcSettings;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using Thetacat.Filtering;
+using Thetacat.Types;
 
 namespace Thetacat.TcSettings;
 
@@ -77,6 +79,17 @@ public class Profile
     }
 
     public override string ToString() => Name ?? string.Empty;
+
+    public string RootForCatalogCache()
+    {
+        if (string.IsNullOrEmpty((LocalCatalogCache)))
+            throw new CatException("no root path for catalog cache");
+
+        string path = Path.Combine(LocalCatalogCache, CatalogID.ToString());
+        Directory.CreateDirectory(path);
+
+        return path;
+    }
 
     public void MigrateToLatest()
     {

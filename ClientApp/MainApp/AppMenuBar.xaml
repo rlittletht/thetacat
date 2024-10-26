@@ -61,6 +61,8 @@
             <MenuItem Header="Test QueueBackground Process (1m Second)" Click="StartBackground1m" />
             <MenuItem Header="Test Indeterminate Background Process (10s Second)" Click="StartBackground10sIndet" />
             <MenuItem Header="Force media scan" Click="ForceSyncMediaScan"/>
+            <MenuItem Header="Force write mediatag cache" Click="ForceWriteMediatagCache" />
+            <MenuItem Header="Force read mediatag cache" Click="ForceReadMediatagCache" />
         </MenuItem>
     </Menu>
 </UserControl>

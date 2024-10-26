@@ -11,10 +11,12 @@ using Thetacat.BackupRestore.Restore;
 using Thetacat.Explorer;
 using Thetacat.Import;
 using Thetacat.Model.Caching;
+using Thetacat.Model.Mediatags.Cache;
 using Thetacat.Repair;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.UI.Options;
+using Thetacat.Util;
 
 namespace Thetacat.MainApp;
 
@@ -39,7 +41,7 @@ public partial class AppMenuBar : UserControl
         m_commands = commands;
     }
 
-    #region Menu Handlers
+#region Menu Handlers
 
     /*----------------------------------------------------------------------------
         %%Function: UploadItems
@@ -329,6 +331,33 @@ public partial class AppMenuBar : UserControl
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: ForceWriteMediatagCache
+        %%Qualified: Thetacat.MainApp.AppMenuBar.ForceWriteMediatagCache
+    ----------------------------------------------------------------------------*/
+    private void ForceWriteMediatagCache(object sender, RoutedEventArgs e)
+    {
+        MicroTimer timer = new MicroTimer();
+
+        MediatagCache cache = MediatagCache.CreateFromCatalog(App.State.Catalog, 0, 0);
+
+        cache.WriteCache();
+
+        MessageBox.Show($"Write complete. Elapsed: {timer.Elapsed()}");
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ForceReadMediatagCache
+        %%Qualified: Thetacat.MainApp.AppMenuBar.ForceReadMediatagCache
+    ----------------------------------------------------------------------------*/
+    private void ForceReadMediatagCache(object sender, RoutedEventArgs e)
+    {
+        MicroTimer timer = new MicroTimer();
+
+        MediatagCache cache = MediatagCache.CreateFromFile();
+
+        MessageBox.Show($"Read complete. Elapsed: {timer.Elapsed()}");
+    }
+    /*----------------------------------------------------------------------------
         %%Function: DoRepairImportTables
         %%Qualified: Thetacat.MainApp.AppMenuBar.DoRepairImportTables
     ----------------------------------------------------------------------------*/
@@ -338,9 +367,10 @@ public partial class AppMenuBar : UserControl
 
         import.RepairImportTables(App.State.Catalog, App.State.Cache);
     }
-    #endregion
 
-    #region Debug Tools
+#endregion
+
+#region Debug Tools
 
     /*----------------------------------------------------------------------------
         %%Function: BackgroundTestTask
@@ -494,5 +524,6 @@ public partial class AppMenuBar : UserControl
     {
         ProgressDialog.DoWorkWithProgress(DoWork, m_commands?.Window);
     }
-    #endregion
+
+#endregion
 }

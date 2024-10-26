@@ -17,5 +17,5 @@ public class ServiceMediaTag
 {
     public Guid MediaId { get; set; } = Guid.Empty;
     public Guid Id { get; set; } = Guid.Empty;
-    public string? Value { get; init; }
+    public string? Value { get; set; }
 }
