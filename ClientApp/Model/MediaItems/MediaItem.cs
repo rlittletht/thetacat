@@ -25,6 +25,7 @@ using Thetacat.Util;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.ImageCaching;
 using System.Diagnostics.CodeAnalysis;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
 

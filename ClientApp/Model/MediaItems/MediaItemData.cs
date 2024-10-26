@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using Thetacat.Import;
 using Thetacat.ServiceClient;
 using Thetacat.Util;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
 

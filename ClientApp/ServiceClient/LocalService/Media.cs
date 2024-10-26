@@ -7,6 +7,7 @@ using TCore.SqlClient;
 using Thetacat.Logging;
 using Thetacat.Model;
 using Thetacat.Types;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -66,7 +67,7 @@ public class Media
                 items,
                 item =>
                 {
-                    foreach (Model.MediaTag tag in item.MediaTags)
+                    foreach (MediaTag tag in item.MediaTags)
                     {
                         tagsToInsert.Add(
                             new ServiceMediaTag()

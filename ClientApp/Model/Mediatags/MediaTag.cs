@@ -2,7 +2,7 @@
 using System.Windows;
 using Thetacat.Metatags.Model;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Mediatags;
 
 public class MediaTag
 {
@@ -24,14 +24,14 @@ public class MediaTag
             MessageBox.Show($"MediaTag specified metatag ${metatagId} which did not exist in the schema. Creating a LocalOnly metatag");
 
             tag = new Metatag()
-                  {
-                      Description = $"Unknown metatag ${metatagId}",
-                      ID = metatagId,
-                      LocalOnly = true,
-                      Name = $"__${metatagId}",
-                      Parent = null,
-                      Standard = "unknown"
-                  };
+            {
+                Description = $"Unknown metatag ${metatagId}",
+                ID = metatagId,
+                LocalOnly = true,
+                Name = $"__${metatagId}",
+                Parent = null,
+                Standard = "unknown"
+            };
         }
 
         return new MediaTag(tag, value);

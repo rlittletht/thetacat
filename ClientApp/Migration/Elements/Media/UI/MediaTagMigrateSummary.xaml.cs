@@ -8,6 +8,7 @@ using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Migration.Elements.Metadata.UI;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.Types;
 using Thetacat.Util;
 

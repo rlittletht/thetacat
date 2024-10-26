@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Thetacat.Metatags.Model;
+using Thetacat.Model.Mediatags;
 using KeyValuePair = System.Collections.Generic.KeyValuePair;
 
 namespace Thetacat.Model.Client;

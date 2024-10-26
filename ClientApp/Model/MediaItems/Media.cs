@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 
 namespace Thetacat.Model;

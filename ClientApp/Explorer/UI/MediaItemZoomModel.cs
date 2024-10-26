@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using Emgu.CV.Util;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Explorer.UI;
 

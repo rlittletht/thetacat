@@ -4,6 +4,7 @@ using System.Windows.Forms.Design;
 using TCore.PostfixText;
 using Thetacat.Metatags;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.Types;
 
 namespace Thetacat.Filtering;

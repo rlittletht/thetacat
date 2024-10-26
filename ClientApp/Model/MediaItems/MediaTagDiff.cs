@@ -1,4 +1,5 @@
 ﻿using System;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
 

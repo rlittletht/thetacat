@@ -18,6 +18,7 @@ using Thetacat.Explorer.UI;
 using Thetacat.Import;
 using Thetacat.ServiceClient;
 using System.Windows.Media;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Explorer;
 

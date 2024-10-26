@@ -115,6 +115,5 @@ namespace Thetacat
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $"thetacat\\{ClientDatabaseName}");
         }
-        
     }
 }

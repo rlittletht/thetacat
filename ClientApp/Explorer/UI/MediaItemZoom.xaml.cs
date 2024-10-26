@@ -8,6 +8,7 @@ using Thetacat.Explorer.UI;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
+using Thetacat.Model.Mediatags;
 using Thetacat.Types;
 using Thetacat.Util;
 

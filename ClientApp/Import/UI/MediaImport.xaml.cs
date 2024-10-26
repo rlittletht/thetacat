@@ -18,6 +18,7 @@ using Thetacat.Metatags;
 using Thetacat.Import.UI.Commands;
 using Thetacat.Metatags.Model;
 using Thetacat.Repair;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Import.UI
 {

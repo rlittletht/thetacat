@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 using Thetacat.UI;
 

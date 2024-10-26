@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 
