@@ -16,7 +16,8 @@ namespace Thetacat.Model.Mediatags.Cache;
 
 public class MediatagCache
 {
-    private readonly List<ServiceMediaTag> m_tags = new();
+    private readonly Dictionary<Guid, List<ServiceMediaTag>> m_tags = new();
+
     private readonly string m_cacheFilepath = Path.Combine(App.State.ActiveProfile.RootForCatalogCache(), "metatag-cache.xml");
 
     private int m_tagClock;
@@ -29,7 +30,7 @@ public class MediatagCache
 
     public static string s_uri = "https://schemas.thetasoft.com/thetacat/metatagCache/2024";
 
-    #region Write
+#region Write
 
     /*----------------------------------------------------------------------------
         %%Function: CreateFromCatalog
@@ -43,13 +44,18 @@ public class MediatagCache
         {
             foreach (MediaTag tag in item.MediaTags)
             {
-                cache.m_tags.Add(
+                ServiceMediaTag serviceTag =
                     new ServiceMediaTag()
                     {
                         Id = tag.Metatag.ID,
                         MediaId = item.ID,
                         Value = tag.Value
-                    });
+                    };
+
+                if (!cache.m_tags.ContainsKey(serviceTag.MediaId))
+                    cache.m_tags.Add(serviceTag.MediaId, new List<ServiceMediaTag>());
+
+                cache.m_tags[serviceTag.MediaId].Add(serviceTag);
             }
         }
 
@@ -94,6 +100,18 @@ public class MediatagCache
     }
 
     /*----------------------------------------------------------------------------
+        %%Function: WriteMediatagsByMediaId
+        %%Qualified: Thetacat.Model.Mediatags.Cache.MediatagCache.WriteMediatagsByMediaId
+    ----------------------------------------------------------------------------*/
+    public static void WriteMediatagsByMediaId(XmlWriter writer, Dictionary<Guid, List<ServiceMediaTag>> tags)
+    {
+        foreach (Guid id in tags.Keys)
+        {
+            MediatagsCacheItem.Write(writer, id, tags[id]);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
         %%Function: WriteCache
         %%Qualified: Thetacat.Model.Mediatags.Cache.MediatagCache.WriteCache
     ----------------------------------------------------------------------------*/
@@ -112,13 +130,14 @@ public class MediatagCache
                 _writer.WriteAttributeString(s_attr_tagClock, m_tagClock.ToString());
                 _writer.WriteAttributeString(s_attr_resetClock, m_resetClock.ToString());
 
-                WriteMediatags(_writer, m_tags);
+                WriteMediatagsByMediaId(_writer, m_tags);
             });
     }
 
-    #endregion
+#endregion
 
-    #region Read
+#region Read
+
     /*----------------------------------------------------------------------------
         %%Function: CreateFromFile
         %%Qualified: Thetacat.Model.Mediatags.Cache.MediatagCache.CreateFromFile
@@ -169,9 +188,11 @@ public class MediatagCache
     ----------------------------------------------------------------------------*/
     static bool FParseElements(XmlReader reader, string element, MediatagCache cache)
     {
-        if (element == MediatagCacheItem.s_rootElement)
+        if (element == MediatagsCacheItem.s_rootElement)
         {
-            cache.m_tags.Add(MediatagCacheItem.CreateFromReader(reader).MediaTag);
+            MediatagsCacheItem item = MediatagsCacheItem.CreateFromReader(reader);
+
+            cache.m_tags.Add(item.MediaId, item.Tags);
             return true;
         }
 
@@ -186,5 +207,6 @@ public class MediatagCache
     {
         return XmlIO.FReadElement(reader, this, s_rootElement, FParseAttributes, FParseElements);
     }
-    #endregion
+
+#endregion
 }

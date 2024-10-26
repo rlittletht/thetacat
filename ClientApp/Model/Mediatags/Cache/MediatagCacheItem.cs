@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Xml;
+using Thetacat.Metatags.Model;
 using Thetacat.ServiceClient;
 using XMLIO;
 
@@ -8,7 +9,7 @@ namespace Thetacat.Model.Mediatags.Cache;
 
 public class MediatagCacheItem
 {
-    public static string s_rootElement = "mediatag";
+    public static string s_rootElement = "tag";
 
     public static string s_attr_MediaId = "mediaId";
     public static string s_attr_Id = "id";
@@ -26,10 +27,14 @@ public class MediatagCacheItem
             s_rootElement,
             (_writer) =>
             {
-                _writer.WriteAttributeString("mediaId", tag.MediaId.ToString());
                 _writer.WriteAttributeString("id", tag.Id.ToString());
                 if (tag.Value != null)
+                {
+                    if (string.IsNullOrWhiteSpace(tag.Value))
+                        writer.WriteAttributeString("xml", "space", null, "preserve");
+
                     _writer.WriteString(tag.Value);
+                }
             });
     }
 
