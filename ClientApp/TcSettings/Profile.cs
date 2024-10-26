@@ -77,4 +77,14 @@ public class Profile
     }
 
     public override string ToString() => Name ?? string.Empty;
+
+    public void MigrateToLatest()
+    {
+        if (string.IsNullOrEmpty(LocalCatalogCache) && !string.IsNullOrEmpty(_DerivativeCache))
+        {
+            LocalCatalogCache = _DerivativeCache;
+        }
+
+        _DerivativeCache = null;
+    }
 }

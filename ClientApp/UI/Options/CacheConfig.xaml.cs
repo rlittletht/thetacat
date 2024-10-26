@@ -33,7 +33,7 @@ public partial class CacheConfig : UserControl
         _Model.ProfileOptions = catOptionsModel.CurrentProfile;
 
         _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
-        _Model.DerivativeLocation = _Model.ProfileOptions?.Profile._DerivativeCache ?? string.Empty;
+        _Model.LocalCatalogCacheLocation = _Model.ProfileOptions?.Profile.LocalCatalogCache ?? string.Empty;
 
         // we might have changed the sql server connection string, so use that string
         App.State.PushTemporarySqlConnection(sqlConnection);
@@ -137,10 +137,10 @@ public partial class CacheConfig : UserControl
 
     public bool FSaveSettings(string sqlConnection, Guid catalogID)
     {
-        PathSegment derivativeLocation = new PathSegment(_Model.DerivativeLocation);
+        PathSegment localCatalogCacheRoot = new PathSegment(_Model.LocalCatalogCacheLocation);
         try
         {
-            PathSegment formatsDirectory = PathSegment.Join(derivativeLocation, "cat-derivatives/formats");
+            PathSegment formatsDirectory = PathSegment.Join(localCatalogCacheRoot, "cat-derivatives/formats");
             // other derivatives may exist but they will create their directories on demand
 
             if (!Directory.Exists(formatsDirectory.Local))
@@ -154,11 +154,11 @@ public partial class CacheConfig : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"can't create or use derivative location {derivativeLocation}: {ex}");
+            MessageBox.Show($"can't create or use derivative location {localCatalogCacheRoot}: {ex}");
             return false;
         }
 
-        _Model.ProfileOptions!.Profile._DerivativeCache = derivativeLocation;
+        _Model.ProfileOptions!.Profile.LocalCatalogCache = localCatalogCacheRoot;
         _Model.ProfileOptions.Profile.CacheLocation = _Model.CacheLocation;
 
         // verify workgroup settings are valid

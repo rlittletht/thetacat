@@ -24,10 +24,10 @@ public class CacheConfigModel: INotifyPropertyChanged
         set => SetField(ref m_profileOptions, value);
     }
 
-    public string DerivativeLocation
+    public string LocalCatalogCacheLocation
     {
-        get => m_derivativeLocation;
-        set => SetField(ref m_derivativeLocation, value);
+        get => m_localCatalogCacheLocation;
+        set => SetField(ref m_localCatalogCacheLocation, value);
     }
 
     public class WorkgroupItem
@@ -60,7 +60,7 @@ public class CacheConfigModel: INotifyPropertyChanged
     private string m_workgroupCacheRoot = string.Empty;
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
-    private string m_derivativeLocation = string.Empty;
+    private string m_localCatalogCacheLocation = string.Empty;
     private ProfileOptions? m_profileOptions;
     private bool m_createNewWorkgroup;
 

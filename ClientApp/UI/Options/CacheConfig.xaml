@@ -30,8 +30,10 @@
                 Client Configuration
             </GroupBox.Header>
             <StackPanel Margin="8 0 8 0">
-                <TextBlock>Derivative cache location</TextBlock>
-                <TextBox Text="{Binding Path=DerivativeLocation}"></TextBox>
+                <TextBlock>Local catalog cache location</TextBlock>
+                <TextBox Text="{Binding Path=LocalCatalogCacheLocation}"
+                         ToolTip="This is the root of the catalog caches. Derivatives are stored at the root, and each catalog can have a subdirectory with its own local caches."
+                         ></TextBox>
             </StackPanel>
         </GroupBox>
         <GroupBox Grid.Row="1" Margin="5" Name="WorkgroupOptions">

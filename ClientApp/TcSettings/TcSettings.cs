@@ -26,6 +26,16 @@ public class TcSettings
     public string LastExportPath = string.Empty;
     public Dictionary<string, Profile> Profiles = new();
 
+    private void MigrateToLatest()
+    {
+        // go through each settings set and convert it to the modern format
+
+        foreach (Profile profile in Profiles.Values)
+        {
+            profile.MigrateToLatest();
+        }
+    }
+
     public TcSettings()
     {
 #pragma warning disable format // @formatter:off
@@ -88,6 +98,7 @@ public class TcSettings
                     .AddElement("CacheOptions")
                         .AddChildElement("Client")
                             .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache = value)
+                            .AddElement("LocalCatalogCacheRoot", (_, context) => context!.GetDictionaryValue<string, Profile>().LocalCatalogCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>().LocalCatalogCache = value)
                             .AddElement("ClientDatabase", (_, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName = value ?? "")
                             .Pop()
                         .Pop()
@@ -122,6 +133,7 @@ public class TcSettings
         {
             using ReadFile<TcSettings> file = ReadFile<TcSettings>.CreateSettingsFile(App.SettingsPath);
             file.DeSerialize(XmlSettingsDescription, this);
+            MigrateToLatest();
         }
         catch (Exception ex) when
             (ex is DirectoryNotFoundException
