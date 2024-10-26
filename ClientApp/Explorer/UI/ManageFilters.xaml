@@ -41,7 +41,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Vertical" Grid.Row="0">
                         <TextBlock Text="Source: " />
-                        <TextBox Text="{Binding Path=SelectedFilter.FilterType}" Margin="0" IsEnabled="False"/>
+                        <TextBox Text="{Binding Path=SelectedFilter.FilterType}" Margin="0" IsEnabled="False" />
                     </StackPanel>
                     <TextBlock Text="Description" Grid.Row="1" />
                     <TextBox Text="{Binding Path=SelectedFilter.Definition.Description, Mode=OneWay}"
@@ -59,13 +59,16 @@
                 </Grid>
             </GroupBox>
             <DockPanel Grid.Row="2" LastChildFill="False">
-                <Button Content="Set As Default" Click="DoSetAsDefault" Height="24" Margin="5 0 0 0"
-                        DockPanel.Dock="Left" Width="96" />
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="5 5 5 5">
-                    <Button Content="New" Click="DoNewFilter" Height="24" Margin="5 0 0 0" Width="{StaticResource ButtonWidth}" />
-                    <Button Content="Edit" Click="DoEditFilter" Height="24" Margin="5 0 0 0" Width="{StaticResource ButtonWidth}" />
-                    <Button Content="Delete" Click="DeleteFilter" Height="24" Margin="5 0 0 0" Width="{StaticResource ButtonWidth}" />
-                    <Button Content="Apply" IsDefault="True" Click="DoApply" Height="24" Margin="5 0 0 0" Width="{StaticResource ButtonWidth}" />
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left"
+                            Style="{StaticResource StackPanel.ButtonStack-MediumWidth-Tight}">
+                    <Button Content="Set As Default" Click="DoSetAsDefault"
+                            Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults-Wide}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Style="{StaticResource StackPanel.ButtonStack-MediumWidth-Tight}">
+                    <Button Content="New" Click="DoNewFilter" Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults}" />
+                    <Button Content="Edit" Click="DoEditFilter" Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults}" />
+                    <Button Content="Delete" Click="DeleteFilter" Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults}" />
+                    <Button Content="Apply" IsDefault="True" Click="DoApply" Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults}" />
                 </StackPanel>
             </DockPanel>
         </Grid>
