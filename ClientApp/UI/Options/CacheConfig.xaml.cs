@@ -33,7 +33,7 @@ public partial class CacheConfig : UserControl
         _Model.ProfileOptions = catOptionsModel.CurrentProfile;
 
         _Model.CacheLocation = _Model.ProfileOptions?.Profile.CacheLocation ?? string.Empty;
-        _Model.DerivativeLocation = _Model.ProfileOptions?.Profile.DerivativeCache ?? string.Empty;
+        _Model.DerivativeLocation = _Model.ProfileOptions?.Profile._DerivativeCache ?? string.Empty;
 
         // we might have changed the sql server connection string, so use that string
         App.State.PushTemporarySqlConnection(sqlConnection);
@@ -158,7 +158,7 @@ public partial class CacheConfig : UserControl
             return false;
         }
 
-        _Model.ProfileOptions!.Profile.DerivativeCache = derivativeLocation;
+        _Model.ProfileOptions!.Profile._DerivativeCache = derivativeLocation;
         _Model.ProfileOptions.Profile.CacheLocation = _Model.CacheLocation;
 
         // verify workgroup settings are valid

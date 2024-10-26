@@ -87,7 +87,7 @@ public class TcSettings
                         .Pop()
                     .AddElement("CacheOptions")
                         .AddChildElement("Client")
-                            .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache = value)
+                            .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache = value)
                             .AddElement("ClientDatabase", (_, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName = value ?? "")
                             .Pop()
                         .Pop()

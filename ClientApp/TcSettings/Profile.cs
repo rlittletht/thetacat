@@ -34,7 +34,9 @@ public class Profile
     public string? TimelineOrder;
     public bool? ExpandMediaStacksInExplorers;
 
-    public string? DerivativeCache;
+    public string? _DerivativeCache;
+    public string? DerivativeCache => LocalCatalogCache;
+    public string? LocalCatalogCache;
 
     public List<string> MetatagMru = new();
     public List<MapPair> ElementsSubstitutions = new();
@@ -70,7 +72,8 @@ public class Profile
         TimelineType = basedOn.TimelineType;
         ExpandMediaStacksInExplorers = basedOn.ExpandMediaStacksInExplorers;
         TimelineOrder = basedOn.TimelineOrder;
-        DerivativeCache = basedOn.DerivativeCache;
+        _DerivativeCache = basedOn._DerivativeCache;
+        LocalCatalogCache = basedOn.LocalCatalogCache;
     }
 
     public override string ToString() => Name ?? string.Empty;
