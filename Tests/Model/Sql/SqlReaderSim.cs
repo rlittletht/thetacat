@@ -42,6 +42,7 @@ public class SqlReaderSim: ISqlReader
     public long GetInt64(int index) => throw new NotImplementedException();
 
     public DateTime GetDateTime(int index) => throw new NotImplementedException();
+    public bool GetBoolean(int index) => throw new NotImplementedException();
 
     public short? GetNullableInt16(int index) => throw new NotImplementedException();
 
@@ -56,6 +57,8 @@ public class SqlReaderSim: ISqlReader
     public long? GetNullableInt64(int index) => throw new NotImplementedException();
 
     public DateTime? GetNullableDateTime(int index) => throw new NotImplementedException();
+    public bool? GetNullableBoolean(int index) => throw new NotImplementedException();
+
     public bool IsDBNull(int index) => throw new NotImplementedException();
 
     Type ISqlReader.GetFieldAffinity(int index) => throw new NotImplementedException();

@@ -65,7 +65,7 @@ public class MediatagCacheItem
         %%Function: CreateFromReader
         %%Qualified: Thetacat.Model.Mediatags.Cache.MediatagCacheItem.CreateFromReader
     ----------------------------------------------------------------------------*/
-    public static MediatagCacheItem CreateFromReader(XmlReader reader)
+    public static MediatagCacheItem CreateFromReader(XmlReader reader, Guid mediaId)
     {
         MediatagCacheItem item = new MediatagCacheItem();
         XmlIO.ContentCollector collector = new XmlIO.ContentCollector();
@@ -73,6 +73,7 @@ public class MediatagCacheItem
         XmlIO.FReadElement(reader, item, s_rootElement, FParseAttributes, null, collector);
 
         item.m_creating.Value = collector.NullContent ? null : collector.ToString();
+        item.MediaTag.MediaId = mediaId;
 
         return item;
     }

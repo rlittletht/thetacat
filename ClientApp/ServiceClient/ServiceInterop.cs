@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.Marshalling;
 using Thetacat.Import;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -84,12 +85,9 @@ public class ServiceInterop
         LocalService.Media.InsertNewMediaItems(catalogID, newItems);
     }
 
-    public static ServiceCatalog ReadFullCatalog(Guid catalogID)
-    {
-        return LocalService.Media.ReadFullCatalog_OldWithJoin(catalogID);
-    }
+    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
+    public static ServiceMediaTagsWithClocks ReadMediaTagsForClock(Guid catalogID, int tagClock) => LocalService.Mediatags.ReadMediaTagsForClock(catalogID, tagClock);
 
-    public static List<ServiceMediaTag> ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Media.ReadFullCatalogMediaTags(catalogID);
     public static List<ServiceMediaItem> ReadFullCatalogMedia(Guid catalogID) => LocalService.Media.ReadFullCatalogMedia(catalogID);
 
     public static List<ServiceWorkgroup> GetAvailableWorkgroups(Guid catalogID)

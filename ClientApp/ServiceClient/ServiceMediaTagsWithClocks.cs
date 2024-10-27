@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Thetacat.ServiceClient;
 
@@ -13,11 +14,9 @@ namespace Thetacat.ServiceClient;
     the model ServiceMediaTag, it won't have its MediaId set (since it will be
     related to its MediaItem by its parent/child relationship
 ----------------------------------------------------------------------------*/
-public class ServiceMediaTag
+public class ServiceMediaTagsWithClocks
 {
-    public Guid MediaId { get; set; } = Guid.Empty;
-    public Guid Id { get; set; } = Guid.Empty;
-    public string? Value { get; set; }
-    public int Clock { get; set; } = 0;
-    public bool Deleted { get; set; } = false;
+    public List<ServiceMediaTag> Tags { get; set; } = new();
+    public int TagClock { get; set; } = 0;
+    public int ResetClock { get; set; } = 0;
 }

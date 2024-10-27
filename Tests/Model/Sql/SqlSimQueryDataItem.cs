@@ -37,6 +37,7 @@ public class SqlSimQueryDataItem: ISqlReader
     public double GetDouble(int index) => (double)(m_data[record][index] ?? throw new NullReferenceException());
     public long GetInt64(int index) => (Int64)(m_data[record][index] ?? throw new NullReferenceException());
     public DateTime GetDateTime(int index) => DateTime.Parse((string)(m_data[record][index] ?? throw new NullReferenceException()));
+    public bool GetBoolean(int index) => throw new NotImplementedException();
 
     public short? GetNullableInt16(int index) => (Int16?)(m_data[record][index]);
     public int? GetNullableInt32(int index) => (Int32?)(m_data[record][index]);
@@ -45,6 +46,8 @@ public class SqlSimQueryDataItem: ISqlReader
     public double? GetNullableDouble(int index) => (double?)(m_data[record][index]);
     public long? GetNullableInt64(int index) => (Int64?)(m_data[record][index]);
     public DateTime? GetNullableDateTime(int index) => m_data[record][index] == null ? null : DateTime.Parse((string)m_data[record][index]!);
+    public bool? GetNullableBoolean(int index) => throw new NotImplementedException();
+
     public bool IsDBNull(int index) => throw new NotImplementedException();
 
     public Type GetFieldAffinity(int index) => throw new NotImplementedException();

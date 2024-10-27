@@ -62,7 +62,7 @@ public class MediatagsCacheItem
     {
         if (element == MediatagCacheItem.s_rootElement)
         {
-            item.m_creating.Add(MediatagCacheItem.CreateFromReader(reader).MediaTag);
+            item.m_creating.Add(MediatagCacheItem.CreateFromReader(reader, item.MediaId).MediaTag);
             return true;
         }
 

@@ -14,6 +14,7 @@ using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.Mediatags;
 using Thetacat.Model.Caching;
+using Thetacat.Model.Mediatags.Cache;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -262,17 +263,21 @@ public class Catalog : ICatalog
                     return catalog;
                 });
 
-        Task<List<ServiceMediaTag>> taskGetMediaTags =
+        Task<IEnumerable<ServiceMediaTag>> taskGetMediaTags =
             Task.Run(
                 () =>
                 {
                     MicroTimer timer = new MicroTimer();
 
-                    List<ServiceMediaTag> tags = ServiceInterop.ReadFullCatalogMediaTags(catalogID);
+                    MediatagCache tagCache = new MediatagCache(catalogID);
+                    tagCache.ReadFullCatalogMediaTagsWithCache();
 
                     App.LogForApp(EventType.Information, $"GetMediaTags elapsed: {timer.Elapsed()}");
 
-                    return tags;
+                    // rewrite the cache if dirty
+                    tagCache.WriteCache(false/*fWriteAlways*/);
+
+                    return tagCache as IEnumerable<ServiceMediaTag>;
                 });
 
         List<Task> tasks = new List<Task>() { taskGetMedia, taskGetMediaTags };

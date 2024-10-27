@@ -80,12 +80,12 @@ public class Profile
 
     public override string ToString() => Name ?? string.Empty;
 
-    public string RootForCatalogCache()
+    public string RootForCatalogCache(Guid? catalogID)
     {
         if (string.IsNullOrEmpty((LocalCatalogCache)))
             throw new CatException("no root path for catalog cache");
 
-        string path = Path.Combine(LocalCatalogCache, CatalogID.ToString());
+        string path = Path.Combine(LocalCatalogCache, (catalogID ?? CatalogID).ToString());
         Directory.CreateDirectory(path);
 
         return path;

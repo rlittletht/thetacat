@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
@@ -47,7 +48,7 @@ public class MetatagMRU
 
             if (tag == null)
             {
-                MessageBox.Show($"unknown metatag {id} in MRU");
+                App.LogForApp(EventType.Error, $"unknown metatag {id} in MRU");
                 continue;
             }
 

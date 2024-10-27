@@ -133,82 +133,6 @@ public class Media
             cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
     }
 
-    static readonly string s_queryFullMediaTags = @"
-            SELECT $$tcat_mediatags$$.id, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value
-            FROM $$#tcat_mediatags$$
-            WHERE $$tcat_mediatags$$.catalog_id=@CatalogID";
-
-    public static List<ServiceMediaTag> ReadFullCatalogMediaTags(Guid catalogID)
-    {
-        HashSet<Guid> mediaAdded = new();
-
-        return LocalServiceClient.DoGenericQueryWithAliases<List<ServiceMediaTag>>(
-            s_queryFullMediaTags,
-            (ISqlReader reader, Guid correlationId, ref List<ServiceMediaTag> building) =>
-            {
-                Guid mediaId = reader.GetGuid(0);
-                building.Add(
-                    new ServiceMediaTag()
-                    {
-                        Id = reader.GetGuid(1),
-                        MediaId = mediaId,
-                        Value = reader.GetNullableString(2)
-                    });
-            },
-            s_aliases,
-            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
-    }
-
-    static readonly string s_queryFullCatalogWithTags = @"
-            SELECT $$tcat_media$$.id, $$tcat_media$$.virtualPath, $$tcat_media$$.mimeType, $$tcat_media$$.state, $$tcat_mediatags$$.metatag, $$tcat_mediatags$$.value, $$tcat_media$$.md5
-            FROM $$#tcat_media$$
-            FULL OUTER JOIN $$#tcat_mediatags$$ ON $$tcat_mediatags$$.id = $$tcat_media$$.id
-            WHERE $$tcat_media$$.catalog_id=@CatalogID";
-
-    public static ServiceCatalog ReadFullCatalog_OldWithJoin(Guid catalogID)
-    {
-        HashSet<Guid> mediaAdded = new();
-
-        return LocalServiceClient.DoGenericQueryWithAliases<ServiceCatalog>(
-            s_queryFullCatalogWithTags,
-            (ISqlReader reader, Guid correlationId, ref ServiceCatalog building) =>
-            {
-                if (building.MediaItems == null || building.MediaTags == null)
-                {
-                    building.MediaItems = new List<ServiceMediaItem>();
-                    building.MediaTags = new List<ServiceMediaTag>();
-                }
-
-                Guid mediaId = reader.GetGuid(0);
-                if (!mediaAdded.Contains(mediaId))
-                {
-                    building.MediaItems.Add(
-                        new ServiceMediaItem()
-                        {
-                            Id = mediaId,
-                            VirtualPath = reader.GetString(1),
-                            MimeType = reader.GetString(2),
-                            State = reader.GetString(3),
-                            MD5 = reader.GetString(6)
-                        });
-                    mediaAdded.Add(mediaId);
-                }
-
-                if (!reader.IsDBNull(4))
-                {
-                    building.MediaTags.Add(
-                        new ServiceMediaTag()
-                        {
-                            MediaId = mediaId,
-                            Id = reader.GetGuid(4),
-                            Value = reader.GetNullableString(5)
-                        });
-                }
-            },
-            s_aliases,
-            cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
-    }
-
     static string BuildInsertItemSql(Guid catalogID, MediaItemDiff diffOp)
     {
         if (diffOp.ItemData == null)
@@ -268,91 +192,6 @@ public class Media
         return $"UPDATE tcat_media SET {setsSql} WHERE ID='{diffOp.ID.ToString()}' AND catalog_id='{catalogID}'";
     }
 
-    static string BuildMediaTagDelete(Guid catalogID, Guid mediaId, Guid metatagId)
-    {
-        return $"DELETE FROM tcat_mediatags WHERE id='{mediaId}' AND metatag='{metatagId}' AND catalog_id='{catalogID}' ";
-    }
-
-    static string BuildMediaTagInsert(Guid catalogID, Guid mediaId, MediaTag mediaTag)
-    {
-        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
-
-        return
-            $"INSERT INTO tcat_mediatags (catalog_id, id, metatag, value) VALUES ('{catalogID}', '{mediaId}', '{mediaTag.Metatag.ID}', {SqlText.Nullable(value)}) ";
-    }
-
-    static string BuildMediaTagUpdate(Guid catalogID, Guid mediaId, MediaTag mediaTag)
-    {
-        string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
-
-        return
-            $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)} WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
-    }
-
-    static List<string> BuildUpdateItemTagsSql(Guid catalogID, MediaItemDiff diffOp)
-    {
-        List<string> sets = new();
-
-        switch (diffOp.DiffOp)
-        {
-            case MediaItemDiff.Op.Insert:
-            {
-                if (diffOp.ItemData == null)
-                    throw new CatExceptionInternalFailure("no itemdata for insert");
-                // all the tags get inserted
-                foreach (KeyValuePair<Guid, MediaTag> tag in diffOp.ItemData.Tags)
-                {
-                    sets.Add(BuildMediaTagInsert(catalogID, diffOp.ID, tag.Value));
-                }
-
-                return sets;
-            }
-            case MediaItemDiff.Op.Delete:
-                // all the media tags associated with this media ID gets deleted
-                sets.Add($"DELETE FROM tcat_mediatags WHERE id='{diffOp.ID}' AND catalog_id='{catalogID}' ");
-                return sets;
-            case MediaItemDiff.Op.Update:
-                if (!diffOp.IsTagsChanged
-                    || diffOp.TagDiffs == null
-                    || diffOp.TagDiffs.Count == 0)
-                {
-                    return sets;
-                }
-
-                // for existing mediaitmes that are being updated, individual tags can be
-                // added, updated, or deleted...
-                foreach (MediaTagDiff tagDiff in diffOp.TagDiffs)
-                {
-                    switch (tagDiff.DiffOp)
-                    {
-                        case MediaTagDiff.Op.Delete:
-                            sets.Add(BuildMediaTagDelete(catalogID, diffOp.ID, tagDiff.ID));
-                            break;
-                        case MediaTagDiff.Op.Insert:
-                            sets.Add(
-                                BuildMediaTagInsert(
-                                    catalogID,
-                                    diffOp.ID,
-                                    tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
-                            break;
-                        case MediaTagDiff.Op.Update:
-                            sets.Add(
-                                BuildMediaTagUpdate(
-                                    catalogID,
-                                    diffOp.ID,
-                                    tagDiff.MediaTag ?? throw new CatExceptionInternalFailure("mediatag not set for insert")));
-                            break;
-                        default:
-                            throw new CatExceptionInternalFailure($"unknown diffop: {tagDiff.DiffOp}");
-                    }
-                }
-
-                return sets;
-            default:
-                throw new CatExceptionInternalFailure($"unknown MediaItemDiff.Op {diffOp.DiffOp}");
-        }
-    }
-
     public static void UpdateMediaItems(Guid catalogID, IEnumerable<MediaItemDiff> diffs)
     {
         Guid crid = Guid.NewGuid();
@@ -374,7 +213,7 @@ public class Media
                 diffs,
                 diff =>
                 {
-                    updateTags.AddRange(BuildUpdateItemTagsSql(catalogID, diff));
+                    updateTags.AddRange(Mediatags.BuildUpdateItemTagsSql(catalogID, diff));
                     return BuildUpdateItemSql(catalogID, diff);
                 },
                 1000,
@@ -407,7 +246,7 @@ public class Media
         SELECT id, min_workgroup_clock FROM tcat_deletedmedia WHERE catalog_id = @CatalogID";
 
     private static readonly string s_getDeletedItemsVectorClock = @"
-        SELECT value FROM tcat_vector_clocks WHERE catalog_id = @CatalogId";
+        SELECT value FROM tcat_vector_clocks WHERE catalog_id = @CatalogId AND name = 'workgroup-deleted-media'";
 
     /*----------------------------------------------------------------------------
         %%Function: GetDeletedMediaItems

@@ -340,7 +340,7 @@ public partial class AppMenuBar : UserControl
 
         MediatagCache cache = MediatagCache.CreateFromCatalog(App.State.Catalog, 0, 0);
 
-        cache.WriteCache();
+        cache.WriteCache(true/*fWriteAlways*/);
 
         MessageBox.Show($"Write complete. Elapsed: {timer.Elapsed()}");
     }
@@ -353,10 +353,13 @@ public partial class AppMenuBar : UserControl
     {
         MicroTimer timer = new MicroTimer();
 
-        MediatagCache cache = MediatagCache.CreateFromFile();
+        MediatagCache cache = new();
+        
+        cache.ReadFromFile();
 
         MessageBox.Show($"Read complete. Elapsed: {timer.Elapsed()}");
     }
+
     /*----------------------------------------------------------------------------
         %%Function: DoRepairImportTables
         %%Qualified: Thetacat.MainApp.AppMenuBar.DoRepairImportTables
