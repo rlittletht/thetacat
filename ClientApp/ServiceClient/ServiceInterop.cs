@@ -34,6 +34,9 @@ public class ServiceInterop
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
 
+    public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID) =>
+        LocalService.Mediatags.UpdateMediatagsWithNoClockAndincrementVectorClock(catalogID);
+
     public static void DeleteMediaItem(Guid catalogID, Guid id) => LocalService.Media.DeleteMediaItem(catalogID, id);
 
     public static void DeleteImportsForMediaItem(Guid catalogId, Guid id) => LocalService.Import.DeleteMediaItem(catalogId, id);
@@ -85,7 +88,10 @@ public class ServiceInterop
         LocalService.Media.InsertNewMediaItems(catalogID, newItems);
     }
 
-    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
+//    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
+
+    public static void RemoveDeletedMediatagsAndResetTagClock(Guid CatalogID) => LocalService.Mediatags.RemoveDeletedMediatagsAndResetTagClock(CatalogID);
+
     public static ServiceMediaTagsWithClocks ReadMediaTagsForClock(Guid catalogID, int tagClock) => LocalService.Mediatags.ReadMediaTagsForClock(catalogID, tagClock);
 
     public static List<ServiceMediaItem> ReadFullCatalogMedia(Guid catalogID) => LocalService.Media.ReadFullCatalogMedia(catalogID);

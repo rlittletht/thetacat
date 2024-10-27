@@ -13,6 +13,7 @@ using Thetacat.Import;
 using Thetacat.Model.Caching;
 using Thetacat.Model.Mediatags.Cache;
 using Thetacat.Repair;
+using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.UI.Options;
@@ -343,6 +344,32 @@ public partial class AppMenuBar : UserControl
         cache.WriteCache(true/*fWriteAlways*/);
 
         MessageBox.Show($"Write complete. Elapsed: {timer.Elapsed()}");
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ForceUpdateTagClocks
+        %%Qualified: Thetacat.MainApp.AppMenuBar.ForceUpdateTagClocks
+    ----------------------------------------------------------------------------*/
+    private void ForceUpdateTagClocks(object sender, RoutedEventArgs e)
+    {
+        MicroTimer timer = new MicroTimer();
+
+        MediatagCache.UpdateMediatagsWithNoClockAndincrementVectorClock();
+
+        MessageBox.Show($"Update complete. Elapsed: {timer.Elapsed()}");
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ForceRemoveDeletedMediatagsAndResetTagClock
+        %%Qualified: Thetacat.MainApp.AppMenuBar.ForceRemoveDeletedMediatagsAndResetTagClock
+    ----------------------------------------------------------------------------*/
+    private void ForceRemoveDeletedMediatagsAndResetTagClock(object sender, RoutedEventArgs e)
+    {
+        MicroTimer timer = new MicroTimer();
+
+        ServiceInterop.RemoveDeletedMediatagsAndResetTagClock(App.State.ActiveProfile.CatalogID);
+
+        MessageBox.Show($"Remove deleted items complete. Elapsed: {timer.Elapsed()}");
     }
 
     /*----------------------------------------------------------------------------

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
+using Microsoft.Data.SqlClient;
 using TCore.PostfixText;
 using TCore.XmlSettings;
 using Thetacat.Model;
@@ -338,5 +339,32 @@ public class MediatagCache : IEnumerable<ServiceMediaTag>
         // update our clocks
         m_resetClock = tagsWithClocks.ResetClock;
         m_tagClock = tagsWithClocks.TagClock;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateMediatagsWithNoClockAndincrementVectorClock
+        %%Qualified: Thetacat.Model.Mediatags.Cache.MediatagCache.UpdateMediatagsWithNoClockAndincrementVectorClock
+    ----------------------------------------------------------------------------*/
+    public static void UpdateMediatagsWithNoClockAndincrementVectorClock()
+    {
+        int retries = 5;
+
+        while (retries-- > 0)
+        {
+            try
+            {
+                ServiceInterop.UpdateMediatagsWithNoClockAndincrementVectorClock(App.State.ActiveProfile.CatalogID);
+                return;
+            }
+            catch (SqlException exc)
+            {
+                if (exc.Message != "Coherency Failure")
+                    throw;
+
+                // fallthrough to retry
+            }
+        }
+
+        throw new CatException("Could not update mediatags clock after 5 coherency failure retries");
     }
 }

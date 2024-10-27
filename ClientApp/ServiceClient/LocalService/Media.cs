@@ -30,14 +30,17 @@ public class Media
 
     private static readonly string s_queryInsertMediaTag = @"
         INSERT INTO tcat_mediatags
-            (catalog_id, id, metatag, value)
+            (catalog_id, id, metatag, value, deleted, clock)
         VALUES ";
 
+    // this is going to trigger a tag-clock reset
     private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
         DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id) AND tcat_stacks.catalog_id=@CatalogID
         DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id) AND tcat_stackmedia.catalog_id=@CatalogID
         DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id) AND tcat_mediatags.catalog_id=@CatalogID
-        DELETE FROM tcat_media WHERE catalog_id=@CatalogID";
+        DELETE FROM tcat_media WHERE catalog_id=@CatalogID
+        UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@Catalog";
+
 
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems
@@ -90,7 +93,7 @@ public class Media
                 s_queryInsertMediaTag,
                 tagsToInsert,
                 item =>
-                    $"('{catalogID}', {SqlText.SqlifyQuoted(item.MediaId.ToString())}, '{item.Id}', {SqlText.Nullable(item.Value)}) ",
+                    $"('{catalogID}', {SqlText.SqlifyQuoted(item.MediaId.ToString())}, '{item.Id}', {SqlText.Nullable(item.Value)}, 0, 0) ",
                 1000,
                 ", ",
                 s_aliases);
@@ -405,7 +408,7 @@ public class Media
         INSERT INTO tcat_deletedmedia (catalog_id, id, min_workgroup_clock) VALUES (@CatalogID, @MediaID, 0)";
 
     private static readonly string s_deleteMediaTagsForMedia = @"
-        DELETE FROM tcat_mediatags
+        UPDATE tcat_mediatags SET deleted = 1, clock = 0 
         WHERE catalog_id = @CatalogID AND id = @MediaID";
 
     private static readonly string s_deleteMediaItem = @"
