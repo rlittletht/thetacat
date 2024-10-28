@@ -103,6 +103,11 @@ public class MediaItemDiff: INotifyPropertyChanged
             }
             else
             {
+                if (item.Base.Tags[tag.Metatag.ID].Deleted && !tag.Deleted)
+                {
+                    diff.TagDiffs.Add(MediaTagDiff.CreateResurrect(tag));
+                    tagDifferences = true;
+                }
                 if (string.Compare(tag.Value, item.Base.Tags[tag.Metatag.ID].Value, StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
                     diff.TagDiffs.Add(MediaTagDiff.CreateUpdate(tag));

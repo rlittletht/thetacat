@@ -13,6 +13,7 @@ public class MediatagCacheItem
 
     public static string s_attr_MediaId = "mediaId";
     public static string s_attr_Id = "id";
+    public static string s_attr_Deleted = "deleted";
 
     public ServiceMediaTag MediaTag => m_creating;
 
@@ -27,7 +28,10 @@ public class MediatagCacheItem
             s_rootElement,
             (_writer) =>
             {
-                _writer.WriteAttributeString("id", tag.Id.ToString());
+                _writer.WriteAttributeString(s_attr_Id, tag.Id.ToString());
+                if (tag.Deleted)
+                    writer.WriteAttributeString(s_attr_Deleted, "true");
+
                 if (tag.Value != null)
                 {
                     if (string.IsNullOrWhiteSpace(tag.Value))
@@ -55,6 +59,14 @@ public class MediatagCacheItem
         if (attribute == s_attr_Id)
         {
             item.m_creating.Id = Guid.Parse(value);
+            return true;
+        }
+
+        if (attribute == s_attr_Deleted)
+        {
+            if (value == "true")
+                item.m_creating.Deleted = true;
+
             return true;
         }
 

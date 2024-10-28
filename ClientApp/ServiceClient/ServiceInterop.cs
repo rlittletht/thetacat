@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.Marshalling;
+using System.Threading;
 using Thetacat.Import;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -34,8 +35,32 @@ public class ServiceInterop
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
 
-    public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID) =>
-        LocalService.Mediatags.UpdateMediatagsWithNoClockAndincrementVectorClock(catalogID);
+    public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID)
+    {
+        // first, figure out how many we are going to update
+        int count = LocalService.Mediatags.GetMediatagsPendingClockCount(catalogID);
+        bool fNeedRebuildIndex = false;
+
+        if (count > 175000)
+        {
+            // better to disable the index and rebuild later
+            LocalService.Mediatags.DisableClockIndex();
+            fNeedRebuildIndex = true;
+        }
+
+        try
+        {
+            while (LocalService.Mediatags.UpdateMediatagsWithNoClockAndincrementVectorClockBatched(catalogID, 5000) > 0)
+            {
+                Thread.Sleep(100);
+            }
+        }
+        finally
+        {
+            if (fNeedRebuildIndex)
+                LocalService.Mediatags.RebuildClockIndex();
+        }
+    }
 
     public static void DeleteMediaItem(Guid catalogID, Guid id) => LocalService.Media.DeleteMediaItem(catalogID, id);
 

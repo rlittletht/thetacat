@@ -51,6 +51,7 @@ public class Media
     ----------------------------------------------------------------------------*/
     public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> items)
     {
+        throw new NotImplementedException("do someting about tag.Deleted below...");
         Guid crid = Guid.NewGuid();
         ISql sql = LocalServiceClient.GetConnection();
 

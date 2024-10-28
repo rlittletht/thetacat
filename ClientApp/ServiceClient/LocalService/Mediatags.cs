@@ -42,6 +42,67 @@ public class Mediatags
             DELETE FROM tcat_mediatags WHERE catalog_id=@Catalog AND deleted = 1
         COMMIT TRANSACTION";
 
+    private static readonly string s_getPendingClockCount = @"
+        SELECT count(*) FROM tcat_mediatags WHERE catalog_id=@CatalogID AND clock=0";
+
+    private static readonly string s_disableClockIndex = @"
+        ALTER INDEX idx_tcat_mediatags_new_clock ON tcat_mediatags DISABLE";
+
+    private static readonly string s_rebuildClockIndex = @"
+        ALTER INDEX idx_tcat_mediatags_new_clock ON tcat_mediatags REBUILD";
+
+    public static int GetMediatagsPendingClockCount(Guid catalogID)
+    {
+        ISql? sql = null;
+
+        try
+        {
+            sql = LocalServiceClient.GetConnection();
+
+            return sql.NExecuteScalar(
+                new SqlCommandTextInit(s_getPendingClockCount),
+                cmd => cmd.AddParameterWithValue("@CatalogID", catalogID));
+        }
+        finally
+        {
+            sql?.Close();
+        }
+    }
+
+    public static void DisableClockIndex()
+    {
+        ISql? sql = null;
+
+        try
+        {
+            sql = LocalServiceClient.GetConnection();
+
+            sql.ExecuteNonQuery(new SqlCommandTextInit(s_disableClockIndex));
+        }
+        finally
+        {
+            sql?.Close();
+        }
+    }
+
+    public static void RebuildClockIndex()
+    {
+        ISql? sql = null;
+
+        try
+        {
+            sql = LocalServiceClient.GetConnection();
+
+            sql.ExecuteNonQuery(
+                new SqlCommandTextInit(s_rebuildClockIndex),
+                cmd => cmd.CommandTimeout = 300);
+        }
+        finally
+        {
+            sql?.Close();
+        }
+    }
+
     public static void RemoveDeletedMediatagsAndResetTagClock(Guid catalogId)
     {
         ISql? sql = null;
@@ -65,15 +126,13 @@ public class Mediatags
     private static readonly string s_setPendingTagVectorClocks = @"
         DECLARE @version AS int
         DECLARE @count AS int
-
+        
         BEGIN TRANSACTION
 
         BEGIN TRY
 	        SET @version = (SELECT [value] FROM tcat_vector_clocks where catalog_id = @CatalogID AND name = 'mediatag-clock');
 
-	        WAITFOR DELAY '00:00:08'
-
-	        UPDATE tcat_mediatags SET clock = @version + 1 WHERE clock = 0 AND catalog_id = @CatalogID
+	        UPDATE tcat_mediatags SET clock = @version + 1 WHERE catalog_id = @CatalogID AND clock = 0
 
             set @count = @@ROWCOUNT
         
@@ -93,6 +152,42 @@ public class Mediatags
 		                END
                 END
 	        COMMIT TRANSACTION
+        END TRY
+        BEGIN CATCH
+	        ROLLBACK TRANSACTION
+	        RAISERROR('Coherency Failure', 18, 1)
+        END CATCH";
+
+    private static readonly string s_setPendingTagVectorClocksBatched = @"
+        DECLARE @version AS int
+        DECLARE @count AS int
+        
+        BEGIN TRANSACTION
+
+        BEGIN TRY
+	        SET @version = (SELECT [value] FROM tcat_vector_clocks where catalog_id = @CatalogID AND name = 'mediatag-clock');
+
+	        UPDATE TOP(@BatchSize) tcat_mediatags SET clock = @version + 1 WHERE catalog_id = @CatalogID AND clock = 0
+
+            set @count = @@ROWCOUNT
+        
+            IF @count > 0
+                BEGIN
+	                IF EXISTS(
+		                SELECT 1
+		                FROM tcat_vector_clocks WITH (UPDLOCK,HOLDLOCK)
+		                WHERE catalog_id = @CatalogID AND name = 'mediatag-clock' AND [value] = @version 
+		                )
+		                BEGIN
+			                UPDATE tcat_vector_clocks SET [value] = @version + 1 WHERE catalog_id = @CatalogID AND name = 'mediatag-clock' AND [value] = @version
+		                END
+	                ELSE
+		                BEGIN
+			                THROW 51000, 'Coherency failure', 1
+		                END
+                END
+	        COMMIT TRANSACTION
+            SELECT @count
         END TRY
         BEGIN CATCH
 	        ROLLBACK TRANSACTION
@@ -119,10 +214,45 @@ public class Mediatags
         try
         {
             sql = LocalServiceClient.GetConnection();
-
+            
             sql.ExecuteNonQuery(
                 new SqlCommandTextInit(s_setPendingTagVectorClocks),
-                cmd => cmd.AddParameterWithValue("@CatalogID", catalogId));
+                cmd =>
+                {
+                    cmd.CommandTimeout = 300; // 5 minute timeout
+                    cmd.AddParameterWithValue("@CatalogID", catalogId);
+                });
+        }
+        // we want exceptions to get thrown
+        finally
+        {
+            sql?.Close();
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateMediatagsWithNoClockAndincrementVectorClockBatched
+        %%Qualified: Thetacat.ServiceClient.LocalService.Mediatags.UpdateMediatagsWithNoClockAndincrementVectorClockBatched
+
+        Same as UpdateMediatagsWithNoClockAndincrementVectorClock but takes a
+        batch size. Returns the count of rows affected. If 0, we're done
+    ----------------------------------------------------------------------------*/
+    public static int UpdateMediatagsWithNoClockAndincrementVectorClockBatched(Guid catalogId, int batchSize)
+    {
+        ISql? sql = null;
+
+        try
+        {
+            sql = LocalServiceClient.GetConnection();
+
+            return sql.NExecuteScalar(
+                new SqlCommandTextInit(s_setPendingTagVectorClocksBatched),
+                cmd =>
+                {
+                    cmd.CommandTimeout = 300; // 5 minute timeout
+                    cmd.AddParameterWithValue("@CatalogID", catalogId);
+                    cmd.AddParameterWithValue("@BatchSize", batchSize);
+                });
         }
         // we want exceptions to get thrown
         finally
@@ -276,7 +406,7 @@ public class Mediatags
         string? value = mediaTag.Value == null ? null : SqlText.Sqlify(mediaTag.Value);
 
         return
-            $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)}, Clock = 0 WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
+            $"UPDATE tcat_mediatags SET value = {SqlText.Nullable(value)}, Clock = 0, Deleted = {(mediaTag.Deleted ? 1 : 0)} WHERE id='{mediaId}' AND metatag='{mediaTag.Metatag.ID}' AND catalog_id='{catalogID}' ";
     }
 
     public static List<string> BuildUpdateItemTagsSql(Guid catalogID, MediaItemDiff diffOp)

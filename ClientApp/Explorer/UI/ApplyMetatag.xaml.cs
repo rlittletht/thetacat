@@ -133,6 +133,9 @@ public partial class ApplyMetatag : Window
         {
             foreach (MediaTag tag in mediaItem.MediaTags)
             {
+                if (tag.Deleted)
+                    continue;
+
                 if (!tagsCounts.TryGetValue(tag.Metatag, out int count))
                 {
                     count = 0;

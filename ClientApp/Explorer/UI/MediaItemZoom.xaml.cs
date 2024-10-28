@@ -106,6 +106,9 @@ public partial class MediaItemZoom : Window
 
         foreach (MediaTag tag in m_model.MediaItem.MediaTags)
         {
+            if (tag.Deleted)
+                continue;
+
             m_model.Tags.Add(tag);
         }
     }

@@ -438,6 +438,9 @@ public partial class MediaExplorer : UserControl
             {
                 foreach (MediaTag tag in mediaItem.MediaTags)
                 {
+                    if (tag.Deleted)
+                        continue;
+
                     if (MetatagStandards.GetStandardFromStandardTag(tag.Metatag.Standard) != MetatagStandards.Standard.User
                         && tag.Metatag.ID != BuiltinTags.s_DontPushToCloudID
                         && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID)

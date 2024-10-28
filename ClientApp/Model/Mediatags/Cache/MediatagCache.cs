@@ -81,7 +81,8 @@ public class MediatagCache : IEnumerable<ServiceMediaTag>
                     {
                         Id = tag.Metatag.ID,
                         MediaId = item.ID,
-                        Value = tag.Value
+                        Value = tag.Value,
+                        Deleted = tag.Deleted
                     };
 
                 if (!cache.m_tags.ContainsKey(serviceTag.MediaId))
@@ -262,21 +263,7 @@ public class MediatagCache : IEnumerable<ServiceMediaTag>
     void UpdateTag(ServiceMediaTag tag)
     {
         if (!m_tags.ContainsKey(tag.MediaId))
-        {
-            if (tag.Deleted)
-                // nothing to do if we don't have this media item and the tag is deleted...
-                return;
-
             m_tags.Add(tag.MediaId, new List<ServiceMediaTag>());
-        }
-
-        if (tag.Deleted)
-        {
-            if (m_tags[tag.MediaId].RemoveAll((_tag) => _tag.Id == tag.Id) > 0)
-                m_dirty = true;
-
-            return;
-        }
 
         bool found = false;
 
@@ -284,6 +271,7 @@ public class MediatagCache : IEnumerable<ServiceMediaTag>
         {
             if (_tag.Id == tag.Id)
             {
+                _tag.Deleted = tag.Deleted;
                 _tag.Value = tag.Value;
                 _tag.Clock = tag.Clock;
                 found = true;

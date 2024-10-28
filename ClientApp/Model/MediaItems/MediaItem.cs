@@ -265,7 +265,18 @@ public class MediaItem : INotifyPropertyChanged
             return true;
         }
 
-        return Tags.TryGetValue(guid, out mediaTag);
+        if (Tags.TryGetValue(guid, out mediaTag))
+        {
+            if (mediaTag.Deleted)
+            {
+                mediaTag = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public bool HasMediaTag(Guid guid)
@@ -274,7 +285,12 @@ public class MediaItem : INotifyPropertyChanged
         if (guid == BuiltinTags.s_VirtualPathID)
             return true;
 
-        return Tags.ContainsKey(guid);
+        if (Tags.ContainsKey(guid))
+        {
+            return !Tags[guid].Deleted;
+        }
+
+        return false;
     }
 
     public int? ImageWidth
@@ -666,15 +682,16 @@ public class MediaItem : INotifyPropertyChanged
             tag,
             (key, oldMediaTag) =>
             {
-                if (oldMediaTag.Value != tag.Value)
+                if (oldMediaTag.Value != tag.Value || oldMediaTag.Deleted)
                 {
-                    if (!allowPropertyOverride)
+                    if (!allowPropertyOverride && !oldMediaTag.Deleted)
                     {
                         App.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                         log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                     }
 
                     oldMediaTag.Value = tag.Value;
+                    oldMediaTag.Deleted = false;
                 }
                 else
                 {

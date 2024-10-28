@@ -48,7 +48,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_tags = new();
         foreach (KeyValuePair<Guid, MediaTag> tag in source.m_tags)
         {
-            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value));
+            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value, tag.Value.Deleted));
         }
         m_virtualPath = source.m_virtualPath;
     }

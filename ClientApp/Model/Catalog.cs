@@ -234,6 +234,8 @@ public class Catalog : ICatalog
     ----------------------------------------------------------------------------*/
     public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
     {
+        MicroTimer timer = new();
+
         m_media.PushPendingChanges(catalogID, verify);
         foreach (KeyValuePair<MediaStackType, MediaStacks> item in m_mediaStacks)
         {
@@ -246,7 +248,9 @@ public class Catalog : ICatalog
                     : (count, _) => verify(count, itemType));
         }
 
+        MediatagCache.UpdateMediatagsWithNoClockAndincrementVectorClock();
         TriggerItemDirtied(false);
+        App.LogForApp(EventType.Warning, $"PushPendingChanges elapsed: {timer.Elapsed()}");
     }
 
     private async Task<ServiceCatalog> GetFullCatalogAsync(Guid catalogID)
@@ -346,7 +350,7 @@ public class Catalog : ICatalog
                     throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema, even after refreshing the schema");
             }
 
-            m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value));
+            m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value, tag.Deleted));
         }
 
         App.LogForApp(EventType.Information, $"MediaTags added: {timer.Elapsed()}");
