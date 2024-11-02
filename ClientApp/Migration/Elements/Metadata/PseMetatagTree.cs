@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Metatags;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -128,14 +129,27 @@ public class PseMetatagTree : IMetatagTreeItem
         return null;
     }
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
     {
         PseMetatagTree newItem = new PseMetatagTree();
+        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            if (workingBuffer == null)
+                newItem.Children.Add(clone);
+            else
+                workingBuffer.Add(clone);
+        }
+
+        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
+        if (workingBuffer != null)
+        {
+            cloneDelegatePostChildren?.Invoke(workingBuffer);
+            newItem.Children.AddRange(workingBuffer);
         }
 
         return newItem;

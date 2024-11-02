@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Metatags;
 
@@ -140,10 +141,10 @@ public class MetatagTreeItem: IMetatagTreeItem
 
         return null;
     }
-
+    
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
     {
         MetatagTreeItem newItem =
             new MetatagTreeItem()
@@ -151,12 +152,25 @@ public class MetatagTreeItem: IMetatagTreeItem
                 m_metatag = m_metatag
             };
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
+        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
+
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            if (workingBuffer == null)
+                newItem.Children.Add(clone);
+            else
+                workingBuffer.Add(clone);
         }
 
+        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
+        if (workingBuffer != null)
+        {
+            cloneDelegatePostChildren?.Invoke(workingBuffer);
+            newItem.Children.AddRange(workingBuffer);
+        }
         return newItem;
     }
 

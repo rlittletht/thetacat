@@ -5,6 +5,7 @@ using Thetacat.Types;
 namespace Thetacat.Metatags;
 
 public delegate void CloneTreeItemDelegate(IMetatagTreeItem item);
+public delegate void CloneTreeItemChildrenDelegate(List<IMetatagTreeItem> children);
 public delegate void VisitTreeItemDelegate(IMetatagTreeItem item, IMetatagTreeItem? parent, int depth);
 public interface IMetatagTreeItem
 {
@@ -17,6 +18,6 @@ public interface IMetatagTreeItem
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> matcher);
     public void SeekAndDelete(HashSet<string> delete);
     public bool FilterTreeToMatches(MetatagTreeItemMatcher matcher);
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate);
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren);
     public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth);
 }

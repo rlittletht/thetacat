@@ -92,7 +92,7 @@ public partial class MetatagTreeView : UserControl
         IEnumerable<IMetatagTreeItem>? items,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
-        MetatagTree.CloneAndAddCheckedItems(items, Model.Items, initialCheckboxState);
+        MetatagTree.CloneAndAddCheckedItems(items, Model.Items, true/*fSort*/, initialCheckboxState);
     }
 
 #if NOTUSED

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Thetacat.Types;
+using Thetacat.Util;
 using Metatag = Thetacat.Metatags.Model.Metatag;
 
 namespace Thetacat.Metatags;
@@ -166,14 +168,27 @@ public class MetatagTree : IMetatagTreeItem
 
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
     {
         MetatagTree newItem = new MetatagTree();
+        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            if (workingBuffer == null)
+                newItem.Children.Add(clone);
+            else
+                workingBuffer.Add(clone);
+        }
+
+        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
+        if (workingBuffer != null)
+        {
+            cloneDelegatePostChildren?.Invoke(workingBuffer);
+            newItem.Children.AddRange(workingBuffer);
         }
 
         return newItem;
@@ -187,10 +202,16 @@ public class MetatagTree : IMetatagTreeItem
     public static void CloneAndAddCheckedItems(
         IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
+        bool fSort,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {
+        IComparer<IMetatagTreeItem?> comparer = Comparer<IMetatagTreeItem?>.Create(
+            (left, right) => string.Compare(left?.Name ?? "", right?.Name ?? "", StringComparison.CurrentCultureIgnoreCase));
+
         if (items == null)
             return;
+
+        List<IMetatagTreeItem> working = fSort ? new List<IMetatagTreeItem>() : null;
 
         foreach (IMetatagTreeItem item in items)
         {
@@ -201,8 +222,23 @@ public class MetatagTree : IMetatagTreeItem
                         innerItem.Checked = false; // no entry means its not indeterminate and its not true...
                     else
                         innerItem.Checked = value;
+                },
+                children =>
+                {
+                    if (fSort)
+                        children.Sort(comparer);
                 });
-            cloneInto.Add(newItem);
+
+            if (working != null)
+                working.Add(newItem);
+            else
+                cloneInto.Add(newItem);
+        }
+
+        if (working != null)
+        {
+            working.Sort(comparer);
+            cloneInto.AddRange(working);
         }
     }
 
@@ -213,6 +249,6 @@ public class MetatagTree : IMetatagTreeItem
     {
         cloneInto.Clear();
 
-        CloneAndAddCheckedItems(items, cloneInto, initialCheckboxState);
+        CloneAndAddCheckedItems(items, cloneInto, true /*fSort*/, initialCheckboxState);
     }
 }
