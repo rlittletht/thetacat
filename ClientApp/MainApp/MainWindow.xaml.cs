@@ -71,6 +71,8 @@ public partial class MainWindow : Window, IMainCommands
         App.OnMainWindowCreated();
         App.State.RegisterWindowPlace(this, "MainWindow");
         m_model.PropertyChanged += MainWindowPropertyChanged;
+        App.State.WindowManager.PropertyChanged += WindowManagerPropertyChanged;
+
         Activated += OnMainWindowActivated;
         RebuildProfileList();
 
@@ -104,6 +106,7 @@ public partial class MainWindow : Window, IMainCommands
     {
         App.State.SetupLogging(CloseAsyncLog, CloseAppLog);
         App.State.SetupBackgroundWorkers(AddBackgroundWork);
+        App.State.SetupChooseFilter(ChooseFilterOrCurrent);
 
         s_asyncLog = new CatLog(EventType.Information);
         s_appLog = new CatLog(EventType.Information);
@@ -181,6 +184,18 @@ public partial class MainWindow : Window, IMainCommands
         if (e.PropertyName == "CurrentProfile" && m_model.CurrentProfile?.Name != null)
         {
             App.State.ChangeProfile(m_model.CurrentProfile.Name);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: WindowManagerPropertyChanged
+        %%Qualified: Thetacat.MainApp.MainWindow.WindowManagerPropertyChanged
+    ----------------------------------------------------------------------------*/
+    private void WindowManagerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "QuickFilterPanel")
+        {
+            m_model.IsQuickFilterPanelVisible = App.State.WindowManager.QuickFilterPanel != null;
         }
     }
 
@@ -396,8 +411,11 @@ public partial class MainWindow : Window, IMainCommands
             selectedType = filter.FilterType;
             if (selectedType == FilterType.Workgroup)
                 selectedId = filter.Id;
+            else if (selectedType == FilterType.Ephemeral)
+                selectedName = "Temporary";
             else
                 selectedName = filter.Definition.FilterName;
+
         }
 
         // regardless, rebuild from the settings (they might night be applying a new filter, but they
@@ -408,6 +426,8 @@ public partial class MainWindow : Window, IMainCommands
             m_model.ExplorerCollection.Filter = App.State.Filters.GetWorkgroupFilter(selectedId);
         else if (selectedType == FilterType.Local)
             m_model.ExplorerCollection.Filter = App.State.Filters.GetLocalFilter(selectedName);
+        else if (selectedType == FilterType.Ephemeral)
+            m_model.ExplorerCollection.Filter = filter;
 
         m_model.ExplorerCollection.DontRebuildTimelineOnFilterChange = false; // reset it (regardless of whether we set it)
     }

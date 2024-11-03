@@ -44,7 +44,11 @@ public interface IAppState
     public void AddBackgroundWork(string description, BackgroundWorkerWork<bool> work, OnWorkCompletedDelegate? onWorkCompleted = null);
     public void SetupLogging(CloseLogMonitorDelegate closeAsyncLogDelegate, CloseLogMonitorDelegate closeAppLogDelegate);
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate);
+    public void SetupChooseFilter(ChooseFilterOrCurrentDelegate chooseFilterOrCurrentDelegate);
+
     public void ChangeProfile(string profileName);
+    public void ChooseFilterOrCurrent(Filter? filter);
+
     public void PushTemporarySqlConnection(string connectionString);
     public void PopTemporarySqlConnection();
 

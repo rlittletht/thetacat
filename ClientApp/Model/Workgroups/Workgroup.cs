@@ -338,12 +338,12 @@ public class Workgroup : IWorkgroup
         we assume the caller is going to update the workgroup database right after
         this to prevent other clients from trying to cache the same files.
     ----------------------------------------------------------------------------*/
-    public Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(IEnumerable<MediaItem> mediaCollection, ICache cache, int count)
+    public Dictionary<Guid, MediaItem> GetNextItemsForQueueFromMediaCollection(Guid catalogID, IEnumerable<MediaItem> mediaCollection, ICache cache, int count)
     {
         Dictionary<Guid, MediaItem> itemsToQueue = new();
         int countToSkip = 0;
 
-        List<ServiceImportItem> pendingUploadItems = ServiceInterop.GetAllImportsPendingUpload(App.State.ActiveProfile.CatalogID);
+        List<ServiceImportItem> pendingUploadItems = ServiceInterop.GetAllImportsPendingUpload(catalogID);
         Dictionary<Guid, ServiceImportItem>? pendingUploadItemsMap = null;
 
         if (count <= 0)
@@ -420,7 +420,7 @@ public class Workgroup : IWorkgroup
 
     public Dictionary<Guid, MediaItem> GetNextItemsForQueue(int count)
     {
-        return GetNextItemsForQueueFromMediaCollection(App.State.Catalog.GetMediaCollection(), App.State.Cache, count);
+        return GetNextItemsForQueueFromMediaCollection(App.State.ActiveProfile.CatalogID, App.State.Catalog.GetMediaCollection(), App.State.Cache, count);
     }
 
 /*----------------------------------------------------------------------------

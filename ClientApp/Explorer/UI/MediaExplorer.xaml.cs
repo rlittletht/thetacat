@@ -197,10 +197,11 @@ public partial class MediaExplorer : UserControl
 
     public void Close()
     {
+        // call this regardless of collection open status
+        App.State.WindowManager.OnCloseCollection();
+
         if (m_collection != null)
         {
-            App.State.WindowManager.OnCloseCollection();
-
             m_collection.Close();
             m_collection = null;
         }

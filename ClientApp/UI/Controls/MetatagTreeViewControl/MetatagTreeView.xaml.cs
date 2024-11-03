@@ -6,6 +6,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
+using Thetacat.Model.Mediatags;
+using Thetacat.Model;
 using Thetacat.Standards;
 
 namespace Thetacat.UI.Controls;
@@ -69,6 +71,18 @@ public partial class MetatagTreeView : UserControl
         set => SetValue(ShowSchemaVersionProperty, value);
     }
 
+    public static readonly DependencyProperty IsThreeStateProperty =
+        DependencyProperty.Register(
+            name: nameof(IsThreeState),
+            propertyType: typeof(bool),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(true));
+
+    public bool IsThreeState
+    {
+        get => (bool)GetValue(IsThreeStateProperty);
+        set => SetValue(IsThreeStateProperty, value);
+    }
 
     public MetatagTreeViewModel Model = new MetatagTreeViewModel();
 
@@ -289,4 +303,110 @@ public partial class MetatagTreeView : UserControl
     {
         SelectedItemChanged?.Invoke(sender, e);
     }
+
+    #region Checked/Unchecked support
+    public static Dictionary<string, bool?> GetCheckedAndSetFromSetsAndIndeterminates(List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+    {
+        Dictionary<string, bool?> checkedAndIndeterminate = new();
+        foreach (Metatag tag in tagsSet)
+        {
+            checkedAndIndeterminate.Add(tag.ID.ToString(), true);
+        }
+
+        foreach (Metatag tag in tagsIndeterminate)
+        {
+            checkedAndIndeterminate.Add(tag.ID.ToString(), null);
+        }
+
+        return checkedAndIndeterminate;
+    }
+
+    public static HashSet<string> GetExpandedTreeItems(MetatagTreeView metatagTree)
+    {
+        HashSet<string> expandedTreeItems = new HashSet<string>();
+
+        foreach (object? item in metatagTree.Tree.Items)
+        {
+            if (item is IMetatagTreeItem metatagTreeItem)
+            {
+                metatagTreeItem.Preorder(
+                    null,
+                    (child, parent, depth) =>
+                    {
+                        if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem { IsExpanded: true })
+                            expandedTreeItems.Add(child.ID);
+                    },
+                    0);
+            }
+        }
+
+        return expandedTreeItems;
+    }
+
+    public static void RestoreExpandedTreeItems(MetatagTreeView metatagTree, HashSet<string> expandedTreeItems)
+    {
+        foreach (object? item in metatagTree.Tree.Items)
+        {
+            if (item is IMetatagTreeItem metatagTreeItem)
+            {
+                metatagTreeItem.Preorder(
+                    null,
+                    (child, parent, depth) =>
+                    {
+                        if (expandedTreeItems.Contains(child.ID))
+                        {
+                            if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem treeItem)
+                                treeItem.IsExpanded = true;
+                        }
+                    },
+                    0);
+            }
+        }
+    }
+
+
+    public static Dictionary<string, bool?> GetCheckedAndIndetermineFromMediaSet(IReadOnlyCollection<MediaItem> mediaItems)
+    {
+        List<Metatag> tagsIndeterminate = new();
+        List<Metatag> tagsSet = new();
+
+        FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
+        return GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
+    }
+
+    public static void FillSetsAndIndeterminatesFromMediaItems(
+        IReadOnlyCollection<MediaItem> mediaItems, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+    {
+        // keep a running count of the number of times a tag was seen. we either see it
+        // never, or the same as the number of media items. anything different and its
+        // not consistently applied (hence indeterminate)
+        Dictionary<Metatag, int> tagsCounts = new Dictionary<Metatag, int>();
+
+        foreach (MediaItem mediaItem in mediaItems)
+        {
+            foreach (MediaTag tag in mediaItem.MediaTags)
+            {
+                if (tag.Deleted)
+                    continue;
+
+                if (!tagsCounts.TryGetValue(tag.Metatag, out int count))
+                {
+                    count = 0;
+                    tagsCounts.Add(tag.Metatag, count);
+                }
+
+                tagsCounts[tag.Metatag] = count + 1;
+            }
+        }
+
+        foreach (KeyValuePair<Metatag, int> tagCount in tagsCounts)
+        {
+            if (tagCount.Value == mediaItems.Count)
+                tagsSet.Add(tagCount.Key);
+            else if (tagCount.Value != 0)
+                tagsIndeterminate.Add(tagCount.Key);
+        }
+    }
+    #endregion
+
 }

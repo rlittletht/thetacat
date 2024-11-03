@@ -118,10 +118,12 @@ public class MetatagTree : IMetatagTreeItem
                         treeItem.ParentId.Value,
                         MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId.Value));
                 }
+
                 IdMap[treeItem.ParentId.Value].AddChild(treeItem);
             }
         }
     }
+
     public MetatagTree()
     {
     }
@@ -168,28 +170,19 @@ public class MetatagTree : IMetatagTreeItem
 
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         MetatagTree newItem = new MetatagTree();
-        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
         cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
             IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
 
-            if (workingBuffer == null)
-                newItem.Children.Add(clone);
-            else
-                workingBuffer.Add(clone);
+            newItem.Children.Add(clone);
         }
 
-        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
-        if (workingBuffer != null)
-        {
-            cloneDelegatePostChildren?.Invoke(workingBuffer);
-            newItem.Children.AddRange(workingBuffer);
-        }
+        cloneDelegatePostChildren?.Invoke(newItem);
 
         return newItem;
     }
@@ -211,8 +204,6 @@ public class MetatagTree : IMetatagTreeItem
         if (items == null)
             return;
 
-        List<IMetatagTreeItem> working = fSort ? new List<IMetatagTreeItem>() : null;
-
         foreach (IMetatagTreeItem item in items)
         {
             IMetatagTreeItem newItem = item.Clone(
@@ -223,27 +214,19 @@ public class MetatagTree : IMetatagTreeItem
                     else
                         innerItem.Checked = value;
                 },
-                children =>
-                {
-                    if (fSort)
-                        children.Sort(comparer);
-                });
-
-            if (working != null)
-                working.Add(newItem);
-            else
-                cloneInto.Add(newItem);
+                fSort
+                    ? innerItem => { innerItem.Children.Sort(_item => _item.Name); }
+                    : null);
+            
+            cloneInto.Add(newItem);
         }
 
-        if (working != null)
-        {
-            working.Sort(comparer);
-            cloneInto.AddRange(working);
-        }
+        if (fSort)
+            cloneInto.Sort(item => item.Name);
     }
 
     public static void CloneAndSetCheckedItems(
-        IEnumerable<IMetatagTreeItem>? items, 
+        IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
         Dictionary<string, bool?>? initialCheckboxState = null)
     {

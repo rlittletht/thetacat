@@ -15,7 +15,8 @@ public class MainWindowModel: INotifyPropertyChanged
     private bool m_isSchemaDirty;
     private Profile? m_currentProfile;
     private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
-
+    private bool m_isQuickFilterPanelVisible = false;
+    
     public MediaExplorerCollection ExplorerCollection { get; } = new(14.0);
     public ObservableCollection<Filter> AvailableFilters { get; } = new ();
     public ObservableCollection<Profile> AvailableProfiles { get; } = new ();
@@ -24,6 +25,12 @@ public class MainWindowModel: INotifyPropertyChanged
     public bool IsLargePreview => m_itemSize.Equals(ExplorerItemSize.Large);
     public bool IsMediumPreview => m_itemSize.Equals(ExplorerItemSize.Medium);
     public bool IsSmallPreview => m_itemSize.Equals(ExplorerItemSize.Small);
+
+    public bool IsQuickFilterPanelVisible
+    {
+        get => m_isQuickFilterPanelVisible;
+        set => SetField(ref m_isQuickFilterPanelVisible, value);
+    }
 
     public ExplorerItemSize ItemSize
     {

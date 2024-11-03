@@ -341,7 +341,7 @@ public partial class AppMenuBar : UserControl
 
         MediatagCache cache = MediatagCache.CreateFromCatalog(App.State.Catalog, 0, 0);
 
-        cache.WriteCache(true/*fWriteAlways*/);
+        cache.WriteCache(true /*fWriteAlways*/);
 
         MessageBox.Show($"Write complete. Elapsed: {timer.Elapsed()}");
     }
@@ -381,7 +381,7 @@ public partial class AppMenuBar : UserControl
         MicroTimer timer = new MicroTimer();
 
         MediatagCache cache = new();
-        
+
         cache.ReadFromFile();
 
         MessageBox.Show($"Read complete. Elapsed: {timer.Elapsed()}");
@@ -555,5 +555,19 @@ public partial class AppMenuBar : UserControl
         ProgressDialog.DoWorkWithProgress(DoWork, m_commands?.Window);
     }
 
-#endregion
+    #endregion
+
+    private void ToggleQuickFilterPanel(object sender, RoutedEventArgs e)
+    {
+        if (App.State.WindowManager.QuickFilterPanel != null)
+        {
+            App.State.WindowManager.QuickFilterPanel.Close();
+            App.State.WindowManager.QuickFilterPanel = null;
+        }
+        else
+        {
+            App.State.WindowManager.QuickFilterPanel = new QuickFilterPanel();
+            App.State.WindowManager.QuickFilterPanel.Show();
+        }
+    }
 }

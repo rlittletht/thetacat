@@ -57,6 +57,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Filtering\UI\QuickFilterPanel.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="UI\Controls\BackedTreeViewControl\BackedTreeView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

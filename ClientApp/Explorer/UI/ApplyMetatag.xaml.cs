@@ -4,12 +4,14 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Thetacat.Explorer.UI;
+using Thetacat.Filtering;
 using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Mediatags;
 using Thetacat.Standards;
+using Thetacat.Types;
 using Thetacat.UI.Controls;
 using Thetacat.Util;
 
@@ -28,6 +30,7 @@ public partial class ApplyMetatag : Window
     public ApplyMetatag(ApplyMetatagsDelegate applyDelegate)
     {
         m_applyDelegate = applyDelegate;
+
         InitializeComponent();
         DataContext = model;
         App.State.RegisterWindowPlace(this, "ApplyMetatagWindow");
@@ -41,7 +44,7 @@ public partial class ApplyMetatag : Window
         model.RootAvailable = new MetatagTree(schema.MetatagsWorking, null, null);
         model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, tagsSet.Union(tagsIndeterminate));
 
-        Dictionary<string, bool?> initialState = GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
+        Dictionary<string, bool?> initialState = MetatagTreeView.GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
 
         Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
         Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState);
@@ -52,108 +55,6 @@ public partial class ApplyMetatag : Window
         App.LogForApp(EventType.Verbose, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 
-    public static Dictionary<string, bool?> GetCheckedAndSetFromSetsAndIndeterminates(List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
-    {
-        Dictionary<string, bool?> checkedAndIndeterminate = new();
-        foreach (Metatag tag in tagsSet)
-        {
-            checkedAndIndeterminate.Add(tag.ID.ToString(), true);
-        }
-
-        foreach (Metatag tag in tagsIndeterminate)
-        {
-            checkedAndIndeterminate.Add(tag.ID.ToString(), null);
-        }
-
-        return checkedAndIndeterminate;
-    }
-
-    public HashSet<string> GetExpandedTreeItems(MetatagTreeView metatagTree)
-    {
-        HashSet<string> expandedTreeItems = new HashSet<string>();
-
-        foreach (object? item in metatagTree.Tree.Items)
-        {
-            if (item is IMetatagTreeItem metatagTreeItem)
-            {
-                metatagTreeItem.Preorder(
-                    null,
-                    (child, parent, depth) =>
-                    {
-                        if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem { IsExpanded: true })
-                            expandedTreeItems.Add(child.ID);
-                    },
-                    0);
-            }
-        }
-
-        return expandedTreeItems;
-    }
-
-    public void RestoreExpandedTreeItems(MetatagTreeView metatagTree, HashSet<string> expandedTreeItems)
-    {
-        foreach (object? item in metatagTree.Tree.Items)
-        {
-            if (item is IMetatagTreeItem metatagTreeItem)
-            {
-                metatagTreeItem.Preorder(
-                    null,
-                    (child, parent, depth) =>
-                    {
-                        if (expandedTreeItems.Contains(child.ID))
-                        {
-                            if (metatagTree.Tree.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem treeItem)
-                                treeItem.IsExpanded = true;
-                        }
-                    },
-                    0);
-            }
-        }
-    }
-
-
-    public static Dictionary<string, bool?> GetCheckedAndIndetermineFromMediaSet(IReadOnlyCollection<MediaItem> mediaItems)
-    {
-        List<Metatag> tagsIndeterminate = new();
-        List<Metatag> tagsSet = new();
-
-        FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
-        return GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
-    }
-
-    public static void FillSetsAndIndeterminatesFromMediaItems(
-        IReadOnlyCollection<MediaItem> mediaItems, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
-    {
-        // keep a running count of the number of times a tag was seen. we either see it
-        // never, or the same as the number of media items. anything different and its
-        // not consistently applied (hence indeterminate)
-        Dictionary<Metatag, int> tagsCounts = new Dictionary<Metatag, int>();
-
-        foreach (MediaItem mediaItem in mediaItems)
-        {
-            foreach (MediaTag tag in mediaItem.MediaTags)
-            {
-                if (tag.Deleted)
-                    continue;
-
-                if (!tagsCounts.TryGetValue(tag.Metatag, out int count))
-                {
-                    count = 0;
-                    tagsCounts.Add(tag.Metatag, count);
-                }
-
-                tagsCounts[tag.Metatag] = count + 1;
-            }
-        }
-
-        foreach (KeyValuePair<Metatag, int> tagCount in tagsCounts)
-        {
-            if (tagCount.Value == mediaItems.Count)
-                tagsSet.Add(tagCount.Key);
-            else if (tagCount.Value != 0)
-                tagsIndeterminate.Add(tagCount.Key);
-        }
-    }
 
     /*----------------------------------------------------------------------------
         %%Function: InternalUpdateForMedia
@@ -175,20 +76,20 @@ public partial class ApplyMetatag : Window
         List<Metatag> tagsIndeterminate = new();
         List<Metatag> tagsSet = new();
 
-        HashSet<string> expandedApply = GetExpandedTreeItems(Metatags);
-        HashSet<string> expandedApplied = GetExpandedTreeItems(MetatagsApplied);
+        HashSet<string> expandedApply = MetatagTreeView.GetExpandedTreeItems(Metatags);
+        HashSet<string> expandedApplied = MetatagTreeView.GetExpandedTreeItems(MetatagsApplied);
 
-        FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
+        MetatagTreeView.FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
 
         Set(schema, tagsSet, tagsIndeterminate);
         if (vectorClock != null)
             model.SelectedItemsVectorClock = vectorClock.Value;
 
         if (expandedApply.Count > 0)
-            RestoreExpandedTreeItems(Metatags, expandedApply);
+            MetatagTreeView.RestoreExpandedTreeItems(Metatags, expandedApply);
 
         if (expandedApplied.Count > 0)
-            RestoreExpandedTreeItems(MetatagsApplied, expandedApplied);
+            MetatagTreeView.RestoreExpandedTreeItems(MetatagsApplied, expandedApplied);
 
         App.LogForApp(EventType.Verbose, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
         if (applyDelegate != null)
@@ -245,7 +146,7 @@ public partial class ApplyMetatag : Window
         IReadOnlyCollection<MediaItem> mediaItems, 
         MetatagSchema schema)
     {
-        Dictionary<string, bool?> originalState = ApplyMetatag.GetCheckedAndIndetermineFromMediaSet(mediaItems);
+        Dictionary<string, bool?> originalState = MetatagTreeView.GetCheckedAndIndetermineFromMediaSet(mediaItems);
 
         // find all the tags to remove
         foreach (KeyValuePair<string, bool?> item in originalState)
@@ -307,6 +208,24 @@ public partial class ApplyMetatag : Window
         Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
 
         m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
+    }
+
+    private void DoQuickFilterToAll(object sender, RoutedEventArgs e)
+    {
+        // sync the checked state between the tree control and the media items
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+
+        Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, false);
+        App.State.ChooseFilterOrCurrent(tempFilter);
+    }
+
+    private void DoQuickFilterToAny(object sender, RoutedEventArgs e)
+    {
+        // sync the checked state between the tree control and the media items
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+
+        Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, true);
+        App.State.ChooseFilterOrCurrent(tempFilter);
     }
 
     private void DoRemove(object sender, RoutedEventArgs e)

@@ -12,6 +12,7 @@ namespace Tests.Model;
 public class TestCache
 {
     private static string Match1Value = "\\('[^']*',[ ]*'[^']*',[ ]*'[^']*',[ ]*null,[ ]*[0-9]+\\)[ ]*";
+    public static readonly Guid catalogID  = Guid.Parse("12345678-1000-0000-0000-000000000001");
 
     private static void CloseMonitorMock(bool skip)
     {
@@ -140,7 +141,7 @@ public class TestCache
                         }))
             });
 
-        cacheMock.QueueCacheDownloadsFromMedia(catalogMock.GetMediaCollection(), cacheMock, 4);
+        cacheMock.QueueCacheDownloadsFromMedia(catalogID, catalogMock.GetMediaCollection(), cacheMock, 4);
 
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { TestMedia.mediaItem1, TestMedia.mediaItem2, TestMedia.mediaItem3, TestMedia.mediaItem4 });
@@ -252,7 +253,7 @@ public class TestCache
                         }))
             });
 
-        cacheMock.QueueCacheDownloadsFromMedia(catalogMock.GetMediaCollection(), cacheMock, 4);
+        cacheMock.QueueCacheDownloadsFromMedia(catalogID, catalogMock.GetMediaCollection(), cacheMock, 4);
 
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { TestMedia.mediaItem1, TestMedia.mediaItem4 });
@@ -388,7 +389,7 @@ public class TestCache
                         }))
             });
 
-        cacheMock.QueueCacheDownloadsFromMedia(catalogMock.GetMediaCollection(), cacheMock, 4);
+        cacheMock.QueueCacheDownloadsFromMedia(catalogID, catalogMock.GetMediaCollection(), cacheMock, 4);
 
         // there should now be 2 items in our queue
         cacheMock.VerifyQueueContains(new MediaItem[] { TestMedia.mediaItem1, TestMedia.mediaItem4 });
@@ -474,7 +475,7 @@ public class TestCache
                 // there are no updates
             });
 
-        cacheMock.QueueCacheDownloadsFromMedia(catalogMock.GetMediaCollection(), cacheMock, 4);
+        cacheMock.QueueCacheDownloadsFromMedia(catalogID, catalogMock.GetMediaCollection(), cacheMock, 4);
 
         // our queue should be empty
         cacheMock.VerifyQueueContains(new MediaItem[] { });

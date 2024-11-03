@@ -8,7 +8,7 @@ using Thetacat.Util;
 
 namespace Thetacat.Metatags;
 
-public class MetatagTreeItem: IMetatagTreeItem
+public class MetatagTreeItem : IMetatagTreeItem
 {
     private Metatag? m_metatag;
 
@@ -27,22 +27,22 @@ public class MetatagTreeItem: IMetatagTreeItem
     public static MetatagTreeItem CreateFromMetatag(Metatag item)
     {
         MetatagTreeItem metatag = new()
-        {
-            m_metatag = item
-        };
+                                  {
+                                      m_metatag = item
+                                  };
         return metatag;
     }
 
     public static MetatagTreeItem CreateParentPlaceholder(Guid id)
     {
         MetatagTreeItem metatag = new()
-        {
-            m_metatag = new Metatag
-            {
-                ID = id
-            },
-            IsPlaceholder = true
-        };
+                                  {
+                                      m_metatag = new Metatag
+                                                  {
+                                                      ID = id
+                                                  },
+                                      IsPlaceholder = true
+                                  };
 
         return metatag;
     }
@@ -141,10 +141,10 @@ public class MetatagTreeItem: IMetatagTreeItem
 
         return null;
     }
-    
+
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         MetatagTreeItem newItem =
             new MetatagTreeItem()
@@ -153,24 +153,17 @@ public class MetatagTreeItem: IMetatagTreeItem
             };
 
         cloneDelegatePreChildren(newItem);
-        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
         foreach (IMetatagTreeItem item in Children)
         {
             IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
 
-            if (workingBuffer == null)
-                newItem.Children.Add(clone);
-            else
-                workingBuffer.Add(clone);
+            newItem.Children.Add(clone);
         }
 
-        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
-        if (workingBuffer != null)
-        {
-            cloneDelegatePostChildren?.Invoke(workingBuffer);
-            newItem.Children.AddRange(workingBuffer);
-        }
+        cloneDelegatePostChildren?.Invoke(newItem);
+
+        newItem.Children.Sort(item => item.Name);
         return newItem;
     }
 

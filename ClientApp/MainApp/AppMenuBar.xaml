@@ -26,6 +26,8 @@
         </MenuItem>
         <MenuItem Header="_View">
             <MenuItem Header="_Filter" Click="DoChooseFilter" />
+            <MenuItem Header="_QuickFilter" Click="ToggleQuickFilterPanel"
+                      IsChecked="{Binding Path=IsQuickFilterPanelVisible, Mode=OneWay}" />
             <Separator />
             <MenuItem Header="Show _Cache Info" Click="ShowCacheInfo" />
             <MenuItem Header="_Preview size">

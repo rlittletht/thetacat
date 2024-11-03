@@ -61,6 +61,7 @@ public class PseMetatagTree : IMetatagTreeItem
                 IdMap[int.Parse(treeItem.ParentId)].AddChild(treeItem);
             }
         }
+
         // lastly, clean up anything that is just placeholders and fixup their
         // parents to be empty
         HashSet<int> keysToDelete = new();
@@ -129,28 +130,19 @@ public class PseMetatagTree : IMetatagTreeItem
         return null;
     }
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         PseMetatagTree newItem = new PseMetatagTree();
-        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
         cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
             IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
 
-            if (workingBuffer == null)
-                newItem.Children.Add(clone);
-            else
-                workingBuffer.Add(clone);
+            newItem.Children.Add(clone);
         }
 
-        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
-        if (workingBuffer != null)
-        {
-            cloneDelegatePostChildren?.Invoke(workingBuffer);
-            newItem.Children.AddRange(workingBuffer);
-        }
+        cloneDelegatePostChildren?.Invoke(newItem);
 
         return newItem;
     }

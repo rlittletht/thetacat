@@ -285,7 +285,7 @@ public class Cache : ICache
         return virtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
+    public void QueueCacheDownloadsFromMedia(Guid catalogID, IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
     {
         _Workgroup.RefreshWorkgroupMedia(Entries);
 
@@ -314,7 +314,7 @@ public class Cache : ICache
             return;
 
         // now let's stake our claim to some items we're going to cache
-        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, chunkSize);
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(catalogID, mediaCollection, cache, chunkSize);
         _Workgroup.PushChangesToDatabaseWithCache(cache, itemsForCache);
 
         // lastly, queue all the items left in itemsForCache
@@ -326,7 +326,7 @@ public class Cache : ICache
 
     public void QueueCacheDownloads(int chunkSize)
     {
-        QueueCacheDownloadsFromMedia(App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
+        QueueCacheDownloadsFromMedia(App.State.ActiveProfile.CatalogID, App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
     }
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)

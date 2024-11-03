@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Windows.Media.Media3D;
 using NUnit.Framework;
 using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
+using TCore.PostfixText;
 
 namespace Thetacat.Filtering;
 
@@ -282,5 +284,61 @@ public class Filters : IEnumerable<Filter>
         {
             filter.CommitUpdateToDatabase(App.State.Workgroup!);
         }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: BuildClause
+        %%Qualified: Thetacat.Filtering.Filters.BuildClause
+    ----------------------------------------------------------------------------*/
+    public static void BuildClause(List<string> strings, int first, int last, PostfixText postfix, PostfixOperator op)
+    {
+        if (first > last)
+            return;
+
+        if (first == last)
+        {
+            postfix.AddExpression(
+                Expression.Create(
+                    Value.CreateForField($"{{{strings[first]}}}"),
+                    Value.Create("$true"),
+                    new ComparisonOperator(ComparisonOperator.Op.Eq)));
+
+            return;
+        }
+
+        BuildClause(strings, first, (first + last) / 2, postfix, op);
+        BuildClause(strings, (first + last) / 2 + 1, last, postfix, op);
+        postfix.AddOperator(op);
+    }
+
+
+    /*----------------------------------------------------------------------------
+        %%Function: CreateFromSelectedMetatags
+        %%Qualified: Thetacat.Filtering.Filters.CreateFromSelectedMetatags
+
+        Build a new filter reflected the selected metatags. this is an
+        AND filter unless fIncludeAny is set.
+    ----------------------------------------------------------------------------*/
+    public static Filter CreateFromSelectedMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems, bool fIncludeAny)
+    {
+        List<string> checkedItems = new List<string>();
+
+        // only consider checked items
+        foreach (KeyValuePair<string, bool?> pair in checkedUncheckedAndIndeterminateItems)
+        {
+            if (pair.Value ?? false)
+            {
+                checkedItems.Add(pair.Key);
+            }
+        }
+
+        FilterDefinition definition = new FilterDefinition();
+        PostfixOperator op = new PostfixOperator(fIncludeAny ? PostfixOperator.Op.Or : PostfixOperator.Op.And);
+
+        BuildClause(checkedItems, 0, checkedItems.Count - 1, definition.Expression, op);
+
+        Filter filter = new Filter(definition, FilterType.Ephemeral, Guid.NewGuid());
+
+        return filter;
     }
 }

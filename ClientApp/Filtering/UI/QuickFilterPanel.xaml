@@ -1,0 +1,30 @@
+﻿<Window x:Class="Thetacat.Explorer.QuickFilterPanel"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Explorer"
+        xmlns:metatags="clr-namespace:Thetacat.Metatags"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
+        mc:Ignorable="d"
+        Title="Quick Filter" Height="600" Width="300">
+    <GroupBox>
+            <GroupBox.Header>Choose metatags to filter to</GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="10*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <controls:MetatagTreeView IsThreeState="False" Checkable="True" x:Name="Metatags" Grid.Row="0" />
+                <DockPanel LastChildFill="False" Grid.Row="1">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right"
+                                Style="{StaticResource StackPanel.ButtonStack-MediumWidth-Tight}">
+                        <Button Content="Filter To All" Click="DoQuickFilterToAll"
+                                Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults-MediumWide}" />
+                        <Button Content="Filter To Any" Click="DoQuickFilterToAny"
+                                Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults-MediumWide}" />
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
+        </GroupBox>
+</Window>

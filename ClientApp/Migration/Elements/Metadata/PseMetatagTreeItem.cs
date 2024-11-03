@@ -36,22 +36,22 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public static PseMetatagTreeItem CreateFromMetatag(PseMetatag item)
     {
         PseMetatagTreeItem pseMetatag = new()
-        {
-            m_metatag = item
-        };
+                                        {
+                                            m_metatag = item
+                                        };
         return pseMetatag;
     }
 
     public static PseMetatagTreeItem CreateParentPlaceholder(int id)
     {
         PseMetatagTreeItem pseMetatag = new()
-        {
-            m_metatag = new PseMetatag
-            {
-                ID = id
-            },
-            IsPlaceholder = true
-        };
+                                        {
+                                            m_metatag = new PseMetatag
+                                                        {
+                                                            ID = id
+                                                        },
+                                            IsPlaceholder = true
+                                        };
 
         return pseMetatag;
     }
@@ -99,7 +99,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
         return null;
     }
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemChildrenDelegate? cloneDelegatePostChildren)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         PseMetatagTreeItem newItem =
             new PseMetatagTreeItem()
@@ -107,25 +107,16 @@ public class PseMetatagTreeItem : IMetatagTreeItem
                 m_metatag = m_metatag,
                 IsPlaceholder = IsPlaceholder
             };
-        List<IMetatagTreeItem>? workingBuffer = cloneDelegatePostChildren != null ? new List<IMetatagTreeItem>() : null;
 
         cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
             IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
 
-            if (workingBuffer == null)
-                newItem.Children.Add(clone);
-            else
-                workingBuffer.Add(clone);
+            newItem.Children.Add(clone);
         }
 
-        // if we have a postChildren delegate, then operate on the buffer and add it to the Children
-        if (workingBuffer != null)
-        {
-            cloneDelegatePostChildren?.Invoke(workingBuffer);
-            newItem.Children.AddRange(workingBuffer);
-        }
+        cloneDelegatePostChildren?.Invoke(newItem);
 
         return newItem;
     }

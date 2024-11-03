@@ -27,11 +27,13 @@ public class AppState : IAppState
     public event EventHandler<ProfileChangedEventArgs>? ProfileChanged;
     public delegate void CloseLogMonitorDelegate(bool skipClose);
     public delegate void AddBackgroundWorkDelegate(string description, BackgroundWorkerWork<bool> work, OnWorkCompletedDelegate? onWorkCompleted = null);
+    public delegate void ChooseFilterOrCurrentDelegate(Filter? filter);
 
     public DpiScale DpiScale { get; set; }
     private CloseLogMonitorDelegate? m_closeAsyncLog;
     private CloseLogMonitorDelegate? m_closeAppLog;
     private AddBackgroundWorkDelegate? m_addBackgroundWork;
+    private ChooseFilterOrCurrentDelegate? m_chooseFilterOrCurrent;
 
     public TcSettings.TcSettings Settings { get; }
     public TcSettings.Profile ActiveProfile { get; private set; }
@@ -43,6 +45,7 @@ public class AppState : IAppState
     public Filters Filters { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
     public void CloseAppLogMonitor(bool skipClose) => m_closeAppLog?.Invoke(skipClose);
+    public void ChooseFilterOrCurrent(Filter? filter) => m_chooseFilterOrCurrent?.Invoke(filter);
 
     public string AzureStorageAccount =>
         App.State.ActiveProfile.AzureStorageAccount ?? throw new CatExceptionInitializationFailure("no azure storage account set");
@@ -59,6 +62,11 @@ public class AppState : IAppState
     {
         m_closeAsyncLog = closeAsyncLogDelegate;
         m_closeAppLog = closeAppLogDelegate;
+    }
+
+    public void SetupChooseFilter(ChooseFilterOrCurrentDelegate chooseDelegate)
+    {
+        m_chooseFilterOrCurrent = chooseDelegate;
     }
 
     public void SetupBackgroundWorkers(AddBackgroundWorkDelegate addWorkDelegate)

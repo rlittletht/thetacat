@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using Accessibility;
 using Thetacat.Explorer;
@@ -14,10 +15,24 @@ namespace Thetacat.Model;
     dealing with modeless windows that someone has to clean up, but also
     useful for getting at a top level window
 ----------------------------------------------------------------------------*/
-public class WindowManager
+public class WindowManager: INotifyPropertyChanged
 {
     private ApplyMetatag? m_applyMetatag = null;
+    private QuickFilterPanel? m_quickFilterPanel = null;
+
     private List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
+
+    public QuickFilterPanel? QuickFilterPanel
+    {
+        get => m_quickFilterPanel;
+        set
+        {
+            if (value != null && value != m_quickFilterPanel)
+                value.Closing += ((_, _) => { App.State.WindowManager.QuickFilterPanel = null; });
+            m_quickFilterPanel = value;
+            OnPropertyChanged();
+        }
+    }
 
     public ApplyMetatag? ApplyMetatagPanel
     {
@@ -25,11 +40,9 @@ public class WindowManager
         set
         {
             if (value != null && value != m_applyMetatag)
-                value.Closing += ((_, _) =>
-                                  {
-                                      App.State.WindowManager.ApplyMetatagPanel = null;
-                                  });
+                value.Closing += ((_, _) => { App.State.WindowManager.ApplyMetatagPanel = null; });
             m_applyMetatag = value;
+            OnPropertyChanged();
         }
     }
 
@@ -69,5 +82,23 @@ public class WindowManager
 
         ApplyMetatagPanel?.Close();
         ApplyMetatagPanel = null;
+
+        QuickFilterPanel?.Close();
+        QuickFilterPanel = null;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }
