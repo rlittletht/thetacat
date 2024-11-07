@@ -84,6 +84,9 @@
     <Compile Update="UI\Controls\TopOfStackAdornment.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="UI\Input\InputFormats.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

@@ -7,7 +7,19 @@
         xmlns:metatags="clr-namespace:Thetacat.Metatags"
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
-        Title="ApplyMetatag" Height="600" Width="300">
+        xmlns:types="clr-namespace:Thetacat.Types"
+        Title="ApplyMetatag" Height="600" Width="300"
+        x:Name="ApplyMetatagControl">
+    <Window.Resources>
+        <types:BindingProxy x:Key="ManageMetatdataModelProxy"
+                            Data="{Binding ElementName=ApplyMetatagControl, Path=Model}" />
+
+        <ContextMenu x:Key="ApplyMetatagContextMenu">
+            <MenuItem Header="Set mediatag value..."
+                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.SetMediaTagValueCommand}"
+                      CommandParameter="{Binding}" />
+        </ContextMenu>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="7*" />
@@ -20,7 +32,7 @@
                     <RowDefinition Height="10*" />
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
-                <controls:MetatagTreeView Checkable="True" x:Name="Metatags" Grid.Row="0" />
+                <controls:MetatagTreeView Checkable="True" x:Name="Metatags" HasValues="True" Grid.Row="0" ItemContextMenu="{StaticResource ApplyMetatagContextMenu}" />
                 <DockPanel LastChildFill="False" Grid.Row="1"
                            Style="{StaticResource DockPanel.ButtonStack-MediumWidth-Tight}">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right"

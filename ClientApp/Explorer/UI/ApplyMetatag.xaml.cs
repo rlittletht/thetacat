@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
+using Thetacat.Import.UI;
+using Thetacat.Import.UI.Commands;
 using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
@@ -13,48 +15,78 @@ using Thetacat.Model.Mediatags;
 using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.UI.Controls;
+using Thetacat.UI.Input;
 using Thetacat.Util;
 
 namespace Thetacat.Explorer;
 
-public delegate void ApplyMetatagsDelegate(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock);
+public delegate void ApplyMetatagsDelegate(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, Dictionary<string, string?> values, int vectorClock);
 
 /// <summary>
 /// Interaction logic for ApplyMetatag.xaml
 /// </summary>
 public partial class ApplyMetatag : Window
 {
-    private ApplyMetatagModel model = new();
+    readonly ApplyMetatagModel m_model = new();
     private ApplyMetatagsDelegate m_applyDelegate;
+
+    public ApplyMetatagModel Model => m_model;
 
     public ApplyMetatag(ApplyMetatagsDelegate applyDelegate)
     {
         m_applyDelegate = applyDelegate;
 
+        m_model.SetMediaTagValueCommand = new SetMediaTagValueCommand(_SetMediaTagValueCommand);
+        DataContext = m_model;
         InitializeComponent();
-        DataContext = model;
         App.State.RegisterWindowPlace(this, "ApplyMetatagWindow");
     }
 
-    private void Set(MetatagSchema schema, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+    // We take a mediatag for the set tags because we (might) allow values.  If all the values
+    // aren't the same, then it will be in the indeterminate set
+    private void Set(MetatagSchema schema, List<MediaTag> tagsSet, List<Metatag> tagsIndeterminate)
     {
+        List<Metatag> metatagsSet = new List<Metatag>();
+
+        foreach (MediaTag tag in tagsSet)
+        {
+            metatagsSet.Add(tag.Metatag);
+        }
+
         MicroTimer timer = new MicroTimer();
         timer.Start();
 
-        model.RootAvailable = new MetatagTree(schema.MetatagsWorking, null, null);
-        model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, tagsSet.Union(tagsIndeterminate));
+        m_model.RootAvailable = new MetatagTree(schema.MetatagsWorking, null, null);
+        m_model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, metatagsSet.Union(tagsIndeterminate));
 
-        Dictionary<string, bool?> initialState = MetatagTreeView.GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
+        Dictionary<string, bool?> initialState = new();
+        Dictionary<string, string?> initialValues = new();
 
-        Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
-        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState);
-        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_IsTrashItem, initialState);
-        MetatagsApplied.Initialize(model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
-        MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_DontPushToCloud, initialState);
-        MetatagsApplied.AddSpecificTag(model.RootApplied.Children, BuiltinTags.s_IsTrashItem, initialState);
+        MetatagTreeView.GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(tagsSet, tagsIndeterminate, initialState, initialValues);
+
+        Metatags.Initialize(m_model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_IsTrashItem, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_DateSpecified, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_OriginalMediaDate, initialState, initialValues);
+        MetatagsApplied.Initialize(m_model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_DontPushToCloud, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_IsTrashItem, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_DateSpecified, initialState);
         App.LogForApp(EventType.Verbose, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 
+    void _SetMediaTagValueCommand(IMetatagTreeItem? context)
+    {
+        if (context is IMetatagTreeItem nameItem)
+        {
+            if (InputFormats.FPrompt("Enter a value for the metatag (fill in only one)", nameItem.Value ?? "", out string? result, this))
+            {
+                context.Value = result;
+                context.Checked = true;
+            }
+        }
+    }
 
     /*----------------------------------------------------------------------------
         %%Function: InternalUpdateForMedia
@@ -74,7 +106,7 @@ public partial class ApplyMetatag : Window
         timer.Start();
 
         List<Metatag> tagsIndeterminate = new();
-        List<Metatag> tagsSet = new();
+        List<MediaTag> tagsSet = new();
 
         HashSet<string> expandedApply = MetatagTreeView.GetExpandedTreeItems(Metatags);
         HashSet<string> expandedApplied = MetatagTreeView.GetExpandedTreeItems(MetatagsApplied);
@@ -83,7 +115,7 @@ public partial class ApplyMetatag : Window
 
         Set(schema, tagsSet, tagsIndeterminate);
         if (vectorClock != null)
-            model.SelectedItemsVectorClock = vectorClock.Value;
+            m_model.SelectedItemsVectorClock = vectorClock.Value;
 
         if (expandedApply.Count > 0)
             MetatagTreeView.RestoreExpandedTreeItems(Metatags, expandedApply);
@@ -110,9 +142,9 @@ public partial class ApplyMetatag : Window
         ApplyDelegate will update the ApplyDelegate for the panel
     ----------------------------------------------------------------------------*/
     public void UpdateForMedia(
-        IReadOnlyCollection<MediaItem> mediaItems, 
-        MetatagSchema schema, 
-        int vectorClock, 
+        IReadOnlyCollection<MediaItem> mediaItems,
+        MetatagSchema schema,
+        int vectorClock,
         ApplyMetatagsDelegate applyDelegate)
     {
         InternalUpdateForMedia(mediaItems, schema, vectorClock, applyDelegate);
@@ -140,13 +172,20 @@ public partial class ApplyMetatag : Window
 
         The caller is responsible for validating the vector clock BEFORE calling
         us
+
+        This takes the new set of checkedUncheckedAndIndeterminate states as well
+        as the values for checked metatags and applies those changes to the model
     ----------------------------------------------------------------------------*/
     public void UpdateMediaForMetatagChanges(
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminate, 
-        IReadOnlyCollection<MediaItem> mediaItems, 
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminate,
+        Dictionary<string, string?> values,
+        IReadOnlyCollection<MediaItem> mediaItems,
         MetatagSchema schema)
     {
-        Dictionary<string, bool?> originalState = MetatagTreeView.GetCheckedAndIndetermineFromMediaSet(mediaItems);
+        Dictionary<string, bool?> originalState = new Dictionary<string, bool?>();
+        Dictionary<string, string?> originalValues = new Dictionary<string, string?>();
+
+        MetatagTreeView.GetCheckedAndIndetermineFromMediaSet(mediaItems, originalState, originalValues);
 
         // find all the tags to remove
         foreach (KeyValuePair<string, bool?> item in originalState)
@@ -168,6 +207,21 @@ public partial class ApplyMetatag : Window
                 MessageBox.Show("Strange. We have a false in the checked/indeterminate");
         }
 
+        HashSet<string> metatagValuesToChange = new HashSet<string>();
+
+        // find all the values that have to change
+        foreach (string metatagID in values.Keys)
+        {
+            if (originalValues.TryGetValue(metatagID, out string? originalValue))
+            {
+                if (originalValue == values[metatagID])
+                    continue;
+            }
+
+            // values need to be updated or added
+            metatagValuesToChange.Add(metatagID);
+        }
+
         int mruClock = App.State.MetatagMRU.VectorClock;
 
         // find all the tags to add
@@ -177,10 +231,11 @@ public partial class ApplyMetatag : Window
             {
                 if (!originalState.TryGetValue(item.Key, out bool? checkedState)
                     || checkedState == null
-                    || checkedState == false)
+                    || checkedState == false
+                    || metatagValuesToChange.Contains(item.Key))
                 {
-                    // it was originally unset(false), was indeterminate, or was false
-                    MediaTag mediaTag = MediaTag.CreateMediaTag(schema, Guid.Parse(item.Key), null);
+                    // it was originally unset(false), was indeterminate, was false, or the value changes
+                    MediaTag mediaTag = MediaTag.CreateMediaTag(schema, Guid.Parse(item.Key), values[item.Key]);
                     SetMediatagForMedia(mediaTag, mediaItems);
 
                     App.State.MetatagMRU.TouchMetatag(mediaTag.Metatag);
@@ -204,36 +259,23 @@ public partial class ApplyMetatag : Window
 
     private void DoApply(object sender, RoutedEventArgs e)
     {
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = new Dictionary<string, bool?>();
+        Dictionary<string, string?> values = new Dictionary<string, string?>();
         // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+        Metatags.GetCheckedUncheckedAndIndeterminateItems(checkedUncheckedAndIndeterminateItems, values);
 
-        m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
-    }
-
-    private void DoQuickFilterToAll(object sender, RoutedEventArgs e)
-    {
-        // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
-
-        Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, false);
-        App.State.ChooseFilterOrCurrent(tempFilter);
-    }
-
-    private void DoQuickFilterToAny(object sender, RoutedEventArgs e)
-    {
-        // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
-
-        Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, true);
-        App.State.ChooseFilterOrCurrent(tempFilter);
+        m_applyDelegate(checkedUncheckedAndIndeterminateItems, values, m_model.SelectedItemsVectorClock);
     }
 
     private void DoRemove(object sender, RoutedEventArgs e)
     {
-        // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = new Dictionary<string, bool?>();
+        Dictionary<string, string?> values = new Dictionary<string, string?>();
 
-        m_applyDelegate(checkedUncheckedAndIndeterminateItems, model.SelectedItemsVectorClock);
+        // sync the checked state between the tree control and the media items
+        Metatags.GetCheckedUncheckedAndIndeterminateItems(checkedUncheckedAndIndeterminateItems, values);
+
+        m_applyDelegate(checkedUncheckedAndIndeterminateItems, values, m_model.SelectedItemsVectorClock);
     }
 
     private void DoManageMetatags(object sender, RoutedEventArgs e)
@@ -245,9 +287,12 @@ public partial class ApplyMetatag : Window
         // and update the metatag panel
         MetatagSchema schema = App.State.MetatagSchema;
 
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = new Dictionary<string, bool?>();
+        Dictionary<string, string?> values = new Dictionary<string, string?>();
 
-        List<Metatag> tagsSet = new();
+        Metatags.GetCheckedUncheckedAndIndeterminateItems(checkedUncheckedAndIndeterminateItems, values);
+
+        List<MediaTag> tagsSet = new();
         List<Metatag> tagsIndeterminate = new();
 
         foreach (KeyValuePair<string, bool?> state in checkedUncheckedAndIndeterminateItems)
@@ -255,7 +300,7 @@ public partial class ApplyMetatag : Window
             if (state.Value == null)
                 tagsIndeterminate.Add(schema.GetMetatagFromId(new Guid(state.Key))!);
             if (state.Value != null && state.Value.Value)
-                tagsSet.Add(schema.GetMetatagFromId(new Guid(state.Key))!);
+                tagsSet.Add(new MediaTag(schema.GetMetatagFromId(new Guid(state.Key))!, values[state.Key]));
         }
 
         // get the set of set tags

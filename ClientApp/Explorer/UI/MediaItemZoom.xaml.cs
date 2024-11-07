@@ -156,7 +156,7 @@ public partial class MediaItemZoom : Window
         %%Function: ApplyMetatagChangesFromPanel
         %%Qualified: Thetacat.Explorer.MediaItemZoom.ApplyMetatagChangesFromPanel
     ----------------------------------------------------------------------------*/
-    void ApplyMetatagChangesFromPanel(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
+    void ApplyMetatagChangesFromPanel(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, Dictionary<string, string?> values, int vectorClock)
     {
         if (m_model.MediaItem == null)
             return;
@@ -171,6 +171,7 @@ public partial class MediaItemZoom : Window
 
         App.State.WindowManager.ApplyMetatagPanel?.UpdateMediaForMetatagChanges(
             checkedUncheckedAndIndeterminate,
+            values,
             new MediaItem[] { m_model.MediaItem },
             schema);
 

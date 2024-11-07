@@ -17,6 +17,7 @@ using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Filtering;
 using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.ServiceClient;
@@ -977,6 +978,9 @@ public class MediaExplorerCollection : INotifyPropertyChanged
     {
         if (TimelineType.Equals(TimelineType.ImportDate))
             return GetLocalDateFromMedia(mediaItem, mediaItem.ImportDate);
+
+        if (mediaItem.SpecifiedMediaDate != null)
+            return GetLocalDateFromMedia(mediaItem, mediaItem.SpecifiedMediaDate);
 
         return GetLocalDateFromMedia(mediaItem, mediaItem.OriginalMediaDate);
     }

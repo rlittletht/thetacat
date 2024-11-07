@@ -30,6 +30,18 @@
             </StackPanel>
         </HierarchicalDataTemplate>
 
+        <HierarchicalDataTemplate x:Key="CheckableTemplateWithValues" DataType="{x:Type metatags:IMetatagTreeItem}"
+                                  ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal"
+                        ContextMenu="{Binding Path=ItemContextMenu, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}">
+                <CheckBox IsChecked="{Binding Checked}"
+                          IsThreeState="{Binding Path=IsThreeState, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}" />
+                <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
+                <TextBlock Text="{Binding Description}" Margin="15,0,0,0" />
+                <TextBlock Text="{Binding Value}" Margin="15,0,0,0" />
+            </StackPanel>
+        </HierarchicalDataTemplate>
+        
         <DockPanel x:Key="ShowSchemaVersionContent" LastChildFill="False" VerticalAlignment="Center">
             <TextBlock DockPanel.Dock="Right" Text="{Binding Path=SchemaVersion}" />
             <TextBlock DockPanel.Dock="Right" Margin="0,0,2,0">Metatag Schema Version:</TextBlock>
@@ -37,7 +49,9 @@
 
         <metatagTreeViewControl:MetatagTreeViewTemplateSelector x:Key="MetatagTreeViewTemplateSelector"
                                                                 NonCheckableTemplate="{StaticResource NonCheckableTemplate}"
-                                                                CheckableTemplate="{StaticResource CheckableTemplate}" />
+                                                                CheckableTemplate="{StaticResource CheckableTemplate}"
+                                                                CheckableTemplateWithValues="{StaticResource CheckableTemplateWithValues}"
+                                                                />
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>

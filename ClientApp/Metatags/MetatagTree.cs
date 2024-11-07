@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Thetacat.Types;
 using Thetacat.Util;
 using Metatag = Thetacat.Metatags.Model.Metatag;
@@ -131,6 +133,12 @@ public class MetatagTree : IMetatagTreeItem
     public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
     public string Description => "Metatags";
     public string Name => "___Root";
+    public string? Value
+    {
+        get => null;
+        set => throw new CatExceptionInternalFailure("can't set tree value");
+    }
+
     public string ID => "";
     public bool? Checked { get; set; }
 
@@ -196,7 +204,8 @@ public class MetatagTree : IMetatagTreeItem
         IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
         bool fSort,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
         IComparer<IMetatagTreeItem?> comparer = Comparer<IMetatagTreeItem?>.Create(
             (left, right) => string.Compare(left?.Name ?? "", right?.Name ?? "", StringComparison.CurrentCultureIgnoreCase));
@@ -213,6 +222,9 @@ public class MetatagTree : IMetatagTreeItem
                         innerItem.Checked = false; // no entry means its not indeterminate and its not true...
                     else
                         innerItem.Checked = value;
+
+                    if (initialValues != null && initialValues.TryGetValue(innerItem.ID, out string? itemValue))
+                        innerItem.Value = itemValue;
                 },
                 fSort
                     ? innerItem => { innerItem.Children.Sort(_item => _item.Name); }
@@ -228,10 +240,26 @@ public class MetatagTree : IMetatagTreeItem
     public static void CloneAndSetCheckedItems(
         IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
         cloneInto.Clear();
 
-        CloneAndAddCheckedItems(items, cloneInto, true /*fSort*/, initialCheckboxState);
+        CloneAndAddCheckedItems(items, cloneInto, true /*fSort*/, initialCheckboxState, initialValues);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

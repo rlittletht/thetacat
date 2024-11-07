@@ -1,9 +1,12 @@
-﻿using Thetacat.Metatags;
+﻿using Thetacat.Import.UI.Commands;
+using Thetacat.Metatags;
 
 namespace Thetacat.Explorer.UI;
 
 public class ApplyMetatagModel
 {
+    public SetMediaTagValueCommand? SetMediaTagValueCommand { get; set; }
+
     public IMetatagTreeItem? RootAvailable
     {
         get => m_rootAvailable;

@@ -1,0 +1,28 @@
+﻿<Window x:Class="Thetacat.UI.Input.InputFormats"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.UI.Input"
+        mc:Ignorable="d"
+        Title="Input With Formats" Height="200" Width="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="5">
+            <TextBlock Text="{Binding Path=Prompt}" />
+            <TextBlock Text="Enter string value" />
+            <TextBox Text="{Binding Path=InputText}" />
+            <TextBlock Text="Enter number value" />
+            <TextBox Text="{Binding Path=InputNumber}" />
+            <TextBlock Text="Enter date value" />
+            <TextBox Text="{Binding Path=InputDate}" />
+        </StackPanel>
+        <StackPanel VerticalAlignment="Bottom"  HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="1" Margin="5">
+            <Button Content="OK" Width="64" Click="OkButton" />
+            <Button Content="Cancel" Width="64" Click="CancelButton" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -42,7 +42,7 @@ public partial class MetatagTreeView : UserControl
     public ContextMenu ItemContextMenu
     {
         get => (ContextMenu)GetValue(ItemContextMenuProperty);
-        set => SetValue(CheckableProperty, value);
+        set => SetValue(ItemContextMenuProperty, value);
     }
 
     public static readonly DependencyProperty CheckableProperty =
@@ -84,6 +84,19 @@ public partial class MetatagTreeView : UserControl
         set => SetValue(IsThreeStateProperty, value);
     }
 
+    public static readonly DependencyProperty HasValuesProperty =
+        DependencyProperty.Register(
+            name: nameof(HasValues),
+            propertyType: typeof(bool),
+            ownerType: typeof(MetatagTreeView),
+            new PropertyMetadata(false));
+
+    public bool HasValues
+    {
+        get => (bool)GetValue(HasValuesProperty);
+        set => SetValue(HasValuesProperty, value);
+    }
+
     public MetatagTreeViewModel Model = new MetatagTreeViewModel();
 
     public MetatagTreeView()
@@ -96,17 +109,19 @@ public partial class MetatagTreeView : UserControl
     public void SetItems(
         IEnumerable<IMetatagTreeItem>? items,
         int schemaVersion,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
-        MetatagTree.CloneAndSetCheckedItems(items, Model.Items, initialCheckboxState);
+        MetatagTree.CloneAndSetCheckedItems(items, Model.Items, initialCheckboxState, initialValues);
         Model.SchemaVersion = schemaVersion;
     }
 
     public void AddItems(
         IEnumerable<IMetatagTreeItem>? items,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
-        MetatagTree.CloneAndAddCheckedItems(items, Model.Items, true/*fSort*/, initialCheckboxState);
+        MetatagTree.CloneAndAddCheckedItems(items, Model.Items, true /*fSort*/, initialCheckboxState, initialValues);
     }
 
 #if NOTUSED
@@ -155,7 +170,8 @@ public partial class MetatagTreeView : UserControl
         IEnumerable<IMetatagTreeItem> roots,
         int schemaVersion,
         MetatagStandards.Standard? standardRoot = null,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
         Model.SchemaVersion = schemaVersion;
 
@@ -173,18 +189,19 @@ public partial class MetatagTreeView : UserControl
                     m_virtualRootMetatags.Add(item);
                 }
 #endif
-            SetItems(itemMatch?.Children, schemaVersion, initialCheckboxState);
+            SetItems(itemMatch?.Children, schemaVersion, initialCheckboxState, initialValues);
         }
         else
         {
-            SetItems(roots, schemaVersion, initialCheckboxState);
+            SetItems(roots, schemaVersion, initialCheckboxState, initialValues);
         }
     }
 
     public void AddSpecificTag(
         IEnumerable<IMetatagTreeItem> roots,
-        Metatag metatag, 
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Metatag metatag,
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
         IMetatagTreeItem? itemMatch = MetatagTree.FindMatchingChild(
             roots,
@@ -196,7 +213,7 @@ public partial class MetatagTreeView : UserControl
         // go ahead and try to add the item, but the roots passed in will only be the actually
         // applied items, which means it won't be present if its not already applied.
         if (itemMatch != null)
-            AddItems(new IMetatagTreeItem[] { itemMatch }, initialCheckboxState);
+            AddItems(new IMetatagTreeItem[] { itemMatch }, initialCheckboxState, initialValues);
     }
 
     /*----------------------------------------------------------------------------
@@ -206,9 +223,10 @@ public partial class MetatagTreeView : UserControl
         This will have an entry for everything in the tree. If its not in this
         dictionary, then assume its indeterminate (and shouldn't be changed)
     ----------------------------------------------------------------------------*/
-    public Dictionary<string, bool?> GetCheckedUncheckedAndIndeterminateItems()
+    public void GetCheckedUncheckedAndIndeterminateItems(
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminedItems,
+        Dictionary<string, string?>? values)
     {
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminedItems = new();
         List<string> containersMarked = new();
 
         foreach (IMetatagTreeItem item in Model.Items)
@@ -220,11 +238,19 @@ public partial class MetatagTreeView : UserControl
                     if (visiting.Children.Count > 0)
                     {
                         if (visiting.Checked is true)
+                        {
+                            checkedUncheckedAndIndeterminedItems.Add(visiting.ID, visiting.Checked);
                             containersMarked.Add(visiting.Name);
+                        }
                         return;
                     }
 
                     checkedUncheckedAndIndeterminedItems.Add(visiting.ID, visiting.Checked);
+                    if (values != null)
+                    {
+                        if (visiting.Checked is true)
+                            values.Add(visiting.ID, visiting.Value);
+                    }
                 },
                 0);
         }
@@ -237,11 +263,9 @@ public partial class MetatagTreeView : UserControl
                     MessageBoxButton.OKCancel)
                 != MessageBoxResult.OK)
             {
-                return new Dictionary<string, bool?>();
+                checkedUncheckedAndIndeterminedItems.Clear();
             }
         }
-
-        return checkedUncheckedAndIndeterminedItems;
     }
 
     /*----------------------------------------------------------------------------
@@ -304,21 +328,36 @@ public partial class MetatagTreeView : UserControl
         SelectedItemChanged?.Invoke(sender, e);
     }
 
-    #region Checked/Unchecked support
-    public static Dictionary<string, bool?> GetCheckedAndSetFromSetsAndIndeterminates(List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+#region Checked/Unchecked support
+
+    public static void GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(
+        List<MediaTag> tagsSet, 
+        List<Metatag> tagsIndeterminate, 
+        Dictionary<string, bool?> checkedAndIndeterminate, 
+        Dictionary<string, string?> values)
     {
-        Dictionary<string, bool?> checkedAndIndeterminate = new();
-        foreach (Metatag tag in tagsSet)
+        foreach (MediaTag tag in tagsSet)
         {
-            checkedAndIndeterminate.Add(tag.ID.ToString(), true);
+            checkedAndIndeterminate.Add(tag.Metatag.ID.ToString(), true);
+            values.Add(tag.Metatag.ID.ToString(), tag.Value);
         }
 
         foreach (Metatag tag in tagsIndeterminate)
         {
             checkedAndIndeterminate.Add(tag.ID.ToString(), null);
         }
+    }
 
-        return checkedAndIndeterminate;
+    public static Dictionary<string, string?> GetInitialValuesFromTagsSet(List<MediaTag> tagsSet)
+    {
+        Dictionary<string, string?> values = new();
+
+        foreach (MediaTag tag in tagsSet)
+        {
+            values.Add(tag.Metatag.ID.ToString(), tag.Value);
+        }
+
+        return values;
     }
 
     public static HashSet<string> GetExpandedTreeItems(MetatagTreeView metatagTree)
@@ -364,23 +403,34 @@ public partial class MetatagTreeView : UserControl
         }
     }
 
+    // need to also get the values from this so we know what to add and remove (and add needs the values to add)
+    /*----------------------------------------------------------------------------
+        %%Function: GetCheckedAndIndetermineFromMediaSet
+        %%Qualified: Thetacat.UI.Controls.MetatagTreeView.GetCheckedAndIndetermineFromMediaSet
 
-    public static Dictionary<string, bool?> GetCheckedAndIndetermineFromMediaSet(IReadOnlyCollection<MediaItem> mediaItems)
+        Get the checked state and the values for checked metatags from the media items
+    ----------------------------------------------------------------------------*/
+    public static void GetCheckedAndIndetermineFromMediaSet(
+        IReadOnlyCollection<MediaItem> mediaItems,
+        Dictionary<string, bool?> state,
+        Dictionary<string, string?> values)
     {
         List<Metatag> tagsIndeterminate = new();
-        List<Metatag> tagsSet = new();
+        List<MediaTag> tagsSet = new();
 
         FillSetsAndIndeterminatesFromMediaItems(mediaItems, tagsSet, tagsIndeterminate);
-        return GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
+
+        GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(tagsSet, tagsIndeterminate, state, values);
     }
 
     public static void FillSetsAndIndeterminatesFromMediaItems(
-        IReadOnlyCollection<MediaItem> mediaItems, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+        IReadOnlyCollection<MediaItem> mediaItems, List<MediaTag> tagsSet, List<Metatag> tagsIndeterminate)
     {
         // keep a running count of the number of times a tag was seen. we either see it
         // never, or the same as the number of media items. anything different and its
         // not consistently applied (hence indeterminate)
         Dictionary<Metatag, int> tagsCounts = new Dictionary<Metatag, int>();
+        Dictionary<Metatag, MediaTag> tagsValues = new Dictionary<Metatag, MediaTag>();
 
         foreach (MediaItem mediaItem in mediaItems)
         {
@@ -393,6 +443,17 @@ public partial class MetatagTreeView : UserControl
                 {
                     count = 0;
                     tagsCounts.Add(tag.Metatag, count);
+                    tagsValues.Add(tag.Metatag, tag);
+                }
+                else
+                {
+                    MediaTag tagLast = tagsValues[tag.Metatag];
+                    if (tagLast.Value != tag.Value)
+                    {
+                        // not the same, must be indeterminate. force it to never match the media items count, which
+                        // will force it to be indeterminate
+                        count = mediaItems.Count + 1;
+                    }
                 }
 
                 tagsCounts[tag.Metatag] = count + 1;
@@ -402,11 +463,11 @@ public partial class MetatagTreeView : UserControl
         foreach (KeyValuePair<Metatag, int> tagCount in tagsCounts)
         {
             if (tagCount.Value == mediaItems.Count)
-                tagsSet.Add(tagCount.Key);
+                tagsSet.Add(tagsValues[tagCount.Key]);
             else if (tagCount.Value != 0)
                 tagsIndeterminate.Add(tagCount.Key);
         }
     }
-    #endregion
 
+#endregion
 }

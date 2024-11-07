@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
@@ -11,8 +12,15 @@ namespace Thetacat.Metatags;
 public class MetatagTreeItem : IMetatagTreeItem
 {
     private Metatag? m_metatag;
+    private string? m_value;
+    private bool? m_checked;
 
-    public bool? Checked { get; set; }
+    public bool? Checked
+    {
+        get => m_checked;
+        set => SetField(ref m_checked, value);
+    }
+
     public bool IsLocalOnly { get; set; }
     public Guid ItemId => m_metatag?.ID ?? Guid.Empty;
     public Guid? ParentId => m_metatag?.Parent;
@@ -21,6 +29,12 @@ public class MetatagTreeItem : IMetatagTreeItem
     public string Description => m_metatag?.Description ?? String.Empty;
     public string Name => m_metatag?.Name ?? String.Empty;
     public string ID => m_metatag?.ID.ToString() ?? String.Empty;
+
+    public string? Value
+    {
+        get => m_value;
+        set => SetField(ref m_value, value);
+    }
 
     public bool IsPlaceholder { get; private init; }
 
@@ -179,5 +193,20 @@ public class MetatagTreeItem : IMetatagTreeItem
     public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
         Preorder(this, parent, visit, depth);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

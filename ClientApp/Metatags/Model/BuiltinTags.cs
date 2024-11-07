@@ -13,6 +13,7 @@ public class BuiltinTags
     public static readonly Guid s_WidthID = new Guid("B84B3981-C69C-4C5A-9928-377B8FEC5FBC");
     public static readonly Guid s_HeightID = new Guid("FE34A67F-DD8C-41F8-A914-EE1E5628D292");
     public static readonly Guid s_OriginalMediaDateID = new Guid("BDE93371-2422-489E-86AD-462E2EC975CD");
+    public static readonly Guid s_DateSpecifiedID = new Guid("E4693062-E701-49F9-9A6A-AA9240FE5D5F");
     public static readonly Guid s_ImportDateID = new Guid("DA8D46B7-10AE-4B69-9EDD-AB4E97F6AB4B");
     public static readonly Guid s_TransformRotateID = new Guid("1A057F3D-B342-4BDE-A6D9-5C529DCAAD4F");
     public static readonly Guid s_TransformMirrorID = new Guid("E50BBD66-D1C9-4D4A-B33D-28A534982883");
@@ -27,7 +28,7 @@ public class BuiltinTags
     public static readonly Metatag s_Height = Metatag.Create(s_CatRootID, "height", "height", MetatagStandards.Standard.Cat, s_HeightID);
     public static readonly Metatag s_OriginalMediaDate = Metatag.Create(s_CatRootID, "originalMediaDate", "originalMediaDate", MetatagStandards.Standard.Cat, s_OriginalMediaDateID);
     public static readonly Metatag s_ImportDate = Metatag.Create(s_CatRootID, "importDate", "importDate", MetatagStandards.Standard.Cat, s_ImportDateID);
-    
+    public static readonly Metatag s_DateSpecified = Metatag.Create(s_CatRootID, "specifiedDate", "Manually specified date", MetatagStandards.Standard.Cat, s_DateSpecifiedID);
     // transforms
     public static readonly Metatag s_TransformRotate = Metatag.Create(s_CatRootID, "transformRotate", "transformRotate", MetatagStandards.Standard.Cat, s_TransformRotateID);
     public static readonly Metatag s_TransformMirror = Metatag.Create(s_CatRootID, "transformMirror", "transformMirror", MetatagStandards.Standard.Cat, s_TransformMirrorID);
@@ -48,6 +49,7 @@ public class BuiltinTags
         s_Height,
         s_OriginalMediaDate,
         s_ImportDate,
+        s_DateSpecified,
         s_TransformRotate,
         s_TransformMirror,
         s_IsTrashItem,

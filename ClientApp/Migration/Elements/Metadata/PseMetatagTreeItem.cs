@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Thetacat.Metatags;
 using Thetacat.Types;
 using Thetacat.Util;
@@ -22,7 +24,11 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID.ToString() ?? string.Empty;
     public bool? Checked { get; set; }
-
+    public string? Value
+    {
+        get => throw new CatExceptionInternalFailure("NYI in PSE metatags");
+        set => throw new CatExceptionInternalFailure("NYI in PSE metatags");
+    }
     public PseMetatag Item => m_metatag ?? new PseMetatag();
 
     public bool IsPlaceholder { get; private set; }
@@ -124,5 +130,20 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
         MetatagTreeItem.Preorder(this, parent, visit, depth);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

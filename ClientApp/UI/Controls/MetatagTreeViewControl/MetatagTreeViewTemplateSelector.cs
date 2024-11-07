@@ -12,6 +12,7 @@ namespace Thetacat.UI.Controls;
 public class MetatagTreeViewTemplateSelector : DataTemplateSelector
 {
     public DataTemplate? CheckableTemplate { get; set; }
+    public DataTemplate? CheckableTemplateWithValues { get; set; }
     public DataTemplate? NonCheckableTemplate { get; set; }
 
     public T? ParentOfType<T>(DependencyObject? element) where T : DependencyObject
@@ -49,7 +50,12 @@ public class MetatagTreeViewTemplateSelector : DataTemplateSelector
         MetatagTreeView? treeView = ParentOfType<MetatagTreeView>(container);
 
         if (treeView is { Checkable: true })
+        {
+            if (treeView is { HasValues: true })
+                return CheckableTemplateWithValues;
             return CheckableTemplate;
+
+        }
 
         return NonCheckableTemplate;
     }

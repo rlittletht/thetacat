@@ -41,7 +41,7 @@ public partial class QuickFilterPanel : Window
 
         // FUTURE: We could populate these from the current filter (or try to)
         List<Metatag> tagsIndeterminate = new();
-        List<Metatag> tagsSet = new();
+        List<MediaTag> tagsSet = new();
 
         HashSet<string> expandedApply = MetatagTreeView.GetExpandedTreeItems(Metatags);
 
@@ -51,15 +51,24 @@ public partial class QuickFilterPanel : Window
             MetatagTreeView.RestoreExpandedTreeItems(Metatags, expandedApply);
     }
 
-    private void Set(MetatagSchema schema, List<Metatag> tagsSet, List<Metatag> tagsIndeterminate)
+    private void Set(MetatagSchema schema, List<MediaTag> tagsSet, List<Metatag> tagsIndeterminate)
     {
         MicroTimer timer = new MicroTimer();
         timer.Start();
+        List<Metatag> metatagsSet = new List<Metatag>();
+
+        foreach (MediaTag tag in tagsSet)
+        {
+            metatagsSet.Add(tag.Metatag);
+        }
 
         model.RootAvailable = new MetatagTree(schema.MetatagsWorking, null, null);
-        model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, tagsSet.Union(tagsIndeterminate));
+        model.RootApplied = new MetatagTree(schema.MetatagsWorking, null, metatagsSet.Union(tagsIndeterminate));
 
-        Dictionary<string, bool?> initialState = MetatagTreeView.GetCheckedAndSetFromSetsAndIndeterminates(tagsSet, tagsIndeterminate);
+        Dictionary<string, bool?> initialState = new();
+        Dictionary<string, string?> initialValues = new();
+
+        MetatagTreeView.GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(tagsSet, tagsIndeterminate, initialState, initialValues);
 
         Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
         Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState);
@@ -71,7 +80,9 @@ public partial class QuickFilterPanel : Window
     private void DoQuickFilterToAll(object sender, RoutedEventArgs e)
     {
         // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = new Dictionary<string, bool?>();
+        Dictionary<string, string?> values = new Dictionary<string, string?>();
+        Metatags.GetCheckedUncheckedAndIndeterminateItems(checkedUncheckedAndIndeterminateItems, null);
 
         Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, false);
         App.State.ChooseFilterOrCurrent(tempFilter);
@@ -80,7 +91,8 @@ public partial class QuickFilterPanel : Window
     private void DoQuickFilterToAny(object sender, RoutedEventArgs e)
     {
         // sync the checked state between the tree control and the media items
-        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = Metatags.GetCheckedUncheckedAndIndeterminateItems();
+        Dictionary<string, bool?> checkedUncheckedAndIndeterminateItems = new Dictionary<string, bool?>();
+        Metatags.GetCheckedUncheckedAndIndeterminateItems(checkedUncheckedAndIndeterminateItems, null);
 
         Filter tempFilter = Filters.CreateFromSelectedMetatags(checkedUncheckedAndIndeterminateItems, true);
         App.State.ChooseFilterOrCurrent(tempFilter);

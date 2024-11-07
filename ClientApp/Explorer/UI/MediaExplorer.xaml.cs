@@ -276,7 +276,7 @@ public partial class MediaExplorer : UserControl
         that should be updated (both the set of items and the version of the
         items)
     ----------------------------------------------------------------------------*/
-    void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
+    void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, Dictionary<string, string?> values, int vectorClock)
     {
         MetatagSchema schema = App.State.MetatagSchema;
 
@@ -288,7 +288,7 @@ public partial class MediaExplorer : UserControl
 
         List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
 
-        App.State.WindowManager.ApplyMetatagPanel?.UpdateMediaForMetatagChanges(checkedUncheckedAndIndeterminate, mediaItems, schema);
+        App.State.WindowManager.ApplyMetatagPanel?.UpdateMediaForMetatagChanges(checkedUncheckedAndIndeterminate, values, mediaItems, schema);
     }
 
     private void UnloadItemCaches(MediaExplorerItem explorerItem)
@@ -444,7 +444,8 @@ public partial class MediaExplorer : UserControl
 
                     if (MetatagStandards.GetStandardFromStandardTag(tag.Metatag.Standard) != MetatagStandards.Standard.User
                         && tag.Metatag.ID != BuiltinTags.s_DontPushToCloudID
-                        && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID)
+                        && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID
+                        && tag.Metatag.ID != BuiltinTags.s_DateSpecifiedID)
                     {
                         continue;
                     }

@@ -327,6 +327,23 @@ public class MediaItem : INotifyPropertyChanged
         }
     }
 
+    public DateTime? SpecifiedMediaDate
+    {
+        get
+        {
+            if (Tags.TryGetValue(BuiltinTags.s_DateSpecifiedID, out MediaTag? tag))
+                return tag.Value == null ? null : DateTime.Parse(tag.Value);
+
+            return null;
+        }
+        set
+        {
+            MediaTag tag = new MediaTag(BuiltinTags.s_DateSpecified, value?.ToUniversalTime().ToString("u"));
+            FAddOrUpdateMediaTag(tag, true);
+            OnPropertyChanged(nameof(SpecifiedMediaDate));
+        }
+    }
+
     public DateTime? OriginalMediaDate
     {
         get
