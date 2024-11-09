@@ -6,6 +6,13 @@ using Thetacat.Types;
 
 namespace Thetacat.Explorer.UI;
 
+/*----------------------------------------------------------------------------
+    %%Class: ZoomTag
+    %%Qualified: Thetacat.Explorer.UI.ZoomTag
+
+    This is a single tag that is applied to the media item in the zoom
+    window (allows easy population of the list of tags)
+----------------------------------------------------------------------------*/
 public class ZoomTag
 {
     public Metatag? Tag { get; set; } = null;

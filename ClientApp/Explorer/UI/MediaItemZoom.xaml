@@ -41,8 +41,8 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="False">
                                 <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="BorderBrush" Value="Transparent"/>
-                                <Setter Property="Foreground" Value="Transparent"/>
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Foreground" Value="Transparent" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -75,7 +75,7 @@
                 <MenuItem Header="_Next" Click="NextImage" />
                 <MenuItem Header="_Previous" Click="PreviousImage" />
                 <MenuItem Header="_Toggle Trashed" Click="ToggleImageTrashed" />
-                <MenuItem Header="_Sync catalog window" Click="DoSyncCatalog"/>
+                <MenuItem Header="_Sync catalog window" Click="DoSyncCatalog" />
             </MenuItem>
         </Menu>
         <Grid Margin="0">
@@ -108,7 +108,8 @@
                     <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
                 </StackPanel>
                 <DockPanel LastChildFill="False">
-                    <Button DockPanel.Dock="Left" Content="&lt;" Width="32" Style="{StaticResource ShowOnHoverOnly}" FontSize="32" FontWeight="Black" Click="PreviousImage"/>
+                    <Button DockPanel.Dock="Left" Content="&lt;" Width="32" Style="{StaticResource ShowOnHoverOnly}"
+                            FontSize="32" FontWeight="Black" Click="PreviousImage" />
                     <Button DockPanel.Dock="Right" Content="&gt;" Width="32" Style="{StaticResource ShowOnHoverOnly}"
                             Click="NextImage"
                             FontSize="32" FontWeight="Black" />
@@ -228,14 +229,32 @@
                         MediaTags set on this item
                     </GroupBox.Header>
                     <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}" Focusable="False">
+                        <ListView.Resources>
+                            <ContextMenu x:Key="MetadataListViewMenu">
+                                <MenuItem Header="Metatag panel..." Click="ToggleMetatagPanel"/>
+                                <MenuItem Header="Edit metatag value..." Click="EditMetatagValue"/>
+                            </ContextMenu>
+                        </ListView.Resources>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListViewItem}">
+                                    <Setter Property="ContextMenu" Value="{StaticResource MetadataListViewMenu}"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
                                     <GridViewColumnHeader Content="Metatag" Tag="Metatag.StandardName"
                                                           Click="SortType" />
                                 </GridViewColumn>
-                                <GridViewColumn DisplayMemberBinding="{Binding Value}">
+                                <GridViewColumn>
                                     <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <TextBlock Text="{Binding Value}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                             </GridView>
                         </ListView.View>

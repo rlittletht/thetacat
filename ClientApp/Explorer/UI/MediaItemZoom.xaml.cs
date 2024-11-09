@@ -10,6 +10,7 @@ using Thetacat.Model;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Model.Mediatags;
 using Thetacat.Types;
+using Thetacat.UI.Input;
 using Thetacat.Util;
 
 namespace Thetacat.Explorer;
@@ -126,6 +127,26 @@ public partial class MediaItemZoom : Window
                 App.State.MetatagSchema,
                 m_model.VectorClock,
                 ApplyMetatagChangesFromPanel);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: _ShowHideMetatagPanel
+        %%Qualified: Thetacat.Explorer.MediaItemZoom._ShowHideMetatagPanel
+    ----------------------------------------------------------------------------*/
+    private void _ShowHideMetatagPanel()
+    {
+        if (App.State.WindowManager.ApplyMetatagPanel == null)
+            App.State.WindowManager.ApplyMetatagPanel = new ApplyMetatag(ApplyMetatagChangesFromPanel);
+
+        if (App.State.WindowManager.ApplyMetatagPanel.IsVisible)
+        {
+            App.State.WindowManager.ApplyMetatagPanel.Hide();
+        }
+        else
+        {
+            UpdateMetatagPanelIfNecessary();
+            App.State.WindowManager.ApplyMetatagPanel.Show();
+        }
     }
 
     /*----------------------------------------------------------------------------
@@ -264,7 +285,8 @@ public partial class MediaItemZoom : Window
         %%Qualified: Thetacat.Explorer.MediaItemZoom.MediaItemZoom
     ----------------------------------------------------------------------------*/
     public MediaItemZoom(
-        MediaItem item, GetNextMediaItemDelegate? getGetNextMediaItem, GetPreviousMediaItemDelegate? getGetPreviousMediaItem, SyncCatalogDelegate? syncCatalog, int vectorClockBase)
+        MediaItem item, GetNextMediaItemDelegate? getGetNextMediaItem, GetPreviousMediaItemDelegate? getGetPreviousMediaItem, SyncCatalogDelegate? syncCatalog,
+        int vectorClockBase)
     {
         m_getNextMediaItem = getGetNextMediaItem;
         m_getPreviousMediaItem = getGetPreviousMediaItem;
@@ -527,4 +549,29 @@ public partial class MediaItemZoom : Window
     public void Tag28Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(27);
     public void Tag29Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(28);
     public void Tag30Click(object sender, RoutedEventArgs e) => SyncMediaTagStateOnMedia(29);
+
+    private void ToggleMetatagPanel(object sender, RoutedEventArgs e)
+    {
+        if (App.State.WindowManager.ApplyMetatagPanel != null)
+        {
+            App.State.WindowManager.ApplyMetatagPanel.Close();
+            App.State.WindowManager.ApplyMetatagPanel = null;
+        }
+        else
+        {
+            _ShowHideMetatagPanel();
+        }
+    }
+
+    private void EditMetatagValue(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem { Parent: ContextMenu { PlacementTarget: ListViewItem { DataContext: MediaTag mediaTag } } })
+        {
+            if (InputFormats.FPrompt("Set metatag value", mediaTag.Value ?? "", out string? newValue, this))
+            {
+                MediaTag newMediaTag = MediaTag.CreateMediaTag(App.State.MetatagSchema, mediaTag.Metatag.ID, newValue);
+                m_model.MediaItem?.FAddOrUpdateMediaTag(newMediaTag, true);
+            }
+        }
+    }
 }

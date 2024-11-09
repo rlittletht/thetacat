@@ -1,13 +1,20 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using Thetacat.Metatags.Model;
 
 namespace Thetacat.Model.Mediatags;
 
-public class MediaTag
+public class MediaTag: INotifyPropertyChanged
 {
+    private string? m_value;
     public Metatag Metatag { get; init; }
-    public string? Value { get; set; }
+
+    public string? Value
+    {
+        get => m_value;
+        set => m_value = value;
+    }
 
     // Deleted tags don't really exist (and will hide from being queried)
     // HOWEVER, when you try to add on top of a Deleted item, it will get resurrected
@@ -57,4 +64,6 @@ public class MediaTag
 
         return true;
     }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
