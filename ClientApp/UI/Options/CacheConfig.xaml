@@ -6,41 +6,39 @@
              xmlns:local="clr-namespace:Thetacat.UI.Options"
              mc:Ignorable="d"
              d:DesignHeight="550" d:DesignWidth="800" DataContext="{Binding Path=_Model}">
+    <Control.Resources>
+        <ToolTip x:Key="WorkgroupIdTip" ToolTipService.ShowOnDisabled="True">
+            The ID for your workgroup. This will be automatically created for you when you click Create New Workgroup, or when you select an existing workgroup.
+        </ToolTip>
+        <ToolTip x:Key="WorkgroupNameTip" ToolTipService.ShowOnDisabled="True">
+            The name of your workgroup. This will be saved in the shared catalog database and visible to everyone that has access to the catalog, even if it is a local workgroup of one.
+        </ToolTip>
+        <ToolTip x:Key="WorkgroupRootTip" ToolTipService.ShowOnDisabled="True">
+            This is the root to your workgroup cache. This can be a UNC path (\\server\share) or if this is a 'private' workgroup (of one person), this can just be a root drive (c:\)
+        </ToolTip>
+        <ToolTip x:Key="CachePathTip" ToolTipService.ShowOnDisabled="True">
+            This is the path to your workgroup cache, including your workgroup database. It should be relative to the Workgroup root.
+        </ToolTip>
+    </Control.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="20*"/>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="20*" />
-            <RowDefinition Height="60*"/>
-            <RowDefinition Height="auto" />
+            <RowDefinition Height="80*" />
         </Grid.RowDefinitions>
         <GroupBox Grid.Row="0" Margin="5" Name="ClientOptions">
             <GroupBox.Header>
-                Client Cache Configuration
+                Client Configuration
             </GroupBox.Header>
             <StackPanel Margin="8 0 8 0">
-                <TextBlock>Derivative cache location</TextBlock>
-                <TextBox Text="{Binding Path=DerivativeLocation}"></TextBox>
+                <TextBlock>Local catalog cache location</TextBlock>
+                <TextBox Text="{Binding Path=LocalCatalogCacheLocation}"
+                         ToolTip="This is the root of the catalog caches. Derivatives are stored at the root, and each catalog can have a subdirectory with its own local caches."
+                         ></TextBox>
             </StackPanel>
         </GroupBox>
-        <StackPanel Grid.Row="1" Margin="5">
-            <TextBlock >Local cache configuration</TextBlock>
-            <ComboBox  Name="CacheConfiguration"
-                      SelectedItem="{Binding CurrentCacheType}" ItemsSource="{Binding CacheTypes}" />
-
-        </StackPanel>
-        <GroupBox Grid.Row="2" Margin="5" Name="LocalOptions">
+        <GroupBox Grid.Row="1" Margin="5" Name="WorkgroupOptions">
             <GroupBox.Header>
-                Private Cache Options
-            </GroupBox.Header>
-            <StackPanel Margin="8 0 8 0">
-                <TextBlock>Cache location</TextBlock>
-                <TextBox Name="CacheLocation" Text="{Binding Path=CacheLocation}"></TextBox>
-            </StackPanel>
-        </GroupBox>
-        <GroupBox Grid.Row="3" Margin="5" Name="WorkgroupOptions">
-            <GroupBox.Header>
-                Workgroup Cache Options
+                Cache Options
             </GroupBox.Header>
             <StackPanel Margin="8 0 8 0">
                 <TextBlock Width="auto" Name="WorkgroupLabel">Workgroup</TextBlock>
@@ -52,16 +50,24 @@
                     <ComboBox Name="Workgroup" Width="auto" IsEditable="True" SelectedItem="{Binding CurrentWorkgroup}" ItemsSource="{Binding Workbooks}" Text="{Binding WorkgroupItemName}"/>
                     <CheckBox Content="Create New Workgroup" IsChecked="{Binding Path=CreateNewWorkgroup}" Grid.Column="1" />
                 </Grid>
-                <TextBlock>ID</TextBlock>
-                <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}" IsEnabled="{Binding Path=CreateNewWorkgroup}"/>
-                <TextBlock>Name</TextBlock>
+                <TextBlock ToolTip="{StaticResource WorkgroupIdTip}">ID</TextBlock>
+                <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}" IsEnabled="{Binding Path=CreateNewWorkgroup}" IsReadOnly="True"
+                         ToolTip="{StaticResource WorkgroupIdTip}" />
+                <TextBlock ToolTip="{StaticResource WorkgroupNameTip}">
+                    Name
+                </TextBlock>
                 <TextBox Name="WorkgroupName" Text="{Binding Path=WorkgroupName}"
+                         ToolTip="{StaticResource WorkgroupNameTip}"
                          IsEnabled="{Binding Path=CreateNewWorkgroup}" />
-                <TextBlock>Server path</TextBlock>
+                <TextBlock ToolTip="{StaticResource WorkgroupRootTip}">
+                    Path to workgroup root
+                </TextBlock>
                 <TextBox Name="WorkgroupServerPath" Text="{Binding Path=WorkgroupServerPath}"
+                         ToolTip="{StaticResource WorkgroupRootTip}"
                          IsEnabled="{Binding Path=CreateNewWorkgroup}" />
-                <TextBlock>Cache root</TextBlock>
+                <TextBlock ToolTip="{StaticResource CachePathTip}">Cache root</TextBlock>
                 <TextBox Name="WorkgroupCacheRoot" Text="{Binding Path=WorkgroupCacheRoot}"
+                         ToolTip="{StaticResource CachePathTip}"
                          IsEnabled="{Binding Path=CreateNewWorkgroup}" />
             </StackPanel>
         </GroupBox>

@@ -9,6 +9,7 @@ using TCore.SqlClient;
 using Thetacat.Import;
 using Thetacat.Model;
 using Microsoft.VisualBasic;
+using System.Collections.ObjectModel;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -28,6 +29,13 @@ public class Import
         FROM $$#tcat_import$$
         WHERE $$tcat_import$$.source = @SourceClient AND $$tcat_import$$.catalog_id = @CatalogID";
 
+    private static readonly string s_queryAllImportsPendingUpload = $@"
+        SELECT 
+            $$tcat_import$$.id, $$tcat_import$$.state, $$tcat_import$$.sourcePath, 
+            $$tcat_import$$.sourceServer, $$tcat_import$$.uploadDate, $$tcat_import$$.source
+        FROM $$#tcat_import$$
+        WHERE $$tcat_import$$.state = 'pending-upload' AND $$tcat_import$$.catalog_id = @CatalogID";
+
     private static readonly string s_deleteMediaItem = @"
         DELETE FROM tcat_import WHERE catalog_id=@CatalogID AND id=@MediaID";
 
@@ -43,7 +51,7 @@ public class Import
             });
     }
 
-    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
+    public static List<ServiceImportItem> GetImportsForClient(Guid catalogID, string sourceClient)
     {
         return LocalServiceClient.DoGenericQueryWithAliases(
                 s_baseQuery,
@@ -68,6 +76,33 @@ public class Import
                     cmd.AddParameterWithValue("@SourceClient", sourceClient);
                     cmd.AddParameterWithValue("@CatalogID", catalogID);
                 });
+    }
+
+
+    public static List<ServiceImportItem> GetAllImportsPendingUpload(Guid catalogID)
+    {
+        return LocalServiceClient.DoGenericQueryWithAliases(
+            s_queryAllImportsPendingUpload,
+            (ISqlReader reader, Guid correlationId, ref List<ServiceImportItem> building) =>
+            {
+                ServiceImportItem item =
+                    new()
+                    {
+                        ID = reader.GetGuid(0),
+                        State = reader.GetString(1),
+                        SourcePath = reader.GetString(2),
+                        SourceServer = reader.GetString(3),
+                        UploadDate = reader.GetNullableDateTime(4),
+                        Source = reader.GetNullableString(5)
+                    };
+
+                building.Add(item);
+            },
+            s_aliases,
+            (cmd) =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+            });
     }
 
     private static readonly string s_baseQueryAll = $@"
@@ -103,12 +138,14 @@ public class Import
     private static readonly string s_queryUpdateState = @"
         UPDATE tcat_import SET state=@NewState WHERE id=@MediaID AND catalog_id=@CatalogID";
 
+    private static readonly string s_queryUpdateStateAndClient = @"
+        UPDATE tcat_import SET state=@NewState, source=@Source, uploadDate = null WHERE id=@MediaID AND catalog_id=@CatalogID";
+
     private static readonly string s_deleteImportItem = @"
         DELETE FROM tcat_import WHERE id=@MediaID AND catalog_id=@CatalogID";
 
     private static readonly string s_updateMediaState = @"
         UPDATE tcat_media SET state=@NewState WHERE id=@MediaID AND catalog_id=@CatalogID";
-
 
     public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
@@ -134,6 +171,38 @@ public class Import
                 {
                     cmd.AddParameterWithValue("@MediaID", id);
                     cmd.AddParameterWithValue("@NewState", MediaItem.StringFromState(MediaItemState.Active));
+                    cmd.AddParameterWithValue("@CatalogID", catalogID);
+                });
+
+            sql.Commit();
+        }
+        catch
+        {
+            sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
+
+    public static void ResetImportToPendingForItem(Guid catalogID, Guid id, string clientName)
+    {
+        Guid crid = Guid.NewGuid();
+        ISql sql = LocalServiceClient.GetConnection();
+
+        sql.BeginTransaction();
+
+        try
+        {
+            sql.ExecuteNonQuery(
+                new SqlCommandTextInit(s_queryUpdateStateAndClient, s_aliases),
+                (cmd) =>
+                {
+                    cmd.AddParameterWithValue("@MediaID", id);
+                    cmd.AddParameterWithValue("@Source", clientName);
+                    cmd.AddParameterWithValue("@NewState", ImportItem.StringFromState(ImportItem.ImportState.PendingUpload));
                     cmd.AddParameterWithValue("@CatalogID", catalogID);
                 });
 
@@ -264,6 +333,22 @@ public class Import
                 cmd.AddParameterWithValue("@CatalogID", catalogID);
 //                cmd.AddParameterWithValue("@Ids", string.Join(",", idStrings));
             });
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: BuildImportItemMap
+        %%Qualified: Thetacat.ServiceClient.LocalService.Import.BuildImportItemMap
+    ----------------------------------------------------------------------------*/
+    public static Dictionary<Guid, ServiceImportItem> BuildImportItemMap(IReadOnlyCollection<ServiceImportItem> importItems)
+    {
+        Dictionary<Guid, ServiceImportItem> map = new();
+
+        foreach (ServiceImportItem importItem in importItems)
+        {
+            map.Add(importItem.ID, importItem);
+        }
+
+        return map;
     }
 
 }

@@ -2,29 +2,35 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\cat.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.11.0" />
+    <None Remove="Assets\cat.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
     <PackageReference Include="Emgu.CV" Version="4.8.1.5350" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.0.5324" />
     <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
     <PackageReference Include="Meziantou.Framework.WPF" Version="1.5.5" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.35.0" />
-    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.All" Version="1.12.10" />
-    <PackageReference Include="Microsoft.Windows.EventTracing.Processing.Toolkit" Version="1.11.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
     <PackageReference Include="TCore.Exceptions" Version="1.1.1" />
     <PackageReference Include="TCore.MetadataExtractor" Version="1.0.2" />
     <PackageReference Include="TCore.Microsoft.WindowsAPICodePack.Shell" Version="1.1.1.2" />
-    <PackageReference Include="TCore.Pipeline" Version="1.2.0" />
-    <PackageReference Include="TCore.PostfixText" Version="1.4.0" />
+    <PackageReference Include="TCore.Pipeline" Version="3.0.0" />
+    <PackageReference Include="TCore.PostfixText" Version="1.5.0" />
+    <PackageReference Include="TCore.SqlClient" Version="1.5.1" />
+    <PackageReference Include="TCore.SqlCore" Version="1.4.2" />
+    <PackageReference Include="TCore.SQLiteClient" Version="1.5.1" />
     <PackageReference Include="TCore.XMLIO" Version="1.4.0" />
     <PackageReference Include="TCore.XmlSettings" Version="1.7.0" />
 <!--    <PackageReference Include="TCore.SqlCore" Version="1.2.0" />
@@ -34,7 +40,7 @@
 
   <ItemGroup>
     <Folder Include="Azure\" />
-    <Folder Include="Model\Metatags\" />
+    <Folder Include="Properties\" />
     <Folder Include="Secrets\" />
   </ItemGroup>
 
@@ -43,13 +49,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\liblet\cs\sql\sql.csproj" />
-    <ProjectReference Include="..\..\liblet\cs\TCore.SqlCore\SqlCore\SqlCore.csproj" />
-    <ProjectReference Include="..\..\liblet\cs\TCore.SQLiteClient\SQLiteClient\SQLiteClient.csproj" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\cat.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Filtering\UI\QuickFilterPanel.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="UI\Controls\BackedTreeViewControl\BackedTreeView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\Controls\PendingUploadAdornment.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="UI\Controls\OfflineAdornment.xaml.cs">
@@ -62,6 +76,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Explorer\UI\MediaItemDetails.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\Controls\NotTopOfStackAdornment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\Controls\TopOfStackAdornment.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="UI\Input\InputFormats.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

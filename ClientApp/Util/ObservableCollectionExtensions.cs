@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reflection;
+using System.Windows.Input;
 using global::System.Linq;
 
 namespace Thetacat.Util;
@@ -42,6 +43,26 @@ public static class ObservableCollectionExtensions
 
         type.InvokeMember("OnPropertyChanged", ProtectedMember, null,
           collection, new object[] { new PropertyChangedEventArgs("Item[]") });
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: Sort
+        %%Qualified: Thetacat.Util.ObservableCollectionExtensions.Sort<T, TKey>
+    ----------------------------------------------------------------------------*/
+    public static void Sort<T, TKey>(this ObservableCollection<T> collection, Func<T, TKey> keySelector)
+    {
+        IOrderedEnumerable<T> sorted = collection.OrderBy(keySelector);
+
+        int newPosition = 0;
+        foreach (T item in sorted)
+        {
+            int oldPosition = collection.IndexOf(item);
+            
+            if (oldPosition != newPosition)
+                collection.Move(oldPosition, newPosition);
+
+            newPosition++;
+        }
     }
 
     public static void AddRange<T>(this ObservableCollection<T> collection, IEnumerable<T> items)

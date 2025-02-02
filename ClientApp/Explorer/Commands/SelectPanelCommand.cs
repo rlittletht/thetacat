@@ -23,7 +23,7 @@ public class SelectPanelCommand : ICommand
         if (parameter is MediaExplorerItem item)
             m_selectDelegate(item);
 
-        MainWindow.LogForApp(EventType.Information, $"Invoke SelectPanel");
+        App.LogForApp(EventType.Verbose, $"Invoke SelectPanel");
     }
 
 #pragma warning disable CS0067

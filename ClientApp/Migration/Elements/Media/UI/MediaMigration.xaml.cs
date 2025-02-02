@@ -195,7 +195,7 @@ public partial class MediaMigration : UserControl
             ((Storyboard?)VerifyStatus.Resources.FindName("spinner"))?.Stop();
             SetVerifyResult();
             verifyTimer?.Stop();
-            MainWindow.LogForApp(EventType.Warning, $"VerifyPaths: {verifyTimer?.Elapsed()}");
+            App.LogForApp(EventType.Information, $"VerifyPaths: {verifyTimer?.Elapsed()}");
             App.State.Md5Cache.CommitCacheItems();
         }
     }
@@ -337,14 +337,14 @@ public partial class MediaMigration : UserControl
         List<PseMediaItem> checkedItems = BuildCheckedVerifiedItems();
         MediaImporter importer = new MediaImporter(
             checkedItems, 
-            MainWindow.ClientName,
+            MainApp.MainWindow.ClientName,
             (itemFile, catalogItem) =>
             {
                 PseMediaItem pseItem = itemFile as PseMediaItem ?? throw new CatExceptionInternalFailure("file item isn't a PseMediaItem");
                 pseItem.CatID = catalogItem.ID;
             });
 
-        importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
+        importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema, App.State.Cache);
         ProgressDialog.DoWorkWithProgress(report => DoRemainingPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
         // and lastly we have to add the items we just manually added to our cache

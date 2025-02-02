@@ -14,6 +14,7 @@ using Thetacat.Logging;
 using Thetacat.Model.Client;
 using Thetacat.Types;
 using Path = System.IO.Path;
+using System.Security.Cryptography;
 
 namespace Thetacat.Model.ImageCaching;
 
@@ -48,10 +49,10 @@ public class ImageCache
     public ImageCache(bool fFullFidelity = false)
     {
         // don't start the pipeline thread if we're under a unit test.
-        if (!MainWindow.InUnitTest)
+        if (!MainApp.MainWindow.InUnitTest)
         {
             // this will start the thread which will just wait for work to do...
-            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(null, DoImageLoaderWork);
+            m_imageLoaderPipeline = new ProducerConsumer<ImageLoaderWork>(5, DoImageLoaderWork, 5);
             m_imageLoaderPipeline.Start();
         }
 
@@ -80,10 +81,31 @@ public class ImageCache
     }
 
 
-    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string localPath)
+    public ImageCacheItem QueuePurgeAndReloadToCache(MediaItem mediaItem, string md5, ImageCacheItem existing)
+    {
+        if (existing.IsLoadQueued || existing.Image == null)
+        {
+            App.LogForApp(EventType.Critical, $"trying to purge and reload an item that isn't loaded {existing.MediaId}");
+            return existing;
+        }
+
+        existing.Image = null;
+        existing.ImageInternal = null;
+
+        existing.IsLoadQueued = true;
+        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, existing));
+        return existing;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: TryQueueBackgroundLoadToCache
+        %%Qualified: Thetacat.Model.ImageCaching.ImageCache.TryQueueBackgroundLoadToCache
+        
+    ----------------------------------------------------------------------------*/
+    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
-        MainWindow.LogForAsync(EventType.Critical, $"queuing item {item.MediaId}");
+        App.LogForAsync(EventType.Verbose, $"queuing item {item.MediaId}");
 
         if (!Items.TryAdd(mediaItem.ID, item))
         {
@@ -94,13 +116,20 @@ public class ImageCache
             }
 
             if (existingItem.IsLoadQueued || existingItem.Image != null)
+            {
+                if (existingItem.IsLoadQueued)
+                {
+                    // accelearate the item...
+                    m_imageLoaderPipeline?.Producer.Accelerate(mediaItem.ID);
+                }
                 return existingItem;
+            }
 
             item = existingItem;
         }
 
         item.IsLoadQueued = true;
-        m_imageLoaderPipeline?.Producer.QueueRecord(new ImageLoaderWork(mediaItem, item));
+        m_imageLoaderPipeline?.Producer.QueueRecordFirst(new ImageLoaderWork(mediaItem, md5, item, false, onDerivativeWorkComplete));
         return item;
     }
 
@@ -139,35 +168,44 @@ public class ImageCache
 
 #region Image Loading/Threading
 
-    class ImageLoaderWork : IPipelineBase<ImageLoaderWork>
+    class ImageLoaderWork : IPipelineWorkItemBase<ImageLoaderWork>
     {
+        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
+        public Guid Cookie => MediaKey;
         public Guid MediaKey { get; set; }
+        public string MD5 { get; set; } = string.Empty;
         public string? PathToImage { get; set; }
         public double AspectRatio { get; set; }
         public int? OriginalWidth { get; set; }
         public Transformations Transformations { get; set; }
+        public bool PurgeAndReload { get; set; }
 
         public ImageLoaderWork()
         {
             Transformations = Transformations.Empty;
         }
 
-        public ImageLoaderWork(MediaItem mediaItem, ImageCacheItem cacheItem)
+        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem, bool isPurgeAndReload = false, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete = null)
         {
             MediaKey = mediaItem.ID;
             PathToImage = cacheItem.LocalPath;
             AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
             OriginalWidth = mediaItem.ImageWidth;
             Transformations = new Transformations(mediaItem);
+            MD5 = md5;
+            OnDerivativeWorkComplete = onDerivativeWorkComplete;
         }
 
         public void InitFrom(ImageLoaderWork t)
         {
+            PurgeAndReload = t.PurgeAndReload;
             MediaKey = t.MediaKey;
             PathToImage = t.PathToImage;
             AspectRatio = t.AspectRatio;
             OriginalWidth = t.OriginalWidth;
             Transformations = new Transformations(t.Transformations.TransformationsKey);
+            OnDerivativeWorkComplete = t.OnDerivativeWorkComplete;
+            MD5 = t.MD5;
         }
     }
 
@@ -414,7 +452,7 @@ public class ImageCache
             { "image/jpeg", 10 },
         };
 
-    BitmapSource GetTransformedFullFidelityImage(string pathToRawImage, Guid mediaId, Transformations transformations)
+    BitmapSource GetTransformedFullFidelityImage(string pathToRawImage, Guid mediaId, string md5, Transformations transformations)
     {
         BitmapSource? fullImage = null;
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(mediaId);
@@ -426,10 +464,10 @@ public class ImageCache
         {
             BitmapSource? pendingBitmap;
 
-            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
+            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
             {
                 // check to see if we have a non-transformed version available
-                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
+                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
                 {
                     // ok, do the transformations and save them
                     if (pendingBitmap != null)
@@ -446,7 +484,7 @@ public class ImageCache
                     {
                         // save the pre-transform derivative
                         fullImage.Freeze();
-                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, Transformations.Empty, fullImage);
+                        App.State.Derivatives.QueueSaveReformatImage(mediaItem, md5, Transformations.Empty, fullImage);
 
                         // and transform it
                         fullImage = DoTransformations(fullImage, transformations);
@@ -454,7 +492,7 @@ public class ImageCache
                 }
 
                 fullImage.Freeze();
-                App.State.Derivatives.QueueSaveReformatImage(mediaItem, transformations, fullImage);
+                App.State.Derivatives.QueueSaveReformatImage(mediaItem, md5, transformations, fullImage);
             }
             else
             {
@@ -505,13 +543,16 @@ public class ImageCache
         we could free and reload. or just live with the awful memory consumption
         until you close and reopen the app...
     ----------------------------------------------------------------------------*/
-    void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems)
+    void DoImageLoaderWork(IEnumerable<ImageLoaderWork> workItems, Consumer<ImageLoaderWork>.ShouldAbortDelegate shouldAbort)
     {
         foreach (ImageLoaderWork item in workItems)
         {
+            if (shouldAbort())
+                return;
+
             if (item.PathToImage == null)
             {
-                MainWindow.LogForApp(EventType.Warning, $"skipping null path");
+                App.LogForApp(EventType.Warning, $"skipping null path");
                 continue;
             }
 
@@ -541,7 +582,7 @@ public class ImageCache
 
                 // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
                 // need to transcode)
-                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
+                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, item.MD5, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
                 {
                     if (pendingBitmap != null)
                     {
@@ -558,14 +599,14 @@ public class ImageCache
                 {
                     // we didn't find a match for what we want exactly. get a full fidelity image with the correct transformation
                     // (this might get transcoded). (this will save any interim transform steps as derivative items)
-                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.Transformations);
+                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.MD5, item.Transformations);
 
                     // and now scale it to the size we want, if necessary
                     if (scaling)
                     {
                         targetBitmap = ScaleBitmap(fullImage, scaleFactor);
                         targetBitmap.Freeze();
-                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, transformations, targetBitmap, scaleFactor);
+                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, item.MD5, transformations, targetBitmap, scaleFactor, item.OnDerivativeWorkComplete);
                     }
                     else
                     {
@@ -582,7 +623,7 @@ public class ImageCache
             }
             catch (Exception e)
             {
-                MainWindow.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
+                App.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
                 BitmapSource error = CreatePlaceholderImage($"cache failed");
                 InternalSetBitmapForItem(item.MediaKey, error);
             }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows;
 using HeyRed.Mime;
 using RestoreWindowPlace;
+using Thetacat.Logging;
 using Thetacat.Types;
 
 namespace Thetacat
@@ -25,6 +26,16 @@ namespace Thetacat
 
                 return m_appState;
             }
+        }
+
+        public static void LogForAsync(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            MainApp.MainWindow.LogForAsync(eventType, log, details, correlationId);
+        }
+
+        public static void LogForApp(EventType eventType, string log, string? details = null, Guid? correlationId = null)
+        {
+            MainApp.MainWindow.LogForApp(eventType, log, details, correlationId);
         }
 
         public static void OnMainWindowCreated()
@@ -97,10 +108,12 @@ namespace Thetacat
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\options.xml");
 
         public static string MapStorePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\remappingPaths.xml");
+
+        public static string MetatagCacheRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "thetacat\\metatagCaches");
+
         public static string ClientDatabasePath(string ClientDatabaseName)
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $"thetacat\\{ClientDatabaseName}");
         }
-        
     }
 }

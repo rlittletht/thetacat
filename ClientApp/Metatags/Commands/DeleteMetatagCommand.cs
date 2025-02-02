@@ -24,7 +24,7 @@ public class DeleteMetatagCommand : ICommand
         if (parameter is IMetatagTreeItem item)
             m_deleteDelegate(item);
 
-        MainWindow.LogForApp(EventType.Information, $"Invoke DeleteMetatag");
+        App.LogForApp(EventType.Verbose, $"Invoke DeleteMetatag");
     }
 
 #pragma warning disable CS0067

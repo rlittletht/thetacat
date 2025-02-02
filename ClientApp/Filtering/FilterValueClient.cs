@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms.Design;
 using TCore.PostfixText;
 using Thetacat.Metatags;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.Types;
 
 namespace Thetacat.Filtering;
 
 public class FilterValueClient: PostfixText.IValueClient
 {
-    private MediaItem m_mediaItem;
+    private readonly MediaItem m_mediaItem;
 
     public FilterValueClient(MediaItem mediaItem)
     {
@@ -30,12 +32,11 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
         {
             // get the tree item for this metatag
-            
-            // just in case this is a parent metatag...
-            IMetatagTreeItem? metatagTreeItem = App.State.MetatagSchema.WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagID), -1);
+
+            IMetatagTreeItem? metatagTreeItem = App.State.MetatagSchema.GetTreeItemIfContainer(metatagID);
 
             if (metatagTreeItem == null)
             {
@@ -50,7 +51,7 @@ public class FilterValueClient: PostfixText.IValueClient
                 {
                     if (Guid.TryParse(item.ID, out Guid itemID))
                     {
-                        matched |= m_mediaItem.Tags.ContainsKey(itemID);
+                        matched |= m_mediaItem.HasMediaTag(itemID);
                     }
                 },
                 0);
@@ -72,7 +73,7 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
             return null;
 
         // try to coerce the value to a number
@@ -91,7 +92,7 @@ public class FilterValueClient: PostfixText.IValueClient
         if (!Guid.TryParse(field, out Guid metatagID))
             throw new CatExceptionInternalFailure($"invalid guid format: {field}");
 
-        if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag))
+        if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag))
             return null;
 
         if (mediaTag.Value == null)
@@ -116,7 +117,7 @@ public class FilterValueClient: PostfixText.IValueClient
             if (!Guid.TryParse(field, out Guid metatagID))
                 return Value.ValueType.String;
 
-            if (!m_mediaItem.Tags.TryGetValue(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
+            if (!m_mediaItem.TryGetMediaTag(metatagID, out MediaTag? mediaTag) || mediaTag.Value == null)
                 return Value.ValueType.String;
 
             value = mediaTag.Value;

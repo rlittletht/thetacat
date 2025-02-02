@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using Thetacat.Import;
 using Thetacat.ServiceClient;
 using Thetacat.Util;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
 
@@ -21,7 +22,7 @@ public class MediaItemData : INotifyPropertyChanged
 #pragma warning disable format // @formatter:off
 
     public string MimeType                           { get => m_mimeType;    set => SetField(ref m_mimeType, value); }
-    public Guid ID                                   { get => m_id;          private set => SetField(ref m_id, value); }
+    public Guid ID                                   { get => m_id;          set => SetField(ref m_id, value); }
     public PathSegment VirtualPath                   { get => m_virtualPath; set => SetField(ref m_virtualPath, value); }
     public string MD5                                { get => m_md5;         set => SetField(ref m_md5, value); }
     public MediaItemState State                      { get => m_state;       set => SetField(ref m_state, value); }
@@ -47,7 +48,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_tags = new();
         foreach (KeyValuePair<Guid, MediaTag> tag in source.m_tags)
         {
-            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value));
+            m_tags.TryAdd(tag.Key, new MediaTag(tag.Value.Metatag, tag.Value.Value, tag.Value.Deleted));
         }
         m_virtualPath = source.m_virtualPath;
     }

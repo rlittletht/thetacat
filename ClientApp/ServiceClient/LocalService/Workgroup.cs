@@ -4,6 +4,7 @@ using TCore;
 using TCore.SqlCore;
 using TCore.SqlClient;
 using Thetacat.Model;
+using Thetacat.Model.Workgroups;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -40,6 +41,11 @@ public class Workgroup
 
     private static readonly string s_updateWorkgroup = @"
             UPDATE tcat_workgroups SET name=@Name, serverPath=@ServerPath, cacheRoot=@CacheRoot WHERE id=@Id AND catalog_id=@CatalogID";
+
+    private static readonly string s_updateWorkgroupDeletedMediaClockToAtLeast = @"
+        UPDATE tcat_workgroups
+        SET deletedMediaClock = 
+            GREATEST((SELECT deletedMediaClock FROM tcat_workgroups WHERE catalog_id=@CatalogID AND id=@WorkgroupID), @NewClock) WHERE catalog_id=@CatalogID AND id=@WorkgroupID";
 
     private static readonly string s_deleteWorkgroups = @"
             DELETE from tcat_workgroups WHERE catalog_id=@CatalogID";
@@ -163,5 +169,23 @@ public class Workgroup
                 cmd.AddParameterWithValue("@CacheRoot", workgroup.CacheRoot);
                 cmd.AddParameterWithValue("@CatalogID", catalogID);
             });
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateWorkgroupDeleteMediaClockToAtLeast
+        %%Qualified: Thetacat.ServiceClient.LocalService.Workgroup.UpdateWorkgroupDeleteMediaClockToAtLeast
+    ----------------------------------------------------------------------------*/
+    public static void UpdateWorkgroupDeleteMediaClockToAtLeast(Guid catalogID, Guid id, int newClock)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_updateWorkgroupDeletedMediaClockToAtLeast,
+            s_aliases,
+            (cmd) =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+                cmd.AddParameterWithValue("@WorkgroupID", id);
+                cmd.AddParameterWithValue("@NewClock", newClock);
+            });
+
     }
 }

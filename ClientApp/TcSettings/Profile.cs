@@ -2,7 +2,9 @@
 using static Thetacat.TcSettings.TcSettings;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using Thetacat.Filtering;
+using Thetacat.Types;
 
 namespace Thetacat.TcSettings;
 
@@ -32,8 +34,11 @@ public class Profile
 
     public string? TimelineType;
     public string? TimelineOrder;
+    public bool? ExpandMediaStacksInExplorers;
 
-    public string? DerivativeCache;
+    public string? _DerivativeCache;
+    public string? DerivativeCache => LocalCatalogCache;
+    public string? LocalCatalogCache;
 
     public List<string> MetatagMru = new();
     public List<MapPair> ElementsSubstitutions = new();
@@ -67,9 +72,32 @@ public class Profile
         ShowAppLogOnStart = basedOn.ShowAppLogOnStart;
         ExplorerItemSize = basedOn.ExplorerItemSize;
         TimelineType = basedOn.TimelineType;
+        ExpandMediaStacksInExplorers = basedOn.ExpandMediaStacksInExplorers;
         TimelineOrder = basedOn.TimelineOrder;
-        DerivativeCache = basedOn.DerivativeCache;
+        _DerivativeCache = basedOn._DerivativeCache;
+        LocalCatalogCache = basedOn.LocalCatalogCache;
     }
 
     public override string ToString() => Name ?? string.Empty;
+
+    public string RootForCatalogCache(Guid? catalogID)
+    {
+        if (string.IsNullOrEmpty((LocalCatalogCache)))
+            throw new CatException("no root path for catalog cache");
+
+        string path = Path.Combine(LocalCatalogCache, (catalogID ?? CatalogID).ToString());
+        Directory.CreateDirectory(path);
+
+        return path;
+    }
+
+    public void MigrateToLatest()
+    {
+        if (string.IsNullOrEmpty(LocalCatalogCache) && !string.IsNullOrEmpty(_DerivativeCache))
+        {
+            LocalCatalogCache = _DerivativeCache;
+        }
+
+        _DerivativeCache = null;
+    }
 }

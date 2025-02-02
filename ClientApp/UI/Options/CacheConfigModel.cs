@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 
@@ -24,24 +24,10 @@ public class CacheConfigModel: INotifyPropertyChanged
         set => SetField(ref m_profileOptions, value);
     }
 
-    public string DerivativeLocation
+    public string LocalCatalogCacheLocation
     {
-        get => m_derivativeLocation;
-        set => SetField(ref m_derivativeLocation, value);
-    }
-
-    public class CacheTypeItem
-    {
-        public Cache.CacheType Type;
-        public string Name;
-
-        public CacheTypeItem(Cache.CacheType cacheType, string name)
-        {
-            Type = cacheType;
-            Name = name;
-        }
-
-        public override string ToString() => Name;
+        get => m_localCatalogCacheLocation;
+        set => SetField(ref m_localCatalogCacheLocation, value);
     }
 
     public class WorkgroupItem
@@ -62,24 +48,6 @@ public class CacheConfigModel: INotifyPropertyChanged
         set => SetField(ref m_currentWorkgroup, value);
     }
 
-    public CacheTypeItem CurrentCacheType
-    {
-        get => m_cacheType;
-        set => SetField(ref m_cacheType, value);
-    }
-
-    private static readonly CacheTypeItem s_cacheTypePrivate =new CacheTypeItem(Cache.CacheType.Private, "Private");
-    private static readonly CacheTypeItem s_cacheTypeWorkgroyup = new CacheTypeItem(Cache.CacheType.Workgroup, "Workgroup");
-
-    private static readonly List<CacheTypeItem> s_cacheTypes =
-        new()
-        {
-            s_cacheTypePrivate,
-            s_cacheTypeWorkgroyup
-        };
-
-    public List<CacheTypeItem> CacheTypes => s_cacheTypes;
-        
     private string m_cacheLocation = string.Empty;
 
     private ObservableCollection<WorkgroupItem> m_workgroups = new ObservableCollection<WorkgroupItem>();
@@ -90,10 +58,9 @@ public class CacheConfigModel: INotifyPropertyChanged
     private string m_workgroupName = string.Empty;
     private string m_workgroupServerPath = string.Empty;
     private string m_workgroupCacheRoot = string.Empty;
-    private CacheTypeItem m_cacheType = s_cacheTypePrivate;
     private WorkgroupItem? m_currentWorkgroup;
     private string m_workgroupItemName = string.Empty;
-    private string m_derivativeLocation = string.Empty;
+    private string m_localCatalogCacheLocation = string.Empty;
     private ProfileOptions? m_profileOptions;
     private bool m_createNewWorkgroup;
 
@@ -216,20 +183,6 @@ public class CacheConfigModel: INotifyPropertyChanged
         catch (CatExceptionNoSqlConnection)
         {
             return;
-        }
-    }
-
-    public void SetCacheTypeFromString(string type)
-    {
-        Cache.CacheType cacheType = Cache.CacheTypeFromString(type);
-
-        foreach (CacheTypeItem item in CacheTypes)
-        {
-            if (item.Type == cacheType)
-            {
-                CurrentCacheType = item;
-                return;
-            }
         }
     }
 }

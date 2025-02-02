@@ -26,6 +26,16 @@ public class TcSettings
     public string LastExportPath = string.Empty;
     public Dictionary<string, Profile> Profiles = new();
 
+    private void MigrateToLatest()
+    {
+        // go through each settings set and convert it to the modern format
+
+        foreach (Profile profile in Profiles.Values)
+        {
+            profile.MigrateToLatest();
+        }
+    }
+
     public TcSettings()
     {
 #pragma warning disable format // @formatter:off
@@ -51,6 +61,7 @@ public class TcSettings
                             .AddChildElement("Timeline")
                             .AddAttribute("Type", (_, context) => context!.GetDictionaryValue<string, Profile>().TimelineType, (_, value, context) => context!.GetDictionaryValue<string, Profile>().TimelineType = value)
                             .AddAttribute("Order", (_, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder, (_, value, context) => context!.GetDictionaryValue<string, Profile>().TimelineOrder = value)
+                            .AddAttribute("ExpandStackItems", (_, context) => context!.GetDictionaryValue<string, Profile>().ExpandMediaStacksInExplorers?.ToString() ?? "false", (_, value, context) => context!.GetDictionaryValue<string, Profile>().ExpandMediaStacksInExplorers = bool.Parse(value))
                             .AddElement("MetatagMru")
                                 .AddChildElement("Tag", (_, context) => (string?)context?.RepeatKey, (_, value, context) => context!.RepeatKey = value ?? "")
                                 .SetRepeating(CreateMetatagMruRepeatContext, AreRemainingMetatagMru, CommitMetatagMruRepeatItem, (settings) => settings.MetatagMruEnumerator = null)
@@ -86,15 +97,16 @@ public class TcSettings
                         .Pop()
                     .AddElement("CacheOptions")
                         .AddChildElement("Client")
-                            .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>().DerivativeCache = value)
+                            .AddChildElement("DerivativeCache", (_, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>()._DerivativeCache = value)
+                            .AddElement("LocalCatalogCacheRoot", (_, context) => context!.GetDictionaryValue<string, Profile>().LocalCatalogCache, (_, value, context) => context!.GetDictionaryValue<string, Profile>().LocalCatalogCache = value)
                             .AddElement("ClientDatabase", (_, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ClientDatabaseName = value ?? "")
                             .Pop()
                         .Pop()
                         .AddChildElement("CacheType")
                         .AddAttribute("Type", (_, context) => context!.GetDictionaryValue<string, Profile>().CacheType, (_, value, context) => context!.GetDictionaryValue<string, Profile>().CacheType = value)
-                        .AddElement("PrivateCache")
-                            .AddChildElement("CacheLocation", (_, context) => context!.GetDictionaryValue<string, Profile>().CacheLocation, (_, value, context) => context!.GetDictionaryValue<string, Profile>().CacheLocation = value)
-                            .Pop()
+//                      .AddElement("PrivateCache")
+//                          .AddChildElement("CacheLocation", (_, context) => context!.GetDictionaryValue<string, Profile>().CacheLocation, (_, value, context) => context!.GetDictionaryValue<string, Profile>().CacheLocation = value)
+//                          .Pop()
                         .AddElement("WorkgroupCache")
                             .AddChildElement("Workgroup")
                             .AddAttribute("ID", (_, context) => context!.GetDictionaryValue<string, Profile>().WorkgroupId, (_, value, context) => context!.GetDictionaryValue<string, Profile>().WorkgroupId = value)
@@ -121,6 +133,7 @@ public class TcSettings
         {
             using ReadFile<TcSettings> file = ReadFile<TcSettings>.CreateSettingsFile(App.SettingsPath);
             file.DeSerialize(XmlSettingsDescription, this);
+            MigrateToLatest();
         }
         catch (Exception ex) when
             (ex is DirectoryNotFoundException

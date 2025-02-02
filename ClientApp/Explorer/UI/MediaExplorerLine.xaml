@@ -49,11 +49,20 @@
                             </MenuItem.ItemTemplate>
                         </MenuItem>
                         <Separator />
+                        <MenuItem Header="Create and Edit new Version"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.EditNewVersion}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Show/Hide Metatag Panel"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
                                   CommandParameter="{Binding}"/>
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
+                                  CommandParameter="{Binding}"/>
+                        <MenuItem Header="Open item stack"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.OpenItemsStack}"
+                                  CommandParameter="{Binding}" />
+                        <MenuItem Header="Toggle Top Of Stack"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ToggleTopOfStackItems}"
                                   CommandParameter="{Binding}"/>
                         <MenuItem Header="Reset Cache"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
@@ -72,15 +81,32 @@
                     <Image Source="{Binding Path=TileImage}"
                        Margin="5,5,5,5"
                        MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                    <StackPanel Orientation="Horizontal" Margin="15 10" HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom">
+                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" 
+                           MouseMove="OnItemMouseMove" 
+                           AllowDrop="True"
+                           DragEnter="OnItemDragEnter"
+                           DragOver="OnItemDragOver"
+                           DragLeave="OnItemDragLeave" 
+                           Drop="OnItemDragDrop"/>
+                    <StackPanel Orientation="Horizontal" Margin="6 6" HorizontalAlignment="Right"
+                                VerticalAlignment="Bottom" >
+                        <StackPanel.Background>
+                            <SolidColorBrush Color="AntiqueWhite" Opacity="0.7"/>
+                        </StackPanel.Background>
+                        <controls:PendingUploadAdornment Visibility="{Binding Path=PendingUploadAdornerVisibility}" />
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                         <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
+                        <controls:TopOfStackAdornment Visibility="{Binding Path=TopOfStackAdornerVisibility}" />
+                        <controls:NotTopOfStackAdornment Visibility="{Binding Path=NotTopOfStackAdornerVisibility}" />
                     </StackPanel>
                 </Grid>
             </StackPanel>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsActiveDropTarget}" Value="True">
+                    <DataTrigger.Setters>
+                        <Setter Property="Background" Value="Blue" TargetName="ThePanel" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Selected}" Value="True">
                     <DataTrigger.Setters>
                         <Setter Property="Background" Value="Black" TargetName="ThePanel" />

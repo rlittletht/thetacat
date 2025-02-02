@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.Types;
 
 namespace Tests.Model.Workgroups;
@@ -9,8 +10,6 @@ public class CacheMock : Cache, ICache
     private IWorkgroup? m_workgroupOverride;
 
     public override IWorkgroup _Workgroup => m_workgroupOverride ?? throw new CatExceptionInitializationFailure();
-
-    public override CacheType Type => CacheType.Workgroup;
 
     public void SetWorkgroup(IWorkgroup workgroup)
     {

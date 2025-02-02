@@ -1,17 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Metatags;
 
-public class MetatagTreeItem: IMetatagTreeItem
+public class MetatagTreeItem : IMetatagTreeItem
 {
     private Metatag? m_metatag;
+    private string? m_value;
+    private bool? m_checked;
 
-    public bool? Checked { get; set; }
+    public bool? Checked
+    {
+        get => m_checked;
+        set => SetField(ref m_checked, value);
+    }
+
     public bool IsLocalOnly { get; set; }
     public Guid ItemId => m_metatag?.ID ?? Guid.Empty;
     public Guid? ParentId => m_metatag?.Parent;
@@ -21,27 +30,33 @@ public class MetatagTreeItem: IMetatagTreeItem
     public string Name => m_metatag?.Name ?? String.Empty;
     public string ID => m_metatag?.ID.ToString() ?? String.Empty;
 
+    public string? Value
+    {
+        get => m_value;
+        set => SetField(ref m_value, value);
+    }
+
     public bool IsPlaceholder { get; private init; }
 
     public static MetatagTreeItem CreateFromMetatag(Metatag item)
     {
         MetatagTreeItem metatag = new()
-        {
-            m_metatag = item
-        };
+                                  {
+                                      m_metatag = item
+                                  };
         return metatag;
     }
 
     public static MetatagTreeItem CreateParentPlaceholder(Guid id)
     {
         MetatagTreeItem metatag = new()
-        {
-            m_metatag = new Metatag
-            {
-                ID = id
-            },
-            IsPlaceholder = true
-        };
+                                  {
+                                      m_metatag = new Metatag
+                                                  {
+                                                      ID = id
+                                                  },
+                                      IsPlaceholder = true
+                                  };
 
         return metatag;
     }
@@ -143,7 +158,7 @@ public class MetatagTreeItem: IMetatagTreeItem
 
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         MetatagTreeItem newItem =
             new MetatagTreeItem()
@@ -151,12 +166,18 @@ public class MetatagTreeItem: IMetatagTreeItem
                 m_metatag = m_metatag
             };
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
+
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            newItem.Children.Add(clone);
         }
 
+        cloneDelegatePostChildren?.Invoke(newItem);
+
+        newItem.Children.Sort(item => item.Name);
         return newItem;
     }
 
@@ -172,5 +193,20 @@ public class MetatagTreeItem: IMetatagTreeItem
     public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
         Preorder(this, parent, visit, depth);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

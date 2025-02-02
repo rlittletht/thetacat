@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="Thetacat.Controls.PendingUploadAdornment"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Thetacat.Controls"
+             mc:Ignorable="d" Height="24" Width="26">
+    <Canvas Margin="0,0,768,427">
+        <Canvas.LayoutTransform>
+            <ScaleTransform ScaleY=".05" ScaleX=".05" />
+        </Canvas.LayoutTransform>
+        <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+              StrokeStartLineCap="Round" StrokeEndLineCap="Round" Canvas.Left="20.2"
+              Data="M93.72,183.25C49.49,198.05,16,233.1,16,288c0,66,54,112,120,112H320.37" />
+        <Path Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32" Canvas.Left="0.2"
+              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+              Data="M467.82,377.74C485.24,363.3,496,341.61,496,312c0-59.82-53-85.76-96-88-8.89-89.54-71-144-144-144-26.16,0-48.79,6.93-67.6,18.14" />
+        <Line X1="256" Y1="338" X2="256" Y2="197" Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+              StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+        <Polyline Points="320 235.79 256 171.79 192 235.79"
+                  Stroke="#ff000000" StrokeMiterLimit="10" StrokeThickness="32"
+                  StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+        </Polyline>
+    </Canvas>
+</UserControl>

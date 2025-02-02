@@ -9,4 +9,5 @@ public class ServiceWorkgroupItem
     public Guid? CachedBy { get; set; }
     public DateTime? CachedDate { get; set; }
     public int? VectorClock { get; set; }
+    public string? MD5 { get; set; }
 }

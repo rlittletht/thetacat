@@ -1,4 +1,5 @@
 ﻿using System;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
 
@@ -39,7 +40,14 @@ public class MediaTagDiff
             };
     }
 
-    public static MediaTagDiff CreateUpdate(MediaTag tag)
+    /*----------------------------------------------------------------------------
+        %%Function: CreateResurrect
+        %%Qualified: Thetacat.Model.MediaTagDiff.CreateResurrect
+
+        For now, this is just an update...we might create an Op.Resurrect if update
+        isn't enough
+    ----------------------------------------------------------------------------*/
+    public static MediaTagDiff CreateResurrect(MediaTag tag)
     {
         return
             new MediaTagDiff(tag.Metatag.ID)
@@ -49,4 +57,13 @@ public class MediaTagDiff
             };
     }
 
+    public static MediaTagDiff CreateUpdate(MediaTag tag)
+    {
+        return
+            new MediaTagDiff(tag.Metatag.ID)
+            {
+                DiffOp = Op.Update,
+                MediaTag = tag
+            };
+    }
 }

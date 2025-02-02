@@ -11,7 +11,9 @@ using Thetacat.Import.UI;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
@@ -40,8 +42,9 @@ public class MediaImporter
     public delegate void NotifyCatalogItemCreatedOrRepairedDelegate(object? source, MediaItem newItem);
     private readonly ObservableCollection<ImportItem> ImportItems = new();
     private readonly HashSet<string> m_ignoreLogs = new();
+    private readonly HashSet<Guid> m_knownItems = new();
 
-    #region Constructors
+#region Constructors
 
     /*----------------------------------------------------------------------------
         %%Function: MediaImporter.
@@ -89,16 +92,17 @@ public class MediaImporter
         Create an importer for this client -- it will have all the items that
         are pending upload and owned by this client
     ----------------------------------------------------------------------------*/
-    public MediaImporter(string clientSource)
+    public MediaImporter(ICache cache, string clientSource)
     {
-        List<ServiceImportItem> items = ServiceInterop.GetPendingImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
+        List<ServiceImportItem> items = ServiceInterop.GetImportsForClient(App.State.ActiveProfile.CatalogID, clientSource);
         bool skippedItems = false;
+        CacheScanner scanner = new CacheScanner();
 
         foreach (ServiceImportItem item in items)
         {
             if (!App.State.Catalog.TryGetMedia(item.ID, out MediaItem? mediaItem))
             {
-                MainWindow.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
+                App.LogForApp(EventType.Error, $"import item {item.ID} not found in catalog");
 
                 skippedItems = true;
                 ImportItems.Add(
@@ -108,6 +112,7 @@ public class MediaImporter
                         PathSegment.CreateFromString(item.SourceServer),
                         PathSegment.CreateFromString(item.SourcePath),
                         ImportItem.ImportState.MissingFromCatalog));
+                m_knownItems.Add(item.ID);
             }
             else
             {
@@ -117,10 +122,44 @@ public class MediaImporter
                     PathSegment.CreateFromString(item.SourceServer),
                     PathSegment.CreateFromString(item.SourcePath),
                     ImportItem.StateFromString(item.State ?? string.Empty));
-
                 newItem.SkipWorkgroupOnlyItem = mediaItem.DontPushToCloud;
 
+                if (!newItem.SkipWorkgroupOnlyItem)
+                {
+                    // make sure the source item still exists. if it doesn't, we will try to get it from
+                    // the workgroup cache
+                    PathSegment fullPath = newItem.FullSourcePath;
+                    scanner.EnsureDirectoryLoadedForFile(fullPath);
+
+                    if (scanner.GetFileInfoForFile(fullPath) == null)
+                    {
+                        // file doesn't exist in the import location. this can happen if it was
+                        // removable media (since removed), or maybe too much time has passed from the import
+                        // and the upload.
+
+                        // try to get the file from the cache instead
+                        string? local = cache.TryGetCachedFullPath(item.ID);
+                        if (local != null)
+                        {
+                            fullPath = new PathSegment(local);
+                            scanner.EnsureDirectoryLoadedForFile(fullPath);
+                            if (scanner.GetFileInfoForFile(fullPath) == null)
+                            {
+                                // workgroup cache doesn't exist either
+                                App.LogForApp(EventType.Error, $"import item {item.ID} in source location or cache location {fullPath}");
+                                skippedItems = true;
+                                newItem.State = ImportItem.ImportState.MissingFromCatalog;
+                            }
+                            else
+                            {
+                                newItem.SetPathsFromFullPath(fullPath);
+                            }
+                        }
+                    }
+                }
+
                 ImportItems.Add(newItem);
+                m_knownItems.Add(newItem.ID);
             }
         }
 
@@ -136,9 +175,11 @@ public class MediaImporter
             }
         }
     }
-    #endregion
 
-    #region Interactive
+#endregion
+
+#region Interactive
+
     /*----------------------------------------------------------------------------
         %%Function: ClearItems
         %%Qualified: Thetacat.Import.MediaImporter.ClearItems
@@ -157,8 +198,8 @@ public class MediaImporter
         Add the set of files to the importer. Interactive version
     ----------------------------------------------------------------------------*/
     public void AddMediaItemFilesToImporter(
-        IEnumerable<IMediaItemFile> files, 
-        string source, 
+        IEnumerable<IMediaItemFile> files,
+        string source,
         NotifyCatalogItemCreatedOrRepairedDelegate? notifyDelegate)
     {
         foreach (IMediaItemFile file in files)
@@ -179,6 +220,7 @@ public class MediaImporter
             }
 
             ImportItems.Add(newItem);
+            m_knownItems.Add(newItem.ID);
         }
     }
 
@@ -193,9 +235,28 @@ public class MediaImporter
         import.Owner = parentWindow;
         import.ShowDialog();
     }
-    #endregion
 
-    #region Import Media
+#endregion
+
+#region Import Media
+
+    /*----------------------------------------------------------------------------
+        %%Function: PrePopulateCacheForLocalPath
+        %%Qualified: Thetacat.Import.MediaImporter.PrePopulateCacheForLocalPath
+
+        Same as PrePopulateCacheForItem (used in the import path), but takes a
+        path to a local file (used for created a new version based on)
+
+        REMEMBER to push the changes to the workgroup database using
+        cache.PushChangesToDatabase()
+    ----------------------------------------------------------------------------*/
+    public static void PrePopulateCacheForLocalPath(ICache cache, PathSegment fullLocal, MediaItem mediaItem)
+    {
+        cache.PrimeCacheFromImport(mediaItem, fullLocal);
+        mediaItem.NotifyCacheStatusChanged();
+    }
+
+
     /*----------------------------------------------------------------------------
         %%Function: PrePopulateCacheForItem
         %%Qualified: Thetacat.Import.MediaImporter.PrePopulateCacheForItem
@@ -204,11 +265,9 @@ public class MediaImporter
         doing the importing, we have the media already cached locally. we can
         populate the workgroup cache saving a download.
     ----------------------------------------------------------------------------*/
-    void PrePopulateCacheForItem(ImportItem item, MediaItem mediaItem)
+    public static void PrePopulateCacheForItem(ICache cache, ImportItem item, MediaItem mediaItem)
     {
-        // here we can pre-populate our cache.
-        App.State.Cache.PrimeCacheFromImport(mediaItem, PathSegment.Join(item.SourceServer, item.SourcePath));
-        mediaItem.NotifyCacheStatusChanged();
+        PrePopulateCacheForLocalPath(cache, PathSegment.Join(item.SourceServer, item.SourcePath), mediaItem);
     }
 
 
@@ -265,10 +324,11 @@ public class MediaImporter
         things in an incoherent state.
     ----------------------------------------------------------------------------*/
     private void CreateCatalogAndUpdateImportTableWork(
-        Guid catalogID, 
-        IProgressReport report, 
-        ICatalog catalog, 
-        MetatagSchema metatagSchema)
+        Guid catalogID,
+        IProgressReport report,
+        ICatalog catalog,
+        MetatagSchema metatagSchema,
+        ICache cache)
     {
         m_ignoreLogs.Clear();
         int total = ImportItems.Count;
@@ -328,7 +388,7 @@ public class MediaImporter
                     item.State = ImportItem.ImportState.PendingUpload;
 
                     // and handle prepopulating the cache since we have the media locally
-                    PrePopulateCacheForItem(item, mediaItem);
+                    PrePopulateCacheForItem(cache, item, mediaItem);
                 }
             }
             catch (Exception ex)
@@ -386,14 +446,16 @@ public class MediaImporter
 
         Do the actual import on a background thread with progress
     ----------------------------------------------------------------------------*/
-    public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema)
+    public void CreateCatalogItemsAndUpdateImportTable(Guid catalogID, ICatalog catalog, MetatagSchema metatagSchema, ICache cache)
     {
         ProgressDialog.DoWorkWithProgress(
-            (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema));
+            (report) => CreateCatalogAndUpdateImportTableWork(catalogID, report, catalog, metatagSchema, cache));
     }
-    #endregion
 
-    #region Upload Media
+#endregion
+
+#region Upload Media
+
     /*----------------------------------------------------------------------------
         %%Function: UploadPendingMediaWork
         %%Qualified: Thetacat.Import.MediaImporter.UploadPendingMediaWork
@@ -415,14 +477,14 @@ public class MediaImporter
                     && !item.SourcePath.Local.EndsWith("MOV")
                     && !item.SkipWorkgroupOnlyItem)
                 {
-                    PathSegment path = PathSegment.Join(item.SourceServer, item.SourcePath);
+                    PathSegment path = item.FullSourcePath;
                     Task<TcBlob> task = AzureCat._Instance.UploadMedia(item.ID.ToString(), path.Local);
 
                     task.Wait();
 
                     if (task.IsCanceled || task.IsFaulted)
                     {
-                        MainWindow.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
+                        App.LogForAsync(EventType.Warning, "Task was cancelled in UploadPendingMediaWork. Aborting upload");
                         return false;
                     }
 
@@ -431,7 +493,7 @@ public class MediaImporter
 
                     if (media.MD5 != blob.ContentMd5)
                     {
-                        MessageBox.Show($"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
+                        App.LogForApp(EventType.Critical, $"Strange. MD5 was wrong for {path}: was {media.MD5} but blob calculated {blob.ContentMd5}");
                         media.MD5 = blob.ContentMd5;
                     }
 
@@ -440,15 +502,19 @@ public class MediaImporter
                     item.UploadDate = DateTime.Now;
 
                     ServiceInterop.CompleteImportForItem(App.State.ActiveProfile.CatalogID, item.ID);
-                    MainWindow.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
+                    App.LogForAsync(EventType.Information, $"uploaded item {item.ID} ({item.SourcePath}");
                 }
 
                 if (item.State == ImportItem.ImportState.MissingFromCatalog)
                 {
                     ServiceInterop.DeleteImportItem(App.State.ActiveProfile.CatalogID, item.ID);
-                    MainWindow.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
+                    App.LogForAsync(EventType.Information, $"removed missing catalog item {item.ID} ({item.SourcePath}");
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            App.LogForApp(EventType.Critical, $"Upload pending media failed: {ex.Message}");
         }
         finally
         {
@@ -472,5 +538,137 @@ public class MediaImporter
 
         App.State.AddBackgroundWork("Uploading pending media", UploadPendingMediaWork);
     }
-    #endregion
+
+    /*----------------------------------------------------------------------------
+        %%Function: CreateNewImportItemForArbitraryPath
+        %%Qualified: Thetacat.Import.MediaImporter.CreateNewImportItemForArbitraryPath
+
+        Create an item for an arbitrary localPath + mediaItem
+    ----------------------------------------------------------------------------*/
+    public static ImportItem CreateNewImportItemForArbitraryPath(MediaItem mediaItem, PathSegment fullPath)
+    {
+        ImportItem.ImportState state = mediaItem.State == MediaItemState.Active ? ImportItem.ImportState.Complete : ImportItem.ImportState.PendingUpload;
+
+        // need to invent an import item for each missing item
+        ImportItem item = new ImportItem(mediaItem.ID, MainApp.MainWindow.ClientName, PathSegment.Empty, PathSegment.Empty, mediaItem.VirtualPath, state);
+
+        item.SetPathsFromFullPath(fullPath);
+        return item;
+    }
+
+
+    /*----------------------------------------------------------------------------
+        %%Function: MediaImporter
+        %%Qualified: Thetacat.Import.MediaImporter.MediaImporter
+
+        Create an importer with all items for the given catalog
+    ----------------------------------------------------------------------------*/
+    public MediaImporter(Guid catalogID)
+    {
+        IReadOnlyCollection<ServiceImportItem> items = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
+
+        foreach (ServiceImportItem item in items)
+        {
+            ImportItems.Add(new ImportItem(item));
+            m_knownItems.Add(item.ID);
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: RepairImportTables
+        %%Qualified: Thetacat.Import.MediaImporter.RepairImportTables
+
+        Find media that is in the catalog AND in the workgroup, but isn't part
+        of the import tables. (This happened for a while when CreateVersionBasedOn
+        didn't populate the import table).
+    ----------------------------------------------------------------------------*/
+    public void RepairImportTables(ICatalog catalog, ICache cache)
+    {
+        HashSet<Guid> missingItems = new();
+
+        // first go through the workgroup cache
+        foreach (ICacheEntry entry in cache.Entries.Values)
+        {
+            if (!m_knownItems.Contains(entry.ID))
+                missingItems.Add(entry.ID);
+        }
+
+        // now go through the catalog to see if there are any missing
+        foreach (MediaItem mediaItem in catalog.GetMediaCollection())
+        {
+            if (mediaItem.DontPushToCloud)
+            {
+                // if we already added it because it was missing from the cache, remove it
+                // (since we know its never supposed to be uploaded)
+                if (missingItems.Contains(mediaItem.ID))
+                    missingItems.Remove(mediaItem.ID);
+
+                continue;
+            }
+
+            if (!m_knownItems.Contains(mediaItem.ID))
+                missingItems.Add(mediaItem.ID);
+        }
+
+        if (missingItems.Count == 0)
+        {
+            MessageBox.Show("Import tables are consistent with Catalog and Workgroup Cache.");
+            return;
+        }
+
+        List<ImportItem> newItems = new();
+
+        foreach (Guid mediaId in missingItems)
+        {
+            string? localPath = cache.TryGetCachedFullPath(mediaId);
+
+            if (localPath == null)
+            {
+                // can't get a local path. can't create an import item
+                App.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no workgroup cache for it. this will remain broken");
+                continue;
+            }
+
+            if (!catalog.TryGetMedia(mediaId, out MediaItem? mediaItem))
+            {
+                // can't find this item in the catalog. don't try to fix it
+                App.LogForApp(EventType.Critical, $"Can't fix import item for {mediaId} -- no catalog item for it. this will remain broken");
+                continue;
+            }
+
+            if (mediaItem.State == MediaItemState.Active)
+                App.LogForApp(EventType.Critical, $"media state is active for missing import ({mediaItem.VirtualPath}). weird. still fixing.");
+
+            PathSegment fullPath = new PathSegment(localPath);
+            ImportItem item = CreateNewImportItemForArbitraryPath(mediaItem, fullPath);
+
+            newItems.Add(item);
+        }
+
+        if (MessageBox.Show(
+                $"There are {newItems.Count} items that need to be added to the imports table. Do you want to add these?",
+                "Confirm import table repair",
+                MessageBoxButton.YesNo)
+            == MessageBoxResult.Yes)
+        {
+            ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, newItems);
+        }
+    }
+
+    public void UpdateImportItemForMd5Change(MediaItem mediaItem, PathSegment fullPath)
+    {
+        if (m_knownItems.Contains(mediaItem.ID))
+        {
+            // we need to change it to be in a pending state
+            ServiceInterop.ResetImportToPendingForItem(App.State.ActiveProfile.CatalogID, mediaItem.ID, MainApp.MainWindow.ClientName);
+        }
+        else
+        {
+            ImportItem item = CreateNewImportItemForArbitraryPath(mediaItem, fullPath);
+
+            mediaItem.State = MediaItemState.Pending;
+            ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, new List<ImportItem> { item });
+        }
+    }
+#endregion
 }

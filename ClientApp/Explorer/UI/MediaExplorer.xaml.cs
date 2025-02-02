@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using Emgu.CV;
 using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -14,7 +15,10 @@ using Thetacat.Types;
 using Thetacat.Explorer.Commands;
 using Thetacat.Util;
 using Thetacat.Explorer.UI;
+using Thetacat.Import;
 using Thetacat.ServiceClient;
+using System.Windows.Media;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Explorer;
 
@@ -26,18 +30,19 @@ public partial class MediaExplorer : UserControl
     private MediaExplorerCollection? m_collection;
 
     public MediaExplorerModel Model { get; set; } = new();
-    private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
     private readonly ItemSelector m_selector;
 
     public MediaExplorer()
     {
         InitializeComponent();
-           
+
         DataContext = Model;
         m_selector = new ItemSelector(null, UpdateMetatagPanelIfNecessary);
 
         Model.ShowHideMetatagPanel = new ShowHideMetatagPanelCommand(_ShowHideMetatagPanel);
         Model.DeleteItems = new DeleteCommand(_DeleteItems);
+        Model.ToggleTopOfStackItems = new ToggleTopOfStackCommand(_ToggleTopOfStackItems);
+        Model.OpenItemsStack = new OpenItemsStackCommand(_OpenItemsStack);
         Model.ResetCacheItems = new ResetCacheItemsCommand(_ClearCacheItems);
         Model.RotateItemsRight = new RotateItemsRightCommand(_RotateItemsRight);
         Model.MirrorItems = new MirrorItemsCommand(_MirrorItems);
@@ -47,11 +52,10 @@ public partial class MediaExplorer : UserControl
         Model.AddExtendSelectPanel = new SelectPanelCommand(m_selector._StickyExtendSelectPanel);
         Model.ContextSelectPanel = new SelectPanelCommand(m_selector._ContextSelectPanel);
         Model.LaunchItem = new LaunchItemCommand(LaunchItem);
+        Model.EditNewVersion = new EditNewVersionCommand(_EditNewVersion);
         Model.RemoveMenuTag = new ProcessMenuTagCommand(RemoveMenuTagFromSelectedItems);
         Model.AddMenuTag = new ProcessMenuTagCommand(ApplyMenuTagToSelectedItems);
     }
-
-    private readonly List<MediaItemZoom> m_zooms = new List<MediaItemZoom>();
 
     MediaItem? GetNextItem(MediaItem item)
     {
@@ -75,18 +79,77 @@ public partial class MediaExplorer : UserControl
         return nextMediaItem;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: JumpToLine
+        %%Qualified: Thetacat.Explorer.MediaExplorer.JumpToLine
+    ----------------------------------------------------------------------------*/
+    public void JumpToLine(int line)
+    {
+        if (line != -1)
+        {
+            if (VisualTreeHelper.GetChild(ExplorerBox, 0) is ScrollViewer scrollViewer)
+            {
+                double scrollTo = line;
+                scrollViewer.ScrollToVerticalOffset(scrollTo);
+            }
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: SyncCatalog
+        %%Qualified: Thetacat.Explorer.MediaExplorer.SyncCatalog
+    ----------------------------------------------------------------------------*/
+    void SyncCatalog(MediaItem item)
+    {
+        int? line = m_collection?.GetLineForItem(item);
+
+        if (line != null)
+            JumpToLine(line.Value);
+    }
+
+
+    public void _EditNewVersion(MediaExplorerItem? context)
+    {
+        if (context == null)
+            return;
+
+        if (m_selector.SelectedItems.Count != 1)
+        {
+            MessageBox.Show("You must select exactly one item in order to create and edit a version");
+            return;
+        }
+
+        foreach (MediaExplorerItem item in m_selector.SelectedItems)
+        {
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
+
+            MediaItem? itemNew = App.State.Catalog.CreateVersionBasedOn(App.State.Cache, mediaItem);
+
+            if (itemNew != null)
+            {
+                // now we have to get this item into the cache and refresh the catalog
+                List<MediaItem> itemsToQueue = new() { itemNew };
+
+                MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
+            }
+        }
+    }
+
+    // with a 125,000 range of vector clocks, we get 34k vector clock ranges...
+    private static readonly int s_zoomVectorClockRange = 125000;
+    private int m_nextZoomVectorClockBase = s_zoomVectorClockRange;
+
     public void LaunchItem(MediaExplorerItem? context)
     {
         if (context == null)
             return;
 
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(context.MediaId);
-            
-        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem);
 
-        zoom.Closing += OnMediaZoomClosing;
+        MediaItemZoom zoom = new MediaItemZoom(mediaItem, GetNextItem, GetPreviousItem, SyncCatalog, m_nextZoomVectorClockBase);
+        m_nextZoomVectorClockBase += s_zoomVectorClockRange;
 
-        m_zooms.Add(zoom);
+        App.State.WindowManager.AddZoom(zoom);
         zoom.Show();
     }
 
@@ -101,6 +164,11 @@ public partial class MediaExplorer : UserControl
 
     public void ScrollTo(int line)
     {
+    }
+
+    public void ClearSelection()
+    {
+        m_selector.ResetSelection();
     }
 
     public void ResetContent(MediaExplorerCollection collection)
@@ -127,35 +195,34 @@ public partial class MediaExplorer : UserControl
         UpdateCollectionDimensions();
     }
 
-    private void OnMediaZoomClosing(object? sender, CancelEventArgs e)
-    {
-        if (sender != null)
-            m_zooms.Remove((MediaItemZoom)sender);
-    }
-
     public void Close()
     {
-        foreach (MediaItemZoom zoom in m_zooms)
-        {
-            zoom.Closing -= OnMediaZoomClosing;
-            zoom.Close();
-        }
+        // call this regardless of collection open status
+        App.State.WindowManager.OnCloseCollection();
 
         if (m_collection != null)
         {
-            if (m_applyMetatagPanel != null)
-            {
-                m_applyMetatagPanel.Close();
-                m_applyMetatagPanel = null;
-            }
             m_collection.Close();
             m_collection = null;
         }
     }
 
+    public void ToggleMetatagPanel()
+    {
+        if (App.State.WindowManager.ApplyMetatagPanel != null)
+        {
+            App.State.WindowManager.ApplyMetatagPanel.Close();
+            App.State.WindowManager.ApplyMetatagPanel = null;
+        }
+        else
+        {
+            _ShowHideMetatagPanel(null);
+        }
+    }
+
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        MainWindow.LogForApp(EventType.Information, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
+        App.LogForApp(EventType.Verbose, $"OnScrollChanged: Change: {e.VerticalChange}, Offset: {e.VerticalOffset}");
         m_collection?.NotifyTopVisibleItem((int)e.VerticalOffset);
         m_collection?.EnsureImagesForSurroundingRows((int)e.VerticalOffset);
     }
@@ -168,6 +235,7 @@ public partial class MediaExplorer : UserControl
         {
             { ExplorerItemSize.Medium, 1.0 },
             { ExplorerItemSize.Large, 1.75 },
+            { ExplorerItemSize.ExtraLarge, 2.5 },
             { ExplorerItemSize.Small, 0.66 }
         };
 
@@ -184,57 +252,31 @@ public partial class MediaExplorer : UserControl
 
     public void SetExplorerItemSize(ExplorerItemSize itemSize)
     {
-        m_itemSize = itemSize;
-        SetModelFromExplorerItemSize(m_itemSize);
+        Model.ItemSize = itemSize;
+        SetModelFromExplorerItemSize(Model.ItemSize);
         App.State.ActiveProfile.ExplorerItemSize = itemSize;
     }
 
-    private ApplyMetatag? m_applyMetatagPanel = null;
-
-    private List<MediaItem> GetSelectedMediaItems(IEnumerable<MediaExplorerItem> selectedItems)
+    private void UpdateMetatagPanelIfNecessary(IReadOnlyCollection<MediaItem> mediaItems)
     {
-        List<MediaItem> mediaItems = new();
-        ICatalog catalog = App.State.Catalog;
-
-        foreach (MediaExplorerItem item in selectedItems)
-        {
-            mediaItems.Add(catalog.GetMediaFromId(item.MediaId));
-        }
-
-        return mediaItems;
+        App.State.WindowManager.ApplyMetatagPanel?.UpdateForMedia(mediaItems, App.State.MetatagSchema, m_selector.VectorClock, ApplySyncMetatags);
     }
 
-    private void UpdateMetatagPanelIfNecessary(IEnumerable<MediaExplorerItem> selectedItems)
+    public void OnParentWindowActivated()
     {
-        if (m_applyMetatagPanel != null)
-        {
-            MicroTimer timer = new MicroTimer();
-            timer.Start();
-            List<MediaItem> mediaItems = GetSelectedMediaItems(selectedItems);
-
-            m_applyMetatagPanel.UpdateForMedia(mediaItems, App.State.MetatagSchema, m_selector.VectorClock);
-            MainWindow.LogForApp(EventType.Warning, $"UpdateMetatagPanelIfNecessary: {timer.Elapsed()}");
-        }
-
+        UpdateMetatagPanelIfNecessary(ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems));
     }
 
-    void RemoveMediatagFromMedia(Guid mediaTagID, IEnumerable<MediaItem> selectedItems)
-    {
-        foreach (MediaItem item in selectedItems)
-        {
-            item.FRemoveMediaTag(mediaTagID);
-        }
-    }
+    /*----------------------------------------------------------------------------
+        %%Function: ApplySyncMetatags
+        %%Qualified: Thetacat.Explorer.MediaExplorer.ApplySyncMetatags
 
-    void SetMediatagForMedia(MediaTag mediaTag, IEnumerable<MediaItem> selectedItems)
-    {
-        foreach (MediaItem item in selectedItems)
-        {
-            item.FAddOrUpdateMediaTag(mediaTag, true);
-        }
-    }
-
-    void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, int vectorClock)
+        Apply the given tags to the media item(s). Use vectorClock to validate
+        that the MetatagPanel and this model change function agree on the model
+        that should be updated (both the set of items and the version of the
+        items)
+    ----------------------------------------------------------------------------*/
+    void ApplySyncMetatags(Dictionary<string, bool?> checkedUncheckedAndIndeterminate, Dictionary<string, string?> values, int vectorClock)
     {
         MetatagSchema schema = App.State.MetatagSchema;
 
@@ -244,61 +286,9 @@ public partial class MediaExplorer : UserControl
             return;
         }
 
-        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
-        Dictionary<string, bool?> originalState = ApplyMetatag.GetCheckedAndIndetermineFromMediaSet(mediaItems);
+        List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
 
-        // find all the tags to remove
-        foreach (KeyValuePair<string, bool?> item in originalState)
-        {
-            // if its indeterminate, then there is no chang
-            if (!checkedUncheckedAndIndeterminate.TryGetValue(item.Key, out bool? checkedState)
-                || checkedState == null)
-            {
-                continue;
-            }
-
-            // if it was true and now its false, remove it
-            if (item.Value == true && checkedState == false)
-            {
-                RemoveMediatagFromMedia(Guid.Parse(item.Key), mediaItems);
-            }
-
-            if (item.Value == false)
-                MessageBox.Show("Strange. We have a false in the checked/indeterminate");
-        }
-
-        int mruClock = App.State.MetatagMRU.VectorClock;
-
-        // find all the tags to add
-        foreach (KeyValuePair<string, bool?> item in checkedUncheckedAndIndeterminate)
-        {
-            if (item.Value is true)
-            {
-                if (!originalState.TryGetValue(item.Key, out bool? checkedState) 
-                    || checkedState == null
-                    || checkedState == false)
-                {
-                    // it was originally unset(false), was indeterminate, or was false
-                    MediaTag mediaTag = MediaTag.CreateMediaTag(schema, Guid.Parse(item.Key), null);
-                    SetMediatagForMedia(mediaTag, mediaItems);
-
-                    App.State.MetatagMRU.TouchMetatag(mediaTag.Metatag);
-                }
-            }
-        }
-
-        if (mruClock != App.State.MetatagMRU.VectorClock)
-        {
-            App.State.ActiveProfile.MetatagMru.Clear();
-            foreach (Metatag tag in App.State.MetatagMRU.RecentTags)
-            {
-                App.State.ActiveProfile.MetatagMru.Add(tag.ID.ToString());
-            }
-
-            App.State.Settings.WriteSettings();
-        }
-
-        UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
+        App.State.WindowManager.ApplyMetatagPanel?.UpdateMediaForMetatagChanges(checkedUncheckedAndIndeterminate, values, mediaItems, schema);
     }
 
     private void UnloadItemCaches(MediaExplorerItem explorerItem)
@@ -318,7 +308,7 @@ public partial class MediaExplorer : UserControl
         foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
         {
             MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
-            
+
             try
             {
                 UnloadItemCaches(explorerItem);
@@ -331,7 +321,7 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _RotateItemsRight(MediaExplorerItem? context)
@@ -363,7 +353,7 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
     }
 
     private void _MirrorItems(MediaExplorerItem? context)
@@ -388,32 +378,52 @@ public partial class MediaExplorer : UserControl
             }
         }
 
-        MediaExplorerCollection.QueueImageCacheLoadForMediaItems(itemsToQueue);
+        MediaExplorerCollection.QueuePreviewImageCacheLoadForMediaItems(itemsToQueue);
+    }
+
+    private void _ToggleTopOfStackItems(MediaExplorerItem? context)
+    {
+        foreach (MediaExplorerItem item in m_selector.SelectedItems)
+        {
+            item.IsTopOfStack = !item.IsTopOfStack;
+        }
+    }
+
+    private void _OpenItemsStack(MediaExplorerItem? context)
+    {
+        foreach (MediaExplorerItem item in m_selector.SelectedItems)
+        {
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(item.MediaId);
+
+            MediaStack? stack =
+                mediaItem.MediaStack != null ? App.State.Catalog.MediaStacks.Items[mediaItem.MediaStack.Value] :
+                mediaItem.VersionStack != null ? App.State.Catalog.VersionStacks.Items[mediaItem.VersionStack.Value] : null;
+
+            if (stack != null)
+                StackExplorer.ShowStackExplorer(stack);
+        }
     }
 
     private void _DeleteItems(MediaExplorerItem? context)
     {
-        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+        List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
 
         m_collection?.FDoDeleteItems(mediaItems);
     }
 
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)
     {
-        if (m_applyMetatagPanel == null)
-        {
-            m_applyMetatagPanel = new ApplyMetatag(ApplySyncMetatags);
-            m_applyMetatagPanel.Closing += ((_, _) => m_applyMetatagPanel = null);
-        }
+        if (App.State.WindowManager.ApplyMetatagPanel == null)
+            App.State.WindowManager.ApplyMetatagPanel = new ApplyMetatag(ApplySyncMetatags);
 
-        if (m_applyMetatagPanel.IsVisible)
+        if (App.State.WindowManager.ApplyMetatagPanel.IsVisible)
         {
-            m_applyMetatagPanel.Hide();
+            App.State.WindowManager.ApplyMetatagPanel.Hide();
         }
         else
         {
-            UpdateMetatagPanelIfNecessary(m_selector.SelectedItems);
-            m_applyMetatagPanel.Show();
+            UpdateMetatagPanelIfNecessary(ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems));
+            App.State.WindowManager.ApplyMetatagPanel.Show();
         }
     }
 
@@ -427,11 +437,15 @@ public partial class MediaExplorer : UserControl
 
             if (App.State.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
             {
-                foreach (KeyValuePair<Guid, MediaTag> tag in mediaItem.Tags)
+                foreach (MediaTag tag in mediaItem.MediaTags)
                 {
-                    if (MetatagStandards.GetStandardFromStandardTag(tag.Value.Metatag.Standard) != MetatagStandards.Standard.User
-                        && tag.Value.Metatag.ID != BuiltinTags.s_DontPushToCloudID
-                        && tag.Value.Metatag.ID != BuiltinTags.s_IsTrashItemID)
+                    if (tag.Deleted)
+                        continue;
+
+                    if (MetatagStandards.GetStandardFromStandardTag(tag.Metatag.Standard) != MetatagStandards.Standard.User
+                        && tag.Metatag.ID != BuiltinTags.s_DontPushToCloudID
+                        && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID
+                        && tag.Metatag.ID != BuiltinTags.s_DateSpecifiedID)
                     {
                         continue;
                     }
@@ -439,14 +453,14 @@ public partial class MediaExplorer : UserControl
                     Model.ExplorerContextMenu.AppliedTags.Add(
                         new ExplorerMenuTag()
                         {
-                            MediaTagId = tag.Value.Metatag.ID,
-                            TagDescription = tag.Value.Metatag.Description,
-                            TagName = tag.Value.Metatag.Name
+                            MediaTagId = tag.Metatag.ID,
+                            TagDescription = tag.Metatag.Description,
+                            TagName = tag.Metatag.Name
                         });
                 }
             }
 
-            MainWindow.LogForApp(EventType.Information, $"hit test result: {item.TileSrc}, {item.TileLabel}");
+            App.LogForApp(EventType.Verbose, $"hit test result: {item.TileSrc}, {item.TileLabel}");
         }
 
         if (Model.ExplorerContextMenu.RecentTagVectorClock != App.State.MetatagMRU.VectorClock)
@@ -468,9 +482,12 @@ public partial class MediaExplorer : UserControl
     private void RemoveMenuTagFromSelectedItems(ExplorerMenuTag? menuTag)
     {
         if (menuTag == null) return;
-        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+        List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
 
-        RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
+        ApplyMetatag.RemoveMediatagFromMedia(menuTag.MediaTagId, mediaItems);
+
+        // and now invalidate the selection to make sure we update the metatag panel
+        m_selector.NotifySelectionChanged();
     }
 
     private void ApplyMenuTagToSelectedItems(ExplorerMenuTag? menuTag)
@@ -478,8 +495,11 @@ public partial class MediaExplorer : UserControl
         if (menuTag == null) return;
 
         MetatagSchema schema = App.State.MetatagSchema;
-        List<MediaItem> mediaItems = GetSelectedMediaItems(m_selector.SelectedItems);
+        List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
         MediaTag mediaTag = MediaTag.CreateMediaTag(schema, menuTag.MediaTagId, null);
-        SetMediatagForMedia(mediaTag, mediaItems);
+        ApplyMetatag.SetMediatagForMedia(mediaTag, mediaItems);
+
+        // and now invalidate the selection to make sure we update the metatag panel
+        m_selector.NotifySelectionChanged();
     }
 }

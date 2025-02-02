@@ -2,7 +2,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 using Thetacat.Explorer.Commands;
+using Thetacat.Logging;
 
 namespace Thetacat.Explorer.UI;
 
@@ -16,6 +19,8 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ExplorerContextMenuModel ExplorerContextMenu { get; set; } = new ExplorerContextMenuModel();
     public ShowHideMetatagPanelCommand? ShowHideMetatagPanel { get; set; }
     public DeleteCommand? DeleteItems { get; set; }
+    public ToggleTopOfStackCommand? ToggleTopOfStackItems { get; set; }
+    public OpenItemsStackCommand? OpenItemsStack { get; set; }
     public ResetCacheItemsCommand? ResetCacheItems { get; set; }
     public RotateItemsRightCommand? RotateItemsRight{ get; set; }
     public MirrorItemsCommand? MirrorItems { get; set; }
@@ -28,6 +33,13 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public ProcessMenuTagCommand? AddMenuTag { get; set; }
 
     public LaunchItemCommand? LaunchItem { get; set; }
+    public EditNewVersionCommand? EditNewVersion { get; set; }
+
+    public ExplorerItemSize ItemSize
+    {
+        get => m_itemSize;
+        set => SetField(ref m_itemSize, value);
+    }
 
     public double PanelItemHeight
     {
@@ -69,5 +81,5 @@ public class MediaExplorerModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<MediaExplorerLineModel> ExplorerLines = new();
-
+    private ExplorerItemSize m_itemSize = ExplorerItemSize.Medium;
 }

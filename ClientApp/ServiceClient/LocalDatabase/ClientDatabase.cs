@@ -11,6 +11,7 @@ using TCore.SQLiteClient;
 using Thetacat.Model.Client;
 using Thetacat.Types;
 using Thetacat.Util;
+using Thetacat.Model.Md5Caching;
 
 namespace Thetacat.ServiceClient.LocalDatabase;
 
@@ -74,6 +75,7 @@ public class ClientDatabase
         return connection;
     }
 
+   
     private readonly string s_createMd5Cache = @"
         CREATE TABLE tcat_md5cache
             (path VARCHAR(1024) NOT NULL,
@@ -88,7 +90,8 @@ public class ClientDatabase
             scaleFactor REAL NOT NULL,
             transformationsKey NVARCHAR(1024) NOT NULL,
             path VARCHAR(1024) NOT NULL,
-            PRIMARY KEY (media, mimeType, scaleFactor, transformationsKey))";
+            md5 NVARCHAR(32) NOT NULL,
+            PRIMARY KEY (media, md5, mimeType, scaleFactor, transformationsKey))";
 
     /*----------------------------------------------------------------------------
         %%Function: CreateDatabase
@@ -114,7 +117,7 @@ public class ClientDatabase
     }
 
     private readonly string s_queryDerivatives = @"
-        SELECT $$tcat_derivatives$$.media, $$tcat_derivatives$$.mimeType, $$tcat_derivatives$$.scaleFactor, $$tcat_derivatives$$.transformationsKey, $$tcat_derivatives$$.path
+        SELECT $$tcat_derivatives$$.media, $$tcat_derivatives$$.mimeType, $$tcat_derivatives$$.scaleFactor, $$tcat_derivatives$$.transformationsKey, $$tcat_derivatives$$.path, $$tcat_derivatives$$.md5
         FROM $$#tcat_derivatives$$";
 
     public List<DerivativeDbItem> ReadDerivatives()
@@ -132,10 +135,11 @@ public class ClientDatabase
                             reader.GetString(1),
                             reader.GetDouble(2),
                             reader.GetString(3),
-                            reader.GetString(4)));
+                            reader.GetString(4),
+                            reader.GetString(5)));
                 },
                 s_aliases
-                );
+            );
         }
         catch (SqlExceptionNoResults)
         {
@@ -147,14 +151,14 @@ public class ClientDatabase
     string BuildDerivativeInsertCommand(DerivativeItem item)
     {
         return
-            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, transformationsKey, path) VALUES ({SqlText.SqlifyQuoted(item.MediaId.ToString())}, {SqlText.SqlifyQuoted(item.MimeType)}, {item.ScaleFactor}, {SqlText.SqlifyQuoted(item.TransformationsKey)}, {SqlText.SqlifyQuoted(item.Path)}) ";
+            $"INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, transformationsKey, path, md5) VALUES ({SqlText.SqlifyQuoted(item.MediaId.ToString())}, {SqlText.SqlifyQuoted(item.MimeType)}, {item.ScaleFactor}, {SqlText.SqlifyQuoted(item.TransformationsKey)}, {SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}) ";
     }
 
     string BuildDerivativeDeleteCommand(DerivativeItem item)
     {
-        return $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor}";
+        return
+            $"DELETE FROM tcat_derivatives WHERE media={SqlText.SqlifyQuoted(item.MediaId.ToString())} AND mimeType={SqlText.SqlifyQuoted(item.MimeType)} AND scaleFactor={item.ScaleFactor} AND MD5={SqlText.SqlifyQuoted(item.MD5)}";
     }
-
 
     List<string> BuildDerivativeInsertCommands(IEnumerable<DerivativeItem> items)
     {
@@ -192,10 +196,16 @@ public class ClientDatabase
             s_aliases);
     }
 
-    public void ExecuteDerivativeUpdates(IEnumerable<DerivativeItem> deletes, IEnumerable<DerivativeItem> inserts)
+    public void ExecuteDerivativeUpdates(IEnumerable<DerivativeItem> deletes, IEnumerable<DerivativeItem> inserts, IEnumerable<DerivativeItem> updates)
     {
         List<string> insertCommands = BuildDerivativeInsertCommands(inserts);
         List<string> deleteCommands = BuildDerivativeDeleteCommands(deletes);
+
+        // we don't actually update expired items -- we delete them because a subsequent insert
+        // will replace it. when we query again on the next session we will have the latest.
+
+        // this is preferable because the derivatives on disk self-replace. (GUID-WxH-transform.jpg)
+        List<string> updateCommands = BuildDerivativeDeleteCommands(updates);
 
         _Connection.BeginTransaction();
         try
@@ -210,11 +220,18 @@ public class ClientDatabase
             WorkgroupDb.ExecutePartedCommands(
                 _Connection,
                 "",
-                insertCommands,
+                updateCommands,
                 (line) => line,
                 100,
                 ";");
             _Connection.Commit();
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                insertCommands,
+                (line) => line,
+                100,
+                ";");
             return;
         }
         catch
@@ -266,7 +283,13 @@ public class ClientDatabase
 
     string BuildMd5InsertCommand(Md5CacheItem item)
     {
-        return $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ({SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}, '{item.LastModified.ToUniversalTime():u}', {item.Size}) ";
+        return
+            $"INSERT INTO tcat_md5cache (path, md5, lastModified, size) VALUES ({SqlText.SqlifyQuoted(item.Path)}, {SqlText.SqlifyQuoted(item.MD5)}, '{item.LastModified.ToUniversalTime():u}', {item.Size}) ";
+    }
+
+    string BuildMd5UpdateCommand(Md5CacheItem item)
+    {
+        return $"UPDATE tcat_md5cache SET md5={SqlText.SqlifyQuoted(item.MD5)}, lastModified='{item.LastModified.ToUniversalTime():u}', size={item.Size} WHERE path={SqlText.SqlifyQuoted(item.Path)}";
     }
 
     string BuildMd5DeleteCommand(Md5CacheItem item)
@@ -274,31 +297,34 @@ public class ClientDatabase
         return $"DELETE FROM tcat_md5cache WHERE path={SqlText.SqlifyQuoted(item.Path)}";
     }
 
-    List<string> BuildMd5InsertCommands(IEnumerable<Md5CacheItem> items)
+    void BuildMd5Commands(
+        IEnumerable<Md5CacheItem> items,
+        out List<string> insertCommands,
+        out List<string> updateCommands,
+        out List<string> deleteCommands)
     {
-        List<string> commands = new List<string>();
+        insertCommands = new List<string>();
+        updateCommands = new List<string>();
+        deleteCommands = new List<string>();
+
         foreach (Md5CacheItem item in items)
         {
-            commands.Add(BuildMd5InsertCommand(item));
+            if (item.ChangeState == ChangeState.Create)
+                insertCommands.Add(BuildMd5InsertCommand(item));
+            else if (item.ChangeState == ChangeState.Delete)
+                deleteCommands.Add(BuildMd5DeleteCommand(item));
+            else if (item.ChangeState == ChangeState.Update)
+                updateCommands.Add(BuildMd5UpdateCommand(item));
         }
-        return commands ;
     }
 
-    List<string> BuildMd5DeleteCommands(IEnumerable<Md5CacheItem> items)
+    public void ExecuteMd5CacheUpdates(IEnumerable<Md5CacheItem> changes)
     {
-        List<string> commands = new List<string>();
-        foreach (Md5CacheItem item in items)
-        {
-            commands.Add(BuildMd5DeleteCommand(item));
-        }
-
-        return commands;
-    }
-
-    public void ExecuteMd5CacheUpdates(IEnumerable<Md5CacheItem> deletes, IEnumerable<Md5CacheItem> inserts)
-    {
-        List<string> insertCommands = BuildMd5InsertCommands(inserts);
-        List<string> deleteCommands = BuildMd5DeleteCommands(deletes);
+        BuildMd5Commands(
+            changes,
+            out List<string> insertCommands,
+            out List<string> updateCommands,
+            out List<string> deleteCommands);
 
         _Connection.BeginTransaction();
         try
@@ -317,6 +343,13 @@ public class ClientDatabase
                 (line) => line,
                 100,
                 ";");
+            WorkgroupDb.ExecutePartedCommands(
+                _Connection,
+                "",
+                updateCommands,
+                (line) => line,
+                100,
+                ";");
             _Connection.Commit();
             return;
         }
@@ -325,5 +358,48 @@ public class ClientDatabase
             _Connection.Rollback();
             throw;
         }
+    }
+
+    private readonly string s_copyFromOldDerivatives = @"
+        INSERT INTO tcat_derivatives (media, mimeType, scaleFactor, transformationsKey, path, md5)
+        SELECT media, mimeType, scaleFactor, transformationsKey, path, '' FROM tcat_derivatives_old";
+
+    void CreateNewDerivativeTableAndPopulate()
+    {
+        // first, rename the existing table
+        _Connection.ExecuteNonQuery(new SqlCommandTextInit("ALTER TABLE tcat_derivatives RENAME TO tcat_derivatives_old"));
+
+        // now create the new table structure
+        _Connection.ExecuteNonQuery(s_createDerivatives);
+
+        // now populate from the old table
+        _Connection.ExecuteNonQuery(new SqlCommandTextInit(s_copyFromOldDerivatives));
+
+        // and drop the old table
+        _Connection.ExecuteNonQuery(new SqlCommandTextInit("DROP TABLE tcat_derivatives_old"));
+    }
+
+    void CheckDerivativeTable()
+    {
+        // first figure out if we've got everything we need
+        TableInfo info = TableInfo.CreateTableInfo(_Connection, "tcat_derivatives");
+
+        if (!info.IsColumnDefined("md5"))
+        {
+            CreateNewDerivativeTableAndPopulate();
+        }
+
+        // and make sure they stick
+        info = TableInfo.CreateTableInfo(_Connection, "tcat_derivatives");
+
+        if (!info.IsColumnDefined("md5"))
+            throw new CatExceptionInternalFailure("md5 column not defined even after we altered the table!");
+    }
+
+    // make a class to get the results from the table info, then execute a query reader into it, then
+    // check if it has the md5 column. if not, call the adjust derivatives and we should be good to go. to sleep.
+    public void AdjustDatabaseIfNecessary()
+    {
+        CheckDerivativeTable();
     }
 }

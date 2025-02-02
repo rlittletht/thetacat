@@ -23,9 +23,22 @@
                                   ItemsSource="{Binding Children}">
             <StackPanel Orientation="Horizontal"
                         ContextMenu="{Binding Path=ItemContextMenu, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}">
-                <CheckBox IsChecked="{Binding Checked}" IsThreeState="True" />
+                <CheckBox IsChecked="{Binding Checked}"
+                          IsThreeState="{Binding Path=IsThreeState, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}" />
                 <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
                 <TextBlock Text="{Binding Description}" Margin="15,0,0,0" />
+            </StackPanel>
+        </HierarchicalDataTemplate>
+
+        <HierarchicalDataTemplate x:Key="CheckableTemplateWithValues" DataType="{x:Type metatags:IMetatagTreeItem}"
+                                  ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal"
+                        ContextMenu="{Binding Path=ItemContextMenu, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}">
+                <CheckBox IsChecked="{Binding Checked}"
+                          IsThreeState="{Binding Path=IsThreeState, RelativeSource={RelativeSource AncestorType=local:MetatagTreeView}}" />
+                <TextBlock Text="{Binding Name}" Margin="2,0,0,0" />
+                <TextBlock Text="{Binding Description}" Margin="15,0,0,0" />
+                <TextBlock Text="{Binding Value}" Margin="15,0,0,0" />
             </StackPanel>
         </HierarchicalDataTemplate>
         
@@ -33,20 +46,23 @@
             <TextBlock DockPanel.Dock="Right" Text="{Binding Path=SchemaVersion}" />
             <TextBlock DockPanel.Dock="Right" Margin="0,0,2,0">Metatag Schema Version:</TextBlock>
         </DockPanel>
-        
+
         <metatagTreeViewControl:MetatagTreeViewTemplateSelector x:Key="MetatagTreeViewTemplateSelector"
                                                                 NonCheckableTemplate="{StaticResource NonCheckableTemplate}"
-                                                                CheckableTemplate="{StaticResource CheckableTemplate}" />
+                                                                CheckableTemplate="{StaticResource CheckableTemplate}"
+                                                                CheckableTemplateWithValues="{StaticResource CheckableTemplateWithValues}"
+                                                                />
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="100*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}" SelectedItemChanged="DoSelectedItemChanged">
+        <TreeView Name="Tree" Grid.Row="0" ItemTemplateSelector="{StaticResource MetatagTreeViewTemplateSelector}"
+                  SelectedItemChanged="DoSelectedItemChanged">
             <TreeView.Resources>
                 <Style TargetType="TreeViewItem">
-                    <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_SelectItemOnRightMouseClick"/>
+                    <EventSetter Event="MouseRightButtonDown" Handler="TreeViewItem_SelectItemOnRightMouseClick" />
                 </Style>
             </TreeView.Resources>
             <!-- 

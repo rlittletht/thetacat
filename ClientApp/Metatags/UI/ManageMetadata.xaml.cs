@@ -169,7 +169,7 @@ public partial class ManageMetadata : Window
     void InitializeAvailableParents()
     {
         if (m_metatagLineageMap == null)
-            m_metatagLineageMap = EditFilter.BuildLineageMap();
+            m_metatagLineageMap = App.State.MetatagSchema.BuildLineageMap();
 
         IComparer<KeyValuePair<Guid, string>> comparer =
             Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
@@ -207,6 +207,7 @@ public partial class ManageMetadata : Window
         }
 
         Model.SelectedMetatag = new ManageMetadataMetatag();
+        SelectParentMetatag(BuiltinTags.s_UserRootID);
         Model.MetatagBase = new ManageMetadataMetatag(Model.SelectedMetatag);
     }
 

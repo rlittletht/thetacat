@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Thetacat.Types;
+using Thetacat.Util;
 using Metatag = Thetacat.Metatags.Model.Metatag;
 
 namespace Thetacat.Metatags;
@@ -116,10 +120,12 @@ public class MetatagTree : IMetatagTreeItem
                         treeItem.ParentId.Value,
                         MetatagTreeItem.CreateParentPlaceholder(treeItem.ParentId.Value));
                 }
+
                 IdMap[treeItem.ParentId.Value].AddChild(treeItem);
             }
         }
     }
+
     public MetatagTree()
     {
     }
@@ -127,6 +133,12 @@ public class MetatagTree : IMetatagTreeItem
     public ObservableCollection<IMetatagTreeItem> Children => RootMetatags;
     public string Description => "Metatags";
     public string Name => "___Root";
+    public string? Value
+    {
+        get => null;
+        set => throw new CatExceptionInternalFailure("can't set tree value");
+    }
+
     public string ID => "";
     public bool? Checked { get; set; }
 
@@ -166,15 +178,19 @@ public class MetatagTree : IMetatagTreeItem
 
     public IMetatagTreeItem? FindParentOfChild(IMetatagMatcher<IMetatagTreeItem> treeItemMatcher) => MetatagTreeItem.FindParentOfChild(this, treeItemMatcher);
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         MetatagTree newItem = new MetatagTree();
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            newItem.Children.Add(clone);
         }
+
+        cloneDelegatePostChildren?.Invoke(newItem);
 
         return newItem;
     }
@@ -187,8 +203,13 @@ public class MetatagTree : IMetatagTreeItem
     public static void CloneAndAddCheckedItems(
         IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        bool fSort,
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
+        IComparer<IMetatagTreeItem?> comparer = Comparer<IMetatagTreeItem?>.Create(
+            (left, right) => string.Compare(left?.Name ?? "", right?.Name ?? "", StringComparison.CurrentCultureIgnoreCase));
+
         if (items == null)
             return;
 
@@ -201,18 +222,44 @@ public class MetatagTree : IMetatagTreeItem
                         innerItem.Checked = false; // no entry means its not indeterminate and its not true...
                     else
                         innerItem.Checked = value;
-                });
+
+                    if (initialValues != null && initialValues.TryGetValue(innerItem.ID, out string? itemValue))
+                        innerItem.Value = itemValue;
+                },
+                fSort
+                    ? innerItem => { innerItem.Children.Sort(_item => _item.Name); }
+                    : null);
+            
             cloneInto.Add(newItem);
         }
+
+        if (fSort)
+            cloneInto.Sort(item => item.Name);
     }
 
     public static void CloneAndSetCheckedItems(
-        IEnumerable<IMetatagTreeItem>? items, 
+        IEnumerable<IMetatagTreeItem>? items,
         ObservableCollection<IMetatagTreeItem> cloneInto,
-        Dictionary<string, bool?>? initialCheckboxState = null)
+        Dictionary<string, bool?>? initialCheckboxState = null,
+        Dictionary<string, string?>? initialValues = null)
     {
         cloneInto.Clear();
 
-        CloneAndAddCheckedItems(items, cloneInto, initialCheckboxState);
+        CloneAndAddCheckedItems(items, cloneInto, true /*fSort*/, initialCheckboxState, initialValues);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.Marshalling;
+using System.Threading;
 using Thetacat.Import;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -28,18 +30,50 @@ public class ServiceInterop
         LocalService.Media.UpdateMediaItems(catalogID, diffs);
     }
 
-    public static List<Guid> GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
+    public static ServiceDeletedItemsClock GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
 
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
+
+    public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID)
+    {
+        // first, figure out how many we are going to update
+        int count = LocalService.Mediatags.GetMediatagsPendingClockCount(catalogID);
+        bool fNeedRebuildIndex = false;
+
+        if (count > 175000)
+        {
+            // better to disable the index and rebuild later
+            LocalService.Mediatags.DisableClockIndex();
+            fNeedRebuildIndex = true;
+        }
+
+        try
+        {
+            while (LocalService.Mediatags.UpdateMediatagsWithNoClockAndincrementVectorClockBatched(catalogID, 5000) > 0)
+            {
+                Thread.Sleep(100);
+            }
+        }
+        finally
+        {
+            if (fNeedRebuildIndex)
+                LocalService.Mediatags.RebuildClockIndex();
+        }
+    }
 
     public static void DeleteMediaItem(Guid catalogID, Guid id) => LocalService.Media.DeleteMediaItem(catalogID, id);
 
     public static void DeleteImportsForMediaItem(Guid catalogId, Guid id) => LocalService.Import.DeleteMediaItem(catalogId, id);
 
-    public static List<ServiceImportItem> GetPendingImportsForClient(Guid catalogID, string sourceClient)
+    public static List<ServiceImportItem> GetImportsForClient(Guid catalogID, string sourceClient)
     {
-        return LocalService.Import.GetPendingImportsForClient(catalogID, sourceClient);
+        return LocalService.Import.GetImportsForClient(catalogID, sourceClient);
+    }
+
+    public static List<ServiceImportItem> GetAllImportsPendingUpload(Guid catalogID)
+    {
+        return LocalService.Import.GetAllImportsPendingUpload(catalogID);
     }
 
     public static List<ServiceImportItem> GetAllImports(Guid catalogID)
@@ -64,6 +98,11 @@ public class ServiceInterop
         LocalService.Import.CompleteImportForItem(catalogID, id);
     }
 
+    public static void ResetImportToPendingForItem(Guid catalogID, Guid id, string clientName)
+    {
+        LocalService.Import.ResetImportToPendingForItem(catalogID, id, clientName);
+    }
+
     public static void DeleteImportItem(Guid catalogID, Guid id)
     {
         LocalService.Import.DeleteImportItem(catalogID, id);
@@ -74,12 +113,12 @@ public class ServiceInterop
         LocalService.Media.InsertNewMediaItems(catalogID, newItems);
     }
 
-    public static ServiceCatalog ReadFullCatalog(Guid catalogID)
-    {
-        return LocalService.Media.ReadFullCatalog_OldWithJoin(catalogID);
-    }
+//    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
 
-    public static List<ServiceMediaTag> ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Media.ReadFullCatalogMediaTags(catalogID);
+    public static void RemoveDeletedMediatagsAndResetTagClock(Guid CatalogID) => LocalService.Mediatags.RemoveDeletedMediatagsAndResetTagClock(CatalogID);
+
+    public static ServiceMediaTagsWithClocks ReadMediaTagsForClock(Guid catalogID, int tagClock) => LocalService.Mediatags.ReadMediaTagsForClock(catalogID, tagClock);
+
     public static List<ServiceMediaItem> ReadFullCatalogMedia(Guid catalogID) => LocalService.Media.ReadFullCatalogMedia(catalogID);
 
     public static List<ServiceWorkgroup> GetAvailableWorkgroups(Guid catalogID)
@@ -112,6 +151,21 @@ public class ServiceInterop
     public static void UpdateMediaStacks(Guid catalogID, List<MediaStackDiff> diffs)
     {
         LocalService.Stacks.UpdateMediaStacks(catalogID, diffs);
+    }
+
+    public static void UpdateWorkgroupDeleteMediaClockToAtLeast(Guid catalogID, Guid id, int newClock)
+    {
+        LocalService.Workgroup.UpdateWorkgroupDeleteMediaClockToAtLeast(catalogID, id, newClock);
+    }
+
+    public static void ExpireDeletedMediaItems(Guid catalogID)
+    {
+        LocalService.Media.ExpireDeletedMediaItems(catalogID);
+    }
+
+    public static void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        LocalService.Media.UpdateDeletedMediaWithNoClockAndIncrementVectorClock(catalogID);
     }
 
 #if WG_ON_SQL

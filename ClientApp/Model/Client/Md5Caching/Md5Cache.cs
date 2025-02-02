@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
 using Thetacat.Util;
 
-namespace Thetacat.Model.Client;
+namespace Thetacat.Model.Md5Caching;
 
 /*----------------------------------------------------------------------------
     %%Class: Md5Cache
@@ -46,27 +47,23 @@ public class Md5Cache
 
     public void CommitCacheItems()
     {
-        List<Md5CacheItem> inserts = new();
-        List<Md5CacheItem> deletes = new();
+        List<Md5CacheItem> changes = new();
 
         foreach (KeyValuePair<PathSegment, Md5CacheItem> dbItem in m_cache)
         {
-            if (dbItem.Value.Pending)
-                inserts.Add(dbItem.Value);
-            if (dbItem.Value.DeletePending)
-                deletes.Add(dbItem.Value);
+            if (dbItem.Value.ChangeState != ChangeState.None)
+                changes.Add(dbItem.Value);
         }
 
-        App.State.ClientDatabase?.ExecuteMd5CacheUpdates(deletes, inserts);
+        App.State.ClientDatabase?.ExecuteMd5CacheUpdates(changes);
 
-        foreach (Md5CacheItem item in inserts)
+        foreach (Md5CacheItem item in changes)
         {
-            item.Pending = false;
-        }
+            bool fDelete = item.DeletePending;
+            item.ChangeState = ChangeState.None;
 
-        foreach (Md5CacheItem item in deletes)
-        {
-            m_cache.TryRemove(item.Path, out Md5CacheItem? removed);
+            if (fDelete)
+                m_cache.TryRemove(item.Path, out _);
         }
     }
 
@@ -75,24 +72,62 @@ public class Md5Cache
         PathSegment path = new PathSegment(localPath.ToLowerInvariant());
 
         if (m_cache.TryGetValue(path, out Md5CacheItem? remove))
-            remove.DeletePending = true;
+            remove.ChangeState = ChangeState.Delete;
     }
 
     public void AddCacheItem(string localPath, string md5)
     {
         FileInfo info = new FileInfo(localPath);
 
+        AddCacheFileInfo(localPath, info, md5);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateCacheFileInfoIfNecessary
+        %%Qualified: Thetacat.Model.Md5Caching.Md5Cache.UpdateCacheFileInfoIfNecessary
+
+        Update the md5 cache for this item. if it already exists and doesn't
+        differ, then
+    ----------------------------------------------------------------------------*/
+    public void UpdateCacheFileInfoIfNecessary(string localPath, FileInfo info, string md5)
+    {
+        Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
+
+        if (m_cache.TryGetValue(item.Path, out Md5CacheItem? existingItem))
+        {
+            if (existingItem.MatchFileInfo(info) && existingItem.MD5 == md5)
+                return;
+
+            item.ChangeState = ChangeState.Update;
+            m_cache.TryUpdate(item.Path, item, existingItem);
+        }
+        else
+        {
+            m_cache.TryAdd(item.Path, item);
+        }
+    }
+
+    public void AddCacheFileInfo(string localPath, FileInfo info, string md5)
+    {
         Md5CacheItem item = new Md5CacheItem(new PathSegment(localPath.ToLowerInvariant()), md5, info.LastWriteTime, info.Length);
 
         m_cache.TryAdd(item.Path, item);
     }
 
-    public bool TryLookupMd5(string localPath, out string? md5)
+    public bool TryLookupCacheItem(string localPath, [MaybeNullWhen(false)] out Md5CacheItem cacheItem)
     {
         PathSegment path = new PathSegment(localPath.ToLowerInvariant());
-        if (m_cache.TryGetValue(path, out Md5CacheItem? item))
+        if (m_cache.TryGetValue(path, out cacheItem))
+            return true;
+
+        return false;
+    }
+
+    public bool TryLookupMd5(string localPath, out string? md5)
+    {
+        if (TryLookupCacheItem(localPath, out Md5CacheItem? item))
         {
-            if (!VerifyFileInfo(item))
+            if (!VerifyItemAgainstFilesystem(item))
             {
                 m_cache.TryRemove(item.Path, out Md5CacheItem? removing);
                 md5 = null;
@@ -108,25 +143,21 @@ public class Md5Cache
     }
 
     /*----------------------------------------------------------------------------
-        %%Function: VerifyFileInfo
-        %%Qualified: Thetacat.Model.Client.Md5Cache.VerifyFileInfo
+        %%Function: VerifyItemAgainstFilesystem
+        %%Qualified: Thetacat.Model.Client.Md5Cache.VerifyItemAgainstFilesystem
 
         Return true if we can use this item's md5
     ----------------------------------------------------------------------------*/
-    bool VerifyFileInfo(Md5CacheItem item)
+    bool VerifyItemAgainstFilesystem(Md5CacheItem item)
     {
-        if (item.FileInfoMatch == TriState.Maybe)
+        if (item.FilesystemMatched == TriState.Maybe)
         {
             FileInfo info = new FileInfo(item.Path.Local);
 
-            item.FileInfoMatch =
-                (info.Length != item.Size
-                    || (Math.Abs(info.LastWriteTime.Ticks - item.LastModified.Ticks) >= 10000000))
-                    ? TriState.No
-                    : TriState.Yes;
+            item.FilesystemMatched = item.MatchFileInfo(info) ? TriState.Yes : TriState.No;
         }
 
-        return item.FileInfoMatch == TriState.Yes;
+        return item.FilesystemMatched == TriState.Yes;
     }
 
     public string GetMd5ForPathSync(string localPath)

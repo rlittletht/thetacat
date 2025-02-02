@@ -5,13 +5,13 @@ using Microsoft.Identity.Client;
 using Thetacat.Model;
 using Thetacat.TcSettings;
 using Thetacat.Util;
+using Thetacat.Model.Caching;
 
 namespace Thetacat.Types;
 
 public interface ICache
 {
-    public Cache.CacheType Type { get; }
-    public void ResetCache(Profile profile);
+    public void ResetCache(Profile profile, IWorkgroup? workgroup);
     public IWorkgroup _Workgroup { get; }
     public PathSegment LocalPathToCacheRoot { get; }
     public ConcurrentDictionary<Guid, ICacheEntry> Entries { get; }
@@ -22,4 +22,6 @@ public interface ICache
     public string? TryGetCachedFullPath(Guid id);
     public void DeleteMediaItem(Guid id);
     public string GetFullLocalPath(PathSegment itemPath);
+    public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal);
+    public void UpdateEntryForMd5Change(Guid id, string md5);
 }

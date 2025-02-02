@@ -1,5 +1,5 @@
 ﻿using System.Windows.Media.Imaging;
-using Thetacat;
+using Thetacat.MainApp;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 
@@ -13,7 +13,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
         
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "", null);
 
         cache.ResetImageForKey(TestMedia.mediaItem1.ID);
         // if we get here, we passed (just looking for a crash...)
@@ -26,7 +26,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "", null);
 
         int counter = 0;
 
@@ -49,7 +49,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "", null);
 
         int counter = 0;
 
@@ -79,7 +79,7 @@ public class TestImageCache
         MainWindow.InUnitTest = true;
         ImageCache cache = new ImageCache();
 
-        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, "");
+        cache.TryQueueBackgroundLoadToCache(TestMedia.mediaItem1, TestMedia.mediaItem1.MD5, "", null);
 
         int counter = 0;
 

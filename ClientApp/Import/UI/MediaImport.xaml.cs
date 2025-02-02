@@ -18,6 +18,7 @@ using Thetacat.Metatags;
 using Thetacat.Import.UI.Commands;
 using Thetacat.Metatags.Model;
 using Thetacat.Repair;
+using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Import.UI
 {
@@ -27,7 +28,8 @@ namespace Thetacat.Import.UI
     public partial class MediaImport : Window
     {
         private readonly MediaImportModel m_model = new();
-        private MediaImporter m_importer;
+        private readonly MediaImporter m_importer;
+        private readonly Dictionary<Guid, string> m_metatagLineageMap;
 
         public MediaImportModel Model => m_model;
 
@@ -41,6 +43,7 @@ namespace Thetacat.Import.UI
             m_importBackgroundWorkers = new BackgroundWorkers(BackgroundActivity.Start, BackgroundActivity.Stop);
             App.State.RegisterWindowPlace(this, "media-import");
             InitializeVirtualRoots();
+            m_metatagLineageMap = App.State.MetatagSchema.BuildLineageMap();
             InitializeAvailableParents();
         }
 
@@ -357,6 +360,13 @@ namespace Thetacat.Import.UI
             return item;
         }
 
+        /*----------------------------------------------------------------------------
+            %%Function: SearchForImportedItemsWork
+            %%Qualified: Thetacat.Import.UI.MediaImport.SearchForImportedItemsWork
+
+            This takes the checked items in the Import dialog and figures out which
+            ones are already in the catalog (using the MD5 as the arbiter)
+        ----------------------------------------------------------------------------*/
         private bool SearchForImportedItemsWork(IProgressReport progress)
         {
             try
@@ -525,7 +535,7 @@ namespace Thetacat.Import.UI
             m_importer.ClearItems();
             m_importer.AddMediaItemFilesToImporter(
                 checkedItems,
-                MainWindow.ClientName,
+                MainApp.MainWindow.ClientName,
                 (itemFile, catalogItem) =>
                 {
                     ImportNode node = itemFile as ImportNode ?? throw new CatExceptionInternalFailure("file item isn't an ImportNode?");
@@ -542,7 +552,7 @@ namespace Thetacat.Import.UI
                     }
                 });
 
-            m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema);
+            m_importer.CreateCatalogItemsAndUpdateImportTable(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.MetatagSchema, App.State.Cache);
 //            ProgressDialog.DoWorkWithProgress(report => DoPrePopulateWork(report, checkedItems), Window.GetWindow(this));
 
             // and lastly we have to add the items we just manually added to our cache
@@ -590,13 +600,8 @@ namespace Thetacat.Import.UI
             m_model.ImportStatus = status;
         }
 
-        private Dictionary<Guid, string>? m_metatagLineageMap;
-
         void InitializeAvailableParents()
         {
-            if (m_metatagLineageMap == null)
-                m_metatagLineageMap = EditFilter.BuildLineageMap();
-
             IComparer<KeyValuePair<Guid, string>> comparer =
                 Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
             ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);
@@ -608,8 +613,7 @@ namespace Thetacat.Import.UI
 
             AvailableMetatagsTree.Initialize(
                 App.State.MetatagSchema.WorkingTree.Children,
-                App.State.MetatagSchema.SchemaVersionWorking,
-                MetatagStandards.Standard.Cat);
+                App.State.MetatagSchema.SchemaVersionWorking);
         }
 
         private FilterModelMetatagItem? GetTagFromId(Guid id)

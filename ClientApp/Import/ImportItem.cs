@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Thetacat.Model;
+using Thetacat.ServiceClient;
 using Thetacat.Util;
 
 namespace Thetacat.Import;
@@ -73,10 +74,22 @@ public class ImportItem: INotifyPropertyChanged
     public DateTime UploadDate { get => m_uploadDate; set => SetField(ref m_uploadDate, value); }
     public PathSegment SourceServer { get => m_sourceServer; set => SetField(ref m_sourceServer, value); }
     public PathSegment SourcePath { get => m_sourcePath; set => SetField(ref m_sourcePath, value); }
+    public PathSegment FullSourcePath => PathSegment.Join(SourceServer, SourcePath);
+
     public ImportState State { get => m_state; set => SetField(ref m_state, value); }
     public Guid ID { get => m_id; set => SetField(ref m_id, value); }
     public MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? m_onCatalogItemCreated;
     private bool m_skipWorkgroupOnlyItem;
+
+    public ImportItem(ServiceImportItem item)
+    {
+        ID = item.ID;
+        m_source = new PathSegment(item.Source ?? "");
+        m_sourceServer = new PathSegment(item.SourceServer ?? "");
+        m_sourcePath = new PathSegment(item.SourcePath ?? "");
+        m_state = StateFromString(item.State ?? "");
+        m_virtualPath = m_sourcePath;
+    }
 
     public ImportItem(Guid id, string source, PathSegment sourceServer, PathSegment sourcePath, ImportState state, object? sourceObject = null, MediaImporter.NotifyCatalogItemCreatedOrRepairedDelegate? onCatalogItemCreated = null)
     {
@@ -100,6 +113,12 @@ public class ImportItem: INotifyPropertyChanged
         m_onCatalogItemCreated = onCatalogItemCreated;
         m_sourceObject = sourceObject;
         m_virtualPath = virtualPath;
+    }
+
+    public void SetPathsFromFullPath(PathSegment fullPath)
+    {
+        SourceServer = fullPath.GetPathRoot() ?? new PathSegment();
+        SourcePath = fullPath.GetRelativePath(SourceServer);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

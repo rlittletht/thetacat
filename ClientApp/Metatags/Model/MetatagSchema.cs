@@ -13,7 +13,7 @@ public class MetatagSchema
     public event EventHandler<DirtyItemEventArgs<bool>>? OnItemDirtied;
     private readonly MetatagSchemaDefinition m_schemaWorking = new MetatagSchemaDefinition();
     private MetatagSchemaDefinition? m_schemaBase;
-
+  
     public MetatagTree WorkingTree => m_schemaWorking.Tree;
     public IEnumerable<Metatag> MetatagsWorking => m_schemaWorking.Metatags;
     public int MetatagCount => m_schemaWorking.Count;
@@ -21,6 +21,21 @@ public class MetatagSchema
     public int SchemaVersionWorking => m_schemaWorking.SchemaVersion;
     public bool DontBuildTree = false;
 
+    public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
+
+    public MetatagSchema()
+    {
+    }
+
+    public MetatagSchema(MetatagSchema source)
+    {
+        m_schemaWorking = source.m_schemaWorking.Clone();
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: EnsureBaseAndVersion
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.EnsureBaseAndVersion
+    ----------------------------------------------------------------------------*/
     void EnsureBaseAndVersion()
     {
         if (m_schemaBase == null)
@@ -30,8 +45,10 @@ public class MetatagSchema
         }
     }
 
-    public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
-
+    /*----------------------------------------------------------------------------
+        %%Function: FindFirstMatchingItemInSchemaDefinition
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.FindFirstMatchingItemInSchemaDefinition
+    ----------------------------------------------------------------------------*/
     static Metatag? FindFirstMatchingItemInSchemaDefinition(MetatagSchemaDefinition schemaDef, IMetatagMatcher<IMetatag> matcher)
     {
         foreach (Metatag metatag in schemaDef.Metatags)
@@ -41,6 +58,28 @@ public class MetatagSchema
         }
 
         return null;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetTreeItemIfContainer
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.GetTreeItemIfContainer
+
+        return the IMetatagTree item in the working tree for this metatagID
+        ONLY if this metatag has children. Cache the result
+    ----------------------------------------------------------------------------*/
+    public IMetatagTreeItem? GetTreeItemIfContainer(Guid metatagID)
+    {
+        if (!m_schemaWorking.ContainerCache.TryGetValue(metatagID, out IMetatagTreeItem? metatagTreeItem))
+        {
+            // just in case this is a parent metatag...
+            metatagTreeItem = WorkingTree.FindMatchingChild(MetatagTreeItemMatcher.CreateIdMatch(metatagID), -1);
+            if (metatagTreeItem != null && metatagTreeItem.Children.Count == 0)
+                metatagTreeItem = null;
+
+            m_schemaWorking.ContainerCache[metatagID] = metatagTreeItem;
+        }
+
+        return metatagTreeItem;
     }
 
     /*----------------------------------------------------------------------------
@@ -161,6 +200,7 @@ public class MetatagSchema
 
         return m_schemaWorking.FRemoveMetatag(metatagId);
     }
+
     /*----------------------------------------------------------------------------
         %%Function: AddStandardRoot
         %%Qualified: Thetacat.Model.MetatagSchema.AddStandardRoot
@@ -254,10 +294,10 @@ public class MetatagSchema
         %%Function: GetOrBuildDirectoryTag
         %%Qualified: Thetacat.Model.Metatags.MetatagSchema.GetOrBuildDirectoryTag
 
-        Get a directory tag (a tag that is needed as a parent for a tag), or 
+        Get a directory tag (a tag that is needed as a parent for a tag), or
         create it if it doesn't exist.
 
-        If this tag must use a predefined static id, pass that in (this is only 
+        If this tag must use a predefined static id, pass that in (this is only
         true for builtin tags like width/height/originalFileDate)
     ----------------------------------------------------------------------------*/
     public Metatag GetOrBuildDirectoryTag(
@@ -285,11 +325,46 @@ public class MetatagSchema
         return dirTag;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: BuildLineageMap
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.BuildLineageMap
+    ----------------------------------------------------------------------------*/
+    public Dictionary<Guid, string> BuildLineageMap()
+    {
+        Dictionary<Guid, string> lineage = new();
+
+        WorkingTree.Preorder(
+            null,
+            (treeItem, parent, depth) =>
+            {
+                string dropdownName;
+
+                if (parent != null && !string.IsNullOrEmpty(parent.ID))
+                {
+                    Guid parentID = Guid.Parse(parent.ID);
+
+                    lineage.TryAdd(parentID, parent.Name);
+                    dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
+                }
+                else
+                {
+                    dropdownName = treeItem.Name;
+                }
+
+                if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
+                    lineage.Add(treeItemID, dropdownName);
+            },
+            0);
+
+        return lineage;
+    }
+
+
     public void EnsureBuiltinMetatagsDefined()
     {
         lock (BuiltinTags.s_BuiltinTags)
         {
-            MainWindow.LogForApp(EventType.Warning, "ensure builtin defined");
+            App.LogForApp(EventType.Verbose, "ensure builtin defined");
             GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
             GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
 
@@ -297,12 +372,12 @@ public class MetatagSchema
             {
                 if (GetMetatagFromId(metatag.ID) == null)
                 {
-                    MainWindow.LogForApp(EventType.Warning, $"adding {metatag.Description}: {metatag.ID}");
+                    App.LogForApp(EventType.Verbose, $"adding {metatag.Description}: {metatag.ID}");
                     AddMetatag(metatag);
                 }
             }
 
-            MainWindow.LogForApp(EventType.Warning, "ensure builtin done");
+            App.LogForApp(EventType.Verbose, "ensure builtin done");
         }
     }
 
@@ -330,7 +405,7 @@ public class MetatagSchema
     {
         m_schemaBase = null;
         m_schemaWorking.Clear();
-        
+
         if (serviceMetatagSchema.Metatags != null)
         {
             foreach (ServiceMetatag serviceMetatag in serviceMetatagSchema.Metatags)
@@ -386,9 +461,9 @@ public class MetatagSchema
         MetatagSchemaDiffOp op = MetatagSchemaDiffOp.CreateUpdate3WM(metatagBase!, metatagServer!, metatagLocal!);
 
         // check if this is an update with no values being updated
-        if (op is { Action: MetatagSchemaDiffOp.ActionType.Update, IsParentChanged: false } 
-            && !op.IsDescriptionChanged 
-            && !op.IsNameChanged 
+        if (op is { Action: MetatagSchemaDiffOp.ActionType.Update, IsParentChanged: false }
+            && !op.IsDescriptionChanged
+            && !op.IsNameChanged
             && !op.IsStandardChanged)
         {
             return null;

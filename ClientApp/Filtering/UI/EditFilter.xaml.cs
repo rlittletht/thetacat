@@ -14,10 +14,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TCore.PostfixText;
+using Thetacat.Logging;
 using Thetacat.Metatags;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.Standards;
+using Thetacat.Types;
 using Thetacat.Util;
 using Expression = TCore.PostfixText.Expression;
 
@@ -30,42 +33,19 @@ namespace Thetacat.Filtering.UI
     {
         private readonly EditFilterModel m_model = new EditFilterModel();
 
-        private Dictionary<Guid, string>? m_metatagLineageMap;
+        private readonly Dictionary<Guid, string> m_metatagLineageMap;
+        private readonly MetatagSchema m_filterSchema;
 
-        public static Dictionary<Guid, string> BuildLineageMap()
-        {
-            Dictionary<Guid, string> lineage = new();
+        /*----------------------------------------------------------------------------
+            %%Function: InitializeAvailableTags
+            %%Qualified: Thetacat.Filtering.UI.EditFilter.InitializeAvailableTags
 
-            App.State.MetatagSchema.WorkingTree.Preorder(
-                null,
-                (treeItem, parent, depth) =>
-                {
-                    string dropdownName;
-
-                    if (parent != null && !string.IsNullOrEmpty(parent.ID))
-                    {
-                        Guid parentID = Guid.Parse(parent.ID);
-
-                        lineage.TryAdd(parentID, parent.Name);
-                        dropdownName = $"{lineage[parentID]}:{treeItem.Name}";
-                    }
-                    else
-                    {
-                        dropdownName = treeItem.Name;
-                    }
-
-                    if (Guid.TryParse(treeItem.ID, out Guid treeItemID))
-                        lineage.Add(treeItemID, dropdownName);
-                },
-                0);
-
-            return lineage;
-        }
-
+            Initialize the available tags in the dialog, both the dropdown and the
+            popup tree
+        ----------------------------------------------------------------------------*/
         private void InitializeAvailableTags()
         {
-            if (m_metatagLineageMap == null)
-                m_metatagLineageMap = BuildLineageMap();
+            App.LogForApp(EventType.Verbose, "ensure builtin done");
 
             IComparer<KeyValuePair<Guid, string>> comparer =
                 Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
@@ -73,34 +53,46 @@ namespace Thetacat.Filtering.UI
 
             foreach (KeyValuePair<Guid, string> item in sorted)
             {
-                m_model.AvailableTags.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
+                m_model.AvailableTags.Add(new FilterModelMetatagItem(m_filterSchema.GetMetatagFromId(item.Key)!, item.Value));
             }
 
             TagMetatagsTree.Initialize(
-                App.State.MetatagSchema.WorkingTree.Children,
-                App.State.MetatagSchema.SchemaVersionWorking);
+                m_filterSchema.WorkingTree.Children,
+                m_filterSchema.SchemaVersionWorking);
         }
 
-        public EditFilter(FilterDefinition? definition = null, Dictionary<Guid, string>? lineageMap = null)
+        /*----------------------------------------------------------------------------
+            %%Function: EditFilter
+            %%Qualified: Thetacat.Filtering.UI.EditFilter.EditFilter
+        ----------------------------------------------------------------------------*/
+        public EditFilter(MetatagSchema filterSchema, Dictionary<Guid, string> lineageMap, Filter? filter = null)
         {
             DataContext = m_model;
             InitializeComponent();
 
+            m_filterSchema = filterSchema;
             m_metatagLineageMap = lineageMap;
-            if (definition != null)
+            if (filter!= null)
             {
-                m_model.Expression = definition.Expression;
-                m_model.FilterName = definition.FilterName;
-                m_model.Description = definition.Description;
+                m_model.Expression = filter.Definition.Expression;
+                m_model.FilterName = filter.Definition.FilterName;
+                m_model.Description = filter.Definition.Description;
+                m_model.Id = filter.Id;
+                m_model.IsTypeAvailable = false;
+                m_model.SelectedType = filter.FilterType == FilterType.Workgroup ? "Workgroup" : "Local";
             }
             else
             {
-                m_model.Expression = definition?.Expression ?? new PostfixText();
+                m_model.Expression = new PostfixText();
+                m_model.IsTypeAvailable = true;
+                m_model.Id = Guid.NewGuid();
             }
 
             InitializeAvailableTags();
             UpdateQueryClauses();
             m_model.PropertyChanged += OnModelPropertyChanged;
+            m_model.Types.Add("Local");
+            m_model.Types.Add("Workgroup");
         }
 
         private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -134,7 +126,7 @@ namespace Thetacat.Filtering.UI
 
             foreach (MediaItem item in App.State.Catalog.GetMediaCollection())
             {
-                if (item.Tags.TryGetValue(metatag.ID, out MediaTag? mediaTag))
+                if (item.TryGetMediaTag(metatag.ID, out MediaTag? mediaTag))
                 {
                     if (mediaTag.Value == null)
                     {
@@ -149,12 +141,14 @@ namespace Thetacat.Filtering.UI
                         // don't add more than 20 different values
                         UpdateMapCount(valueCounts, mediaTag.Value);
                         ops.Add(ComparisonOperator.Op.Eq);
+                        ops.Add(ComparisonOperator.Op.Rex);
                         ops.Add(ComparisonOperator.Op.Ne);
                         ops.Add(ComparisonOperator.Op.Gt);
                         ops.Add(ComparisonOperator.Op.Gte);
                         ops.Add(ComparisonOperator.Op.Lt);
                         ops.Add(ComparisonOperator.Op.Lte);
                         ops.Add(ComparisonOperator.Op.SEq);
+                        ops.Add(ComparisonOperator.Op.SRex);
                         ops.Add(ComparisonOperator.Op.SNe);
                         ops.Add(ComparisonOperator.Op.SGt);
                         ops.Add(ComparisonOperator.Op.SGte);
@@ -162,6 +156,15 @@ namespace Thetacat.Filtering.UI
                         ops.Add(ComparisonOperator.Op.SLte);
                     }
                 }
+            }
+
+            if (ops.Count == 0)
+            {
+                UpdateMapCount(valueCounts, "$false");
+                UpdateMapCount(valueCounts, "$true");
+
+                ops.Add(ComparisonOperator.Op.Eq);
+                ops.Add(ComparisonOperator.Op.Ne);
             }
 
             IComparer<KeyValuePair<string, int>> comparer =
@@ -207,7 +210,7 @@ namespace Thetacat.Filtering.UI
                 m_model.Expression.ToStrings(
                     (field) =>
                     {
-                        if (m_metatagLineageMap != null && Guid.TryParse(field, out Guid metatagId))
+                        if (Guid.TryParse(field, out Guid metatagId))
                         {
                             if (m_metatagLineageMap.TryGetValue(metatagId, out string? lineage))
                                 return $"[{lineage}]";
@@ -238,6 +241,12 @@ namespace Thetacat.Filtering.UI
                 return;
             }
 
+            if (m_model.ComparisonOpForClause == null)
+            {
+                MessageBox.Show("Must select a comparison operator");
+                return;
+            }
+
             string valueText = m_model.ValueTextForClause;
             Value value;
 
@@ -262,6 +271,18 @@ namespace Thetacat.Filtering.UI
         {
             Close();
         }
+
+        public FilterType GetFilterType()
+        {
+            if (m_model.SelectedType == "Local")
+                return FilterType.Local;
+            else if (m_model.SelectedType == "Workgroup")
+                return FilterType.Workgroup;
+            else
+                throw new CatExceptionInternalFailure("Unknown filter type");
+        }
+
+        public Guid GetId() => m_model.Id;
 
         public FilterDefinition GetDefinition()
         {
@@ -303,7 +324,7 @@ namespace Thetacat.Filtering.UI
 
         private void ChooseTag(object sender, RoutedEventArgs e)
         {
-            TagPickerPopup.IsOpen = true;
+            TagPickerPopup.IsOpen = !TagPickerPopup.IsOpen;
         }
 
         private void SelectMetatag(Guid parentId)
@@ -326,6 +347,24 @@ namespace Thetacat.Filtering.UI
             }
 
             TagPickerPopup.IsOpen = false;
+        }
+
+        private void EditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.ExpressionEditing = m_model.Expression.ToString();
+            m_model.IsEditingExpression = true;
+        }
+
+        private void CancelEditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.IsEditingExpression = false;
+        }
+
+        private void SaveEditExpression(object sender, RoutedEventArgs e)
+        {
+            m_model.Expression = PostfixText.CreateFromParserClient(new StringParserClient(m_model.ExpressionEditing));
+            UpdateQueryClauses();
+            m_model.IsEditingExpression = false;
         }
     }
 }

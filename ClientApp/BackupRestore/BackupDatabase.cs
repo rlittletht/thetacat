@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 using Thetacat.UI;
 
@@ -181,7 +182,7 @@ public class BackupDatabase
         WriteElement(writer, "mimeType", (_writer) => _writer.WriteString(mediaItem.MimeType));
         WriteElement(writer, "state", (_writer) => _writer.WriteString(MediaItem.StringFromState(mediaItem.State)));
 
-        WriteElement(writer, "mediaTags", (_writer) => WriteMediaTags(_writer, mediaItem.Tags.Values));
+        WriteElement(writer, "mediaTags", (_writer) => WriteMediaTags(_writer, mediaItem.MediaTags));
     }
 
     /*----------------------------------------------------------------------------

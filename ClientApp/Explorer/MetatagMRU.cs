@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
+using Thetacat.Logging;
 using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
@@ -8,9 +10,11 @@ namespace Thetacat.Explorer;
 
 public class MetatagMRU
 {
-    private static int maxSize = 10;
+    public event EventHandler<PropertyChangedEventArgs>? OnPropertyChanged;
 
-    private List<Metatag> m_recentTags = new();
+    private static readonly int maxSize = 30;
+
+    private readonly List<Metatag> m_recentTags = new();
     private int m_vectorClock = 0;
 
     public int VectorClock => m_vectorClock;
@@ -29,9 +33,10 @@ public class MetatagMRU
         // otherwise, add this to the top
         m_recentTags.Insert(0, metatag);
         if (m_recentTags.Count > maxSize)
-            m_recentTags.RemoveRange(10, m_recentTags.Count - 9);
+            m_recentTags.RemoveRange(maxSize, m_recentTags.Count - maxSize);
 
         m_vectorClock++;
+        TriggerPropertyChanged(nameof(RecentTags));
     }
 
     public void Set(IEnumerable<string> mru)
@@ -43,11 +48,19 @@ public class MetatagMRU
 
             if (tag == null)
             {
-                MessageBox.Show($"unknown metatag {id} in MRU");
+                App.LogForApp(EventType.Error, $"unknown metatag {id} in MRU");
                 continue;
             }
 
             m_recentTags.Add(tag);
         }
+
+        TriggerPropertyChanged(nameof(RecentTags));
+    }
+
+    public void TriggerPropertyChanged(string name)
+    {
+        if (OnPropertyChanged != null)
+            OnPropertyChanged(this, new PropertyChangedEventArgs(name));
     }
 }

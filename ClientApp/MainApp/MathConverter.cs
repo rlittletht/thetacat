@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows.Data;
 using System;
 
-namespace Thetacat;
+namespace Thetacat.MainApp;
 
 // Does a math equation on the bound value.
 // Use @VALUE in your mathEquation as a substitute for bound value

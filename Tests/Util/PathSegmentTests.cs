@@ -82,7 +82,7 @@ public class PathSegmentTests
         Assert.AreEqual(expected.Local, expectedLocal);
     }
 
-    [TestCase("foo.txt", new string[]{})]
+    [TestCase("foo.txt", new string[] { })]
     [TestCase("foo/foo.txt", new string[] { "foo/foo.txt" })]
     [TestCase("\\foo\\foo.txt", new string[] { "foo/foo.txt" })]
     [TestCase("bar\\foo\\foo.txt", new string[] { "bar/foo/foo.txt", "foo/foo.txt" })]
@@ -160,5 +160,38 @@ public class PathSegmentTests
         PathSegment checkPath = new PathSegment(check);
 
         Assert.AreEqual(expected, PathSegment.DoesPathSubsumePath(fullPath, checkPath));
+    }
+
+    [TestCase("c:/left", "c:/left1", false)]
+    [TestCase("c:/left", "c:/Left", true)]
+    [TestCase("c:/left", "c:/left", true)]
+    [Test]
+    public static void TestPathSegmentHashCompare(string left, string right, bool expected)
+    {
+        PathSegment leftPath = new PathSegment(left);
+        PathSegment rightPath = new PathSegment(right);
+
+        Assert.AreEqual(expected, leftPath == rightPath);
+    }
+
+    [TestCase("c:/test", new string[] { "c:/test" }, 1)]
+    [TestCase("c:/Test", new string[] { "c:/test" }, 1)]
+    [TestCase("c:/test", new string[] { "c:/test", "c:/Test" }, 2)]
+    [Test]
+    public static void TestPathSegmentHashAsKey(string test, string[] map, int expected)
+    {
+        Dictionary<PathSegment, int> items = new();
+
+        foreach (string mapItem in map)
+        {
+            PathSegment path = new PathSegment(mapItem);
+
+            items.TryAdd(path, 0);
+            items[path]++;
+        }
+
+        PathSegment testPath = new PathSegment(test);
+
+        Assert.AreEqual(expected, items[testPath]);
     }
 }

@@ -7,26 +7,40 @@
         xmlns:metatags="clr-namespace:Thetacat.Metatags"
         xmlns:controls="clr-namespace:Thetacat.UI.Controls"
         mc:Ignorable="d"
-        Title="ApplyMetatag" Height="600" Width="300">
+        xmlns:types="clr-namespace:Thetacat.Types"
+        Title="ApplyMetatag" Height="600" Width="300"
+        x:Name="ApplyMetatagControl">
+    <Window.Resources>
+        <types:BindingProxy x:Key="ManageMetatdataModelProxy"
+                            Data="{Binding ElementName=ApplyMetatagControl, Path=Model}" />
+
+        <ContextMenu x:Key="ApplyMetatagContextMenu">
+            <MenuItem Header="Set mediatag value..."
+                      Command="{Binding Source={StaticResource ManageMetatdataModelProxy}, Path=Data.SetMediaTagValueCommand}"
+                      CommandParameter="{Binding}" />
+        </ContextMenu>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="7*" />
             <RowDefinition Height="3*" />
         </Grid.RowDefinitions>
         <GroupBox Grid.Row="0">
-            <GroupBox.Header>Select on or more tags to apply</GroupBox.Header>
+            <GroupBox.Header>Available metatags</GroupBox.Header>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="10*" />
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
-                <controls:MetatagTreeView Checkable="True" x:Name="Metatags" Grid.Row="0" />
-                <Grid HorizontalAlignment="Right" Margin="0 0 0 5" Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="64" />
-                    </Grid.ColumnDefinitions>
-                    <Button Content="Apply" IsDefault="True" Click="DoApply" Height="24" Margin="5 0 0 0" />
-                </Grid>
+                <controls:MetatagTreeView Checkable="True" x:Name="Metatags" HasValues="True" Grid.Row="0" ItemContextMenu="{StaticResource ApplyMetatagContextMenu}" />
+                <DockPanel LastChildFill="False" Grid.Row="1"
+                           Style="{StaticResource DockPanel.ButtonStack-MediumWidth-Tight}">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right"
+                                Style="{StaticResource StackPanel.ButtonStack-MediumWidth-Tight}">
+                        <Button Content="Apply" Click="DoApply"
+                                Style="{StaticResource StackPanel.ButtonStack.ButtonDefaults}" />
+                    </StackPanel>
+                </DockPanel>
             </Grid>
         </GroupBox>
         <GroupBox Grid.Row="1">
@@ -37,11 +51,19 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
                 <controls:MetatagTreeView Checkable="True" x:Name="MetatagsApplied" Grid.Row="0" />
-                <Grid HorizontalAlignment="Right" Margin="0 0 0 5" Grid.Row="1">
+                <Grid Margin="0 0 0 5" Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button Content="Remove" IsDefault="True" Click="DoRemove" Height="24" Margin="5 0 0 0" />
+                    <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" Grid.Column="0">
+                        <Button Content="Manage..." Click="DoManageMetatags" Height="24" Margin="5 0 0 0"
+                                Width="92" />
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Grid.Column="1">
+                        <Button Content="Remove" Click="DoRemove" Height="24" Margin="5 0 0 0"
+                                Width="92" />
+                    </StackPanel>
                 </Grid>
             </Grid>
         </GroupBox>

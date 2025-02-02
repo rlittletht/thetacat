@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Thetacat.Metatags;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Migration.Elements.Metadata.UI;
 
@@ -21,7 +24,11 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public string Name => m_metatag?.Name ?? string.Empty;
     public string ID => m_metatag?.ID.ToString() ?? string.Empty;
     public bool? Checked { get; set; }
-
+    public string? Value
+    {
+        get => throw new CatExceptionInternalFailure("NYI in PSE metatags");
+        set => throw new CatExceptionInternalFailure("NYI in PSE metatags");
+    }
     public PseMetatag Item => m_metatag ?? new PseMetatag();
 
     public bool IsPlaceholder { get; private set; }
@@ -35,22 +42,22 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public static PseMetatagTreeItem CreateFromMetatag(PseMetatag item)
     {
         PseMetatagTreeItem pseMetatag = new()
-        {
-            m_metatag = item
-        };
+                                        {
+                                            m_metatag = item
+                                        };
         return pseMetatag;
     }
 
     public static PseMetatagTreeItem CreateParentPlaceholder(int id)
     {
         PseMetatagTreeItem pseMetatag = new()
-        {
-            m_metatag = new PseMetatag
-            {
-                ID = id
-            },
-            IsPlaceholder = true
-        };
+                                        {
+                                            m_metatag = new PseMetatag
+                                                        {
+                                                            ID = id
+                                                        },
+                                            IsPlaceholder = true
+                                        };
 
         return pseMetatag;
     }
@@ -98,7 +105,7 @@ public class PseMetatagTreeItem : IMetatagTreeItem
         return null;
     }
 
-    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegate)
+    public IMetatagTreeItem Clone(CloneTreeItemDelegate cloneDelegatePreChildren, CloneTreeItemDelegate? cloneDelegatePostChildren)
     {
         PseMetatagTreeItem newItem =
             new PseMetatagTreeItem()
@@ -107,11 +114,15 @@ public class PseMetatagTreeItem : IMetatagTreeItem
                 IsPlaceholder = IsPlaceholder
             };
 
-        cloneDelegate(newItem);
+        cloneDelegatePreChildren(newItem);
         foreach (IMetatagTreeItem item in Children)
         {
-            newItem.Children.Add(item.Clone(cloneDelegate));
+            IMetatagTreeItem clone = item.Clone(cloneDelegatePreChildren, cloneDelegatePostChildren);
+
+            newItem.Children.Add(clone);
         }
+
+        cloneDelegatePostChildren?.Invoke(newItem);
 
         return newItem;
     }
@@ -119,5 +130,20 @@ public class PseMetatagTreeItem : IMetatagTreeItem
     public void Preorder(IMetatagTreeItem? parent, VisitTreeItemDelegate visit, int depth)
     {
         MetatagTreeItem.Preorder(this, parent, visit, depth);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

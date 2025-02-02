@@ -1,0 +1,18 @@
+﻿<Window x:Class="Thetacat.Explorer.UI.StackExplorer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.Explorer.UI"
+        xmlns:xpl="clr-namespace:Thetacat.Explorer"
+        mc:Ignorable="d"
+        Title="StackExplorer" Height="450" Width="800" Loaded="OnLoaded" Closing="OnClosing">
+    <DockPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="10*" />
+            </Grid.RowDefinitions>
+            <xpl:MediaExplorer x:Name="Explorer" Grid.Row="0" />
+        </Grid>
+    </DockPanel>
+</Window>

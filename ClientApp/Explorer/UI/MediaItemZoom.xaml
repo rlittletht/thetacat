@@ -6,46 +6,195 @@
         xmlns:local="clr-namespace:Thetacat.Explorer"
         xmlns:controls="clr-namespace:Thetacat.Controls"
         mc:Ignorable="d"
-        Title="MediaItemZoom" Height="450" Width="800">
+        Title="MediaItemZoom" Height="661" Width="800">
     <Window.Resources>
-        <Style x:Key="Heading" TargetType="{x:Type TextBlock}">
+        <Style x:Key="HeadingTextBlock" TargetType="{x:Type TextBlock}">
             <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="750" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Margin" Value="1 0 1 0" />
+        </Style>
+        <Style x:Key="HeadingTextBox" TargetType="{x:Type TextBox}">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="1 0 1 0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="IsReadOnly" Value="True" />
+        </Style>
+        <Style x:Key="ControlRegion" TargetType="Grid">
+            <Setter Property="Background" Value="WhiteSmoke" />
+            <Setter Property="Margin" Value="1 0 1 0" />
+        </Style>
+        <Style x:Key="ShowOnHoverOnly" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="AntiqueWhite" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Foreground" Value="Black" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="False">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Foreground" Value="Transparent" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="TagToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="DarkSeaGreen" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Zoom">
-                <MenuItem Header="{Binding Path=PruneModeCaption}" Click="TogglePruneMode" />
+                <MenuItem Header="Prune mode" Click="TogglePruneMode"
+                          IsChecked="{Binding Path=IsPruning, Mode=OneWay}" />
                 <MenuItem Header="_Next" Click="NextImage" />
                 <MenuItem Header="_Previous" Click="PreviousImage" />
                 <MenuItem Header="_Toggle Trashed" Click="ToggleImageTrashed" />
+                <MenuItem Header="_Sync catalog window" Click="DoSyncCatalog" />
             </MenuItem>
         </Menu>
-        <Grid Margin="5" KeyUp="DoMediaZoomKeyUp">
+        <Grid Margin="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="7*" />
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="3*" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
-                <TextBlock Text="{Binding Path=MediaItem.ID}" Style="{StaticResource Heading}" />
-                <TextBlock Text=":" Style="{StaticResource Heading}" />
-                <TextBlock Text="{Binding Path=MediaItem.VirtualPath}" Style="{StaticResource Heading}" />
-            </StackPanel>
+            <Grid Grid.Row="0" Style="{StaticResource ControlRegion}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0 5 0 5">
+                    <TextBox Text="{Binding Path=MediaItem.ID, Mode=OneWay}" Style="{StaticResource HeadingTextBox}" />
+                    <TextBlock Text=":" Style="{StaticResource HeadingTextBlock}" />
+                    <TextBox Text="{Binding Path=MediaItem.VirtualPath, Mode=OneWay}"
+                             Style="{StaticResource HeadingTextBox}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="PRUNING" VerticalAlignment="Center"
+                           Visibility="{Binding Path=PruningVisibility, Mode=OneWay}" Background="Red"
+                           Style="{StaticResource HeadingTextBlock}" />
+            </Grid>
             <Grid Grid.Row="1">
-                <Image Source="{Binding Path=Image}"
-                       Margin="5,5,5,5"
-                       MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" />
-                <StackPanel Orientation="Horizontal" Margin="15 10" HorizontalAlignment="Right"
+                <Image Source="{Binding Path=Image}" Margin="5,5,5,5" />
+                <StackPanel Orientation="Horizontal" Margin="25 15" HorizontalAlignment="Right"
                             VerticalAlignment="Top">
                     <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
                     <controls:TrashAdornment Visibility="{Binding Path=TrashAdornerVisibility}" />
                 </StackPanel>
+                <DockPanel LastChildFill="False">
+                    <Button DockPanel.Dock="Left" Content="&lt;" Width="32" Style="{StaticResource ShowOnHoverOnly}"
+                            FontSize="32" FontWeight="Black" Click="PreviousImage" />
+                    <Button DockPanel.Dock="Right" Content="&gt;" Width="32" Style="{StaticResource ShowOnHoverOnly}"
+                            Click="NextImage"
+                            FontSize="32" FontWeight="Black" />
+                </DockPanel>
             </Grid>
             <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <ToggleButton IsChecked="{Binding Path=IsTag1Checked}" Content="{Binding Path=Tag1Label}"
+                              Click="Tag1Click" Grid.Column="0" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag2Checked}" Content="{Binding Path=Tag2Label}"
+                              Click="Tag2Click" Grid.Column="1" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag3Checked}" Content="{Binding Path=Tag3Label}"
+                              Click="Tag3Click" Grid.Column="2" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag4Checked}" Content="{Binding Path=Tag4Label}"
+                              Click="Tag4Click" Grid.Column="3" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag5Checked}" Content="{Binding Path=Tag5Label}"
+                              Click="Tag5Click" Grid.Column="4" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag6Checked}" Content="{Binding Path=Tag6Label}"
+                              Click="Tag6Click" Grid.Column="5" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag7Checked}" Content="{Binding Path=Tag7Label}"
+                              Click="Tag7Click" Grid.Column="6" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag8Checked}" Content="{Binding Path=Tag8Label}"
+                              Click="Tag8Click" Grid.Column="7" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag9Checked}" Content="{Binding Path=Tag9Label}"
+                              Click="Tag9Click" Grid.Column="8" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag10Checked}" Content="{Binding Path=Tag10Label}"
+                              Click="Tag10Click" Grid.Column="9" Grid.Row="0" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag11Checked}" Content="{Binding Path=Tag11Label}"
+                              Click="Tag11Click" Grid.Column="0" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag12Checked}" Content="{Binding Path=Tag12Label}"
+                              Click="Tag12Click" Grid.Column="1" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag13Checked}" Content="{Binding Path=Tag13Label}"
+                              Click="Tag13Click" Grid.Column="2" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag14Checked}" Content="{Binding Path=Tag14Label}"
+                              Click="Tag14Click" Grid.Column="3" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag15Checked}" Content="{Binding Path=Tag15Label}"
+                              Click="Tag15Click" Grid.Column="4" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag16Checked}" Content="{Binding Path=Tag16Label}"
+                              Click="Tag16Click" Grid.Column="5" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag17Checked}" Content="{Binding Path=Tag17Label}"
+                              Click="Tag17Click" Grid.Column="6" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag18Checked}" Content="{Binding Path=Tag18Label}"
+                              Click="Tag18Click" Grid.Column="7" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag19Checked}" Content="{Binding Path=Tag19Label}"
+                              Click="Tag19Click" Grid.Column="8" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag20Checked}" Content="{Binding Path=Tag20Label}"
+                              Click="Tag20Click" Grid.Column="9" Grid.Row="1" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag21Checked}" Content="{Binding Path=Tag21Label}"
+                              Click="Tag21Click" Grid.Column="0" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag22Checked}" Content="{Binding Path=Tag22Label}"
+                              Click="Tag22Click" Grid.Column="1" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag23Checked}" Content="{Binding Path=Tag23Label}"
+                              Click="Tag23Click" Grid.Column="2" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag24Checked}" Content="{Binding Path=Tag24Label}"
+                              Click="Tag24Click" Grid.Column="3" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag25Checked}" Content="{Binding Path=Tag25Label}"
+                              Click="Tag25Click" Grid.Column="4" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag26Checked}" Content="{Binding Path=Tag26Label}"
+                              Click="Tag26Click" Grid.Column="5" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag27Checked}" Content="{Binding Path=Tag27Label}"
+                              Click="Tag27Click" Grid.Column="6" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag28Checked}" Content="{Binding Path=Tag28Label}"
+                              Click="Tag28Click" Grid.Column="7" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag29Checked}" Content="{Binding Path=Tag29Label}"
+                              Click="Tag29Click" Grid.Column="8" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+                <ToggleButton IsChecked="{Binding Path=IsTag30Checked}" Content="{Binding Path=Tag30Label}"
+                              Click="Tag30Click" Grid.Column="9" Grid.Row="2" Style="{StaticResource TagToggleStyle}" />
+            </Grid>
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="5*" />
                     <ColumnDefinition Width="5*" />
@@ -79,15 +228,33 @@
                     <GroupBox.Header>
                         MediaTags set on this item
                     </GroupBox.Header>
-                    <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}">
+                    <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}" Focusable="False">
+                        <ListView.Resources>
+                            <ContextMenu x:Key="MetadataListViewMenu">
+                                <MenuItem Header="Metatag panel..." Click="ToggleMetatagPanel"/>
+                                <MenuItem Header="Edit metatag value..." Click="EditMetatagValue"/>
+                            </ContextMenu>
+                        </ListView.Resources>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListViewItem}">
+                                    <Setter Property="ContextMenu" Value="{StaticResource MetadataListViewMenu}"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
                                     <GridViewColumnHeader Content="Metatag" Tag="Metatag.StandardName"
                                                           Click="SortType" />
                                 </GridViewColumn>
-                                <GridViewColumn DisplayMemberBinding="{Binding Value}">
+                                <GridViewColumn>
                                     <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <TextBlock Text="{Binding Value}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                             </GridView>
                         </ListView.View>

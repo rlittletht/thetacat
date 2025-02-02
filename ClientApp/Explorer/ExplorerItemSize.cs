@@ -6,17 +6,20 @@ public class ExplorerItemSize
 {
     public static readonly ExplorerItemSize Medium = new ExplorerItemSize(s_Medium);
     public static readonly ExplorerItemSize Large = new ExplorerItemSize(s_Large);
+    public static readonly ExplorerItemSize ExtraLarge = new ExplorerItemSize(s_ExtraLarge);
     public static readonly ExplorerItemSize Small = new ExplorerItemSize(s_Small);
 
     public const int s_Medium = 0;
     public const int s_Large = 1;
     public const int s_Small = 2;
+    public const int s_ExtraLarge = 3;
 
     private static readonly string[] s_itemSizes =
     {
         "medium",
         "large",
-        "small"
+        "small",
+        "extra-large"
     };
 
     private readonly int m_size;

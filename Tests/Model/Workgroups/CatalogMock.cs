@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Thetacat.Filtering;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
+using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 
@@ -45,10 +46,13 @@ public class CatalogMock : ICatalog
     public MediaItem GetMediaFromId(string id) => m_media.Items[Guid.Parse(id)];
     public bool TryGetMedia(Guid id, [MaybeNullWhen(false)] out MediaItem mediaItem) => m_media.Items.TryGetValue(id, out mediaItem);
 
-    public IEnumerable<MediaItem> GetMediaCollection() => m_media.Items.Values;
+    public IReadOnlyCollection<MediaItem> GetMediaCollection() => m_media.Items.Values.AsReadOnly();
     public List<MediaItem> GetFilteredMediaItems(FilterDefinition filter) => throw new NotImplementedException();
 
     public ObservableCollection<MediaItem> GetObservableCollection() => throw new NotImplementedException();
+    public MediaItem? CreateVersionBasedOn(ICache cache, MediaItem based) => throw new NotImplementedException();
+
+    public MediaItem CreateVersionBasedOn(MediaItem based) => throw new NotImplementedException();
 
     public MediaStacks GetStacksFromType(MediaStackType stackType) => throw new NotImplementedException();
     public void PushPendingChanges(Guid catalogID, Func<int, string, bool>? verify = null)
@@ -71,7 +75,12 @@ public class CatalogMock : ICatalog
 
     public MediaStacks VersionStacks => throw new NotImplementedException();
     public MediaStacks MediaStacks => throw new NotImplementedException();
-    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int index)
+    public void AddMediaToTopOfMediaStack(MediaStackType stackType, Guid stackId, Guid mediaId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void AddMediaToStackAtIndex(MediaStackType stackType, Guid stackId, Guid mediaId, int? index)
     {
         throw new NotImplementedException();
     }
@@ -81,8 +90,20 @@ public class CatalogMock : ICatalog
         throw new NotImplementedException();
     }
 
+    public string GetMD5ForItem(Guid id, ICache cache) => throw new NotImplementedException();
+
     public bool HasMediaItem(Guid mediaId) => m_media.Items.ContainsKey(mediaId);
     public void Reset()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void UpdateDeletedMediaWithNoClockAndIncrementVectorClock(Guid catalogID)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void DealWithPendingDeletedItems(Guid catalogID)
     {
         throw new NotImplementedException();
     }

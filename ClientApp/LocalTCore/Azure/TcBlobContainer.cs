@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -21,43 +22,65 @@ public class TcBlobContainer
 
     public async Task<ETag> DoUploadWithMetadataCheckOnRetry(string localPath, string blobName, FileStream fs, string expectedMd5)
     {
-        try
+        bool fRemoveBlobFirst = false;
+
+        while (true)
         {
-            Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
-            if (!info.HasValue)
-                throw new Exception($"upload {localPath}->{blobName} failed!");
-
-            BlobClient blob = m_client.GetBlobClient(blobName);
-
-            Dictionary<string, string> metadata = new() { { TcBlob.META_FULL_CONTENT_MD5, expectedMd5 } };
-            Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
-
-            if (!blobInfo.HasValue)
-                throw new Exception($"could not get properties for {blobName}");
-
-            return info.Value.ETag;
-        }
-        catch (RequestFailedException exc)
-        {
-            // probably because it already exists...check for that
-            BlobClient blob = m_client.GetBlobClient(blobName);
-            string? md5Blob = null;
-
-            BlobProperties properties = await blob.GetPropertiesAsync();
-
-            // find the MD5 prop
-            foreach (KeyValuePair<string, string> metadata in properties.Metadata)
+            try
             {
-                if (metadata.Key == TcBlob.META_FULL_CONTENT_MD5)
-                    md5Blob = metadata.Value;
+                if (fRemoveBlobFirst)
+                {
+                    await m_client.DeleteBlobAsync(blobName, DeleteSnapshotsOption.IncludeSnapshots);
+                }
+
+                fs.Seek(0, SeekOrigin.Begin);
+                Response<BlobContentInfo> info = await m_client.UploadBlobAsync(blobName, fs);
+                if (!info.HasValue)
+                    throw new Exception($"upload {localPath}->{blobName} failed!");
+
+                BlobClient blob = m_client.GetBlobClient(blobName);
+
+                Dictionary<string, string> metadata = new() { { TcBlob.META_FULL_CONTENT_MD5, expectedMd5 } };
+                Response<BlobInfo> blobInfo = await blob.SetMetadataAsync(metadata);
+
+                if (!blobInfo.HasValue)
+                    throw new Exception($"could not get properties for {blobName}");
+
+                return info.Value.ETag;
             }
+            catch (RequestFailedException exc)
+            {
+                // probably because it already exists...check for that
+                BlobClient blob = m_client.GetBlobClient(blobName);
+                string? md5Blob = null;
 
-            if (md5Blob == null || md5Blob != expectedMd5)
-                throw new CatExceptionAzureFailure($"upload {localPath}->{blobName} failed: {exc.Message}", exc);
+                BlobProperties properties = await blob.GetPropertiesAsync();
 
-            // otherwise, the blob that's already there has the same md5, so we must have uploaded
-            // it before and didn't get to update our DB
-            return properties.ETag;
+                // find the MD5 prop
+                foreach (KeyValuePair<string, string> metadata in properties.Metadata)
+                {
+                    if (metadata.Key == TcBlob.META_FULL_CONTENT_MD5)
+                        md5Blob = metadata.Value;
+                }
+
+                if ((md5Blob == null || md5Blob != expectedMd5))
+                {
+                    if (fRemoveBlobFirst)
+                    {
+                        // we tried removing it first and we still hit an error, throw this.
+                        throw new CatExceptionAzureFailure($"upload {localPath}->{blobName} failed: {exc.Message}", exc);
+                    }
+
+                    fRemoveBlobFirst = true;
+                    // we will fall through and try again removing the blob first
+                }
+                else
+                {
+                    // otherwise, the blob that's already there has the same md5, so we must have uploaded
+                    // it before and didn't get to update our DB
+                    return properties.ETag;
+                }
+            }
         }
     }
 

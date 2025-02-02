@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+﻿using System;
+using Azure.Core;
 using Azure.Identity;
 using System.Threading.Tasks;
 using Thetacat.Types;
@@ -61,6 +62,7 @@ public class AzureCat
         if (m_catalogContainer == null)
         {
             container = await OpenContainerForCatalog(App.State.StorageContainer);
+
             if (container == null)
                 throw new CatExceptionAzureFailure();
         }

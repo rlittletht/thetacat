@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using Thetacat.Model;
+using Thetacat.Types;
 
 namespace Thetacat.Explorer;
 
-public delegate void OnSelectionChangedDelegate(IEnumerable<MediaExplorerItem> selectedItems);
+public delegate void OnSelectionChangedDelegate(IReadOnlyCollection<MediaItem> selectedItems);
 
 public class ItemSelector
 {
@@ -15,12 +16,17 @@ public class ItemSelector
     private int m_itemsSelectedVectorClock = 0;
 
     public int VectorClock => m_itemsSelectedVectorClock;
-    public IEnumerable<MediaExplorerItem> SelectedItems => m_itemsSelected;
+    public IReadOnlyCollection<MediaExplorerItem> SelectedItems => m_itemsSelected;
 
     public ItemSelector(MediaExplorerCollection? collection, OnSelectionChangedDelegate onSelectionChanged)
     {
         m_collection = collection;
         m_onSelectionChanged = onSelectionChanged;
+    }
+
+    public void ResetSelection()
+    {
+        m_itemsSelected.Clear();
     }
 
     public void ResetCollection(MediaExplorerCollection? collection)
@@ -76,10 +82,24 @@ public class ItemSelector
         }
     }
 
-    void NotifySelectionChanged()
+    public static List<MediaItem> GetSelectedMediaItems(IEnumerable<MediaExplorerItem> selectedItems)
+    {
+        List<MediaItem> mediaItems = new();
+        ICatalog catalog = App.State.Catalog;
+
+        foreach (MediaExplorerItem item in selectedItems)
+        {
+            if (catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
+                mediaItems.Add(mediaItem);
+        }
+
+        return mediaItems;
+    }
+
+    public void NotifySelectionChanged()
     {
         m_itemsSelectedVectorClock++;
-        m_onSelectionChanged(m_itemsSelected);
+        m_onSelectionChanged(GetSelectedMediaItems(m_itemsSelected));
     }
 
     /*----------------------------------------------------------------------------

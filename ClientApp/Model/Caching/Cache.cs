@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using HeyRed.Mime;
-using TCore;
 using TCore.SqlCore;
 using Thetacat.Azure;
 using Thetacat.Logging;
@@ -15,19 +15,27 @@ using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.Util;
 
-namespace Thetacat.Model;
+namespace Thetacat.Model.Caching;
 
+/*----------------------------------------------------------------------------
+    %%Class: Cache
+    %%Qualified: Thetacat.Model.Cache
+
+    This is the local cache (private or workgroup -- private is NYI) for the
+    catalog. If you need to look at a copy of the real image, this is where
+    you look.
+
+    If an item is marked as "don't copy to cloud", then the cache is the only
+    copy of the item. Otherwise, these are all offline copies of what is in
+    azure storage.
+
+    TODO: In the future, we will look for local changes to files that make them
+    different than what is in azure storage -- this will allow us to notice
+    offline editing and signal that we should update metadata, hashes, and
+    upload a new copy to azure storage.
+----------------------------------------------------------------------------*/
 public class Cache : ICache
 {
-    public enum CacheType
-    {
-        Private,
-        Workgroup,
-        Unknown
-    }
-
-    public virtual CacheType Type { get; private set; }
-
     public virtual IWorkgroup _Workgroup
     {
         get
@@ -51,45 +59,9 @@ public class Cache : ICache
         LocalPathToCacheRoot = new PathSegment("//mock/server/mockroot");
     }
 
-    public static CacheType CacheTypeFromString(string? value)
+    void ConnectToWorkgroupCache(IWorkgroup workgroup)
     {
-        if (String.Compare(value, "private", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Private;
-        else if (String.Compare(value, "workgroup", StringComparison.InvariantCultureIgnoreCase) == 0)
-            return CacheType.Workgroup;
-
-        return CacheType.Unknown;
-    }
-
-    public static string StringFromCacheType(CacheType cacheType)
-    {
-        switch (cacheType)
-        {
-            case CacheType.Private:
-                return "private";
-            case CacheType.Workgroup:
-                return "workgroup";
-        }
-
-        throw new ArgumentException("bad cache type argument");
-    }
-
-    void ConnectToWorkgroupCache(TcSettings.Profile settings)
-    {
-        if (Type != CacheType.Workgroup)
-            throw new InvalidOperationException("intializing a non-workgroup");
-
-        if (!Guid.TryParse(settings.WorkgroupId, out Guid id))
-            return;
-
-        try
-        {
-            m_workgroup = new Workgroup(settings.CatalogID, id);
-        }
-        catch (SqlExceptionNoResults e)
-        {
-            throw new CatExceptionWorkgroupNotFound(e.Crids, e, "workgroup not found");
-        }
+        m_workgroup = workgroup;
 
         // make sure the directory exists
         Directory.CreateDirectory(_Workgroup.FullyQualifiedPath);
@@ -136,33 +108,28 @@ public class Cache : ICache
         The cache abstracts whether this is workgroup or private
     ----------------------------------------------------------------------------*/
 #pragma warning disable CS8618 // we set these in a method
-    public Cache(TcSettings.Profile? settings)
+    public Cache(Profile? settings, IWorkgroup? workgroup)
     {
-        ResetCache(settings);
+        ResetCache(settings, workgroup);
     }
 #pragma warning restore CS8618
 
-    public void ResetCache(Profile? settings)
+    public void ResetCache(Profile? settings, IWorkgroup? workgroup)
     {
         Entries.Clear();
 
         if (settings == null)
         {
-            Type = CacheType.Unknown;
             LocalPathToCacheRoot = PathSegment.Empty;
             m_workgroup = null;
             return;
         }
 
-        CacheType cacheType = CacheTypeFromString(settings.CacheType);
-
-        Type = cacheType;
-
-        if (Type == CacheType.Workgroup && settings.WorkgroupId != null)
+        if (workgroup != null)
         {
             try
             {
-                ConnectToWorkgroupCache(settings);
+                ConnectToWorkgroupCache(workgroup);
                 LocalPathToCacheRoot = new PathSegment(_Workgroup.FullPathToCacheRoot);
             }
             catch (CatExceptionWorkgroupNotFound)
@@ -192,6 +159,9 @@ public class Cache : ICache
 
         if (Path.Exists(fullPath.Local))
         {
+            if (string.IsNullOrEmpty(md5))
+                return false;
+
             exists = true;
             // yikes. file already exists
             // last chance...is it already the file we want? (check the MD5 hash)
@@ -199,7 +169,7 @@ public class Cache : ICache
             // if the MD5 matches, then the cache is already done. its ok to use
             // this name. when we see the file already exists in the future we
             // will know its OK to assume its the same file
-            return (MediaItem.CalculateMD5Hash(fullPath.Local) == md5);
+            return MediaItem.CalculateMD5Hash(fullPath.Local) == md5;
         }
 
         return true;
@@ -213,6 +183,58 @@ public class Cache : ICache
             throw new CatExceptionInternalFailure("couldn't generate unique name when guid was allowed!");
 
         return unique;
+    }
+
+    public delegate bool IsPathOkToUseDelegate(PathSegment test, string md5, out bool exists);
+
+    public static PathSegment? GetUniqueLocalNameDerivative(PathSegment existingFile, string? suffix, IsPathOkToUseDelegate? pathOk = null)
+    {
+        pathOk ??= OkToUseLocalPathForItem;
+
+        if (pathOk(existingFile, string.Empty, out _))
+            throw new CatExceptionInternalFailure("trying to get unique name for existing item that doesn't exist");
+
+        string extension = Path.GetExtension(existingFile);
+
+        PathSegment check = new PathSegment(existingFile);
+        PathSegment baseCheck;
+
+        if (string.IsNullOrEmpty(suffix))
+            suffix = "";
+        else
+            suffix = $"-{suffix}";
+
+        Regex rex = new Regex($"^(.*){suffix}\\((\\d+)\\){extension}$", RegexOptions.IgnoreCase);
+
+        MatchCollection matches = rex.Matches(check);
+
+        int nextCount = 1;
+
+        if (matches.Count == 0)
+        {
+            // no suffix yet
+            baseCheck = new PathSegment(Path.ChangeExtension(check, null));
+        }
+        else
+        {
+            if (matches[0].Groups.Count != 3)
+                throw new CatExceptionInternalFailure("bad match count");
+
+            nextCount = int.Parse(matches[0].Groups[2].Value) + 1;
+            baseCheck = new PathSegment(matches[0].Groups[1].Value);
+        }
+
+        check = new PathSegment($"{baseCheck}{suffix}({nextCount}){extension}");
+        while (!pathOk(check, string.Empty, out _) && nextCount < 100)
+        {
+            nextCount++;
+            check = new PathSegment($"{baseCheck}{suffix}({nextCount}){extension}");
+        }
+
+        if (nextCount == 100)
+            return null;
+
+        return check;
     }
 
     public static PathSegment? EnsureUniqueLocalCacheVirtualPath(
@@ -263,14 +285,8 @@ public class Cache : ICache
         return virtualPath.AppendLeafSuffix($"({count})");
     }
 
-    public void QueueCacheDownloadsFromMedia(IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
+    public void QueueCacheDownloadsFromMedia(Guid catalogID, IEnumerable<MediaItem> mediaCollection, ICache cache, int chunkSize)
     {
-        if (Type != CacheType.Workgroup)
-        {
-            MessageBox.Show("Private caching NYI");
-            return;
-        }
-
         _Workgroup.RefreshWorkgroupMedia(Entries);
 
         // first, find items in the WG DB that belong to our client and haven't been download
@@ -298,7 +314,7 @@ public class Cache : ICache
             return;
 
         // now let's stake our claim to some items we're going to cache
-        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(mediaCollection, cache, chunkSize);
+        Dictionary<Guid, MediaItem> itemsForCache = _Workgroup.GetNextItemsForQueueFromMediaCollection(catalogID, mediaCollection, cache, chunkSize);
         _Workgroup.PushChangesToDatabaseWithCache(cache, itemsForCache);
 
         // lastly, queue all the items left in itemsForCache
@@ -310,7 +326,7 @@ public class Cache : ICache
 
     public void QueueCacheDownloads(int chunkSize)
     {
-        QueueCacheDownloadsFromMedia(App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
+        QueueCacheDownloadsFromMedia(App.State.ActiveProfile.CatalogID, App.State.Catalog.GetMediaCollection(), App.State.Cache, chunkSize);
     }
 
     async Task<bool> FEnsureMediaItemDownloadedToCache(MediaItem item, string destination)
@@ -318,11 +334,16 @@ public class Cache : ICache
         if (item.IsCachePending && item.State != MediaItemState.Pending)
         {
             TcBlob blob = await AzureCat._Instance.DownloadMedia(destination, item.ID.ToString(), item.MD5);
-            MainWindow.LogForAsync(EventType.Information, $"downloaded {item.ID} to {destination}");
+            App.LogForAsync(EventType.Information, $"downloaded {item.ID} to {destination}");
             return true;
         }
 
         return false;
+    }
+
+    public PathSegment GetRelativePathToCacheRootFromFullPath(PathSegment fullLocal)
+    {
+        return PathSegment.GetRelativePath(LocalPathToCacheRoot, fullLocal);
     }
 
     public string GetFullLocalPath(PathSegment localSegment)
@@ -342,7 +363,7 @@ public class Cache : ICache
     {
         // we still have to make an entry in the cache db
         // since we are manually caching it right now, set the time to now and pending to false)
-        _Workgroup.CreateCacheEntryForItem(App.State.Cache, item, DateTime.Now, false);
+        _Workgroup.CreateCacheEntryForItem(this, item, DateTime.Now, false);
         // now get the destination path it wants us to use
         if (!Entries.TryGetValue(item.ID, out ICacheEntry? entry))
             throw new CatExceptionInternalFailure("we just added a cache entry and its not there!?");
@@ -359,6 +380,25 @@ public class Cache : ICache
 
         File.Copy(importSource.Local, fullLocalPath);
     }
+
+    /*----------------------------------------------------------------------------
+        %%Function: UpdateCacheForMd5Change
+        %%Qualified: Thetacat.Model.Caching.Cache.UpdateCacheForMd5Change
+
+        We know the MD5 value for this item has changed locally (and hence in the
+        workgroup). mark this so we will update it
+    ----------------------------------------------------------------------------*/
+    public void UpdateEntryForMd5Change(Guid id, string md5)
+    {
+        // get the cache entry
+        if (!Entries.TryGetValue(id, out ICacheEntry? cacheEntry))
+            throw new CatExceptionInternalFailure("no cache entry for update cache entry");
+
+        cacheEntry.MD5 = md5;
+        cacheEntry.CachedBy = _Workgroup.ClientId;
+        cacheEntry.CachedDate = DateTime.Now;
+    }
+
 
     /*----------------------------------------------------------------------------
         %%Function: IsCachePathItemLikeVirtualPathItem
@@ -457,7 +497,7 @@ public class Cache : ICache
 
                 if (!App.State.Catalog.TryGetMedia(entry.ID, out MediaItem? item))
                 {
-                    MainWindow.LogForApp(EventType.Critical, $"Could not find item: {entry.ID} in catalog for repath check. skipping");
+                    App.LogForApp(EventType.Critical, $"Could not find item: {entry.ID} in catalog for repath check. skipping");
                     continue;
                 }
 
@@ -559,7 +599,7 @@ public class Cache : ICache
                     task.Wait();
                     if (task.IsCanceled || task.IsFaulted)
                     {
-                        MainWindow.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
+                        App.LogForAsync(EventType.Warning, $"cache download canceled or failed: {task.Exception}");
                         _Workgroup.PushChangesToDatabase(null);
                         return false;
                     }
