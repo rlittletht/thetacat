@@ -17,7 +17,7 @@ public class MetatagBuilder
 
     public static MetatagBuilder Create()
     {
-        return Create(Guid.NewGuid());
+        return Create(RT.Comb.Provider.Sql.Create());
     }
 
     public static MetatagBuilder Create(Guid id)

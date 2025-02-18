@@ -32,7 +32,7 @@ public class MediaItemData : INotifyPropertyChanged
 
     public MediaItemData()
     {
-        m_id = Guid.NewGuid();
+        m_id = RT.Comb.Provider.Sql.Create();
         m_md5 = string.Empty;
         m_mimeType = string.Empty;
         m_virtualPath = PathSegment.Empty;
@@ -72,7 +72,7 @@ public class MediaItemData : INotifyPropertyChanged
         m_md5 = string.Empty;
         m_mimeType = string.Empty;
         m_virtualPath = importItem.VirtualPath;
-        ID = Guid.NewGuid();
+        ID = RT.Comb.Provider.Sql.Create();
         m_tags = new ConcurrentDictionary<Guid, MediaTag>();
     }
 

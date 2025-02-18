@@ -149,7 +149,7 @@ public class Import
 
     public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -189,7 +189,7 @@ public class Import
 
     public static void ResetImportToPendingForItem(Guid catalogID, Guid id, string clientName)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -221,7 +221,7 @@ public class Import
 
     public static void DeleteImportItem(Guid catalogID, Guid id)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();

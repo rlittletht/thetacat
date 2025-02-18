@@ -125,7 +125,7 @@ public class ClientDatabase
         try
         {
             return _Connection.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 s_queryDerivatives,
                 (ISqlReader reader, Guid crid, ref List<DerivativeDbItem> building) =>
                 {
@@ -262,7 +262,7 @@ public class ClientDatabase
         try
         {
             return _Connection.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 s_queryAllMd5Cache,
                 (ISqlReader reader, Guid crid, ref List<Md5CacheDbItem> building) =>
                 {

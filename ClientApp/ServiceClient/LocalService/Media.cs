@@ -52,7 +52,7 @@ public class Media
     public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> items)
     {
         throw new NotImplementedException("do someting about tag.Deleted below...");
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -198,7 +198,7 @@ public class Media
 
     public static void UpdateMediaItems(Guid catalogID, IEnumerable<MediaItemDiff> diffs)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -264,7 +264,7 @@ public class Media
         try
         {
             return sql.ExecuteMultiSetDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 sQuery,
                 (ISqlReader reader, Guid _, int recordset, ref ServiceDeletedItemsClock building) =>
                 {

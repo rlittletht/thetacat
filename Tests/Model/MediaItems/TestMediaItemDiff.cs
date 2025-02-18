@@ -25,7 +25,7 @@ public class TestMediaItemDiff
         bool IsStateChangedExpected,
         bool IsTagsChangedExpected)
     {
-        MediaItemDiff diff = new MediaItemDiff(Guid.NewGuid());
+        MediaItemDiff diff = new MediaItemDiff(RT.Comb.Provider.Sql.Create());
 
         diff.PropertiesChanged = initial;
         diff.PropertiesChanged |= set;

@@ -108,10 +108,10 @@ public class ServiceInterop
         LocalService.Import.DeleteImportItem(catalogID, id);
     }
 
-    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> newItems)
-    {
-        LocalService.Media.InsertNewMediaItems(catalogID, newItems);
-    }
+//    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> newItems)
+//    {
+//        LocalService.Media.InsertNewMediaItems(catalogID, newItems);
+//    }
 
 //    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
 

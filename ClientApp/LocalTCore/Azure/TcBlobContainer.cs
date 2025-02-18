@@ -86,7 +86,7 @@ public class TcBlobContainer
 
     public async Task<TcBlob> Upload(string localPath, string? blobName = null, string? virtualRoot = null)
     {
-        blobName ??= Guid.NewGuid().ToString();
+        blobName ??= RT.Comb.Provider.Sql.Create().ToString();
 
         if (virtualRoot != null)
             blobName = $"{virtualRoot}/{blobName}";

@@ -51,7 +51,7 @@ public partial class CatOptions : Window
         if (e.PropertyName == "CreateNewCatalog")
         {
             if (AccountTab._Model.CreateNewCatalog)
-                AccountTab._Model.CurrentCatalogID = Guid.NewGuid();
+                AccountTab._Model.CurrentCatalogID = RT.Comb.Provider.Sql.Create();
             else
                 AccountTab._Model.CurrentCatalogID = AccountTab._Model.CatalogDefinition?.ID ?? Guid.Empty;
         }

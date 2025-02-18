@@ -81,7 +81,7 @@ public partial class CacheConfig : UserControl
         {
             if (_Model.CreateNewWorkgroup)
             {
-                _Model.WorkgroupID = Guid.NewGuid().ToString();
+                _Model.WorkgroupID = RT.Comb.Provider.Sql.Create().ToString();
             }
             else
             {
@@ -178,7 +178,7 @@ public partial class CacheConfig : UserControl
         App.State.PushTemporarySqlConnection(sqlConnection);
         if (_Model.CreateNewWorkgroup)
         {
-            workgroup.ID = Guid.NewGuid();
+            workgroup.ID = RT.Comb.Provider.Sql.Create();
             ServiceInterop.CreateWorkgroup(catalogID, workgroup);
         }
         else

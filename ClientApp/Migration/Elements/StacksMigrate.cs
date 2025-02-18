@@ -96,7 +96,7 @@ public class StacksMigrate
 
             if (!mapPseStackIdToCatStackId.TryGetValue(item.StackID, out Guid catStackID))
             {
-                catStackID = Guid.NewGuid();
+                catStackID = RT.Comb.Provider.Sql.Create();
                 mapPseStackIdToCatStackId.Add(item.StackID, catStackID);
             }
 

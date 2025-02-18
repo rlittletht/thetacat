@@ -22,7 +22,7 @@ public class Metatag : IMetatag
     {
         return new Metatag()
         {
-            ID = idStatic ?? Guid.NewGuid(),
+            ID = idStatic ?? RT.Comb.Provider.Sql.Create(),
             Parent = parent,
             Name = name,
             Description = description,

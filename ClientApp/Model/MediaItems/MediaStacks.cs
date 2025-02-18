@@ -82,7 +82,7 @@ public class MediaStacks : INotifyPropertyChanged
 
     public MediaStackItem AddToStack(Guid? stackId, MediaItem item)
     {
-        stackId ??= Guid.NewGuid();
+        stackId ??= RT.Comb.Provider.Sql.Create();
 
         if (!m_items.TryGetValue(stackId.Value, out MediaStack? stack))
         {

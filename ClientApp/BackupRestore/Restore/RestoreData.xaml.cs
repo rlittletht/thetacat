@@ -48,7 +48,7 @@ namespace Thetacat.BackupRestore.Restore
             if (e.PropertyName == "CreateNewCatalog")
             {
                 if (m_model.CreateNewCatalog)
-                    m_model.CatalogID = Guid.NewGuid().ToString();
+                    m_model.CatalogID = RT.Comb.Provider.Sql.Create().ToString();
                 else
                     m_model.CatalogID = m_model.CatalogDefinition?.ID.ToString() ?? string.Empty;
             }

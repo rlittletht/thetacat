@@ -71,7 +71,7 @@ public class MediaItem : INotifyPropertyChanged
         MediaItem item = new MediaItem();
 
         item.Data.State = MediaItemState.Pending;
-        item.Data.ID = Guid.NewGuid();
+        item.Data.ID = RT.Comb.Provider.Sql.Create();
         item.Data.MD5 = based.MD5;
         item.Data.MimeType = based.MimeType;
         item.Data.VirtualPath = based.VirtualPath;

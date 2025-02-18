@@ -189,7 +189,7 @@ public class WorkgroupDb
         {
             ServiceWorkgroupClient client =
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryWorkgroupClientDetailsByName,
                     (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                     {
@@ -239,7 +239,7 @@ public class WorkgroupDb
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
                         _Connection.ExecuteDelegatedQuery(
-                            Guid.NewGuid(),
+                            RT.Comb.Provider.Sql.Create(),
                             s_queryWorkgroupMediaClock,
                             (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
                             {
@@ -284,7 +284,7 @@ public class WorkgroupDb
         {
             List<ServiceWorkgroupFilter> filters =
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryWorkgroupFilters,
                     (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupFilter> building) =>
                     {
@@ -314,7 +314,7 @@ public class WorkgroupDb
     {
         return
             _Connection.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 s_queryWorkgroupFilter,
                 (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupFilter building) =>
                 {

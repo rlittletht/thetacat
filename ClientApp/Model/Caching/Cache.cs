@@ -257,7 +257,7 @@ public class Cache : ICache
             if (!okToUseGuid)
                 return null;
 
-            return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(mimeType)));
+            return new PathSegment(Path.ChangeExtension(RT.Comb.Provider.Sql.Create().ToString(), MimeTypesMap.GetExtension(mimeType)));
         }
 
         PathSegment test = PathSegment.Join(localPathToCacheRoot, virtualPath);
@@ -273,7 +273,7 @@ public class Cache : ICache
                     return null;
 
                 exists = false;
-                return new PathSegment(Path.ChangeExtension(Guid.NewGuid().ToString(), MimeTypesMap.GetExtension(mimeType)));
+                return new PathSegment(Path.ChangeExtension(RT.Comb.Provider.Sql.Create().ToString(), MimeTypesMap.GetExtension(mimeType)));
             }
 
             test = PathSegment.Join(localPathToCacheRoot, virtualPath.AppendLeafSuffix($"({++count})"));

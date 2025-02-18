@@ -34,7 +34,7 @@ public class MediaStack : INotifyPropertyChanged, INotifyCollectionChanged
 
     public MediaStack(MediaStackType type, string description)
     {
-        m_stackId = Guid.NewGuid();
+        m_stackId = RT.Comb.Provider.Sql.Create();
         m_type = type;
         m_description = description;
     }

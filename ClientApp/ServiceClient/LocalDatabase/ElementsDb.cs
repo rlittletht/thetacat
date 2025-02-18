@@ -158,7 +158,7 @@ public class ElementsDb
         {
             List<PseMetadata> tags =
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryMetadataDefinitions,
                     (ISqlReader reader, Guid crids, ref List<PseMetadata> building) =>
                     {
@@ -185,7 +185,7 @@ public class ElementsDb
         {
             return
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryMetatagDefinitions,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMetatag> building) =>
                     {
@@ -378,7 +378,7 @@ public class ElementsDb
         try
         {
             imports = _Connection.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 s_queryMediaImportDates,
                 (ISqlReader reader, Guid crid, ref List<PseMediaImportItem> building) =>
                 {
@@ -479,7 +479,7 @@ public class ElementsDb
         {
             return
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryMediaDictionary,
                     (ISqlReader reader, Guid crids, ref Dictionary<int, PseMediaItem> building) =>
                     {
@@ -521,7 +521,7 @@ public class ElementsDb
         {
             return
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryVersionStacks,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
                     {
@@ -543,7 +543,7 @@ public class ElementsDb
         {
             return
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryMediaStacks,
                     (ISqlReader reader, Guid crids, ref List<PseStackItem> building) =>
                     {

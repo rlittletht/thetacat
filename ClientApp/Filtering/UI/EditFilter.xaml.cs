@@ -85,7 +85,7 @@ namespace Thetacat.Filtering.UI
             {
                 m_model.Expression = new PostfixText();
                 m_model.IsTypeAvailable = true;
-                m_model.Id = Guid.NewGuid();
+                m_model.Id = RT.Comb.Provider.Sql.Create();
             }
 
             InitializeAvailableTags();
