@@ -65,6 +65,12 @@ public class CatalogRestore
         return false;
     }
 
+    public CatalogRestore(MetatagSchema schema, Catalog catalog)
+    {
+        Schema = schema;
+        Catalog = catalog;
+    }
+
     public CatalogRestore(XmlReader reader, MetatagSchema schema)
     {
         Schema = schema;

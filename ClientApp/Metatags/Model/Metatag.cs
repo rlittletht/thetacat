@@ -31,6 +31,19 @@ public class Metatag : IMetatag
         };
     }
 
+    public static Metatag Create(Guid? parent, string name, string description, string standard, Guid? idStatic = null)
+    {
+        return new Metatag()
+               {
+                   ID = idStatic ?? RT.Comb.Provider.Sql.Create(),
+                   Parent = parent,
+                   Name = name,
+                   Description = description,
+                   Standard = standard,
+                   LocalOnly = true
+               };
+    }
+
     public static Metatag CreateFromService(ServiceMetatag serviceMetatag)
     {
         return new Metatag()

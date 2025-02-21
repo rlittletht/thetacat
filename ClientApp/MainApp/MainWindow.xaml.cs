@@ -439,7 +439,7 @@ public partial class MainWindow : Window, IMainCommands
     public void EmptyTrash()
     {
         // get a collection of all the items marked for the trash
-        FilterDefinition trashFilter = new FilterDefinition("", "", $"[{BuiltinTags.s_IsTrashItemID:B}] == '$true'");
+        FilterDefinition trashFilter = new FilterDefinition("", "", $"[{App.State.MetatagSchema.BuiltinTags.IsTrashItemID:B}] == '$true'");
 
         if (m_model.ExplorerCollection.FDoDeleteItems(App.State.Catalog.GetFilteredMediaItems(trashFilter), this))
             m_model.ExplorerCollection.BuildTimelineFromMediaCatalog();

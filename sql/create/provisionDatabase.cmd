@@ -1,7 +1,7 @@
 rem @echo off
 set local
 echo %1
-
+echo "(suggested args: -S ^<server^> -C [-E | -U userid -P password])"
 set arg1=%1
 set arg1=%arg1:"=%
 

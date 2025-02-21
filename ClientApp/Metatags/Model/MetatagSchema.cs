@@ -22,14 +22,32 @@ public class MetatagSchema
     public bool DontBuildTree = false;
 
     public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
+    public BuiltinTags BuiltinTags;
 
-    public MetatagSchema()
+    public MetatagSchema(bool useDeprecatedBuiltinTags)
     {
+        BuiltinTags = new BuiltinTags(useDeprecatedBuiltinTags);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ResetBuiltinTagsFromExistingTags
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.ResetBuiltinTagsFromExistingTags
+
+        Figure out if this schema uses deprecated or current builtin tags based
+        on the current metatag definitions (assumes CatRootID is always present)
+    ----------------------------------------------------------------------------*/
+    public void ResetBuiltinTagsFromExistingTags()
+    {
+        if (GetMetatagFromId(BuiltinTags_Current.s_CatRootID) != null)
+            BuiltinTags = new BuiltinTags(false);
+        else
+            BuiltinTags = new BuiltinTags(true);
     }
 
     public MetatagSchema(MetatagSchema source)
     {
         m_schemaWorking = source.m_schemaWorking.Clone();
+        BuiltinTags = new BuiltinTags(source.BuiltinTags.UseDeprecatedBuiltinTags);
     }
 
     /*----------------------------------------------------------------------------
@@ -362,13 +380,13 @@ public class MetatagSchema
 
     public void EnsureBuiltinMetatagsDefined()
     {
-        lock (BuiltinTags.s_BuiltinTags)
+        lock (BuiltinTags.Tags)
         {
             App.LogForApp(EventType.Verbose, "ensure builtin defined");
-            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
-            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.UserRootID);
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.CatRootID);
 
-            foreach (Metatag metatag in BuiltinTags.s_BuiltinTags)
+            foreach (Metatag metatag in BuiltinTags.Tags)
             {
                 if (GetMetatagFromId(metatag.ID) == null)
                 {
@@ -416,6 +434,7 @@ public class MetatagSchema
         }
 
         m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+        ResetBuiltinTagsFromExistingTags();
 
         EnsureBuiltinMetatagsDefined();
 

@@ -63,10 +63,10 @@ public partial class ManageFilters : Window
     {
         MetatagSchema filterSchema = new MetatagSchema(App.State.MetatagSchema);
 
-        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
-        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", filterSchema.BuiltinTags.UserRootID);
+        filterSchema.GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", filterSchema.BuiltinTags.CatRootID);
 
-        foreach (Metatag tag in BuiltinTags.s_NonSchemaBuiltinTags)
+        foreach (Metatag tag in filterSchema.BuiltinTags.NonSchemaTags)
         {
             filterSchema.AddMetatag(tag);
         }

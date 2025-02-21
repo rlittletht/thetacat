@@ -34,11 +34,12 @@ public class MetatagSchemaRestore
 
     public MetatagSchemaRestore(XmlReader reader)
     {
-        Schema = new MetatagSchema();
+        Schema = new MetatagSchema(false);
         Schema.DontBuildTree = true;
 
         XmlIO.FReadElement(reader, this, "metatagSchema", null, FParseElement);
         Schema.DontBuildTree = false;
+        Schema.ResetBuiltinTagsFromExistingTags();
         Schema.RebuildWorkingTree();
     }
 }

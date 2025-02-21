@@ -24,6 +24,7 @@ public class RestoreDataModel: INotifyPropertyChanged
     private string m_catalogName = string.Empty;
     private string m_catalogDescription = string.Empty;
     private bool m_createNewCatalog;
+    private bool m_regenerateIds;
 
     public ObservableCollection<ServiceCatalogDefinition> CatalogDefinitions { get; set; } = new();
 
@@ -37,6 +38,12 @@ public class RestoreDataModel: INotifyPropertyChanged
     {
         get => m_catalogDefinition;
         set => SetField(ref m_catalogDefinition, value);
+    }
+
+    public bool RegenerateIds
+    {
+        get => m_regenerateIds;
+        set => SetField(ref m_regenerateIds, value);
     }
 
     public string CatalogID

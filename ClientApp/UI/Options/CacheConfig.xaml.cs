@@ -1,12 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
 using Thetacat.Model.Caching;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
+using MessageBox = System.Windows.Forms.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 
 namespace Thetacat.UI.Options;
@@ -90,50 +91,6 @@ public partial class CacheConfig : UserControl
         }
     }
 
-    bool IsValidWorkgroupSettings()
-    {
-        if (string.IsNullOrEmpty(_Model.WorkgroupName))
-        {
-            MessageBox.Show("Can't save Workgroup information. Workgroup name not set");
-            return false;
-        }
-
-        // we are going to create a workgroup
-        if (string.IsNullOrEmpty(_Model.WorkgroupServerPath))
-        {
-            MessageBox.Show("Can't save workgroup information. Server path not set");
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(_Model.WorkgroupCacheRoot))
-        {
-            MessageBox.Show("Can't save workgroup information. Cache root not set");
-            return false;
-        }
-
-        string fullPath = PathSegment.Join(_Model.WorkgroupServerPath, _Model.WorkgroupCacheRoot).Local;
-
-        if (!Path.Exists(fullPath))
-        {
-            // try to create the path
-            try
-            {
-                Directory.CreateDirectory(fullPath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Can't create directory for workgroup cache: {ex.Message}");
-                return false;
-            }
-        }
-        else if ((File.GetAttributes(fullPath) & FileAttributes.Directory) != FileAttributes.Directory)
-        {
-            MessageBox.Show($"Can't create workgroup. Cache is not a directory: {fullPath}");
-            return false;
-        }
-
-        return true;
-    }
 
     public bool FSaveSettings(string sqlConnection, Guid catalogID)
     {
@@ -162,27 +119,35 @@ public partial class CacheConfig : UserControl
         _Model.ProfileOptions.Profile.CacheLocation = _Model.CacheLocation;
 
         // verify workgroup settings are valid
-        bool valid = IsValidWorkgroupSettings();
+        bool valid = CreateWorkgroup.ValidateValidWorkgroupSettings(_Model.WorkgroupName, _Model.WorkgroupServerPath, _Model.WorkgroupCacheRoot);
 
         if (!valid)
             return false;
 
-        ServiceWorkgroup workgroup =
-            new ServiceWorkgroup()
-            {
-                Name = _Model.WorkgroupName,
-                ServerPath = PathSegment.CreateFromString(_Model.WorkgroupServerPath),
-                CacheRoot = PathSegment.CreateFromString(_Model.WorkgroupCacheRoot)
-            };
+        string newId;
 
-        App.State.PushTemporarySqlConnection(sqlConnection);
         if (_Model.CreateNewWorkgroup)
         {
-            workgroup.ID = RT.Comb.Provider.Sql.Create();
-            ServiceInterop.CreateWorkgroup(catalogID, workgroup);
+            CreateWorkgroup.CreateNewWorkgroup(
+                catalogID,
+                sqlConnection,
+                _Model.WorkgroupID,
+                _Model.WorkgroupName,
+                _Model.WorkgroupServerPath,
+                _Model.WorkgroupCacheRoot);
+
+            newId = _Model.WorkgroupID;
         }
         else
         {
+            ServiceWorkgroup workgroup =
+                new()
+                {
+                    Name = _Model.WorkgroupName,
+                    ServerPath = PathSegment.CreateFromString(_Model.WorkgroupServerPath),
+                    CacheRoot = PathSegment.CreateFromString(_Model.WorkgroupCacheRoot)
+                };
+
             Guid id;
 
             if (!Guid.TryParse(_Model.WorkgroupID, out id))
@@ -191,13 +156,15 @@ public partial class CacheConfig : UserControl
                 return false;
             }
 
+            App.State.PushTemporarySqlConnection(sqlConnection);
             workgroup.ID = id;
             ServiceInterop.UpdateWorkgroup(catalogID, workgroup);
+            App.State.PopTemporarySqlConnection();
+
+            newId = workgroup.ID!.Value.ToString();
         }
 
-        App.State.PopTemporarySqlConnection();
-
-        _Model.ProfileOptions.Profile.WorkgroupId = workgroup.ID.ToString();
+        _Model.ProfileOptions.Profile.WorkgroupId = newId;
 
         return true;
     }
@@ -231,6 +198,22 @@ public partial class CacheConfig : UserControl
 //                App.State.PopTemporarySqlConnection();
 //            }
 //        }
+        }
+    }
+
+    private void CreateNewWorkgroup(object sender, System.Windows.RoutedEventArgs e)
+    {
+        ServiceWorkgroup? newWorkgroup = CreateWorkgroup.Create(Window.GetWindow(this));
+
+        if (newWorkgroup != null)
+        {
+            // we are creating a new workgroup
+            _Model.CreateNewWorkgroup = true;
+            _Model.WorkgroupName = newWorkgroup.Name!;
+            _Model.WorkgroupServerPath = newWorkgroup.ServerPath!;
+            _Model.WorkgroupCacheRoot = newWorkgroup.CacheRoot!;
+            _Model.WorkgroupID = newWorkgroup.ID!.Value.ToString();
+            _Model.CreateNewWorkgroup = true;
         }
     }
 }

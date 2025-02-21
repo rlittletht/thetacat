@@ -204,6 +204,7 @@ public class Workgroup : IWorkgroup
                     ClientId = RT.Comb.Provider.Sql.Create(),
                     ClientName = MainApp.MainWindow.ClientName,
                     VectorClock = 0,
+                    DeletedMediaClock = 0
                 };
 
             m_db.CreateWorkgroupClient(client);

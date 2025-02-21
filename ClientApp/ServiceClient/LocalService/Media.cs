@@ -23,6 +23,7 @@ public class Media
                 { "tcat_stacks", "ST" }
             });
 
+#if NOTUSED
     private static readonly string s_queryInsertMedia = @"
         INSERT INTO tcat_media
             (catalog_id, id, virtualPath, mimeType, state, md5)
@@ -32,7 +33,7 @@ public class Media
         INSERT INTO tcat_mediatags
             (catalog_id, id, metatag, value, deleted, clock)
         VALUES ";
-
+#endif
     // this is going to trigger a tag-clock reset
     private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
         DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id) AND tcat_stacks.catalog_id=@CatalogID
@@ -52,6 +53,7 @@ public class Media
     public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> items)
     {
         throw new NotImplementedException("do someting about tag.Deleted below...");
+#if NOTUSED
         Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
@@ -109,6 +111,7 @@ public class Media
         {
             sql.Close();
         }
+#endif
     }
 
     static readonly string s_queryFullCatalog = @"

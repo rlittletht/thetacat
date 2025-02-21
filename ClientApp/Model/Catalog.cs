@@ -191,7 +191,7 @@ public class Catalog : ICatalog
 
         // now update some metatags
         newItem.ImportDate = DateTime.Now;
-        newItem.FRemoveMediaTag(BuiltinTags.s_IsTrashItemID);
+        newItem.FRemoveMediaTag(App.State.MetatagSchema.BuiltinTags.IsTrashItemID);
         newItem.VirtualPath = cache.GetRelativePathToCacheRootFromFullPath(newFile);
 
         AddNewMediaItem(newItem);
@@ -209,7 +209,7 @@ public class Catalog : ICatalog
 
         ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, newItems);
 
-        return new MediaItem();
+        return new MediaItem(based.UseDeprecatedTagIds);
     }
 
     void OnMediaItemDirtied(object? sender, DirtyItemEventArgs<Guid> e)

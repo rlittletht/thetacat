@@ -2,6 +2,8 @@
 using System.Windows.Documents;
 using System.Xml;
 using System.Xml.Schema;
+using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using XMLIO;
 
 namespace Thetacat.BackupRestore.Restore;
@@ -13,6 +15,14 @@ public class FullExportRestore
     public ImportsRestore? ImportsRestore;
     public WorkgroupsRestore? WorkgroupsRestore;
     public Guid? CatalogID;
+
+    public GuidMaps GuidMaps = new();
+
+    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports)
+    {
+        CatalogRestore = new CatalogRestore(schema, catalog);
+        ImportsRestore = imports;
+    }
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)
     {
@@ -50,7 +60,7 @@ public class FullExportRestore
 
     private bool FParseFullExportAttribute(string attribute, string value, FullExportRestore fullExport)
     {
-        if (attribute == "catalogId")
+        if (attribute == "catalogID")
         {
             if (Guid.TryParse(value, out Guid id))
             {

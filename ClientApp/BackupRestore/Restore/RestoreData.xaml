@@ -61,6 +61,7 @@
                     <TextBox Text="{Binding Path=CatalogName}" IsEnabled="{Binding Path=CreateNewCatalog}" />
                     <TextBlock Text="Catalog Description" IsEnabled="{Binding Path=CreateNewCatalog}" />
                     <TextBox Text="{Binding Path=CatalogDescription}" IsEnabled="{Binding Path=CreateNewCatalog}" />
+                    <CheckBox Content="Regenerate ids and migrate to new workgroup and database" IsChecked="{Binding Path=RegenerateIds}" />
                 </StackPanel>
             </GroupBox>
         </StackPanel>

@@ -37,7 +37,7 @@ public class Workgroup
 #endif
 
     private static readonly string s_insertWorkgroup = @"
-            INSERT INTO tcat_workgroups (catalog_id, id, name, serverPath, cacheRoot) VALUES (@CatalogID, @Id, @Name, @ServerPath, @CacheRoot)";
+            INSERT INTO tcat_workgroups (catalog_id, id, name, serverPath, cacheRoot, deletedMediaClock) VALUES (@CatalogID, @Id, @Name, @ServerPath, @CacheRoot, 0)";
 
     private static readonly string s_updateWorkgroup = @"
             UPDATE tcat_workgroups SET name=@Name, serverPath=@ServerPath, cacheRoot=@CacheRoot WHERE id=@Id AND catalog_id=@CatalogID";

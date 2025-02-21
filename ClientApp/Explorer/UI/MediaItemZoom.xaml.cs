@@ -247,8 +247,11 @@ public partial class MediaItemZoom : Window
         foreach (Metatag tag in App.State.MetatagMRU.RecentTags)
         {
             // skip builtin tags that shouldn't be on the MRU
-            if (tag.ID == BuiltinTags.s_IsTrashItemID)
+            if (tag.ID == BuiltinTags_Deprecated.s_IsTrashItemID
+                || tag.ID == BuiltinTags_Current.s_IsTrashItemID)
+            {
                 continue;
+            }
 
             if (existingTags.Contains(tag.ID))
             {

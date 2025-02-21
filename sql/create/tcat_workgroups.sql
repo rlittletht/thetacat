@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_workgroups]    Script Date: 1/1/2024 3:05:37 PM ******/
+/****** Object:  Table [dbo].[tcat_workgroups]    Script Date: 2/19/2025 4:43:42 PM ******/
 SET
 	ANSI_NULLS ON
 GO
@@ -11,6 +11,7 @@ GO
 		[name] [nvarchar](128) NOT NULL,
 		[serverPath] [nvarchar](256) NOT NULL,
 		[cacheRoot] [nvarchar](1024) NOT NULL,
+		[deletedMediaClock] [int] NOT NULL,
 		CONSTRAINT [PK_tcat_workgroups] PRIMARY KEY CLUSTERED ([catalog_id] ASC, [id] ASC) WITH (
 			PAD_INDEX = OFF,
 			STATISTICS_NORECOMPUTE = OFF,

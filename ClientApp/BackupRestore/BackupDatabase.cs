@@ -35,7 +35,7 @@ public class BackupDatabase
         bool exportImports,
         bool exportWorkgroups)
     {
-        m_schema = new MetatagSchema();
+        m_schema = new MetatagSchema(false);
         m_catalog = new Catalog();
         m_filename = backupPath;
         m_exportMediaItems = exportMediaItems;

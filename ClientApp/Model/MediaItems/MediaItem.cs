@@ -43,10 +43,12 @@ public class MediaItem : INotifyPropertyChanged
     private MediaItemData? m_base;
     private readonly MediaItemData m_working;
     private bool m_isCachePending = false;
+    public bool UseDeprecatedTagIds = false;
 
-    public MediaItem()
+    public MediaItem(bool useDeprecatedTagIds)
     {
         m_working = new MediaItemData();
+        UseDeprecatedTagIds = useDeprecatedTagIds;
     }
 
     public MediaItem(ImportItem importItem)
@@ -68,7 +70,7 @@ public class MediaItem : INotifyPropertyChanged
 
     public static MediaItem CreateNewBasedOn(MediaItem based)
     {
-        MediaItem item = new MediaItem();
+        MediaItem item = new MediaItem(based.UseDeprecatedTagIds);
 
         item.Data.State = MediaItemState.Pending;
         item.Data.ID = RT.Comb.Provider.Sql.Create();
@@ -258,10 +260,10 @@ public class MediaItem : INotifyPropertyChanged
 
     public bool TryGetMediaTag(Guid guid, [NotNullWhen(true)] out MediaTag? mediaTag)
     {
-        if (guid == BuiltinTags.s_VirtualPathID)
+        if (guid == BuiltinTags_Current.s_VirtualPathID)
         {
             // synthesize a mediatag for virtual path
-            mediaTag = new MediaTag(BuiltinTags.s_VirtualPath, VirtualPath);
+            mediaTag = new MediaTag(BuiltinTags_Current.s_VirtualPath, VirtualPath);
             return true;
         }
 
@@ -282,7 +284,7 @@ public class MediaItem : INotifyPropertyChanged
     public bool HasMediaTag(Guid guid)
     {
         // first check to see if its a builtin non-schema tag
-        if (guid == BuiltinTags.s_VirtualPathID)
+        if (guid == BuiltinTags_Current.s_VirtualPathID)
             return true;
 
         if (Tags.ContainsKey(guid))
@@ -297,14 +299,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_Width.ID, out MediaTag? tag))
+            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Width.ID : BuiltinTags_Current.s_Width.ID, out MediaTag? tag))
                 return int.Parse(tag.Value ?? "");
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_Width, value.ToString());
+            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Width : BuiltinTags_Current.s_Width, value.ToString());
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageWidth));
         }
@@ -314,14 +316,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_Height.ID, out MediaTag? tag))
+            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Height.ID : BuiltinTags_Current.s_Height.ID, out MediaTag? tag))
                 return int.Parse(tag.Value ?? "");
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_Height, value.ToString());
+            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Height : BuiltinTags_Current.s_Height, value.ToString());
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImageHeight));
         }
@@ -331,14 +333,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_DateSpecifiedID, out MediaTag? tag))
+            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DateSpecifiedID : BuiltinTags_Current.s_DateSpecifiedID, out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_DateSpecified, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DateSpecified : BuiltinTags_Current.s_DateSpecified, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(SpecifiedMediaDate));
         }
@@ -348,14 +350,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_OriginalMediaDateID, out MediaTag? tag))
+            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDateID : BuiltinTags_Current.s_OriginalMediaDateID, out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(OriginalMediaDate));
         }
@@ -365,14 +367,14 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(BuiltinTags.s_ImportDateID, out MediaTag? tag))
+            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDateID : BuiltinTags_Current.s_ImportDateID, out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(BuiltinTags.s_ImportDate, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate, value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImportDate));
         }
@@ -428,26 +430,26 @@ public class MediaItem : INotifyPropertyChanged
 
     public int? TransformRotate
     {
-        get => GetBuiltinTagValue(BuiltinTags.s_TransformRotate, int.Parse);
-        set => SetBuiltinTagValue(BuiltinTags.s_TransformRotate, value);
+        get => GetBuiltinTagValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_TransformRotate : BuiltinTags_Current.s_TransformRotate, int.Parse);
+        set => SetBuiltinTagValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_TransformRotate : BuiltinTags_Current.s_TransformRotate, value);
     }
 
     public bool IsTrashItem
     {
-        get => FHasBuiltinTag(BuiltinTags.s_IsTrashItem);
-        set => SetBuiltinTagToggleTag(BuiltinTags.s_IsTrashItem, value);
+        get => FHasBuiltinTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_IsTrashItem : BuiltinTags_Current.s_IsTrashItem);
+        set => SetBuiltinTagToggleTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_IsTrashItem : BuiltinTags_Current.s_IsTrashItem, value);
     }
 
     public bool DontPushToCloud
     {
-        get => FHasBuiltinTag(BuiltinTags.s_DontPushToCloud);
-        set => SetBuiltinTagToggleTag(BuiltinTags.s_DontPushToCloud, value);
+        get => FHasBuiltinTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DontPushToCloud : BuiltinTags_Current.s_DontPushToCloud);
+        set => SetBuiltinTagToggleTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DontPushToCloud : BuiltinTags_Current.s_DontPushToCloud, value);
     }
 
     public bool TransformMirror
     {
-        get => FHasBuiltinTag(BuiltinTags.s_TransformMirror);
-        set => SetBuiltinTagToggleTag(BuiltinTags.s_TransformMirror, value);
+        get => FHasBuiltinTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_TransformMirror : BuiltinTags_Current.s_TransformMirror);
+        set => SetBuiltinTagToggleTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_TransformMirror : BuiltinTags_Current.s_TransformMirror, value);
     }
 
 #endregion
@@ -841,11 +843,11 @@ public class MediaItem : INotifyPropertyChanged
         Tuple<int, int>? widthHeight = FindWidthHeightFromMediaTags(metatagSchema);
         if (widthHeight != null)
         {
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Width, widthHeight.Item1.ToString()), true);
-            FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_Height, widthHeight.Item2.ToString()), true);
+            FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Width : BuiltinTags_Current.s_Width, widthHeight.Item1.ToString()), true);
+            FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Height : BuiltinTags_Current.s_Height, widthHeight.Item2.ToString()), true);
         }
 
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")), true);
+        FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")), true);
 
         string? dateTimeString =
             TryGetMediaTagValueFromStandardAndType(
@@ -874,7 +876,7 @@ public class MediaItem : INotifyPropertyChanged
 
         dateTimeString ??= File.GetCreationTime(file).ToUniversalTime().ToString("u");
 
-        FAddOrUpdateMediaTag(new MediaTag(BuiltinTags.s_OriginalMediaDate, dateTimeString), true);
+        FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate, dateTimeString), true);
 
         return log;
     }

@@ -88,7 +88,8 @@ public class WorkgroupDb
         CREATE TABLE tcat_workgroup_clients(
             id VARCHAR(36) NOT NULL PRIMARY KEY, 
             name VARCHAR(128) NOT NULL, 
-            vectorClock INTEGER NOT NULL)";
+            vectorClock INTEGER NOT NULL,
+            deletedMediaClock INTEGER NOT NULL DEFAULT 0)";
 
     private readonly string s_initializeVectorClock = @"
         INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('workgroup-clock', 0)";

@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_schemaversions]    Script Date: 2/19/2024 2:48:29 PM ******/
+/****** Object:  Table [dbo].[tcat_schemaversions]    Script Date: 2/19/2025 4:30:08 PM ******/
 SET
 	ANSI_NULLS ON
 GO

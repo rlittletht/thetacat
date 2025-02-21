@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_metatags]    Script Date: 1/1/2024 2:55:53 PM ******/
+/****** Object:  Table [dbo].[tcat_metatags]    Script Date: 2/19/2025 4:29:48 PM ******/
 SET
 	ANSI_NULLS ON
 GO

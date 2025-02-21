@@ -21,6 +21,7 @@ using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.TcSettings;
 using Thetacat.Types;
 using Thetacat.Util;
 using MessageBox = System.Windows.MessageBox;
@@ -110,6 +111,57 @@ namespace Thetacat.BackupRestore.Restore
 
             bool fClearBeforeRestore = false;
 
+            FullExportRestore restore = m_fullRestoreData;
+            GuidMaps idMaps = new();
+
+            if (m_model.RegenerateIds)
+            {
+                if (m_model.ImportWorkgroups)
+                {
+                    MessageBox.Show("Cannot regenerate IDs when importing workgroups");
+                    return;
+                }
+
+                if (m_model.CurrentRestoreBehavior != "Create New" && m_model.CurrentRestoreBehavior != "Replace")
+                {
+                    MessageBox.Show("Cannot regenerate IDs unless also replacing or creating new database.");
+                    return;
+                }
+
+                if (restore.CatalogRestore == null)
+                {
+                    MessageBox.Show("Cannot regenerate IDs without a catalog");
+                    return;
+                }
+
+                if (restore.CatalogRestore.Schema.MetatagCount == 0)
+                {
+                    MessageBox.Show("Cannot regenerate IDs without a schema");
+                    return;
+                }
+
+                // TODO: Change this. We require a target profile and a reference profile. The target profile is the current profile, and the
+                // reference profile should be listed and made available to select. This means we don't have to have any special selection code, etc.
+
+                if (MessageBox.Show(
+                        $"Regenerating ids and migrating requires that you have already created the target profile with a new SQL database and workgroup to restore into. "
+                        + $"(NOTE: You will want a new database since the whole point of regenerating IDs is to optimize the indexes, and restoring into an existing "
+                        + $"database will just perpetuate the fragmented indexes.\n\nYou will be prompted for the reference profile in order to "
+                        + $"properly migrate Non-Cloud media to the new workgroup."
+                        + $"\n\nDo you want to continue?",
+                        "Restore data",
+                        MessageBoxButton.OKCancel)
+                    == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+
+                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out Profile? referenceProfile))
+                    return;
+
+                restore = idMaps.RemapFullRestore(restore);
+            }
+
             // first figure out what we're restoring to
             if (m_model.CurrentRestoreBehavior == "Create New")
             {
@@ -175,7 +227,7 @@ namespace Thetacat.BackupRestore.Restore
             if (m_model.ImportSchema)
             {
                 // clear if request
-                if (m_fullRestoreData.CatalogRestore == null || m_fullRestoreData.CatalogRestore.Schema.MetatagCount == 0)
+                if (restore.CatalogRestore == null || restore.CatalogRestore.Schema.MetatagCount == 0)
                 {
                     MessageBox.Show("Can't restore from empty catalog or schema");
                 }
@@ -186,9 +238,9 @@ namespace Thetacat.BackupRestore.Restore
 
                     // load the base schema
                     ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
-                    m_fullRestoreData.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
+                    restore.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
 
-                    m_fullRestoreData.CatalogRestore.Schema.UpdateServer(
+                    restore.CatalogRestore.Schema.UpdateServer(
                         catalogID,
                         (count) => MessageBox.Show(
                                 $"Updating {count} schema items. Proceed?",
@@ -200,12 +252,12 @@ namespace Thetacat.BackupRestore.Restore
 
             if (m_model.ImportWorkgroups)
             {
-                if ((m_fullRestoreData.WorkgroupsRestore?.Workgroups.Count ?? 0) == 0)
+                if ((restore.WorkgroupsRestore?.Workgroups.Count ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty set of workgroups");
                 }
                 else if (MessageBox.Show(
-                             $"Updating {m_fullRestoreData.WorkgroupsRestore!.Workgroups.Count} workgroups. Proceed?",
+                             $"Updating {restore.WorkgroupsRestore!.Workgroups.Count} workgroups. Proceed?",
                              "Restore Data",
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
@@ -213,7 +265,7 @@ namespace Thetacat.BackupRestore.Restore
 //                    if (fClearBeforeRestore)
 //                        ServiceInterop.DeleteAllWorkgroups();
 
-                    foreach (ServiceWorkgroup workgroup in m_fullRestoreData.WorkgroupsRestore!.Workgroups)
+                    foreach (ServiceWorkgroup workgroup in restore.WorkgroupsRestore!.Workgroups)
                     {
                         try
                         {
@@ -236,31 +288,32 @@ namespace Thetacat.BackupRestore.Restore
             }
             else
             {
-                if ((m_fullRestoreData.CatalogRestore?.Catalog.GetMediaCount ?? 0) == 0)
+                if ((restore.CatalogRestore?.Catalog.GetMediaCount ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty catalog");
                 }
                 else
                 {
                     if (!m_model.ImportMediaStacks)
-                        m_fullRestoreData.CatalogRestore!.Catalog.MediaStacks.Clear();
+                        restore.CatalogRestore!.Catalog.MediaStacks.Clear();
 
                     if (!m_model.ImportVersionStacks)
-                        m_fullRestoreData.CatalogRestore!.Catalog.VersionStacks.Clear();
+                        restore.CatalogRestore!.Catalog.VersionStacks.Clear();
 
                     if (fClearBeforeRestore)
                         ServiceInterop.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
 
                     Catalog catalogCurrent = new Catalog();
-                    MetatagSchema schema = new MetatagSchema();
+                    // we don't support restoring deprecated databases. you must remap them.
+                    MetatagSchema schema = new MetatagSchema(false);
                     ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
 
                     schema.ReplaceFromService(serviceSchema);
                     await catalogCurrent.ReadFullCatalogFromServer(catalogID, schema);
                         
                     // and now we have to diff
-                    m_fullRestoreData.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
-                    m_fullRestoreData.CatalogRestore!.Catalog.PushPendingChanges(
+                    restore.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
+                    restore.CatalogRestore!.Catalog.PushPendingChanges(
                         catalogID,
                         (count, itemType) => MessageBox.Show(
                                 $"Updating {count} {itemType} items. Proceed?",
@@ -272,17 +325,17 @@ namespace Thetacat.BackupRestore.Restore
 
             if (m_model.ImportImports)
             {
-                if ((m_fullRestoreData.ImportsRestore?.ImportItems.Count ?? 0) == 0)
+                if ((restore.ImportsRestore?.ImportItems.Count ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty imports collection");
                 }
                 else if (MessageBox.Show(
-                             $"Inserting {m_fullRestoreData.ImportsRestore!.ImportItems.Count} import records. Proceed?",
+                             $"Inserting {restore.ImportsRestore!.ImportItems.Count} import records. Proceed?",
                              "Restore Data",
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
                 {
-                    ServiceInterop.InsertAllServiceImportItems(catalogID, m_fullRestoreData.ImportsRestore!.ImportItems);
+                    ServiceInterop.InsertAllServiceImportItems(catalogID, restore.ImportsRestore!.ImportItems);
                 }
             }
         }
