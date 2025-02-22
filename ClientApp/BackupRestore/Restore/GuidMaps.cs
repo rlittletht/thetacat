@@ -29,6 +29,17 @@ public class GuidMaps
 
     public Guid CreateForId(IdType idType, Guid oldId)
     {
+        if (idType == IdType.Metatag)
+        {
+            Guid? builtin = BuiltinTags.MapDeprecatedIdToCurrentId(oldId);
+
+            if (builtin != null)
+            {
+                Add(idType, oldId, builtin.Value);
+                return builtin.Value;
+            }
+        }
+
         Guid newId = RT.Comb.Provider.Sql.Create();
         Add(idType, oldId, newId);
         return newId;
@@ -117,6 +128,19 @@ public class GuidMaps
         return newStacks;
     }
 
+    public void RemapStackItemsInPlace(MediaStacks stacks)
+    {
+        List<MediaStack> newStacks = new();
+
+        foreach (MediaStack stack in stacks.Items.Values)
+        {
+            foreach (MediaStackItem item in stack.Items)
+            {
+                item.MediaId = GetNew(IdType.Media, item.MediaId)!.Value;
+            }
+        }
+    }
+
     public MediaTag RemapMediaTag(MetatagSchema schema, MediaTag tag)
     {
         Metatag metatag = schema.GetMetatagFromId(GetNew(IdType.Metatag, tag.Metatag.ID)!.Value)!;
@@ -129,10 +153,11 @@ public class GuidMaps
         ServiceMediaItem newServiceItem =
             new()
             {
-                Id = GetNew(IdType.Media, item.ID),
+                Id = CreateForId(IdType.Media, item.ID),
                 VirtualPath = item.VirtualPath,
                 MimeType = item.MimeType,
-                MD5 = item.MD5
+                MD5 = item.MD5,
+                State = MediaItem.StringFromState(item.State)
             };
 
         MediaItem newItem = new(newServiceItem);
@@ -187,7 +212,11 @@ public class GuidMaps
         {
             catalogNew.AddNewMediaItem(RemapMediaItem(schema, item));
         }
-        
+
+        // lastly, now that we have the media item id maps, map all the stack items
+        RemapStackItemsInPlace(catalogNew.MediaStacks);
+        RemapStackItemsInPlace(catalogNew.VersionStacks);
+
         return catalogNew;
     }
 

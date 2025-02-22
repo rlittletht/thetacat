@@ -36,11 +36,11 @@ public class Media
 #endif
     // this is going to trigger a tag-clock reset
     private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
-        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id) AND tcat_stacks.catalog_id=@CatalogID
-        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id) AND tcat_stackmedia.catalog_id=@CatalogID
-        DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id) AND tcat_mediatags.catalog_id=@CatalogID
+        DELETE FROM tcat_stacks WHERE catalog_id=@CatalogID
+        DELETE FROM tcat_stackmedia WHERE catalog_id=@CatalogID
+        DELETE FROM tcat_mediatags WHERE catalog_id=@CatalogID
         DELETE FROM tcat_media WHERE catalog_id=@CatalogID
-        UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@Catalog";
+        UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@CatalogID";
 
 
     /*----------------------------------------------------------------------------

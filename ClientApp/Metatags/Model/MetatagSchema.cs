@@ -38,10 +38,12 @@ public class MetatagSchema
     ----------------------------------------------------------------------------*/
     public void ResetBuiltinTagsFromExistingTags()
     {
-        if (GetMetatagFromId(BuiltinTags_Current.s_CatRootID) != null)
-            BuiltinTags = new BuiltinTags(false);
-        else
+        // if we know for sure we have a deprecated CatRootID, then we are using deprecated tags
+        // (but if its missing, then assume current tags)
+        if (GetMetatagFromId(BuiltinTags_Deprecated.s_CatRootID) != null)
             BuiltinTags = new BuiltinTags(true);
+        else
+            BuiltinTags = new BuiltinTags(false);
     }
 
     public MetatagSchema(MetatagSchema source)
@@ -418,8 +420,12 @@ public class MetatagSchema
 
         NOTE: this is replaces in-place AND it ensures builtin tags are defined
         (unlike ReadNewBaseFromService() which doesn't ensure builtin tags)
+
+        if we are loading a base schema from the server, we don't want to ensure
+        builtin tags are defined -- that would make us think we don't have to 
+        add them to the server
     ----------------------------------------------------------------------------*/
-    public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
+    public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema, bool dontEnsureBuiltin = false)
     {
         m_schemaBase = null;
         m_schemaWorking.Clear();

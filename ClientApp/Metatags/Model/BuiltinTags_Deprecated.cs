@@ -42,22 +42,4 @@ public class BuiltinTags_Deprecated
 
     // this is just for querying virtual path
     public static readonly Metatag s_VirtualPath = Metatag.Create(s_CatRootID, "virtualPath", "virtual path", MetatagStandards.Standard.Cat, s_VirtualPathID);
-
-    public static readonly Metatag[] s_BuiltinTags =
-    [
-        s_Width,
-        s_Height,
-        s_OriginalMediaDate,
-        s_ImportDate,
-        s_DateSpecified,
-        s_TransformRotate,
-        s_TransformMirror,
-        s_IsTrashItem,
-        s_DontPushToCloud
-    ];
-
-    public static readonly Metatag[] s_NonSchemaBuiltinTags =
-    [
-        s_VirtualPath
-    ];
 }

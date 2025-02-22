@@ -12,6 +12,8 @@ namespace Thetacat.Metatags.Model;
 public class BuiltinTags
 {
     // NOTE: Make sure you update EnsureBuiltinMetatagsDefined if you add a tag here!!
+    // ALSO make sure you update to make sure you update MapDeprecatedIdToCurrentId
+    // to map the old id to the new id
 
     // these are built-in mediatags. 
     public readonly Guid UserRootID;
@@ -31,6 +33,8 @@ public class BuiltinTags
     // (there is no deprecated version of this since it doens't need to be sorted in an SQL index)
     public readonly Guid VirtualPathID = new Guid("7EE164AF-57A7-4B86-8E76-7143CA0D176E");
 
+    public readonly Metatag CatRoot;
+    public readonly Metatag UserRoot;
     public readonly Metatag Width;
     public readonly Metatag Height;
     public readonly Metatag OriginalMediaDate;
@@ -87,6 +91,8 @@ public class BuiltinTags
             DontPushToCloudID = BuiltinTags_Deprecated.s_DontPushToCloudID;
         }
 
+        CatRoot = Metatag.Create(null, "CAT", "cat root", MetatagStandards.Standard.Cat, CatRootID);
+        UserRoot = Metatag.Create(null, "user", "user root", MetatagStandards.Standard.User, UserRootID);
         Width = Metatag.Create(CatRootID, "width", "width", MetatagStandards.Standard.Cat, WidthID);
         Height = Metatag.Create(CatRootID, "height", "height", MetatagStandards.Standard.Cat, HeightID);
         OriginalMediaDate = Metatag.Create(CatRootID, "originalMediaDate", "originalMediaDate", MetatagStandards.Standard.Cat, OriginalMediaDateID);
@@ -100,6 +106,8 @@ public class BuiltinTags
 
         Tags =
         [
+            CatRoot,
+            UserRoot,
             Width,
             Height,
             OriginalMediaDate,
@@ -119,4 +127,21 @@ public class BuiltinTags
 
     public readonly Metatag[] Tags;
     public readonly Metatag[] NonSchemaTags;
+
+    public static Guid? MapDeprecatedIdToCurrentId(Guid id)
+    {
+        if (id == BuiltinTags_Deprecated.s_UserRootID || id == BuiltinTags_Current.s_UserRootID) return BuiltinTags_Current.s_UserRootID;
+        if (id == BuiltinTags_Deprecated.s_CatRootID || id == BuiltinTags_Current.s_CatRootID) return BuiltinTags_Current.s_CatRootID;
+        if (id == BuiltinTags_Deprecated.s_WidthID || id == BuiltinTags_Current.s_WidthID) return BuiltinTags_Current.s_WidthID;
+        if (id == BuiltinTags_Deprecated.s_HeightID || id == BuiltinTags_Current.s_HeightID) return BuiltinTags_Current.s_HeightID;
+        if (id == BuiltinTags_Deprecated.s_OriginalMediaDateID || id == BuiltinTags_Current.s_OriginalMediaDateID) return BuiltinTags_Current.s_OriginalMediaDateID;
+        if (id == BuiltinTags_Deprecated.s_DateSpecifiedID || id == BuiltinTags_Current.s_DateSpecifiedID) return BuiltinTags_Current.s_DateSpecifiedID;
+        if (id == BuiltinTags_Deprecated.s_ImportDateID || id == BuiltinTags_Current.s_ImportDateID) return BuiltinTags_Current.s_ImportDateID;
+        if (id == BuiltinTags_Deprecated.s_TransformRotateID || id == BuiltinTags_Current.s_TransformRotateID) return BuiltinTags_Current.s_TransformRotateID;
+        if (id == BuiltinTags_Deprecated.s_TransformMirrorID || id == BuiltinTags_Current.s_TransformMirrorID) return BuiltinTags_Current.s_TransformMirrorID;
+        if (id == BuiltinTags_Deprecated.s_IsTrashItemID || id == BuiltinTags_Current.s_IsTrashItemID) return BuiltinTags_Current.s_IsTrashItemID;
+        if (id == BuiltinTags_Deprecated.s_DontPushToCloudID || id == BuiltinTags_Current.s_DontPushToCloudID) return BuiltinTags_Current.s_DontPushToCloudID;
+
+        return null;
+    }
 }

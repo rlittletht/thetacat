@@ -19,7 +19,10 @@ public class CatalogDefinitions
 
     public static readonly string s_createCatalogDefinition = @"
         INSERT INTO tcat_catalogs (id, name, description) VALUES (@ID, @Name, @Description)
-        INSERT INTO tcat_schemaversions (catalog_id, metatag_schema_version) VALUES (@ID, 0)";
+        INSERT INTO tcat_schemaversions (catalog_id, metatag_schema_version) VALUES (@ID, 0)
+        INSERT INTO tcat_vector_clocks (catalog_id, name, value) VALUES (@ID, 'workgroup-deleted-media', 0)
+        INSERT INTO tcat_vector_clocks (catalog_id, name, value) VALUES (@ID, 'mediatag-reset-clock', 0)
+        INSERT INTO tcat_vector_clocks (catalog_id, name, value) VALUES (@ID, 'mediatag-clock', 0)";
 
     public static List<ServiceCatalogDefinition> GetCatalogDefinitions()
     {

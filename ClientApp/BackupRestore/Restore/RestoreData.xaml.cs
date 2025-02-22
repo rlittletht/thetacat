@@ -62,6 +62,7 @@ namespace Thetacat.BackupRestore.Restore
                 if (m_model.CatalogDefinition != null)
                 {
                     m_model.CatalogName = m_model.CatalogDefinition.Name;
+                    m_model.CatalogID = m_model.CatalogDefinition.ID.ToString();
                     m_model.CatalogDescription = m_model.CatalogDefinition.Description;
                     m_model.CurrentRestoreBehavior = "Replace";
                     m_model.CreateNewCatalog = false;
@@ -122,9 +123,9 @@ namespace Thetacat.BackupRestore.Restore
                     return;
                 }
 
-                if (m_model.CurrentRestoreBehavior != "Create New" && m_model.CurrentRestoreBehavior != "Replace")
+                if (m_model.CurrentRestoreBehavior != "Replace")
                 {
-                    MessageBox.Show("Cannot regenerate IDs unless also replacing or creating new database.");
+                    MessageBox.Show("Regenerate IDs requires an existing Workgroup + Catalog to restore into (with behavior = REPLACE)");
                     return;
                 }
 
