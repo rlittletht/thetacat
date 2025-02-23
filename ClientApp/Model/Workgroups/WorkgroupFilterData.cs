@@ -11,6 +11,15 @@ public class WorkgroupFilterData
 
     public int FilterClock { get; set; }
 
+    public WorkgroupFilterData()
+    {
+        FilterClock = 0;
+        Id = Guid.Empty;
+        Name = string.Empty;
+        Description = string.Empty;
+        Expression = string.Empty;
+    }
+
     public WorkgroupFilterData(Guid id, string name, string description, string expression, int filterClock)
     {
         Id = id;

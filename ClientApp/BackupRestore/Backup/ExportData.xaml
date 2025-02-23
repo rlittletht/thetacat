@@ -14,7 +14,7 @@
         <StackPanel Orientation="Vertical">
             <TextBlock Text="Export data to" />
             <StackPanel Orientation="Horizontal">
-                <TextBox Text="{Binding Path=ExportPath}" Width="164" />
+                <TextBox Text="{Binding Path=GuidMapExportPath}" Width="164" />
                 <Button Content="..." Click="BrowseForPath" />
             </StackPanel>
             <GroupBox Header="Export database data">

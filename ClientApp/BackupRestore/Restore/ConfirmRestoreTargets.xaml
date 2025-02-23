@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="ConfirmRestoreTargets" Height="450" Width="800">
+        Title="ConfirmRestoreTargets" Height="490" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -16,7 +16,7 @@
                     <TextBlock Text="Reference Information" />
                 </GroupBox.Header>
                 <StackPanel Orientation="Vertical">
-                    <TextBlock Text="Profile"/>
+                    <TextBlock Text="Profile" />
                     <ComboBox ItemsSource="{Binding Path=Profiles}"
                               SelectedItem="{Binding Path=ReferenceProfile}" />
                     <TextBlock Text="SQL Connection" />
@@ -46,10 +46,19 @@
                     <TextBox Text="{Binding Path=TargetWorkgroupId}" />
                 </StackPanel>
             </GroupBox>
+            <GroupBox Header="Guid Map">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Export data to" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Text="{Binding Path=GuidMapExportPath}" Width="212" />
+                        <Button Content="..." Click="BrowseForPath" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
             <Button Content="Cancel" Click="DoCancel" />
-            <Button Content="Restore" Click="DoRestore"/>
+            <Button Content="Restore" Click="DoRestore" />
         </StackPanel>
     </Grid>
 </Window>

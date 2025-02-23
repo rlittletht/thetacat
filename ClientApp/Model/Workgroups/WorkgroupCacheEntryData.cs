@@ -7,7 +7,7 @@ namespace Thetacat.Model.Workgroups;
 
 public class WorkgroupCacheEntryData
 {
-    public Guid ID { get; init; }
+    public Guid ID { get; set; }
     public PathSegment Path { get; set; }
 
     public Guid CachedBy { get; set; }
@@ -15,14 +15,24 @@ public class WorkgroupCacheEntryData
     public int? VectorClock { get; set; }
     public string MD5 { get; set; }
 
-    public WorkgroupCacheEntryData(Guid iD, PathSegment path, Guid cachedBy, DateTime? cacheDate, int? vectorClock, string mD5)
+    public WorkgroupCacheEntryData()
     {
-        ID = iD;
+        ID = Guid.Empty;
+        Path = new PathSegment();
+        CachedBy = Guid.Empty;
+        CacheDate = null;
+        VectorClock = null;
+        MD5 = "";
+    }
+
+    public WorkgroupCacheEntryData(Guid id, PathSegment path, Guid cachedBy, DateTime? cacheDate, int? vectorClock, string md5)
+    {
+        ID = id;
         Path = path;
         CachedBy = cachedBy;
         CacheDate = cacheDate;
         VectorClock = vectorClock;
-        MD5 = mD5;
+        MD5 = md5;
     }
 
     public WorkgroupCacheEntryData(WorkgroupCacheEntryData source)

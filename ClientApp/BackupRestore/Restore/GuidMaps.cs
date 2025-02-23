@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Windows.Media.Animation;
+using System.Xml;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Mediatags;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
+using XMLIO;
 
 namespace Thetacat.BackupRestore.Restore;
 
@@ -26,6 +30,30 @@ public class GuidMaps
             { IdType.Media, new() },
             { IdType.Stack, new() }
         };
+
+    public static string GetStringForIdType(IdType idType)
+    {
+        return idType switch
+        {
+            IdType.Catalog => "catalog",
+            IdType.Metatag => "metatag",
+            IdType.Media => "media",
+            IdType.Stack => "stack",
+            _ => throw new ArgumentOutOfRangeException(nameof(idType), idType, null)
+        };
+    }
+
+    public static IdType IdTypeFromString(string idTypeString)
+    {
+        return idTypeString switch
+        {
+            "catalog" => IdType.Catalog,
+            "metatag" => IdType.Metatag,
+            "media" => IdType.Media,
+            "stack" => IdType.Stack,
+            _ => throw new ArgumentOutOfRangeException(nameof(idTypeString), idTypeString, null)
+        };
+    }
 
     public Guid CreateForId(IdType idType, Guid oldId)
     {
@@ -179,15 +207,16 @@ public class GuidMaps
 
         foreach (ServiceImportItem import in imports.ImportItems)
         {
-            newImports.ImportItems.Add(new ServiceImportItem()
-            {
-                ID = GetNew(IdType.Media, import.ID)!.Value,
-                State = import.State,
-                SourcePath = import.SourcePath,
-                SourceServer = import.SourceServer,
-                UploadDate = import.UploadDate,
-                Source = import.Source
-            });
+            newImports.ImportItems.Add(
+                new ServiceImportItem()
+                {
+                    ID = GetNew(IdType.Media, import.ID)!.Value,
+                    State = import.State,
+                    SourcePath = import.SourcePath,
+                    SourceServer = import.SourceServer,
+                    UploadDate = import.UploadDate,
+                    Source = import.Source
+                });
         }
 
         return newImports;
@@ -227,5 +256,130 @@ public class GuidMaps
         ImportsRestore importsNew = RemapImports(restore.ImportsRestore!);
 
         return new FullExportRestore(schemaNew, catalogNew, importsNew);
+    }
+
+    public delegate void WriteChildrenDelegate(XmlWriter writer);
+    public static string s_uri = "https://schemas.thetasoft.com/thetacat/backup/2024/guidMap";
+
+    public void WriteElement(XmlWriter writer, string element, WriteChildrenDelegate? children)
+    {
+        if (children != null)
+        {
+            writer.WriteStartElement(element, s_uri);
+            children(writer);
+            writer.WriteEndElement();
+        }
+        else
+        {
+            writer.WriteElementString(element, s_uri);
+        }
+    }
+
+    public void SaveToFile(string exportFile)
+    {
+        XmlWriterSettings settings = new XmlWriterSettings();
+        settings.Async = true;
+
+        using XmlWriter writer = XmlWriter.Create(exportFile, settings);
+
+        WriteElement(
+            writer,
+            "guidMaps",
+            _writer =>
+            {
+                foreach (KeyValuePair<IdType, Dictionary<Guid, Guid>> map in Maps)
+                {
+                    WriteElement(
+                        _writer,
+                        "map",
+                        __writer =>
+                        {
+                            __writer.WriteAttributeString("type", GetStringForIdType(map.Key));
+                            foreach (KeyValuePair<Guid, Guid> pair in map.Value)
+                            {
+                                WriteElement(
+                                    __writer,
+                                    "mapping",
+                                    ___writer =>
+                                    {
+                                        ___writer.WriteAttributeString("old", pair.Key.ToString());
+                                        ___writer.WriteAttributeString("new", pair.Value.ToString());
+                                    });
+                            }
+                        });
+                }
+            });
+    }
+
+    public static GuidMaps CreateFromFile(string importFile)
+    {
+        GuidMaps maps = new();
+
+        using Stream stm = File.Open(importFile, FileMode.Open);
+        using XmlReader reader = XmlReader.Create(stm);
+
+        if (!XmlIO.Read(reader))
+            return maps;
+
+        XmlIO.SkipNonContent(reader);
+
+        XmlIO.FReadElement(reader, maps, "guidMaps", null, FParseGuidMapsElement);
+        return maps;
+    }
+
+    class GuidMapImport
+    {
+        public IdType idType;
+        public Dictionary<Guid, Guid> map = new();
+        public Guid buildingOld = Guid.Empty;
+        public Guid buildingNew = Guid.Empty;
+
+    }
+
+    static bool FParseGuidMapsElement(XmlReader reader, string element, GuidMaps maps)
+    {
+        if (element != "map")
+            throw new XmlioExceptionSchemaFailure($"unknown element {element}");
+
+        GuidMapImport map = new();
+
+        return XmlIO.FReadElement(reader, map, "map", FParseGuidMapAttribute, FParseGuidMapElement);
+    }
+
+    static bool FParseGuidMapAttribute(string attribnute, string value, GuidMapImport map)
+    {
+        if (attribnute == "type")
+        {
+            map.idType = IdTypeFromString(value);
+            return true;
+        }
+        return false;
+    }
+
+    static bool FParseGuidMapElement(XmlReader reader, string element, GuidMapImport map)
+    {
+        if (element != "mapping")
+            throw new XmlioExceptionSchemaFailure($"unknown element {element}");
+
+        if (!XmlIO.FReadElement(reader, map, "mapping", FParseGuidMappingAttribute, null))
+            return false;
+
+        map.map.Add(map.buildingOld, map.buildingNew);
+        return true;
+    }
+
+    static bool FParseGuidMappingAttribute(string attribute, string value, GuidMapImport map)
+    {
+        if (attribute == "old")
+        {
+            map.buildingOld = Guid.Parse(value);
+            return true;
+        }
+        if (attribute == "new")
+        {
+            map.buildingNew = Guid.Parse(value);
+            return true;
+        }
+        return false;
     }
 }

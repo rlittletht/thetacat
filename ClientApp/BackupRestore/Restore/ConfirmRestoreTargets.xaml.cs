@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Emgu.CV.Dnn;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -120,7 +122,7 @@ public partial class ConfirmRestoreTargets : Window
         %%Function: ConfirmAndGetReference
         %%Qualified: Thetacat.BackupRestore.Restore.ConfirmRestoreTargets.ConfirmAndGetReference
     ----------------------------------------------------------------------------*/
-    public static bool ConfirmAndGetReference(Window? owner, out Profile? referenceProfile)
+    public static bool ConfirmAndGetReference(Window? owner, out Profile? referenceProfile, out string? exportGuidMapPath)
     {
         ConfirmRestoreTargets dialog = new ConfirmRestoreTargets();
         dialog.Owner = owner;
@@ -137,11 +139,39 @@ public partial class ConfirmRestoreTargets : Window
         if (dialog.ShowDialog() == true)
         {
             referenceProfile = App.State.Settings.Profiles[dialog.Model.ReferenceProfile];
+            if (!string.IsNullOrWhiteSpace(dialog.Model.GuidMapExportPath))
+                exportGuidMapPath = dialog.Model.GuidMapExportPath;
+            else
+                exportGuidMapPath = null;
             return true;
         }
 
         referenceProfile = null;
+        exportGuidMapPath = null;
+
         return false;
     }
 
+    private void BrowseForPath(object sender, RoutedEventArgs e)
+    {
+        CommonOpenFileDialog dlg = new CommonOpenFileDialog();
+        dlg.Title = "Choose export file";
+        dlg.IsFolderPicker = false;
+        dlg.InitialDirectory = Model.GuidMapExportPath;
+
+        dlg.AddToMostRecentlyUsedList = false;
+        dlg.AllowNonFileSystemItems = false;
+        dlg.DefaultDirectory = "";
+        dlg.EnsureFileExists = false;
+        dlg.EnsurePathExists = true;
+        dlg.EnsureReadOnly = false;
+        dlg.EnsureValidNames = true;
+        dlg.Multiselect = false;
+        dlg.ShowPlacesList = true;
+
+        if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
+        {
+            Model.GuidMapExportPath = dlg.FileName;
+        }
+    }
 }

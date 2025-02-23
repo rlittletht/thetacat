@@ -19,6 +19,13 @@ namespace Thetacat.BackupRestore.Restore
         private string m_targetWorkgroupName = string.Empty;
         private string m_targetCatalogId = string.Empty;
         private string m_targetProfile = string.Empty;
+        private string m_guidMapExportPath = string.Empty;
+
+        public string GuidMapExportPath
+        {
+            get => m_guidMapExportPath;
+            set => SetField(ref m_guidMapExportPath, value);
+        }
 
         public ObservableCollection<string> Profiles
         {

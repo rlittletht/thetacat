@@ -15,6 +15,7 @@ public class FullExportRestore
     public ImportsRestore? ImportsRestore;
     public WorkgroupsRestore? WorkgroupsRestore;
     public Guid? CatalogID;
+    public WorkgroupDataRestore? WorkgroupDataRestore;
 
     public GuidMaps GuidMaps = new();
 
@@ -47,6 +48,12 @@ public class FullExportRestore
         if (element == "workgroups")
         {
             fullExport.WorkgroupsRestore = new WorkgroupsRestore(reader);
+            return true;
+        }
+
+        if (element == "workgroupData")
+        {
+            fullExport.WorkgroupDataRestore = new WorkgroupDataRestore(reader);
             return true;
         }
 

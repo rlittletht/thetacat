@@ -157,10 +157,23 @@ namespace Thetacat.BackupRestore.Restore
                     return;
                 }
 
-                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out Profile? referenceProfile))
+                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out Profile? referenceProfile, out string? exportGuidMapPath))
                     return;
 
+                if (exportGuidMapPath == null && m_fullRestoreData.WorkgroupDataRestore == null)
+                {
+                    if (MessageBox.Show(
+                            "ID mapping will not be saved and there is no Workgroup data in this backup\n\nYou will not be able to restore a workgroup at a later time without saving the ID mapping.\n\nDo you want to continue?",
+                            "Restore data",
+                            MessageBoxButton.OKCancel)
+                        == MessageBoxResult.Cancel)
+                    {
+                        return;
+                    }
+                }
+
                 restore = idMaps.RemapFullRestore(restore);
+
             }
 
             // first figure out what we're restoring to
