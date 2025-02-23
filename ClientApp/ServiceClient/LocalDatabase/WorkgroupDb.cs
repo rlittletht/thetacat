@@ -139,6 +139,9 @@ public class WorkgroupDb
     private readonly string s_queryMinDeletedMediaClockInWorkgroup = @"
         SELECT MIN(deletedMediaClock) FROM tcat_workgroup_clients";
 
+    private readonly string s_queryAllWorkgroupClients = @"
+        SELECT id, name, vectorClock, deletedMediaClock FROM tcat_workgroup_clients";
+
     /*----------------------------------------------------------------------------
         %%Function: OpenDatabase
         %%Qualified: Thetacat.Model.WorkgroupDb.OpenDatabase
@@ -308,6 +311,38 @@ public class WorkgroupDb
         catch (SqlExceptionNoResults)
         {
             return new List<ServiceWorkgroupFilter>();
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: GetWorkgroupClients
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetWorkgroupClients
+    ----------------------------------------------------------------------------*/
+    public List<ServiceWorkgroupClient> GetWorkgroupClients()
+    {
+        try
+        {
+            List<ServiceWorkgroupClient> clients =
+                _Connection.ExecuteDelegatedQuery(
+                    RT.Comb.Provider.Sql.Create(),
+                    s_queryAllWorkgroupClients,
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupClient> building) =>
+                    {
+                        ServiceWorkgroupClient client =
+                            new()
+                            {
+                                ClientId = reader.GetGuid(0),
+                                ClientName = reader.GetString(1),
+                                VectorClock = reader.GetInt32(2),
+                                DeletedMediaClock = reader.GetInt32(3)
+                            };
+                        building.Add(client);
+                    });
+            return clients;
+        }
+        catch (SqlExceptionNoResults)
+        {
+            return new List<ServiceWorkgroupClient>();
         }
     }
 

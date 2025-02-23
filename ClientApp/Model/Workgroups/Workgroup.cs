@@ -635,4 +635,14 @@ public class Workgroup : IWorkgroup
         return _Database.GetMinWorkgroupDeletedMediaClock();
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetWorkgroupClients
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.GetWorkgroupClients
+    ----------------------------------------------------------------------------*/
+    public IReadOnlyCollection<ServiceWorkgroupClient> GetWorkgroupClients()
+    {
+        return _Database.GetWorkgroupClients();
+    }
+
+    public int BaseVectorClock => m_baseVectorClock;
 }

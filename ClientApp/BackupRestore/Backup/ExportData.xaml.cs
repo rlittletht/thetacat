@@ -68,7 +68,8 @@ namespace Thetacat.BackupRestore.Backup
                 m_model.ExportVersionStacks, 
                 m_model.ExportSchema, 
                 m_model.ExportImports, 
-                m_model.ExportWorkgroups);
+                m_model.ExportWorkgroups,
+                m_model.ExportWorkgroupData);
 
             App.State.AddBackgroundWork("Backing up database", (progress) => backup.DoBackup(progress));
             Close();

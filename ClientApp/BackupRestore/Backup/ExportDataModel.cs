@@ -13,6 +13,13 @@ public class ExportDataModel: INotifyPropertyChanged
     private bool m_exportImports = true;
     private bool m_exportSchema = true;
     private bool m_exportWorkgroups = false;
+    private bool m_exportWorkgroupData;
+
+    public bool ExportWorkgroupData
+    {
+        get => m_exportWorkgroupData;
+        set => SetField(ref m_exportWorkgroupData, value);
+    }
 
     public string ExportPath
     {
