@@ -10,12 +10,14 @@ namespace Thetacat.BackupRestore.Restore;
 public class RestoreDataModel: INotifyPropertyChanged
 {
     private string m_restorePath = "catback.xml";
-    private bool m_importMediaItems = true;
-    private bool m_importMediaStacks = true;
-    private bool m_importVersionStacks = true;
-    private bool m_importImports = true;
-    private bool m_importSchema = true;
+    private bool m_importMediaItems = false;
+    private bool m_importMediaStacks = false;
+    private bool m_importVersionStacks = false;
+    private bool m_importImports = false;
+    private bool m_importSchema = false;
     private bool m_importWorkgroups = false;
+    private bool m_importWorkgroupData = false;
+    private bool m_importDeletedMedia = false;
 
     public ObservableCollection<string> RestoreBehaviors { get; set; } = new ObservableCollection<string>() { "Append", "Replace", "Create New" };
     private string m_currentRestoreBehavior = "Replace";
@@ -25,8 +27,34 @@ public class RestoreDataModel: INotifyPropertyChanged
     private string m_catalogDescription = string.Empty;
     private bool m_createNewCatalog;
     private bool m_regenerateIds;
+    private string m_workgroupId = string.Empty;
+    private string m_workgroupName = string.Empty;
 
     public ObservableCollection<ServiceCatalogDefinition> CatalogDefinitions { get; set; } = new();
+
+    public string WorkgroupId
+    {
+        get => m_workgroupId;
+        set => SetField(ref m_workgroupId, value);
+    }
+
+    public string WorkgroupName
+    {
+        get => m_workgroupName;
+        set => SetField(ref m_workgroupName, value);
+    }
+
+    public bool ImportDeletedMedia
+    {
+        get => m_importDeletedMedia;
+        set => SetField(ref m_importDeletedMedia, value);
+    }
+
+    public bool ImportWorkgroupData
+    {
+        get => m_importWorkgroupData;
+        set => SetField(ref m_importWorkgroupData, value);
+    }
 
     public bool CreateNewCatalog
     {

@@ -29,6 +29,7 @@ public class BackupDatabase
     private readonly bool m_exportImports = false;
     private readonly bool m_exportWorkgroups = false;
     private readonly bool m_exportWorkgroupData = false;
+    private readonly bool m_exportDeletedMedia = false;
 
     public static string s_uri = "https://schemas.thetasoft.com/thetacat/backup/2024";
     private ProgressChunks m_progressChunks = new();
@@ -40,6 +41,7 @@ public class BackupDatabase
         bool exportVersionStacks,
         bool exportSchema,
         bool exportImports,
+        bool exportDeletedMedia,
         bool exportWorkgroups,
         bool exportWorkgroupData)
     {
@@ -53,6 +55,7 @@ public class BackupDatabase
         m_exportImports = exportImports;
         m_exportWorkgroups = exportWorkgroups;
         m_exportWorkgroupData = exportWorkgroupData;
+        m_exportDeletedMedia = exportDeletedMedia;
     }
 
     public delegate void WriteChildrenDelegate(XmlWriter writer);
@@ -295,30 +298,7 @@ public class BackupDatabase
             });
     }
 
-    public void WriteWorkgroupData(XmlWriter writer, Guid catalogId, Guid workgroupId)
-    {
-        Workgroup workgroup = new Workgroup(catalogId, workgroupId);
-
-        WriteElement(
-            writer,
-            "workgroupData",
-            _writer =>
-            {
-                _writer.WriteAttributeString("workgroupId", workgroup.Id.ToString());
-                _writer.WriteAttributeString("name", workgroup.Name);
-
-                StartBlock("workgroupClients");
-                WriteElement(_writer, "clients", __writer => WriteWorkgroupClients(__writer, workgroup));
-                StartBlock("workgroupMedia");
-                WriteElement(_writer, "media", __writer => WriteWorkgroupMediaItems(__writer, workgroup));
-                StartBlock("workgroupFilters");
-                WriteElement(_writer, "filters", __writer => WriteWorkgroupFilters(__writer, workgroup));
-                StartBlock("workgroupClocks");
-                WriteElement(_writer, "vectorClocks", __writer => WriteWorkgroupVectorClocks(__writer, workgroup));
-            });
-    }
-
-#region Imports
+    #region Imports
 
     /*----------------------------------------------------------------------------
         %%Function: WriteImportItem
@@ -366,9 +346,73 @@ public class BackupDatabase
         WriteElement(writer, "imports", (_writer) => WriteImportItems(_writer, importItems));
     }
 
-#endregion Imports
+    #endregion Imports
 
-#region Workgroup Data
+    #region Deleted Media
+
+    public void WriteDeletedMedia(XmlWriter writer, Guid catalogId)
+    {
+        StartBlock("deletedMedia");
+        ServiceDeletedItemsClock itemsWithClock =  ServiceInterop.GetDeletedMediaItems(catalogId);
+
+        if (itemsWithClock.DeletedItems.Count == 0)
+            return;
+
+        WriteElement(
+            writer,
+            "deletedMedia",
+            _writer =>
+            {
+                _writer.WriteAttributeString("workgroupDeletedMediaClock", itemsWithClock.VectorClock.ToString());
+                WriteDeletedMediaItems(_writer, itemsWithClock);
+            });
+    }
+
+    public void WriteDeletedMediaItems(XmlWriter writer, ServiceDeletedItemsClock itemsWithClock)
+    {
+        int count = itemsWithClock.DeletedItems.Count;
+        int i = 0;
+
+        foreach (ServiceDeletedItem item in itemsWithClock.DeletedItems)
+        {
+            UpdateProgress(i, count);
+            WriteElement(
+                writer, 
+                "deletedMediaItem", 
+                _writer =>
+                {
+                    _writer.WriteAttributeString("id", item.Id.ToString());
+                    _writer.WriteAttributeString("minWorkgroupClock", item.MinVectorClock.ToString());
+                });
+        }
+    }
+
+    #endregion
+
+    #region Workgroup Data
+
+    public void WriteWorkgroupData(XmlWriter writer, Guid catalogId, Guid workgroupId)
+    {
+        Workgroup workgroup = new Workgroup(catalogId, workgroupId);
+
+        WriteElement(
+            writer,
+            "workgroupData",
+            _writer =>
+            {
+                _writer.WriteAttributeString("workgroupId", workgroup.Id.ToString());
+                _writer.WriteAttributeString("name", workgroup.Name);
+
+                StartBlock("workgroupClients");
+                WriteElement(_writer, "clients", __writer => WriteWorkgroupClients(__writer, workgroup));
+                StartBlock("workgroupMedia");
+                WriteElement(_writer, "media", __writer => WriteWorkgroupMediaItems(__writer, workgroup));
+                StartBlock("workgroupFilters");
+                WriteElement(_writer, "filters", __writer => WriteWorkgroupFilters(__writer, workgroup));
+                StartBlock("workgroupClocks");
+                WriteElement(_writer, "vectorClocks", __writer => WriteWorkgroupVectorClocks(__writer, workgroup));
+            });
+    }
 
     public void WriteWorkgroupClients(XmlWriter writer, Workgroup workgroup)
     {
@@ -493,7 +537,8 @@ public class BackupDatabase
             || m_exportVersionStacks
             || m_exportSchema
             || m_exportImports
-            || m_exportWorkgroups;
+            || m_exportWorkgroups
+            || m_exportDeletedMedia;
     }
 
     public bool DoBackup(IProgressReport progress)
@@ -509,6 +554,8 @@ public class BackupDatabase
             m_progressChunks.AddWeightedChunk("mediaStacks", 2.0);
         if (m_exportImports)
             m_progressChunks.AddWeightedChunk("imports", 6.0);
+        if (m_exportDeletedMedia)
+            m_progressChunks.AddWeightedChunk("deletedMedia", 5.0);
         if (m_exportWorkgroups)
             m_progressChunks.AddWeightedChunk("workgroups", 1.0);
         if (m_exportWorkgroupData)
@@ -546,6 +593,8 @@ public class BackupDatabase
                     WriteCatalog(_writer, m_catalog);
                 if (m_exportImports)
                     WriteImports(_writer);
+                if (m_exportDeletedMedia)
+                    WriteDeletedMedia(_writer, catalogID);
                 if (m_exportWorkgroups)
                     WriteWorkgroups(_writer);
                 if (m_exportWorkgroupData)

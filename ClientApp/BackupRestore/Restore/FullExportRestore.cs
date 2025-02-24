@@ -16,13 +16,14 @@ public class FullExportRestore
     public WorkgroupsRestore? WorkgroupsRestore;
     public Guid? CatalogID;
     public WorkgroupDataRestore? WorkgroupDataRestore;
-
+    public DeletedMediaRestore? DeletedMediaRestore;
     public GuidMaps GuidMaps = new();
 
-    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports)
+    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports, DeletedMediaRestore deletedMedia)
     {
         CatalogRestore = new CatalogRestore(schema, catalog);
         ImportsRestore = imports;
+        DeletedMediaRestore = deletedMedia;
     }
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)
@@ -48,6 +49,12 @@ public class FullExportRestore
         if (element == "workgroups")
         {
             fullExport.WorkgroupsRestore = new WorkgroupsRestore(reader);
+            return true;
+        }
+
+        if (element == "deletedMedia")
+        {
+            fullExport.DeletedMediaRestore = new DeletedMediaRestore(reader);
             return true;
         }
 

@@ -24,14 +24,23 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Vertical" Grid.Column="0">
-                        <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ExportMediaItems}" />
-                        <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ExportMediaStacks}" />
-                        <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ExportVersionStacks}" />
-                        <CheckBox Content="Import Details" IsChecked="{Binding Path=ExportImports}" />
+                        <CheckBox Content="Export All Data" IsChecked="{Binding Path=ExportAllData}" />
+                        <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ExportMediaItems}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ExportMediaStacks}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ExportVersionStacks}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
                     </StackPanel>
                     <StackPanel Orientation="Vertical" Grid.Column="1">
-                        <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ExportSchema}" />
-                        <CheckBox Content="Workgroup Definitions" IsChecked="{Binding Path=ExportWorkgroups}" />
+                        <CheckBox Content="Import Details" IsChecked="{Binding Path=ExportImports}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ExportSchema}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Deleted Media" IsChecked="{Binding Path=ExportDeletedMedia}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Workgroup Definitions" IsChecked="{Binding Path=ExportWorkgroups}"
+                                  IsEnabled="False" />
                     </StackPanel>
                 </Grid>
             </GroupBox>

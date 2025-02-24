@@ -96,7 +96,7 @@ public class GuidMaps
         throw new CatExceptionInternalFailure("can't find old guid given new guid");
     }
 
-    public Guid? GetNew(IdType idType, Guid? oldId)
+    public Guid? GetNew(IdType idType, Guid? oldId, bool missingIsOk = false)
     {
         if (oldId == null)
             return oldId;
@@ -105,6 +105,9 @@ public class GuidMaps
         {
             return newId;
         }
+
+        if (missingIsOk)
+            return null;
 
         throw new CatExceptionInternalFailure("can't find new guid given old guid");
     }
@@ -249,13 +252,46 @@ public class GuidMaps
         return catalogNew;
     }
 
+    public DeletedMediaRestore RemapDeletedMedia(DeletedMediaRestore? deletedMedia)
+    {
+        if (deletedMedia == null)
+            return null;
+
+        DeletedMediaRestore deletedMediaNew = new();
+
+        deletedMediaNew.WorkgroupDeletedMediaClock = deletedMedia.WorkgroupDeletedMediaClock;
+
+        foreach (ServiceDeletedItem item in deletedMedia.DeletedItems)
+        {
+            Guid? newId = GetNew(IdType.Media, item.Id, true);
+
+            // if the mapping fails, that's ok. that means its been deleted from the catalog
+            // already and just waiting for local workgroups to delete. they will use the old
+            // id.
+            if (newId == null)
+            {
+                newId = item.Id;
+            }
+            ServiceDeletedItem newItem = new()
+            {
+                Id = newId,
+                MinVectorClock = item.MinVectorClock
+            };
+
+            deletedMediaNew.DeletedItems.Add(newItem);
+        }
+
+        return deletedMediaNew;
+    }
+
     public FullExportRestore RemapFullRestore(FullExportRestore restore)
     {
         MetatagSchema schemaNew = RemapMetatagSchema(restore.SchemaRestore!.Schema);
         Catalog catalogNew = RemapCatalog(schemaNew, restore.CatalogRestore!.Catalog);
         ImportsRestore importsNew = RemapImports(restore.ImportsRestore!);
+        DeletedMediaRestore deletedMediaNew = RemapDeletedMedia(restore.DeletedMediaRestore);
 
-        return new FullExportRestore(schemaNew, catalogNew, importsNew);
+        return new FullExportRestore(schemaNew, catalogNew, importsNew, deletedMediaNew);
     }
 
     public delegate void WriteChildrenDelegate(XmlWriter writer);

@@ -68,7 +68,6 @@ namespace Thetacat.BackupRestore.Restore
                     m_model.CreateNewCatalog = false;
                 }
             }
-
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -173,7 +172,6 @@ namespace Thetacat.BackupRestore.Restore
                 }
 
                 restore = idMaps.RemapFullRestore(restore);
-
             }
 
             // first figure out what we're restoring to
@@ -324,7 +322,7 @@ namespace Thetacat.BackupRestore.Restore
 
                     schema.ReplaceFromService(serviceSchema);
                     await catalogCurrent.ReadFullCatalogFromServer(catalogID, schema);
-                        
+
                     // and now we have to diff
                     restore.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
                     restore.CatalogRestore!.Catalog.PushPendingChanges(
@@ -350,6 +348,24 @@ namespace Thetacat.BackupRestore.Restore
                          == MessageBoxResult.OK)
                 {
                     ServiceInterop.InsertAllServiceImportItems(catalogID, restore.ImportsRestore!.ImportItems);
+                }
+            }
+
+            if (m_model.ImportDeletedMedia)
+            {
+                if ((restore.DeletedMediaRestore?.DeletedItems.Count ?? 0) == 0)
+                {
+                    MessageBox.Show("Can't restore an empty deleted media collection");
+                }
+                else if (MessageBox.Show(
+                             $"Inserting {restore.DeletedMediaRestore!.DeletedItems.Count} deleted media records. Proceed?",
+                             "Restore Data",
+                             MessageBoxButton.OKCancel)
+                         == MessageBoxResult.OK)
+                {
+
+                    ServiceInterop.InsertDeletedMediaItemsWithClocksForRestore(catalogID, restore.DeletedMediaRestore.DeletedItems);
+                    ServiceInterop.SetDeleteItemsClockForDatabaseRestore(catalogID, restore.DeletedMediaRestore.WorkgroupDeletedMediaClock);
                 }
             }
         }
@@ -385,8 +401,33 @@ namespace Thetacat.BackupRestore.Restore
             if (restore.FullExportRestore.ImportsRestore?.ImportItems.Count > 0)
                 m_model.ImportImports = true;
 
+            if (restore.FullExportRestore.DeletedMediaRestore != null && restore.FullExportRestore.DeletedMediaRestore.DeletedItems.Count > 0)
+                m_model.ImportDeletedMedia = true;
+
+            if (restore.FullExportRestore.WorkgroupDataRestore != null)
+            {
+                m_model.ImportWorkgroupData = true;
+                if (!String.IsNullOrEmpty(App.State.ActiveProfile.WorkgroupId))
+                {
+                    try
+                    {
+                        ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(
+                            App.State.ActiveProfile.CatalogID,
+                            Guid.Parse(App.State.ActiveProfile.WorkgroupId));
+
+                        m_model.WorkgroupId = workgroup.ID!.ToString();
+                        m_model.WorkgroupName = workgroup.Name!;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
             if (restore.FullExportRestore.WorkgroupsRestore?.Workgroups.Count > 0)
+            {
                 m_model.ImportWorkgroups = true;
+            }
 
             UpdateCurrentCatalogFromID(m_fullRestoreData.CatalogID);
         }
@@ -399,7 +440,7 @@ namespace Thetacat.BackupRestore.Restore
                 m_model.CatalogDefinition = null;
                 m_model.CurrentRestoreBehavior = "Create New";
             }
-            else 
+            else
             {
                 foreach (ServiceCatalogDefinition def in m_model.CatalogDefinitions)
                 {

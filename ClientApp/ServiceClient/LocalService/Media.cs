@@ -308,6 +308,51 @@ public class Media
         }
     }
 
+    private static readonly string s_setWorkgroupDeletedMediaClockForRestore = @"
+        UPDATE tcat_vector_clocks SET value = @Clock WHERE catalog_id = @CatalogId AND name = 'workgroup-deleted-media'";
+
+    public static void SetDeleteItemsClockForDatabaseRestore(Guid catalogId, int clock)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_setWorkgroupDeletedMediaClockForRestore,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogId", catalogId);
+                cmd.AddParameterWithValue("@Clock", clock);
+            });
+    }
+
+    public static void InsertDeletedMediaItemsWithClocksForRestore(Guid catalogId, IReadOnlyCollection<ServiceDeletedItem> items)
+    {
+        ISql sql = LocalServiceClient.GetConnection();
+
+        sql.BeginTransaction();
+
+        try
+        {
+            LocalServiceClient.ExecutePartedCommands(
+                sql,
+                string.Empty,
+                items,
+                item =>
+                    $"INSERT INTO tcat_deletedmedia (catalog_id, id, min_workgroup_clock) VALUES ('{catalogId.ToString()}', '{item.Id.ToString()}', {item.MinVectorClock!}) ",
+                1000,
+                " ",
+                s_aliases);
+
+            sql.Commit();
+        }
+        catch (Exception)
+        {
+            sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
 
     public static readonly string s_expireDeletedMediaItems = @"
         DECLARE @MinClock INT = (SELECT MIN(deletedMediaClock) FROM tcat_workgroups)

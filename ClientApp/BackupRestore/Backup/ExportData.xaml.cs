@@ -57,17 +57,18 @@ namespace Thetacat.BackupRestore.Backup
         private void DoCancel(object sender, RoutedEventArgs e)
         {
             Close();
-        }   
+        }
 
         private void DoExport(object sender, RoutedEventArgs e)
         {
             BackupDatabase backup = new BackupDatabase(
-                m_model.ExportPath, 
-                m_model.ExportMediaItems, 
-                m_model.ExportMediaStacks, 
-                m_model.ExportVersionStacks, 
-                m_model.ExportSchema, 
-                m_model.ExportImports, 
+                m_model.ExportPath,
+                m_model.ExportAllData || m_model.ExportMediaItems,
+                m_model.ExportAllData || m_model.ExportMediaStacks,
+                m_model.ExportAllData || m_model.ExportVersionStacks,
+                m_model.ExportAllData || m_model.ExportSchema,
+                m_model.ExportAllData || m_model.ExportImports,
+                m_model.ExportAllData || m_model.ExportDeletedMedia,
                 m_model.ExportWorkgroups,
                 m_model.ExportWorkgroupData);
 
