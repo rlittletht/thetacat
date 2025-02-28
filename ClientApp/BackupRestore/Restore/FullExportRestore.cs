@@ -19,11 +19,12 @@ public class FullExportRestore
     public DeletedMediaRestore? DeletedMediaRestore;
     public GuidMaps GuidMaps = new();
 
-    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports, DeletedMediaRestore deletedMedia)
+    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports, DeletedMediaRestore? deletedMedia, WorkgroupDataRestore workgroupData)
     {
         CatalogRestore = new CatalogRestore(schema, catalog);
         ImportsRestore = imports;
         DeletedMediaRestore = deletedMedia;
+        WorkgroupDataRestore = workgroupData;
     }
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)

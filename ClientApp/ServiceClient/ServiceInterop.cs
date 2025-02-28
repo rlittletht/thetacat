@@ -38,6 +38,10 @@ public class ServiceInterop
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
 
+    public static void DeleteAllImports(Guid catalogID) => LocalService.Import.DeleteAllImports(catalogID);
+
+    public static void DeleteAllDeletedMedia(Guid catalogID) => LocalService.Media.DeleteAllDeletedMedia(catalogID);
+
     public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID)
     {
         // first, figure out how many we are going to update

@@ -454,6 +454,7 @@ public class BackupDatabase
                 (_writer) =>
                 {
                     _writer.WriteAttributeString("id", media.ID.ToString());
+                    _writer.WriteAttributeString("vectorClock", media.VectorClock.ToString());
                     WriteElement(_writer, "path", __writer => __writer.WriteString(media.Path));
                     WriteElement(_writer, "cacheBy", __writer => __writer.WriteString(media.CachedBy.ToString()));
                     WriteElement(_writer, "cachedDate", __writer => __writer.WriteString(media.CachedDate.ToString()));

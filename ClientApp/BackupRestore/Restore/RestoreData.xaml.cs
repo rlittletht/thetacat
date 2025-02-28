@@ -11,11 +11,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Thetacat.Azure;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
@@ -24,7 +24,6 @@ using Thetacat.ServiceClient.LocalService;
 using Thetacat.TcSettings;
 using Thetacat.Types;
 using Thetacat.Util;
-using MessageBox = System.Windows.MessageBox;
 
 namespace Thetacat.BackupRestore.Restore
 {
@@ -114,6 +113,8 @@ namespace Thetacat.BackupRestore.Restore
             FullExportRestore restore = m_fullRestoreData;
             GuidMaps idMaps = new();
 
+            Profile? referenceProfileForRemap = null;
+
             if (m_model.RegenerateIds)
             {
                 if (m_model.ImportWorkgroups)
@@ -156,8 +157,14 @@ namespace Thetacat.BackupRestore.Restore
                     return;
                 }
 
-                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out Profile? referenceProfile, out string? exportGuidMapPath))
+                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out referenceProfileForRemap, out string? exportGuidMapPath))
                     return;
+
+                if (App.State.ActiveProfile.AzureStorageAccount != referenceProfileForRemap!.AzureStorageAccount)
+                {
+                    MessageBox.Show("Cannot restore to a different azure storage account");
+                    return;
+                }
 
                 if (exportGuidMapPath == null && m_fullRestoreData.WorkgroupDataRestore == null)
                 {
@@ -172,6 +179,9 @@ namespace Thetacat.BackupRestore.Restore
                 }
 
                 restore = idMaps.RemapFullRestore(restore);
+
+                if (exportGuidMapPath != null)
+                    idMaps.SaveToFile(exportGuidMapPath);
             }
 
             // first figure out what we're restoring to
@@ -347,6 +357,9 @@ namespace Thetacat.BackupRestore.Restore
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
                 {
+                    if (fClearBeforeRestore)
+                        ServiceInterop.DeleteAllImports(catalogID);
+
                     ServiceInterop.InsertAllServiceImportItems(catalogID, restore.ImportsRestore!.ImportItems);
                 }
             }
@@ -364,9 +377,18 @@ namespace Thetacat.BackupRestore.Restore
                          == MessageBoxResult.OK)
                 {
 
+                    if (fClearBeforeRestore)
+                        ServiceInterop.DeleteAllDeletedMedia(catalogID);
+
                     ServiceInterop.InsertDeletedMediaItemsWithClocksForRestore(catalogID, restore.DeletedMediaRestore.DeletedItems);
                     ServiceInterop.SetDeleteItemsClockForDatabaseRestore(catalogID, restore.DeletedMediaRestore.WorkgroupDeletedMediaClock);
                 }
+            }
+
+            if (m_model.RegenerateIds)
+            {
+                await RestoreDatabase.MigrateWorkgroup(referenceProfileForRemap!, App.State.ActiveProfile, idMaps, restore.CatalogRestore!.Catalog, restore.WorkgroupDataRestore!);
+                await RestoreDatabase.MigrateAzureBlobsForRemap(referenceProfileForRemap!, App.State.ActiveProfile, idMaps, restore.CatalogRestore!.Catalog);
             }
         }
 
@@ -415,7 +437,7 @@ namespace Thetacat.BackupRestore.Restore
                             App.State.ActiveProfile.CatalogID,
                             Guid.Parse(App.State.ActiveProfile.WorkgroupId));
 
-                        m_model.WorkgroupId = workgroup.ID!.ToString();
+                        m_model.WorkgroupId = workgroup.ID!.Value.ToString();
                         m_model.WorkgroupName = workgroup.Name!;
                     }
                     catch (Exception)

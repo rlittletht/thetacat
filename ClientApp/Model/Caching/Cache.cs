@@ -637,4 +637,10 @@ public class Cache : ICache
     {
         _Workgroup.PushChangesToDatabase(itemsForCache);
     }
+
+    public void AddCacheItemForRestore(ICacheEntry entry)
+    {
+        if (!Entries.TryAdd(entry.ID, entry))
+            throw new CatExceptionInternalFailure("could not add cache entry for restore");
+    }
 }

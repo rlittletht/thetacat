@@ -42,6 +42,20 @@ public class Media
         DELETE FROM tcat_media WHERE catalog_id=@CatalogID
         UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@CatalogID";
 
+    private static readonly string s_deleteAllDeletedMedia = @"
+        DELETE FROM tcat_deletedmedia WHERE catalog_id=@CatalogID";
+
+    /*----------------------------------------------------------------------------
+        %%Function: DeleteAllDeletedMedia
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.DeleteAllDeletedMedia
+    ----------------------------------------------------------------------------*/
+    public static void DeleteAllDeletedMedia(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllDeletedMedia,
+            s_aliases,
+            cmd => { cmd.AddParameterWithValue("@CatalogID", catalogID); });
+    }
 
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems

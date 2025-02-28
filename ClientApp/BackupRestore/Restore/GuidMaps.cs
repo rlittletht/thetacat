@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Media.Animation;
 using System.Xml;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Mediatags;
+using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using XMLIO;
@@ -17,7 +20,9 @@ public enum IdType
     Catalog,
     Metatag,
     Media,
-    Stack
+    Stack,
+    WorkgroupClient,
+    Filter
 }
 
 public class GuidMaps
@@ -28,7 +33,9 @@ public class GuidMaps
             { IdType.Catalog, new() },
             { IdType.Metatag, new() },
             { IdType.Media, new() },
-            { IdType.Stack, new() }
+            { IdType.Stack, new() },
+            { IdType.WorkgroupClient, new() },
+            { IdType.Filter, new() }
         };
 
     public static string GetStringForIdType(IdType idType)
@@ -39,6 +46,8 @@ public class GuidMaps
             IdType.Metatag => "metatag",
             IdType.Media => "media",
             IdType.Stack => "stack",
+            IdType.WorkgroupClient => "workgroup-client",
+            IdType.Filter => "filter",
             _ => throw new ArgumentOutOfRangeException(nameof(idType), idType, null)
         };
     }
@@ -51,6 +60,8 @@ public class GuidMaps
             "metatag" => IdType.Metatag,
             "media" => IdType.Media,
             "stack" => IdType.Stack,
+            "workgroup-client" => IdType.WorkgroupClient,
+            "filter" => IdType.Filter,
             _ => throw new ArgumentOutOfRangeException(nameof(idTypeString), idTypeString, null)
         };
     }
@@ -110,6 +121,28 @@ public class GuidMaps
             return null;
 
         throw new CatExceptionInternalFailure("can't find new guid given old guid");
+    }
+
+    public string RemapStringWithMetatagGuids(string oldString)
+    {
+        Regex regex = new(@"\{([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\}");
+        string newString = oldString;
+        GroupCollection groups = regex.Match(newString).Groups;
+
+        for (int i = 1; i < groups.Count; i++)
+        {
+            if (Guid.TryParse(groups[i].Value, out Guid oldGuid))
+            {
+                Guid newGuid = GetNew(IdType.Metatag, oldGuid)!.Value;
+                newString = newString.Replace(groups[i].Value, $"{newGuid}");
+            }
+            else
+            {
+                throw new CatExceptionInternalFailure("can't parse guid in string");
+            }
+        }
+
+        return newString;
     }
 
     /*----------------------------------------------------------------------------
@@ -252,7 +285,72 @@ public class GuidMaps
         return catalogNew;
     }
 
-    public DeletedMediaRestore RemapDeletedMedia(DeletedMediaRestore? deletedMedia)
+    public WorkgroupDataRestore RemapWorkgroupDataRestore(WorkgroupDataRestore restore)
+    {
+        WorkgroupDataRestore restoreNew = new();
+
+        restoreNew.WorkgroupClock = restore.WorkgroupClock;
+
+        // we don't make the workgroup id becuase the restore will be happening into an already created
+        // workgroup, so the mapping will implicitly happen
+        restoreNew.WorkgroupId = restore.WorkgroupId;
+        restoreNew.WorkgroupName = restore.WorkgroupName;
+
+        foreach (ServiceWorkgroupClient client in restore.Clients)
+        {
+            ServiceWorkgroupClient clientNew = new()
+                                               {
+                                                   ClientId = CreateForId(IdType.WorkgroupClient, client.ClientId!.Value),
+                                                   ClientName = client.ClientName,
+                                                   DeletedMediaClock = client.DeletedMediaClock,
+                                                   VectorClock = client.VectorClock
+                                               };
+
+            restoreNew.Clients.Add(clientNew);
+        }
+
+        foreach (WorkgroupCacheEntryData cacheEntry in restore.MediaItems)
+        {
+            Guid? newId = GetNew(IdType.Media, cacheEntry.ID, true /*missingIsOk*/);
+
+            if (newId == null)
+            {
+                MessageBox.Show($"Could not find media mapping for media ID {cacheEntry.ID} for virtual path {cacheEntry.Path}");
+            }
+            else
+            {
+                WorkgroupCacheEntryData cacheEntryNew =
+                    new()
+                    {
+                        ID = GetNew(IdType.Media, cacheEntry.ID)!.Value,
+                        MD5 = cacheEntry.MD5,
+                        Path = cacheEntry.Path,
+                        CachedBy = GetNew(IdType.WorkgroupClient, cacheEntry.CachedBy)!.Value,
+                        CacheDate = cacheEntry.CacheDate,
+                        VectorClock = cacheEntry.VectorClock
+                    };
+
+                restoreNew.MediaItems.Add(cacheEntryNew);
+            }
+        }
+
+        foreach (WorkgroupFilterData filter in restore.Filters)
+        {
+            WorkgroupFilterData filterNew = new()
+                                            {
+                                                Id = CreateForId(IdType.Filter, filter.Id),
+                                                Name = filter.Name,
+                                                Description = filter.Description,
+                                                Expression = RemapStringWithMetatagGuids(filter.Expression)
+                                            };
+
+            restoreNew.Filters.Add(filterNew);
+        }
+
+        return restoreNew;
+    }
+
+    public DeletedMediaRestore? RemapDeletedMedia(DeletedMediaRestore? deletedMedia)
     {
         if (deletedMedia == null)
             return null;
@@ -272,11 +370,12 @@ public class GuidMaps
             {
                 newId = item.Id;
             }
+
             ServiceDeletedItem newItem = new()
-            {
-                Id = newId,
-                MinVectorClock = item.MinVectorClock
-            };
+                                         {
+                                             Id = newId,
+                                             MinVectorClock = item.MinVectorClock
+                                         };
 
             deletedMediaNew.DeletedItems.Add(newItem);
         }
@@ -289,9 +388,10 @@ public class GuidMaps
         MetatagSchema schemaNew = RemapMetatagSchema(restore.SchemaRestore!.Schema);
         Catalog catalogNew = RemapCatalog(schemaNew, restore.CatalogRestore!.Catalog);
         ImportsRestore importsNew = RemapImports(restore.ImportsRestore!);
-        DeletedMediaRestore deletedMediaNew = RemapDeletedMedia(restore.DeletedMediaRestore);
+        DeletedMediaRestore? deletedMediaNew = RemapDeletedMedia(restore.DeletedMediaRestore);
+        WorkgroupDataRestore workgroupDataNew = RemapWorkgroupDataRestore(restore.WorkgroupDataRestore!);
 
-        return new FullExportRestore(schemaNew, catalogNew, importsNew, deletedMediaNew);
+        return new FullExportRestore(schemaNew, catalogNew, importsNew, deletedMediaNew, workgroupDataNew);
     }
 
     public delegate void WriteChildrenDelegate(XmlWriter writer);
@@ -369,7 +469,6 @@ public class GuidMaps
         public Dictionary<Guid, Guid> map = new();
         public Guid buildingOld = Guid.Empty;
         public Guid buildingNew = Guid.Empty;
-
     }
 
     static bool FParseGuidMapsElement(XmlReader reader, string element, GuidMaps maps)
@@ -389,6 +488,7 @@ public class GuidMaps
             map.idType = IdTypeFromString(value);
             return true;
         }
+
         return false;
     }
 
@@ -411,11 +511,13 @@ public class GuidMaps
             map.buildingOld = Guid.Parse(value);
             return true;
         }
+
         if (attribute == "new")
         {
             map.buildingNew = Guid.Parse(value);
             return true;
         }
+
         return false;
     }
 }

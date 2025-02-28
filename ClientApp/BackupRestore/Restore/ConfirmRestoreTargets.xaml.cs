@@ -55,6 +55,8 @@ public partial class ConfirmRestoreTargets : Window
         Model.ReferenceSqlConnection = p.SqlConnection!;
         Model.ReferenceWorkgroupName = p.WorkgroupName!;
         Model.ReferenceWorkgroupId = p.WorkgroupId!;
+        Model.ReferenceAzureStorage = p.AzureStorageAccount!;
+        Model.ReferenceAzureContainer = p.StorageContainer!;
 
         EnsureWorkgroupsForCatalog(Model.ReferenceSqlConnection, p.CatalogID);
         Model.ReferenceWorkgroupName = GetWorkgroup(p.CatalogID, Guid.Parse(Model.ReferenceWorkgroupId)).Name
@@ -130,6 +132,9 @@ public partial class ConfirmRestoreTargets : Window
         dialog.Model.TargetWorkgroupId = App.State.ActiveProfile.WorkgroupId!;
         dialog.Model.TargetCatalogID = App.State.ActiveProfile.CatalogID.ToString();
         dialog.Model.TargetProfile = App.State.ActiveProfile.Name!;
+        dialog.Model.TargetAzureContainer = App.State.ActiveProfile.StorageContainer!;
+        dialog.Model.TargetAzureStorage = App.State.ActiveProfile.AzureStorageAccount!;
+
         dialog.Model.Profiles.AddRange(App.State.Settings.Profiles.Keys);
 
         dialog.EnsureWorkgroupsForCatalog(null, App.State.ActiveProfile.CatalogID);

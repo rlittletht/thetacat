@@ -19,6 +19,7 @@
             <MenuItem Header="Options" Click="LaunchOptions" />
             <MenuItem Header="_Backup Database" Click="DoBackupDatabase"/>
             <MenuItem Header="_Restore Database" Click="DoRestoreDatabase" />
+            <MenuItem Header="Remap _Azure Blobs..." Click="DoRemapAzureBlobs"/>
             <MenuItem Header="_Empty Trash" Click="DoEmptyTrash"/>
             <MenuItem Header="_Purge Image Cache" Click="DoPurgeCache" />
             <MenuItem Header="_Repair Workgroup Database" Click="DoRepairWorkgroup" />

@@ -43,6 +43,12 @@ public class WorkgroupMediaRestore
             return true;
         }
 
+        if (attribute == "vectorClock")
+        {
+            item.VectorClock = Int32.Parse(value);
+            return true;
+        }
+
         throw new Exception($"Unknown attribute {attribute} in mediaItem");
     }
 

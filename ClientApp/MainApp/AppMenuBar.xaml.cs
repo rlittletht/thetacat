@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,11 +10,15 @@ using System.Windows.Media.Imaging;
 using Thetacat.BackupRestore.Backup;
 using Thetacat.BackupRestore.Restore;
 using Thetacat.Explorer;
+using Thetacat.Export;
 using Thetacat.Import;
+using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using Thetacat.Model.Caching;
 using Thetacat.Model.Mediatags.Cache;
 using Thetacat.Repair;
 using Thetacat.ServiceClient;
+using Thetacat.TcSettings;
 using Thetacat.Types;
 using Thetacat.UI;
 using Thetacat.UI.Options;
@@ -555,7 +560,7 @@ public partial class AppMenuBar : UserControl
         ProgressDialog.DoWorkWithProgress(DoWork, m_commands?.Window);
     }
 
-    #endregion
+#endregion
 
     private void ToggleQuickFilterPanel(object sender, RoutedEventArgs e)
     {
@@ -568,6 +573,31 @@ public partial class AppMenuBar : UserControl
         {
             App.State.WindowManager.QuickFilterPanel = new QuickFilterPanel();
             App.State.WindowManager.QuickFilterPanel.Show();
+        }
+    }
+
+    private async void DoRemapAzureBlobs(object sender, RoutedEventArgs e)
+    {
+        if (App.State.Catalog.GetMediaCollection().Count == 0)
+        {
+            MessageBox.Show("Must be connected to the target profile and loaded catalog before remapping and migrating");
+        }
+
+        if (ChooseRemapSourceTarget.GetRemapRestoreTargetInfo(
+                Window.GetWindow(this),
+                out string? sourceProfile,
+                out string? guidMapFile,
+                out bool migrateAzureBlobs,
+                out bool migrateWorkgroup))
+        {
+            Profile source = App.State.Settings.Profiles[sourceProfile!];
+
+            GuidMaps maps = GuidMaps.CreateFromFile(guidMapFile!);
+
+            if (migrateAzureBlobs)
+                await RestoreDatabase.MigrateAzureBlobsForRemap(source, App.State.ActiveProfile, maps, App.State.Catalog);
+//            if (migrateWorkgroup)
+//                RestoreDatabase.MigrateWorkgroup(source, App.State.ActiveProfile, maps, App.State.Catalog);
         }
     }
 }

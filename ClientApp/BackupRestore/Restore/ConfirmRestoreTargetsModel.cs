@@ -20,6 +20,34 @@ namespace Thetacat.BackupRestore.Restore
         private string m_targetCatalogId = string.Empty;
         private string m_targetProfile = string.Empty;
         private string m_guidMapExportPath = string.Empty;
+        private string m_referenceAzureStorage = string.Empty;
+        private string m_targetAzureStorage = string.Empty;
+        private string m_referenceAzureContainer = string.Empty;
+        private string m_targetAzureContainer = string.Empty;
+
+        public string TargetAzureStorage
+        {
+            get => m_targetAzureStorage;
+            set => SetField(ref m_targetAzureStorage, value);
+        }
+
+        public string ReferenceAzureStorage
+        {
+            get => m_referenceAzureStorage;
+            set => SetField(ref m_referenceAzureStorage, value);
+        }
+
+        public string TargetAzureContainer
+        {
+            get => m_targetAzureContainer;
+            set => SetField(ref m_targetAzureContainer, value);
+        }
+
+        public string ReferenceAzureContainer
+        {
+            get => m_referenceAzureContainer;
+            set => SetField(ref m_referenceAzureContainer, value);
+        }
 
         public string GuidMapExportPath
         {

@@ -45,6 +45,8 @@ public class AzureCat
         {
             if (s_azureCat == null)
                 Create(storageAccountName);
+            else if (s_azureCat.m_storageAccountName != storageAccountName)
+                throw new CatExceptionInitializationFailure();
         }
     }
 

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="ConfirmRestoreTargets" Height="490" Width="800">
+        Title="Confirm Remapping Restore Targets" Height="630" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -21,6 +21,10 @@
                               SelectedItem="{Binding Path=ReferenceProfile}" />
                     <TextBlock Text="SQL Connection" />
                     <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceSqlConnection}" />
+                    <TextBlock Text="Azure Storage" />
+                    <TextBox Text="{Binding Path=ReferenceAzureStorage}" />
+                    <TextBlock Text="Azure Container" />
+                    <TextBox Text="{Binding Path=ReferenceAzureContainer}" />
                     <TextBlock Text="Catalog ID" />
                     <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceCatalogID}" />
                     <TextBlock Text="Workgroup" />
@@ -38,11 +42,15 @@
                     <TextBox IsReadOnly="True " Text="{Binding Path=TargetProfile}" />
                     <TextBlock Text="SQL Connection" />
                     <TextBox Text="{Binding Path=TargetSqlConnection}" />
+                    <TextBlock Text="Azure Storage" />
+                    <TextBox Text="{Binding Path=TargetAzureStorage}" />
+                    <TextBlock Text="Azure Container" />
+                    <TextBox Text="{Binding Path=TargetAzureContainer}" />
                     <TextBlock Text="Catalog ID" />
                     <TextBox Text="{Binding Path=TargetCatalogID}" />
                     <TextBlock Text="Workgroup" />
                     <TextBox Text="{Binding Path=TargetWorkgroupName}" />
-                    <TextBlock Text="Reference Workgroup ID" />
+                    <TextBlock Text="Workgroup ID" />
                     <TextBox Text="{Binding Path=TargetWorkgroupId}" />
                 </StackPanel>
             </GroupBox>

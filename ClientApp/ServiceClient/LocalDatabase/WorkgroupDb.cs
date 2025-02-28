@@ -117,7 +117,7 @@ public class WorkgroupDb
         SELECT value FROM tcat_workgroup_vectorclock WHERE clock = 'workgroup-clock'";
 
     private readonly string s_insertWorkgroupClient = @"
-        INSERT INTO tcat_workgroup_clients (id, name, vectorClock) VALUES (@Id, @Name, @VectorClock)";
+        INSERT INTO tcat_workgroup_clients (id, name, vectorClock, deletedMediaClock) VALUES (@Id, @Name, @VectorClock, 0)";
 
     private readonly string s_updateWorkgroupClock = @"
         UPDATE tcat_workgroup_vectorclock SET value = @VectorClock WHERE clock = 'workgroup-clock'";
@@ -509,6 +509,27 @@ public class WorkgroupDb
     public int GetMinWorkgroupDeletedMediaClock()
     {
         return _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryMinDeletedMediaClockInWorkgroup));
+    }
+
+    public void UpdateWorkgroupClockForRestore(int clock)
+    {
+        _Connection.ExecuteNonQuery(
+            new SqlCommandTextInit(s_updateWorkgroupClock),
+            (cmd) => cmd.AddParameterWithValue("@VectorClock", clock));
+
+    }
+
+    public void InsertCacheEntriesForRestore(List<WorkgroupCacheEntry> inserts)
+    {
+        ExecutePartedCommands(
+            _Connection,
+            "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock, md5) VALUES ",
+            inserts,
+            (entry) =>
+                $"('{entry.ID.ToString()}', {SqlText.SqlifyQuoted(entry.Path.ToString())}, '{entry.CachedBy.ToString()}', {SqlText.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {SqlText.Nullable(entry.VectorClock)}, {SqlText.SqlifyQuoted(entry.MD5)}) ",
+            100,
+            ",",
+            null);
     }
 
     /*----------------------------------------------------------------------------

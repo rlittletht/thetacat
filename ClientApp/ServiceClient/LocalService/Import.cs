@@ -10,6 +10,7 @@ using Thetacat.Import;
 using Thetacat.Model;
 using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
+using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -38,6 +39,20 @@ public class Import
 
     private static readonly string s_deleteMediaItem = @"
         DELETE FROM tcat_import WHERE catalog_id=@CatalogID AND id=@MediaID";
+
+    private static readonly string s_deleteAllMediaItems = @"
+        DELETE FROM tcat_import WHERE catalog_id=@CatalogID";
+
+    public static void DeleteAllImports(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllMediaItems,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+            });
+    }
 
     public static void DeleteMediaItem(Guid catalogId, Guid mediaId)
     {

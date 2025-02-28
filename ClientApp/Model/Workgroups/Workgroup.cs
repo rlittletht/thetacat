@@ -486,6 +486,27 @@ public class Workgroup : IWorkgroup
         m_baseVectorClock = mediaWithClock.VectorClock;
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: RestoreCacheEntriesToDatabase
+        %%Qualified: Thetacat.Model.Workgroups.Workgroup.RestoreCacheEntriesToDatabase
+
+        restore the given cache entries to the workgroup, setting all of the
+        values including the vector clock to the given values
+    ----------------------------------------------------------------------------*/
+    public void RestoreCacheEntriesToDatabase(IEnumerable<ICacheEntry> entries)
+    {
+        List<WorkgroupCacheEntry> inserts = new();
+
+        foreach (ICacheEntry entry in entries)
+        {
+            WorkgroupCacheEntry wgEntry = new (entry.ID, entry.Path, entry.CachedBy, entry.CachedDate, false, entry.VectorClock, entry.MD5);
+
+            inserts.Add(wgEntry);
+        }
+
+        _Database.InsertCacheEntriesForRestore(inserts);
+
+    }
     public void PushChangesToDatabaseWithCache(ICache cache, Dictionary<Guid, MediaItem>? itemsForCache)
     {
         int retryCount = 10; // retry for coherency failures 10 times
@@ -644,5 +665,20 @@ public class Workgroup : IWorkgroup
         return _Database.GetWorkgroupClients();
     }
 
+    public void RestoreWorkgroupClients(IReadOnlyCollection<ServiceWorkgroupClient> clients)
+    {
+        foreach (ServiceWorkgroupClient client in clients)
+        {
+            _Database.CreateWorkgroupClient(client);
+            if (client.DeletedMediaClock != null)
+                _Database.UpdateClientDeletedMediaClockToAtLeast(client.ClientName!, client.DeletedMediaClock.Value);
+        }
+    }
+
+    public void SetWorkgroupClockForRestore(int clock)
+    {
+        _Database.UpdateWorkgroupClockForRestore(clock);
+    }
+    
     public int BaseVectorClock => m_baseVectorClock;
 }

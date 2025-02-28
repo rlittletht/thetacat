@@ -23,6 +23,10 @@ public class WorkgroupDataRestore
         XMLIO.XmlIO.FReadElement(reader, this, "workgroupData", FReadWorkgroupDataAttributes, FReadWorkgroupDataElements);
     }
 
+    public WorkgroupDataRestore()
+    {
+    }
+
     static bool FReadWorkgroupDataAttributes(string attribute, string value, WorkgroupDataRestore data)
     {
         if (attribute == "workgroupId")
