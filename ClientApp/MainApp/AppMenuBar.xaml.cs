@@ -600,4 +600,9 @@ public partial class AppMenuBar : UserControl
 //                RestoreDatabase.MigrateWorkgroup(source, App.State.ActiveProfile, maps, App.State.Catalog);
         }
     }
+
+    private async void DoConsistencyCheck(object sender, RoutedEventArgs e)
+    {
+        await ConsistencyChecker.CheckConsistency(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.Cache, App.State.Workgroup);
+    }
 }
