@@ -18,8 +18,9 @@ public class CatalogRestore
         if (element == "mediaItem")
         {
             MediaItemRestore itemRestore = new MediaItemRestore(reader, catalogRestore.Schema);
+            bool useDeprecatedTagIds = catalogRestore.Schema.GetMetatagFromId(BuiltinTags_Deprecated.s_CatRootID) != null;
 
-            MediaItem mediaItem = new MediaItem(itemRestore.ItemData);
+            MediaItem mediaItem = new MediaItem(itemRestore.ItemData, useDeprecatedTagIds);
 
             foreach (MediaTag tag in itemRestore.MediaTags)
             {

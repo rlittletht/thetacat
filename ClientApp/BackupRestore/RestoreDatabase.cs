@@ -82,7 +82,9 @@ public class RestoreDatabase
         }
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public static async Task MigrateWorkgroup(Profile sourceProfile, Profile targetProfile, GuidMaps idMaps, ICatalog catalog, WorkgroupDataRestore restore)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         try
         {

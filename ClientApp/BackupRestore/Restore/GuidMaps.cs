@@ -224,7 +224,7 @@ public class GuidMaps
                 State = MediaItem.StringFromState(item.State)
             };
 
-        MediaItem newItem = new(newServiceItem);
+        MediaItem newItem = new(newServiceItem, false/*useDeprecatedTagIds*/);
 
         newItem.VersionStack = GetNew(IdType.Stack, newItem.VersionStack);
         newItem.MediaStack = GetNew(IdType.Stack, newItem.MediaStack);

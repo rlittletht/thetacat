@@ -11,6 +11,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Thetacat.Model;
+using Thetacat.UI.Controls.MediaItemsListControl;
+using Thetacat.Util;
 
 namespace Thetacat.BackupRestore.Consistency
 {
@@ -19,9 +22,21 @@ namespace Thetacat.BackupRestore.Consistency
     /// </summary>
     public partial class ConsistencyResults : Window
     {
+        private ConsistencyResultsModel Model = new();
+
         public ConsistencyResults()
         {
+            DataContext = Model;
             InitializeComponent();
+        }
+
+        public static void ShowResults(List<ConsistencyResult> results)
+        {
+            ConsistencyResults resultsDialog = new();
+
+            resultsDialog.Model.Results.AddRange(results);
+
+            resultsDialog.ShowDialog();
         }
     }
 }

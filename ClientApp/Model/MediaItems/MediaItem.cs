@@ -63,9 +63,10 @@ public class MediaItem : INotifyPropertyChanged
         Stacks[MediaStackType.Media] = clone.MediaStack;
     }
 
-    public MediaItem(ServiceMediaItem item)
+    public MediaItem(ServiceMediaItem item, bool useDeprecatedTagIds)
     {
         m_working = new MediaItemData(item);
+        UseDeprecatedTagIds = useDeprecatedTagIds;
     }
 
     public static MediaItem CreateNewBasedOn(MediaItem based)

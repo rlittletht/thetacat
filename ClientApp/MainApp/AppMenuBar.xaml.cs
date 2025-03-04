@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -603,6 +604,20 @@ public partial class AppMenuBar : UserControl
 
     private async void DoConsistencyCheck(object sender, RoutedEventArgs e)
     {
-        await ConsistencyChecker.CheckConsistency(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.Cache, App.State.Workgroup);
+        ConsistencyChecker.CheckConsistency(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.Cache, App.State.Workgroup!);
+    }
+
+    private void DoDeleteOrphanedDuplicates(object sender, RoutedEventArgs e)
+    {
+        Dictionary<Guid, ServiceImportItem> imports = new();
+
+        List<ServiceImportItem> importItems = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
+
+        foreach (ServiceImportItem import in importItems)
+        {
+            imports.Add(import.ID, import);
+        }
+
+        CatalogRepair.DeleteOrphanedDuplicateMedia(App.State.ActiveProfile.CatalogID, App.State.Catalog, App.State.Cache, imports);
     }
 }

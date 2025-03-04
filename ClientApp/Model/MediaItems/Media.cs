@@ -98,11 +98,12 @@ public class Media
         directly unless you know what you are really doing (e.g. you are reading
         from the database which means its by definition not a dirtying action)
     ----------------------------------------------------------------------------*/
-    public void AddMediaTagInternal(Guid id, MediaTag tag)
+    public bool AddMediaTagInternal(Guid id, MediaTag tag)
     {
         if (!m_items.TryGetValue(id, out MediaItem? item))
-            throw new Exception("media not present");
+            return false;
 
         item.AddOrUpdateMediaTagInternal(tag);
+        return true;
     }
 }

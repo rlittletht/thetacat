@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using Thetacat.Azure;
+using Thetacat.BackupRestore.Consistency;
 using Thetacat.Import;
 using Thetacat.Model;
 using Thetacat.Model.Workgroups;
+using Thetacat.Repair;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
 using Thetacat.Types;
+using Thetacat.UI;
+using Thetacat.UI.Controls.MediaItemsListControl;
 using Thetacat.Util;
 
 namespace Thetacat.Export;
@@ -38,46 +44,59 @@ public class ConsistencyChecker
         {
             m_imports.Add(import.ID, import);
         }
-        
+
         foreach (ServiceWorkgroupClient client in workgroup.GetWorkgroupClients())
         {
             m_clients.Add(client.ClientId!.Value, client);
         }
     }
 
-    public void CheckWorkgroupItems()
+    /*----------------------------------------------------------------------------
+        %%Function: CheckWorkgroupItems
+        %%Qualified: Thetacat.Export.ConsistencyChecker.CheckWorkgroupItems
+    ----------------------------------------------------------------------------*/
+    public void CheckWorkgroupItems(List<ConsistencyResult> results, ChunkedProgressReport progress)
     {
-        List<ICacheEntry> missing = new();
+        ObservableCollection<MediaItemsListItem> missing = new();
+
+        int count = m_cache.Entries.Count;
+        int i = 0;
 
         foreach (ICacheEntry entry in m_cache.Entries.Values)
         {
+            progress.UpdateProgress(i++, count);
             if (!m_catalog.TryGetMedia(entry.ID, out _))
-                missing.Add(entry);
+                missing.Add(MediaItemsListItem.Create(entry));
         }
 
         if (missing.Count > 0)
         {
-            List<string> missingDescriptions = new();
+            ConsistencyResult result = new(
+                "Missing Cache Entries",
+                "These items are in the workgroup but do not have entries in the catalog.",
+                missing);
 
-            foreach (ICacheEntry entry in missing)
-            {
-                missingDescriptions.Add($"{entry.ID}: {entry.Path}");
-            }
-
-            MessageBox.Show($"The following items are in the workgroup but not in the catalog:\n\n{string.Join("\n", missingDescriptions)}");
+            results.Add(result);
         }
     }
 
-    public async Task CheckUploadStatesAgainstAzure()
+    /*----------------------------------------------------------------------------
+        %%Function: CheckUploadStatesAgainstAzure
+        %%Qualified: Thetacat.Export.ConsistencyChecker.CheckUploadStatesAgainstAzure
+    ----------------------------------------------------------------------------*/
+    async Task CheckUploadStatesAgainstAzure(List<ConsistencyResult> results, ChunkedProgressReport progress)
     {
         AzureCat.EnsureCreated(App.State.AzureStorageAccount);
-        List<string> nonGuidBlob = new();
-        List<MediaItem> missingBlobs = new();
-        List<MediaItem> badHash = new();
+        ObservableCollection<MediaItemsListItem> nonGuidBlobs = new();
+        ObservableCollection<MediaItemsListItem> missingBlobs = new();
+        ObservableCollection<MediaItemsListItem> badHash = new();
+
         TcBlobContainer container = await AzureCat._Instance.OpenContainerForCatalog(App.State.ActiveProfile.StorageContainer!);
 
+        progress.UpdateProgress(1, 10);
         List<TcBlob> blobs = await container.EnumerateBlobs();
         // build a lookup table by id
+        progress.UpdateProgress(3, 10);
 
         Dictionary<Guid, TcBlob> blobLookup = new();
 
@@ -85,13 +104,15 @@ public class ConsistencyChecker
         {
             if (!Guid.TryParse(blob.BlobName, out Guid id))
             {
-                nonGuidBlob.Add(blob.BlobName);
+                nonGuidBlobs.Add(MediaItemsListItem.Create(blob.BlobName));
             }
             else
             {
                 blobLookup[id] = blob;
             }
         }
+
+        progress.UpdateProgress(6, 10);
 
         // now, confirm our catalog with the blobs
         foreach (MediaItem item in m_catalog.GetMediaCollection())
@@ -100,67 +121,95 @@ public class ConsistencyChecker
                 continue;
             if (!blobLookup.TryGetValue(item.ID, out TcBlob? blob))
             {
-                missingBlobs.Add(item);
+                missingBlobs.Add(MediaItemsListItem.Create(item));
                 continue;
             }
 
             if (blob.ContentMd5 != item.MD5)
             {
-                badHash.Add(item);
+                badHash.Add(MediaItemsListItem.Create(item, $"{blob.ContentMd5} != {item.MD5}"));
             }
         }
 
-        if (nonGuidBlob.Count > 0)
+        progress.UpdateProgress(10, 10);
+
+        if (nonGuidBlobs.Count > 0)
         {
-            MessageBox.Show($"The following blobs are not guids:\n\n{string.Join("\n", nonGuidBlob)}");
+            ConsistencyResult result = new(
+                "Bad Blob Names",
+                "These Azure blobs do not have names that are GUIDs",
+                nonGuidBlobs);
+
+            results.Add(result);
         }
 
         if (missingBlobs.Count > 0)
         {
-            List<string> missingDescriptions = new();
-            foreach (MediaItem item in missingBlobs)
-            {
-                missingDescriptions.Add($"{item.ID}: {item.VirtualPath}");
-            }
-            MessageBox.Show($"The following items are in the catalog but not in the blobs:\n\n{string.Join("\n", missingDescriptions)}");
+            ConsistencyResult result = new(
+                "Missing Blob",
+                "These catalog items are marked as Active but do not have blobs in Azure.",
+                missingBlobs);
+
+            results.Add(result);
         }
 
         if (badHash.Count > 0)
         {
-            List<string> badHashDescriptions = new();
-            foreach (MediaItem item in badHash)
-            {
-                badHashDescriptions.Add($"{item.ID}: {item.VirtualPath}");
-            }
-            MessageBox.Show($"The following items have bad MD5 hashes:\n\n{string.Join("\n", badHashDescriptions)}");
+            ConsistencyResult result = new(
+                "MD5 Mismath",
+                "These catalog items have corresponding blobs in Azure, but the MD5 hashes are not the same",
+                badHash);
+
+            results.Add(result);
         }
     }
 
     bool FileExistsInWorkgroupCache(PathSegment path, string? md5)
     {
-        string fullPath = m_cache.GetFullLocalPath(path);
-
-        bool exists = File.Exists(fullPath);
-
-        if (!exists || string.IsNullOrEmpty(md5))
-            return exists;
-
-        string md5Local = App.State.Md5Cache.GetMd5ForPathSync(fullPath);
-
-        return md5Local == md5;
+        return WorkgroupRepair.FileExistsInWorkgroupCache(m_cache, path, md5);
     }
 
-    public void CheckCatalogAgainstWorkgroup()
+    public void CheckCatalogAgainstWorkgroup(List<ConsistencyResult> results, ChunkedProgressReport progress)
     {
         // look for items that aren't uploaded, but also don't exist in the local cache (which means there
         // is no way for the upload to succeed)
-        List<MediaItem> missingImportEntryNoLocalMediaForUpload = new();
-        List<MediaItem> missingImportEntryHasLocalMedia = new();
-        List<MediaItem> pendingCatalogItemsNotPendingUploadInImport = new();
-        List<MediaItem> pendingCatalogItemsAwaitingClientUpload = new();
+        ObservableCollection<MediaItemsListItem> missingImportEntry = new();
+        ObservableCollection<MediaItemsListItem> pendingCatalogItemsNotPendingUploadInImport = new();
+        ObservableCollection<MediaItemsListItem> pendingCatalogItemsAwaitingClientUpload = new();
+        ObservableCollection<MediaItemsListItem> workgroupMediaMissing = new();
+        ObservableCollection<MediaItemsListItem> duplicateMD5 = new();
 
-        foreach (MediaItem item in m_catalog.GetMediaCollection())
+        IReadOnlyCollection<MediaItem> collection = m_catalog.GetMediaCollection();
+
+        int count = collection.Count;
+        int i = 0;
+
+        Dictionary<string, List<MediaItem>> md5Map = new();
+        foreach (MediaItem item in collection)
         {
+            if (!md5Map.ContainsKey(item.MD5))
+                md5Map[item.MD5] = new List<MediaItem>();
+
+            md5Map[item.MD5].Add(item);
+        }
+
+        foreach(KeyValuePair<string, List<MediaItem>> pair in md5Map)
+        {
+            if (string.IsNullOrWhiteSpace(pair.Key))
+                continue;
+                    
+            if (pair.Value.Count > 1)
+            {
+                foreach (MediaItem item in pair.Value)
+                {
+                    duplicateMD5.Add(MediaItemsListItem.Create(item, $"hash:{pair.Key}"));
+                }
+            }
+        }
+
+        foreach (MediaItem item in collection)
+        {
+            progress.UpdateProgress(i++, count);
             m_imports.TryGetValue(item.ID, out ServiceImportItem? importItem);
 
             if (!m_cache.Entries.TryGetValue(item.ID, out ICacheEntry? cacheEntry))
@@ -183,9 +232,35 @@ public class ConsistencyChecker
                         // since we have no cache entry, we don't know what the real local path should be
                         // the best guess is the virtual path
                         if (FileExistsInWorkgroupCache(item.VirtualPath, item.MD5))
-                            missingImportEntryHasLocalMedia.Add(item);
+                        {
+                            if (!string.IsNullOrWhiteSpace(item.MD5))
+                            {
+                                List<MediaItem> items = md5Map[item.MD5];
+
+                                // first, make sure our item is in the list
+                                if (items.Find(_item => _item.ID == item.ID) == null)
+                                {
+                                    missingImportEntry.Add(MediaItemsListItem.Create(item, "VirtualPath exists, MD5 missing from MD5 map (INTERNAL FAILURE)"));
+                                }
+                                else
+                                {
+                                    MediaItem? dupe = items.Find(_item => _item.VirtualPath.Equals(item.VirtualPath));
+
+                                    if (dupe != null)
+                                    {
+                                        missingImportEntry.Add(MediaItemsListItem.Create(item, $"Duplicate: {dupe.ID}"));
+                                    }
+                                    else
+                                    {
+                                        missingImportEntry.Add(MediaItemsListItem.Create(item, "VirtualPath exists, non-dupe"));
+                                    }
+                                }
+                            }
+                        }
                         else
-                            missingImportEntryNoLocalMediaForUpload.Add(item);
+                        {
+                            missingImportEntry.Add(MediaItemsListItem.Create(item, "VirtualPath not found"));
+                        }
 
                         continue;
                     }
@@ -194,25 +269,120 @@ public class ConsistencyChecker
 
                     if (importItemState == ImportItem.ImportState.Complete)
                     {
-                        pendingCatalogItemsNotPendingUploadInImport.Add(item);
+                        pendingCatalogItemsNotPendingUploadInImport.Add(MediaItemsListItem.Create(item));
                         continue;
                     }
 
-                    pendingCatalogItemsAwaitingClientUpload.Add(item);
+                    pendingCatalogItemsAwaitingClientUpload.Add(MediaItemsListItem.Create(item, $"Source = {importItem.Source}"));
+                }
+            }
+            else
+            {
+                // we have an entry in the workgroup database. validate it
+                if (FileExistsInWorkgroupCache(cacheEntry.Path, null))
+                {
+                    if (!FileExistsInWorkgroupCache(cacheEntry.Path, cacheEntry.MD5))
+                    {
+                        // the file exists, but the MD5 hash doesn't match
+                        workgroupMediaMissing.Add(MediaItemsListItem.Create(item, "MD5 mismatch"));
+                    }
+                }
+                else
+                {
+                    workgroupMediaMissing.Add(MediaItemsListItem.Create(item));
                 }
             }
         }
+
+        if (duplicateMD5.Count > 0)
+        {
+            ConsistencyResult result = new(
+                "Duplicate MD5",
+                "These catalog items have the same MD5 hash.",
+                duplicateMD5);
+            results.Add(result);
+        }
+
+        if (missingImportEntry.Count > 0)
+        {
+            ConsistencyResult result = new(
+                "Missing Import Entry",
+                "These catalog items are marked as Pending, do not have entries in the Workgroup database, and have no entry in the imports table.",
+                missingImportEntry);
+            results.Add(result);
+        }
+
+        if (pendingCatalogItemsNotPendingUploadInImport.Count > 0)
+        {
+            ConsistencyResult result = new(
+                "Pending Item Not Pending",
+                "These catalog items are marked as Pending, do not have entries in the Workgroup database, and their corresponding entry in the imports table are not marked as pending.",
+                pendingCatalogItemsNotPendingUploadInImport);
+            results.Add(result);
+        }
+
+        if (pendingCatalogItemsAwaitingClientUpload.Count > 0)
+        {
+            ConsistencyResult result = new(
+                "Pending Item Awaiting Client Upload",
+                "These catalog items are marked as Pending, do not have entries in the Workgroup database, and are pending upload from a client.",
+                pendingCatalogItemsAwaitingClientUpload);
+
+            results.Add(result);
+        }
+
+        if (workgroupMediaMissing.Count > 0)
+        {
+            ConsistencyResult result = new(
+                "Workgroup Media Missing",
+                "These catalog items have entries in the Workgroup database, but the media is missing from the cache.",
+                workgroupMediaMissing);
+            results.Add(result);
+        }
     }
 
-    public static async Task CheckConsistency(Guid catalogId, ICatalog catalog, ICache cache, IWorkgroup workgroup)
+    public static void CheckConsistency(Guid catalogId, ICatalog catalog, ICache cache, IWorkgroup workgroup)
     {
-        List<ServiceImportItem> imports = ServiceInterop.GetAllImports(catalogId);
 
-        ConsistencyChecker checker = new(catalog, cache, workgroup, imports);
+        App.State.AddBackgroundWork(
+            "Checking for consistency errors",
+            (IProgressReport progressReport) =>
+            {
+                ChunkedProgressReport chunkedProgress = new(progressReport);
+
+                chunkedProgress.AddWeightedChunk("imports", 1.0);
+                chunkedProgress.AddWeightedChunk("checkWorkgroup", 3.0);
+                chunkedProgress.AddWeightedChunk("checkAzure", 10.0);
+                chunkedProgress.AddWeightedChunk("checkCatalog", 90.0);
+
+                chunkedProgress.StartBlock("imports");
+                List<ServiceImportItem> imports = ServiceInterop.GetAllImports(catalogId);
+
+                ConsistencyChecker checker = new(catalog, cache, workgroup, imports);
+
+                List<ConsistencyResult> results = new();
+                chunkedProgress.StartBlock("checkWorkgroup");
+                checker.CheckWorkgroupItems(results, chunkedProgress);
+
+                try
+                {
+                    chunkedProgress.StartBlock("checkAzure");
+                    Task task = checker.CheckUploadStatesAgainstAzure(results, chunkedProgress);
+                    task.Wait();
+                }
+                catch (Exception exc)
+                {
+                    MessageBox.Show($"caught exception trying to check Azure blobs: {exc}");
+                }
+
+                chunkedProgress.StartBlock("checkCatalog");
+                checker.CheckCatalogAgainstWorkgroup(results, chunkedProgress);
+
+                ThreadContext.InvokeOnUiThread(() => ConsistencyResults.ShowResults(results));
+                return true;
+            });
 
         // look for items in the workgroup that don't exist in the catalog
-        checker.CheckWorkgroupItems();
-        await checker.CheckUploadStatesAgainstAzure();
-        checker.CheckCatalogAgainstWorkgroup();
+
     }
 }

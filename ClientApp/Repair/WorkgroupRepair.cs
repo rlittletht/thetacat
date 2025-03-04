@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using NUnit.Framework;
 using Thetacat.Model;
 using Thetacat.ServiceClient.LocalDatabase;
 using Thetacat.Types;
+using Thetacat.Util;
 
 namespace Thetacat.Repair;
 
 public class WorkgroupRepair
 {
-    
     /*----------------------------------------------------------------------------
         %%Function: FindMissingWorkgroupEntries
         %%Qualified: Thetacat.Repair.WorkgroupRepair.FindMissingWorkgroupEntries
 
-        When an item is added to the catalog, it will be added with 
+        When an item is added to the catalog, it will be added with
         state = pending.  This means that the client still has to upload the
         media to the cloud. The client that added it will ALSO add an entry to
         their workgroup with their client name in the 'cachedBy' field.
@@ -67,5 +68,19 @@ public class WorkgroupRepair
             return false;
 
         return true;
+    }
+
+    public static bool FileExistsInWorkgroupCache(ICache cache, PathSegment path, string? md5)
+    {
+        string fullPath = cache.GetFullLocalPath(path);
+
+        bool exists = File.Exists(fullPath);
+
+        if (!exists || string.IsNullOrEmpty(md5))
+            return exists;
+
+        string md5Local = App.State.Md5Cache.GetMd5ForPathSync(fullPath);
+
+        return md5Local == md5;
     }
 }

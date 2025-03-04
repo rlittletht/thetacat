@@ -42,4 +42,9 @@ public class BuiltinTags_Deprecated
 
     // this is just for querying virtual path
     public static readonly Metatag s_VirtualPath = Metatag.Create(s_CatRootID, "virtualPath", "virtual path", MetatagStandards.Standard.Cat, s_VirtualPathID);
+
+    static BuiltinTags_Deprecated(){}
+
+    public static void Initialize()
+    {}
 }

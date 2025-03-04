@@ -32,7 +32,7 @@ public class BackupDatabase
     private readonly bool m_exportDeletedMedia = false;
 
     public static string s_uri = "https://schemas.thetasoft.com/thetacat/backup/2024";
-    private ProgressChunks m_progressChunks = new();
+    private ChunkedProgressReport? m_chunkedProgressReport;
 
     public BackupDatabase(
         string backupPath,
@@ -74,40 +74,6 @@ public class BackupDatabase
         }
     }
 
-#region Progress Reporting
-
-    private IProgressReport? m_progress;
-    private double m_blockStart = 0.0;
-    private double m_blockEnd = 0.0;
-
-    /*----------------------------------------------------------------------------
-        %%Function: StartNextBlock
-        %%Qualified: Thetacat.Export.BackupDatabase.StartNextBlock
-    ----------------------------------------------------------------------------*/
-    void StartNextBlock(double pctEnd)
-    {
-        m_progress?.UpdateProgress(m_blockEnd);
-        m_blockStart = m_blockEnd;
-        m_blockEnd = pctEnd;
-    }
-
-    void StartBlock(string name)
-    {
-        double pctEnd = m_progressChunks.GetChunkPercent(name);
-        StartNextBlock(pctEnd);
-    }
-
-    /*----------------------------------------------------------------------------
-        %%Function: UpdateProgress
-        %%Qualified: Thetacat.Export.BackupDatabase.UpdateProgress
-    ----------------------------------------------------------------------------*/
-    void UpdateProgress(int idxCur, int idxMax)
-    {
-        m_progress?.UpdateProgress(m_blockStart + ((idxCur * 100.0) / idxMax) * (m_blockEnd - m_blockStart));
-    }
-
-#endregion
-
 #region Metatags/Schema
 
     /*----------------------------------------------------------------------------
@@ -135,7 +101,7 @@ public class BackupDatabase
 
         foreach (Metatag metatag in schema.MetatagsWorking)
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer,
                 "metatag",
@@ -149,7 +115,7 @@ public class BackupDatabase
     ----------------------------------------------------------------------------*/
     public void WriteSchema(XmlWriter writer, MetatagSchema schema)
     {
-        StartBlock("schema");
+        m_chunkedProgressReport!.StartBlock("schema");
 
         WriteElement(
             writer,
@@ -216,7 +182,7 @@ public class BackupDatabase
 
         foreach (MediaItem item in catalog.GetMediaCollection())
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(
                 writer,
@@ -260,7 +226,7 @@ public class BackupDatabase
 
         foreach (MediaStack stack in stacks.Items.Values)
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(writer, "stack", (_writer) => WriteMediaStack(_writer, stack));
         }
     }
@@ -280,19 +246,19 @@ public class BackupDatabase
             {
                 if (m_exportMediaItems)
                 {
-                    StartBlock("media");
+                    m_chunkedProgressReport.StartBlock("media");
                     WriteElement(_writer, "media", (__writer) => WriteMediaItems(__writer, catalog));
                 }
 
                 if (m_exportVersionStacks)
                 {
-                    StartBlock("versionStacks");
+                    m_chunkedProgressReport!.StartBlock("versionStacks");
                     WriteElement(_writer, "versionStacks", (__writer) => WriteMediaStacks(__writer, catalog.VersionStacks));
                 }
 
                 if (m_exportMediaStacks)
                 {
-                    StartBlock("mediaStacks");
+                    m_chunkedProgressReport!.StartBlock("mediaStacks");
                     WriteElement(_writer, "mediaStacks", (__writer) => WriteMediaStacks(__writer, catalog.MediaStacks));
                 }
             });
@@ -327,7 +293,7 @@ public class BackupDatabase
 
         foreach (ServiceImportItem item in items)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(writer, "importItem", (_writer) => WriteImportItem(_writer, item));
         }
@@ -339,7 +305,7 @@ public class BackupDatabase
     ----------------------------------------------------------------------------*/
     public void WriteImports(XmlWriter writer)
     {
-        StartBlock("imports");
+        m_chunkedProgressReport!.StartBlock("imports");
 
         List<ServiceImportItem> importItems = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
 
@@ -352,7 +318,7 @@ public class BackupDatabase
 
     public void WriteDeletedMedia(XmlWriter writer, Guid catalogId)
     {
-        StartBlock("deletedMedia");
+        m_chunkedProgressReport!.StartBlock("deletedMedia");
         ServiceDeletedItemsClock itemsWithClock =  ServiceInterop.GetDeletedMediaItems(catalogId);
 
         if (itemsWithClock.DeletedItems.Count == 0)
@@ -375,7 +341,7 @@ public class BackupDatabase
 
         foreach (ServiceDeletedItem item in itemsWithClock.DeletedItems)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer, 
                 "deletedMediaItem", 
@@ -403,13 +369,13 @@ public class BackupDatabase
                 _writer.WriteAttributeString("workgroupId", workgroup.Id.ToString());
                 _writer.WriteAttributeString("name", workgroup.Name);
 
-                StartBlock("workgroupClients");
+                m_chunkedProgressReport!.StartBlock("workgroupClients");
                 WriteElement(_writer, "clients", __writer => WriteWorkgroupClients(__writer, workgroup));
-                StartBlock("workgroupMedia");
+                m_chunkedProgressReport!.StartBlock("workgroupMedia");
                 WriteElement(_writer, "media", __writer => WriteWorkgroupMediaItems(__writer, workgroup));
-                StartBlock("workgroupFilters");
+                m_chunkedProgressReport!.StartBlock("workgroupFilters");
                 WriteElement(_writer, "filters", __writer => WriteWorkgroupFilters(__writer, workgroup));
-                StartBlock("workgroupClocks");
+                m_chunkedProgressReport!.StartBlock("workgroupClocks");
                 WriteElement(_writer, "vectorClocks", __writer => WriteWorkgroupVectorClocks(__writer, workgroup));
             });
     }
@@ -422,7 +388,7 @@ public class BackupDatabase
 
         foreach (ServiceWorkgroupClient client in clients)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer,
                 "client",
@@ -447,7 +413,7 @@ public class BackupDatabase
 
         foreach (ICacheEntry media in mediaItems.Values)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer,
                 "mediaItem",
@@ -471,7 +437,7 @@ public class BackupDatabase
 
         foreach (ServiceWorkgroupFilter filter in filters)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer,
                 "filter",
@@ -488,7 +454,7 @@ public class BackupDatabase
 
     public void WriteWorkgroupVectorClocks(XmlWriter writer, Workgroup workgroup)
     {
-        UpdateProgress(1, 1);
+        m_chunkedProgressReport!.UpdateProgress(1, 1);
         WriteElement(
             writer,
             "workgroupClock",
@@ -514,7 +480,7 @@ public class BackupDatabase
 
         foreach (ServiceWorkgroup item in items)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(writer, "workgroup", (_writer) => WriteWorkgroupItem(_writer, item));
         }
@@ -522,7 +488,7 @@ public class BackupDatabase
 
     public void WriteWorkgroups(XmlWriter writer)
     {
-        StartBlock("workgroups");
+        m_chunkedProgressReport!.StartBlock("workgroups");
 
         List<ServiceWorkgroup> workgroups = ServiceInterop.GetAvailableWorkgroups(App.State.ActiveProfile.CatalogID);
 
@@ -544,33 +510,34 @@ public class BackupDatabase
 
     public bool DoBackup(IProgressReport progress)
     {
-        m_progressChunks.AddWeightedChunk("Read", 5.0);
+        m_chunkedProgressReport = new ChunkedProgressReport(progress);
+
+        m_chunkedProgressReport.AddWeightedChunk("Read", 5.0);
         if (m_exportSchema)
-            m_progressChunks.AddWeightedChunk("schema", 10.0);
+            m_chunkedProgressReport.AddWeightedChunk("schema", 10.0);
         if (m_exportMediaItems)
-            m_progressChunks.AddWeightedChunk("media", 70.0);
+            m_chunkedProgressReport.AddWeightedChunk("media", 70.0);
         if (m_exportVersionStacks)
-            m_progressChunks.AddWeightedChunk("versionStacks", 2.0);
+            m_chunkedProgressReport.AddWeightedChunk("versionStacks", 2.0);
         if (m_exportMediaStacks)
-            m_progressChunks.AddWeightedChunk("mediaStacks", 2.0);
+            m_chunkedProgressReport.AddWeightedChunk("mediaStacks", 2.0);
         if (m_exportImports)
-            m_progressChunks.AddWeightedChunk("imports", 6.0);
+            m_chunkedProgressReport.AddWeightedChunk("imports", 6.0);
         if (m_exportDeletedMedia)
-            m_progressChunks.AddWeightedChunk("deletedMedia", 5.0);
+            m_chunkedProgressReport.AddWeightedChunk("deletedMedia", 5.0);
         if (m_exportWorkgroups)
-            m_progressChunks.AddWeightedChunk("workgroups", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroups", 1.0);
         if (m_exportWorkgroupData)
         {
-            m_progressChunks.AddWeightedChunk("workgroupClients", 1.0);
-            m_progressChunks.AddWeightedChunk("workgroupMedia", 10.0);
-            m_progressChunks.AddWeightedChunk("workgroupFilters", 1.0);
-            m_progressChunks.AddWeightedChunk("workgroupClocks", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupClients", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupMedia", 10.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupFilters", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupClocks", 1.0);
         }
 
         Guid catalogID = App.State.ActiveProfile.CatalogID;
-        m_progress = progress;
 
-        StartBlock("Read");
+        m_chunkedProgressReport!.StartBlock("Read");
 
         Task task = m_catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, m_schema);
 
@@ -602,7 +569,7 @@ public class BackupDatabase
                     WriteWorkgroupData(_writer, catalogID, Guid.Parse(App.State.ActiveProfile.WorkgroupId!));
             });
 
-        m_progress.WorkCompleted();
+        m_chunkedProgressReport.WorkCompleted();
         return true;
     }
 }
