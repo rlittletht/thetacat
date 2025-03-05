@@ -49,14 +49,26 @@ namespace Thetacat.BackupRestore.Restore
 
         void UpdateForTargetProfile(string profile)
         {
-            Profile p = App.State.Settings.Profiles[profile];
+            try
+            {
+                Profile p = App.State.Settings.Profiles[profile];
 
-            Model.TargetCatalogID = p.CatalogID.ToString();
-            Model.TargetSqlConnection = p.SqlConnection!;
-            Model.TargetWorkgroupName = p.WorkgroupName!;
-            Model.TargetWorkgroupId = p.WorkgroupId!;
-            Model.TargetAzureStorage = p.AzureStorageAccount!;
-            Model.TargetAzureContainer = p.StorageContainer!;
+                Model.TargetCatalogID = p.CatalogID.ToString();
+                Model.TargetSqlConnection = p.SqlConnection!;
+                Model.TargetWorkgroupName = p.WorkgroupName!;
+                Model.TargetWorkgroupId = p.WorkgroupId!;
+                Model.TargetAzureStorage = p.AzureStorageAccount!;
+                Model.TargetAzureContainer = p.StorageContainer!;
+            }
+            catch
+            {
+                Model.TargetCatalogID = string.Empty;
+                Model.TargetSqlConnection = string.Empty;
+                Model.TargetWorkgroupName = string.Empty;
+                Model.TargetWorkgroupId = string.Empty;
+                Model.TargetAzureStorage = string.Empty;
+                Model.TargetAzureContainer = string.Empty;
+            }
         }
 
         private void Model_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -114,7 +126,7 @@ namespace Thetacat.BackupRestore.Restore
 
             dialog.Model.Profiles.AddRange(App.State.Settings.Profiles.Keys);
             dialog.Model.TargetProfile = App.State.ActiveProfile.Name!;
-
+            dialog.UpdateForTargetProfile(App.State.ActiveProfile.Name!);
             dialog.ShowDialog();
 
             if (dialog.DialogResult == true)

@@ -127,14 +127,14 @@ public class GuidMaps
     {
         Regex regex = new(@"\{([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\}");
         string newString = oldString;
-        GroupCollection groups = regex.Match(newString).Groups;
+        MatchCollection matches = regex.Matches(newString);
 
-        for (int i = 1; i < groups.Count; i++)
+        for (int i = 0; i < matches.Count; i++)
         {
-            if (Guid.TryParse(groups[i].Value, out Guid oldGuid))
+            if (Guid.TryParse(matches[i].Value, out Guid oldGuid))
             {
                 Guid newGuid = GetNew(IdType.Metatag, oldGuid)!.Value;
-                newString = newString.Replace(groups[i].Value, $"{newGuid}");
+                newString = newString.Replace(matches[i].Value, $"{{{newGuid}}}");
             }
             else
             {
@@ -478,7 +478,13 @@ public class GuidMaps
 
         GuidMapImport map = new();
 
-        return XmlIO.FReadElement(reader, map, "map", FParseGuidMapAttribute, FParseGuidMapElement);
+        if (XmlIO.FReadElement(reader, map, "map", FParseGuidMapAttribute, FParseGuidMapElement))
+        {
+            maps.Maps[map.idType] = map.map;
+            return true;
+        }
+
+        return false;
     }
 
     static bool FParseGuidMapAttribute(string attribnute, string value, GuidMapImport map)

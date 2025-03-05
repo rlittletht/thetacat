@@ -26,3 +26,11 @@ GO
 		) ON [PRIMARY]
 	) ON [PRIMARY]
 GO
+
+/****** Object:  Index [idx_tcat_mediatags_new_clock]    Script Date: 3/4/2025 11:07:49 AM ******/
+CREATE NONCLUSTERED INDEX [idx_tcat_mediatags_new_clock] ON [dbo].[tcat_mediatags]
+(
+	[catalog_id] ASC,
+	[clock] ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
