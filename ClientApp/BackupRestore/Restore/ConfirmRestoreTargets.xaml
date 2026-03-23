@@ -1,0 +1,72 @@
+﻿<Window x:Class="Thetacat.BackupRestore.Restore.ConfirmRestoreTargets"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Confirm Remapping Restore Targets" Height="630" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Vertical" Grid.Row="0">
+            <GroupBox>
+                <GroupBox.Header>
+                    <TextBlock Text="Reference Information" />
+                </GroupBox.Header>
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Profile" />
+                    <ComboBox ItemsSource="{Binding Path=Profiles}"
+                              SelectedItem="{Binding Path=ReferenceProfile}" />
+                    <TextBlock Text="SQL Connection" />
+                    <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceSqlConnection}" />
+                    <TextBlock Text="Azure Storage" />
+                    <TextBox Text="{Binding Path=ReferenceAzureStorage}" />
+                    <TextBlock Text="Azure Container" />
+                    <TextBox Text="{Binding Path=ReferenceAzureContainer}" />
+                    <TextBlock Text="Catalog ID" />
+                    <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceCatalogID}" />
+                    <TextBlock Text="Workgroup" />
+                    <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceWorkgroupName}" />
+                    <TextBlock Text="Reference Workgroup ID" />
+                    <TextBox IsReadOnly="True" Text="{Binding Path=ReferenceWorkgroupId}" />
+                </StackPanel>
+            </GroupBox>
+            <GroupBox>
+                <GroupBox.Header>
+                    <TextBlock Text="Target Information" />
+                </GroupBox.Header>
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Profile" />
+                    <TextBox IsReadOnly="True " Text="{Binding Path=TargetProfile}" />
+                    <TextBlock Text="SQL Connection" />
+                    <TextBox Text="{Binding Path=TargetSqlConnection}" />
+                    <TextBlock Text="Azure Storage" />
+                    <TextBox Text="{Binding Path=TargetAzureStorage}" />
+                    <TextBlock Text="Azure Container" />
+                    <TextBox Text="{Binding Path=TargetAzureContainer}" />
+                    <TextBlock Text="Catalog ID" />
+                    <TextBox Text="{Binding Path=TargetCatalogID}" />
+                    <TextBlock Text="Workgroup" />
+                    <TextBox Text="{Binding Path=TargetWorkgroupName}" />
+                    <TextBlock Text="Workgroup ID" />
+                    <TextBox Text="{Binding Path=TargetWorkgroupId}" />
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Guid Map">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="Export data to" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Text="{Binding Path=GuidMapExportPath}" Width="212" />
+                        <Button Content="..." Click="BrowseForPath" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right">
+            <Button Content="Cancel" Click="DoCancel" />
+            <Button Content="Restore" Click="DoRestore" />
+        </StackPanel>
+    </Grid>
+</Window>

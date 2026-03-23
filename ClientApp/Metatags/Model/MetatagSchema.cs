@@ -22,14 +22,34 @@ public class MetatagSchema
     public bool DontBuildTree = false;
 
     public Metatag? GetMetatagFromId(Guid id) => m_schemaWorking.GetMetatagFromId(id);
+    public BuiltinTags BuiltinTags;
 
-    public MetatagSchema()
+    public MetatagSchema(bool useDeprecatedBuiltinTags)
     {
+        BuiltinTags = new BuiltinTags(useDeprecatedBuiltinTags);
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ResetBuiltinTagsFromExistingTags
+        %%Qualified: Thetacat.Metatags.Model.MetatagSchema.ResetBuiltinTagsFromExistingTags
+
+        Figure out if this schema uses deprecated or current builtin tags based
+        on the current metatag definitions (assumes CatRootID is always present)
+    ----------------------------------------------------------------------------*/
+    public void ResetBuiltinTagsFromExistingTags()
+    {
+        // if we know for sure we have a deprecated CatRootID, then we are using deprecated tags
+        // (but if its missing, then assume current tags)
+        if (GetMetatagFromId(BuiltinTags_Deprecated.s_CatRootID) != null)
+            BuiltinTags = new BuiltinTags(true);
+        else
+            BuiltinTags = new BuiltinTags(false);
     }
 
     public MetatagSchema(MetatagSchema source)
     {
         m_schemaWorking = source.m_schemaWorking.Clone();
+        BuiltinTags = new BuiltinTags(source.BuiltinTags.UseDeprecatedBuiltinTags);
     }
 
     /*----------------------------------------------------------------------------
@@ -362,13 +382,13 @@ public class MetatagSchema
 
     public void EnsureBuiltinMetatagsDefined()
     {
-        lock (BuiltinTags.s_BuiltinTags)
+        lock (BuiltinTags.Tags)
         {
             App.LogForApp(EventType.Verbose, "ensure builtin defined");
-            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.s_UserRootID);
-            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.s_CatRootID);
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.User, "user root", BuiltinTags.UserRootID);
+            GetOrBuildDirectoryTag(null, MetatagStandards.Standard.Cat, "cat root", BuiltinTags.CatRootID);
 
-            foreach (Metatag metatag in BuiltinTags.s_BuiltinTags)
+            foreach (Metatag metatag in BuiltinTags.Tags)
             {
                 if (GetMetatagFromId(metatag.ID) == null)
                 {
@@ -400,8 +420,12 @@ public class MetatagSchema
 
         NOTE: this is replaces in-place AND it ensures builtin tags are defined
         (unlike ReadNewBaseFromService() which doesn't ensure builtin tags)
+
+        if we are loading a base schema from the server, we don't want to ensure
+        builtin tags are defined -- that would make us think we don't have to 
+        add them to the server
     ----------------------------------------------------------------------------*/
-    public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema)
+    public void ReplaceFromService(ServiceMetatagSchema serviceMetatagSchema, bool dontEnsureBuiltin = false)
     {
         m_schemaBase = null;
         m_schemaWorking.Clear();
@@ -416,6 +440,7 @@ public class MetatagSchema
         }
 
         m_schemaWorking.SchemaVersion = serviceMetatagSchema.SchemaVersion ?? 0;
+        ResetBuiltinTagsFromExistingTags();
 
         EnsureBuiltinMetatagsDefined();
 

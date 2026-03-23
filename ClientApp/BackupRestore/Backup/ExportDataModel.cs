@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using NUnit.Framework.Internal;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -13,6 +14,33 @@ public class ExportDataModel: INotifyPropertyChanged
     private bool m_exportImports = true;
     private bool m_exportSchema = true;
     private bool m_exportWorkgroups = false;
+    private bool m_exportWorkgroupData;
+    private bool m_exportAllData = false;
+    private bool m_exportDeletedMedia = false;
+
+    public bool ExportAllData
+    {
+        get => m_exportAllData;
+        set
+        {
+            SetField(ref m_exportAllData, value);
+            OnPropertyChanged(nameof(IsNotExportingAllData));
+        }
+    }
+
+    public bool IsNotExportingAllData => !m_exportAllData;
+
+    public bool ExportDeletedMedia
+    {
+        get => m_exportDeletedMedia;
+        set => SetField(ref m_exportDeletedMedia, value);
+    }
+
+    public bool ExportWorkgroupData
+    {
+        get => m_exportWorkgroupData;
+        set => SetField(ref m_exportWorkgroupData, value);
+    }
 
     public string ExportPath
     {

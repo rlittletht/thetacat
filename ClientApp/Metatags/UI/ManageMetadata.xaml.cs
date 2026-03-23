@@ -207,7 +207,7 @@ public partial class ManageMetadata : Window
         }
 
         Model.SelectedMetatag = new ManageMetadataMetatag();
-        SelectParentMetatag(BuiltinTags.s_UserRootID);
+        SelectParentMetatag(App.State.MetatagSchema.BuiltinTags.UserRootID);
         Model.MetatagBase = new ManageMetadataMetatag(Model.SelectedMetatag);
     }
 

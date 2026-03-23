@@ -11,19 +11,19 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Thetacat.Azure;
 using Thetacat.Export;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.ServiceClient;
 using Thetacat.ServiceClient.LocalService;
+using Thetacat.TcSettings;
 using Thetacat.Types;
 using Thetacat.Util;
-using MessageBox = System.Windows.MessageBox;
 
 namespace Thetacat.BackupRestore.Restore
 {
@@ -48,7 +48,7 @@ namespace Thetacat.BackupRestore.Restore
             if (e.PropertyName == "CreateNewCatalog")
             {
                 if (m_model.CreateNewCatalog)
-                    m_model.CatalogID = Guid.NewGuid().ToString();
+                    m_model.CatalogID = RT.Comb.Provider.Sql.Create().ToString();
                 else
                     m_model.CatalogID = m_model.CatalogDefinition?.ID.ToString() ?? string.Empty;
             }
@@ -61,12 +61,12 @@ namespace Thetacat.BackupRestore.Restore
                 if (m_model.CatalogDefinition != null)
                 {
                     m_model.CatalogName = m_model.CatalogDefinition.Name;
+                    m_model.CatalogID = m_model.CatalogDefinition.ID.ToString();
                     m_model.CatalogDescription = m_model.CatalogDefinition.Description;
                     m_model.CurrentRestoreBehavior = "Replace";
                     m_model.CreateNewCatalog = false;
                 }
             }
-
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -109,6 +109,80 @@ namespace Thetacat.BackupRestore.Restore
             Guid catalogID;
 
             bool fClearBeforeRestore = false;
+
+            FullExportRestore restore = m_fullRestoreData;
+            GuidMaps idMaps = new();
+
+            Profile? referenceProfileForRemap = null;
+
+            if (m_model.RegenerateIds)
+            {
+                if (m_model.ImportWorkgroups)
+                {
+                    MessageBox.Show("Cannot regenerate IDs when importing workgroups");
+                    return;
+                }
+
+                if (m_model.CurrentRestoreBehavior != "Replace")
+                {
+                    MessageBox.Show("Regenerate IDs requires an existing Workgroup + Catalog to restore into (with behavior = REPLACE)");
+                    return;
+                }
+
+                if (restore.CatalogRestore == null)
+                {
+                    MessageBox.Show("Cannot regenerate IDs without a catalog");
+                    return;
+                }
+
+                if (restore.CatalogRestore.Schema.MetatagCount == 0)
+                {
+                    MessageBox.Show("Cannot regenerate IDs without a schema");
+                    return;
+                }
+
+                // TODO: Change this. We require a target profile and a reference profile. The target profile is the current profile, and the
+                // reference profile should be listed and made available to select. This means we don't have to have any special selection code, etc.
+
+                if (MessageBox.Show(
+                        $"Regenerating ids and migrating requires that you have already created the target profile with a new SQL database and workgroup to restore into. "
+                        + $"(NOTE: You will want a new database since the whole point of regenerating IDs is to optimize the indexes, and restoring into an existing "
+                        + $"database will just perpetuate the fragmented indexes.\n\nYou will be prompted for the reference profile in order to "
+                        + $"properly migrate Non-Cloud media to the new workgroup."
+                        + $"\n\nDo you want to continue?",
+                        "Restore data",
+                        MessageBoxButton.OKCancel)
+                    == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+
+                if (!ConfirmRestoreTargets.ConfirmAndGetReference(this, out referenceProfileForRemap, out string? exportGuidMapPath))
+                    return;
+
+                if (App.State.ActiveProfile.AzureStorageAccount != referenceProfileForRemap!.AzureStorageAccount)
+                {
+                    MessageBox.Show("Cannot restore to a different azure storage account");
+                    return;
+                }
+
+                if (exportGuidMapPath == null && m_fullRestoreData.WorkgroupDataRestore == null)
+                {
+                    if (MessageBox.Show(
+                            "ID mapping will not be saved and there is no Workgroup data in this backup\n\nYou will not be able to restore a workgroup at a later time without saving the ID mapping.\n\nDo you want to continue?",
+                            "Restore data",
+                            MessageBoxButton.OKCancel)
+                        == MessageBoxResult.Cancel)
+                    {
+                        return;
+                    }
+                }
+
+                restore = idMaps.RemapFullRestore(restore);
+
+                if (exportGuidMapPath != null)
+                    idMaps.SaveToFile(exportGuidMapPath);
+            }
 
             // first figure out what we're restoring to
             if (m_model.CurrentRestoreBehavior == "Create New")
@@ -175,7 +249,7 @@ namespace Thetacat.BackupRestore.Restore
             if (m_model.ImportSchema)
             {
                 // clear if request
-                if (m_fullRestoreData.CatalogRestore == null || m_fullRestoreData.CatalogRestore.Schema.MetatagCount == 0)
+                if (restore.CatalogRestore == null || restore.CatalogRestore.Schema.MetatagCount == 0)
                 {
                     MessageBox.Show("Can't restore from empty catalog or schema");
                 }
@@ -186,9 +260,9 @@ namespace Thetacat.BackupRestore.Restore
 
                     // load the base schema
                     ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
-                    m_fullRestoreData.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
+                    restore.CatalogRestore.Schema.ReadNewBaseFromService(serviceSchema);
 
-                    m_fullRestoreData.CatalogRestore.Schema.UpdateServer(
+                    restore.CatalogRestore.Schema.UpdateServer(
                         catalogID,
                         (count) => MessageBox.Show(
                                 $"Updating {count} schema items. Proceed?",
@@ -200,12 +274,12 @@ namespace Thetacat.BackupRestore.Restore
 
             if (m_model.ImportWorkgroups)
             {
-                if ((m_fullRestoreData.WorkgroupsRestore?.Workgroups.Count ?? 0) == 0)
+                if ((restore.WorkgroupsRestore?.Workgroups.Count ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty set of workgroups");
                 }
                 else if (MessageBox.Show(
-                             $"Updating {m_fullRestoreData.WorkgroupsRestore!.Workgroups.Count} workgroups. Proceed?",
+                             $"Updating {restore.WorkgroupsRestore!.Workgroups.Count} workgroups. Proceed?",
                              "Restore Data",
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
@@ -213,7 +287,7 @@ namespace Thetacat.BackupRestore.Restore
 //                    if (fClearBeforeRestore)
 //                        ServiceInterop.DeleteAllWorkgroups();
 
-                    foreach (ServiceWorkgroup workgroup in m_fullRestoreData.WorkgroupsRestore!.Workgroups)
+                    foreach (ServiceWorkgroup workgroup in restore.WorkgroupsRestore!.Workgroups)
                     {
                         try
                         {
@@ -236,31 +310,32 @@ namespace Thetacat.BackupRestore.Restore
             }
             else
             {
-                if ((m_fullRestoreData.CatalogRestore?.Catalog.GetMediaCount ?? 0) == 0)
+                if ((restore.CatalogRestore?.Catalog.GetMediaCount ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty catalog");
                 }
                 else
                 {
                     if (!m_model.ImportMediaStacks)
-                        m_fullRestoreData.CatalogRestore!.Catalog.MediaStacks.Clear();
+                        restore.CatalogRestore!.Catalog.MediaStacks.Clear();
 
                     if (!m_model.ImportVersionStacks)
-                        m_fullRestoreData.CatalogRestore!.Catalog.VersionStacks.Clear();
+                        restore.CatalogRestore!.Catalog.VersionStacks.Clear();
 
                     if (fClearBeforeRestore)
                         ServiceInterop.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
 
                     Catalog catalogCurrent = new Catalog();
-                    MetatagSchema schema = new MetatagSchema();
+                    // we don't support restoring deprecated databases. you must remap them.
+                    MetatagSchema schema = new MetatagSchema(false);
                     ServiceMetatagSchema serviceSchema = ServiceInterop.GetMetatagSchema(catalogID);
 
                     schema.ReplaceFromService(serviceSchema);
                     await catalogCurrent.ReadFullCatalogFromServer(catalogID, schema);
-                        
+
                     // and now we have to diff
-                    m_fullRestoreData.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
-                    m_fullRestoreData.CatalogRestore!.Catalog.PushPendingChanges(
+                    restore.CatalogRestore!.Catalog.SetBaseFromBaseCatalog(catalogCurrent);
+                    restore.CatalogRestore!.Catalog.PushPendingChanges(
                         catalogID,
                         (count, itemType) => MessageBox.Show(
                                 $"Updating {count} {itemType} items. Proceed?",
@@ -272,18 +347,48 @@ namespace Thetacat.BackupRestore.Restore
 
             if (m_model.ImportImports)
             {
-                if ((m_fullRestoreData.ImportsRestore?.ImportItems.Count ?? 0) == 0)
+                if ((restore.ImportsRestore?.ImportItems.Count ?? 0) == 0)
                 {
                     MessageBox.Show("Can't restore an empty imports collection");
                 }
                 else if (MessageBox.Show(
-                             $"Inserting {m_fullRestoreData.ImportsRestore!.ImportItems.Count} import records. Proceed?",
+                             $"Inserting {restore.ImportsRestore!.ImportItems.Count} import records. Proceed?",
                              "Restore Data",
                              MessageBoxButton.OKCancel)
                          == MessageBoxResult.OK)
                 {
-                    ServiceInterop.InsertAllServiceImportItems(catalogID, m_fullRestoreData.ImportsRestore!.ImportItems);
+                    if (fClearBeforeRestore)
+                        ServiceInterop.DeleteAllImports(catalogID);
+
+                    ServiceInterop.InsertAllServiceImportItems(catalogID, restore.ImportsRestore!.ImportItems);
                 }
+            }
+
+            if (m_model.ImportDeletedMedia)
+            {
+                if ((restore.DeletedMediaRestore?.DeletedItems.Count ?? 0) == 0)
+                {
+                    MessageBox.Show("Can't restore an empty deleted media collection");
+                }
+                else if (MessageBox.Show(
+                             $"Inserting {restore.DeletedMediaRestore!.DeletedItems.Count} deleted media records. Proceed?",
+                             "Restore Data",
+                             MessageBoxButton.OKCancel)
+                         == MessageBoxResult.OK)
+                {
+
+                    if (fClearBeforeRestore)
+                        ServiceInterop.DeleteAllDeletedMedia(catalogID);
+
+                    ServiceInterop.InsertDeletedMediaItemsWithClocksForRestore(catalogID, restore.DeletedMediaRestore.DeletedItems);
+                    ServiceInterop.SetDeleteItemsClockForDatabaseRestore(catalogID, restore.DeletedMediaRestore.WorkgroupDeletedMediaClock);
+                }
+            }
+
+            if (m_model.RegenerateIds)
+            {
+                await RestoreDatabase.MigrateWorkgroup(referenceProfileForRemap!, App.State.ActiveProfile, idMaps, restore.CatalogRestore!.Catalog, restore.WorkgroupDataRestore!);
+                await RestoreDatabase.MigrateAzureBlobsForRemap(referenceProfileForRemap!, App.State.ActiveProfile, idMaps, restore.CatalogRestore!.Catalog);
             }
         }
 
@@ -318,8 +423,33 @@ namespace Thetacat.BackupRestore.Restore
             if (restore.FullExportRestore.ImportsRestore?.ImportItems.Count > 0)
                 m_model.ImportImports = true;
 
+            if (restore.FullExportRestore.DeletedMediaRestore != null && restore.FullExportRestore.DeletedMediaRestore.DeletedItems.Count > 0)
+                m_model.ImportDeletedMedia = true;
+
+            if (restore.FullExportRestore.WorkgroupDataRestore != null)
+            {
+                m_model.ImportWorkgroupData = true;
+                if (!String.IsNullOrEmpty(App.State.ActiveProfile.WorkgroupId))
+                {
+                    try
+                    {
+                        ServiceWorkgroup workgroup = ServiceInterop.GetWorkgroupDetails(
+                            App.State.ActiveProfile.CatalogID,
+                            Guid.Parse(App.State.ActiveProfile.WorkgroupId));
+
+                        m_model.WorkgroupId = workgroup.ID!.Value.ToString();
+                        m_model.WorkgroupName = workgroup.Name!;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
             if (restore.FullExportRestore.WorkgroupsRestore?.Workgroups.Count > 0)
+            {
                 m_model.ImportWorkgroups = true;
+            }
 
             UpdateCurrentCatalogFromID(m_fullRestoreData.CatalogID);
         }
@@ -332,7 +462,7 @@ namespace Thetacat.BackupRestore.Restore
                 m_model.CatalogDefinition = null;
                 m_model.CurrentRestoreBehavior = "Create New";
             }
-            else 
+            else
             {
                 foreach (ServiceCatalogDefinition def in m_model.CatalogDefinitions)
                 {

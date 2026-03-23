@@ -41,13 +41,13 @@ public class TestCache
             new()
             {
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }, false),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -159,13 +159,13 @@ public class TestCache
             new()
             {
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" }),
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" }),
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }, false),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -272,13 +272,13 @@ public class TestCache
             new()
             {
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }, false),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);
@@ -407,13 +407,13 @@ public class TestCache
             new()
             {
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "active" }, false),
                 new MediaItem(
-                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }),
+                    new ServiceMediaItem() { Id = TestMedia.media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "active" }, false),
             };
 
         CatalogMock catalogMock = new CatalogMock(MediaItems_1_4);

@@ -19,4 +19,6 @@ public interface ICacheEntry
     public string MD5 { get; set; }
 
     public Guid CachedBy { get; set; }
+
+    public int? VectorClock { get; set; }
 }

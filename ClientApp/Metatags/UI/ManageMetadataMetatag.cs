@@ -62,7 +62,7 @@ public class ManageMetadataMetatag: INotifyPropertyChanged
     {
         if (metatag == null)
         {
-            m_id = Guid.NewGuid();
+            m_id = RT.Comb.Provider.Sql.Create();
             m_parent = null;
             m_name = string.Empty;
             m_description = string.Empty;
@@ -89,7 +89,7 @@ public class ManageMetadataMetatag: INotifyPropertyChanged
 
     public ManageMetadataMetatag()
     {
-        m_id = Guid.NewGuid();
+        m_id = RT.Comb.Provider.Sql.Create();
         m_parent = null;
         m_name = string.Empty;
         m_description = string.Empty;

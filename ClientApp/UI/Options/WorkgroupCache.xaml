@@ -1,0 +1,47 @@
+﻿<UserControl x:Class="Thetacat.UI.Options.WorkgroupCache"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Thetacat.UI.Options"
+             mc:Ignorable="d"
+             d:DesignWidth="800">
+    <Control.Resources>
+        <ToolTip x:Key="WorkgroupIdTip" ToolTipService.ShowOnDisabled="True">
+            The ID for your workgroup. This will be automatically created for you when you click Create New Workgroup, or when you select an existing workgroup.
+        </ToolTip>
+        <ToolTip x:Key="WorkgroupNameTip" ToolTipService.ShowOnDisabled="True">
+            The name of your workgroup. This will be saved in the shared catalog database and visible to everyone that has access to the catalog, even if it is a local workgroup of one.
+        </ToolTip>
+        <ToolTip x:Key="WorkgroupRootTip" ToolTipService.ShowOnDisabled="True">
+            This is the root to your workgroup cache. This can be a UNC path (\\server\share) or if this is a 'private' workgroup (of one person), this can just be a root drive (c:\)
+        </ToolTip>
+        <ToolTip x:Key="CachePathTip" ToolTipService.ShowOnDisabled="True">
+            This is the path to your workgroup cache, including your workgroup database. It should be relative to the Workgroup root.
+        </ToolTip>
+    </Control.Resources>
+    <Grid>
+        <StackPanel>
+            <TextBlock ToolTip="{StaticResource WorkgroupIdTip}">ID</TextBlock>
+            <TextBox Name="WorkgroupID" Text="{Binding Path=WorkgroupID}" IsEnabled="{Binding Path=CreateNewWorkgroup}"
+                     IsReadOnly="True"
+                     ToolTip="{StaticResource WorkgroupIdTip}" />
+            <TextBlock ToolTip="{StaticResource WorkgroupNameTip}">
+                Name
+            </TextBlock>
+            <TextBox Name="WorkgroupName" Text="{Binding Path=WorkgroupName}"
+                     ToolTip="{StaticResource WorkgroupNameTip}"
+                     IsEnabled="{Binding Path=CreateNewWorkgroup}" />
+            <TextBlock ToolTip="{StaticResource WorkgroupRootTip}">
+                Path to workgroup root
+            </TextBlock>
+            <TextBox Name="WorkgroupServerPath" Text="{Binding Path=WorkgroupServerPath}"
+                     ToolTip="{StaticResource WorkgroupRootTip}"
+                     IsEnabled="{Binding Path=CreateNewWorkgroup}" />
+            <TextBlock ToolTip="{StaticResource CachePathTip}">Cache root</TextBlock>
+            <TextBox Name="WorkgroupCacheRoot" Text="{Binding Path=WorkgroupCacheRoot}"
+                     ToolTip="{StaticResource CachePathTip}"
+                     IsEnabled="{Binding Path=CreateNewWorkgroup}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

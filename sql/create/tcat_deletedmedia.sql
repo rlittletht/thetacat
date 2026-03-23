@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_deletedmedia]    Script Date: 2/19/2024 2:48:29 PM ******/
+/****** Object:  Table [dbo].[tcat_deletedmedia]    Script Date: 2/19/2025 4:44:29 PM ******/
 SET
 	ANSI_NULLS ON
 GO
@@ -8,6 +8,7 @@ GO
 	CREATE TABLE [dbo].[tcat_deletedmedia](
 		[catalog_id] [uniqueidentifier] NOT NULL,
 		[id] [uniqueidentifier] NOT NULL,
+		[min_workgroup_clock] [int] NOT NULL,
 		CONSTRAINT [PK_tcat_deletedmedia] PRIMARY KEY CLUSTERED ([catalog_id] ASC, [id] ASC) WITH (
 			PAD_INDEX = OFF,
 			STATISTICS_NORECOMPUTE = OFF,

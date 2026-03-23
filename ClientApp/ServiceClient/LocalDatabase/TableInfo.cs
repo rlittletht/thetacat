@@ -30,7 +30,7 @@ public class TableInfo
         try
         {
             List<TableInfoItem> columns = sql.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 $"{s_queryTableInfo}({tableName})",
                 (ISqlReader reader, Guid crid, ref List<TableInfoItem> building) =>
                 {

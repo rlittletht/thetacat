@@ -18,6 +18,8 @@ using Thetacat.Model.Mediatags.Cache;
 using Thetacat.ServiceClient;
 using Thetacat.Types;
 using Thetacat.Util;
+using MetadataExtractor;
+using Thetacat.ServiceClient.LocalService;
 
 namespace Thetacat.Model;
 
@@ -191,7 +193,7 @@ public class Catalog : ICatalog
 
         // now update some metatags
         newItem.ImportDate = DateTime.Now;
-        newItem.FRemoveMediaTag(BuiltinTags.s_IsTrashItemID);
+        newItem.FRemoveMediaTag(App.State.MetatagSchema.BuiltinTags.IsTrashItemID);
         newItem.VirtualPath = cache.GetRelativePathToCacheRootFromFullPath(newFile);
 
         AddNewMediaItem(newItem);
@@ -209,7 +211,7 @@ public class Catalog : ICatalog
 
         ServiceInterop.InsertImportItems(App.State.ActiveProfile.CatalogID, newItems);
 
-        return new MediaItem();
+        return new MediaItem(based.UseDeprecatedTagIds);
     }
 
     void OnMediaItemDirtied(object? sender, DirtyItemEventArgs<Guid> e)
@@ -322,9 +324,22 @@ public class Catalog : ICatalog
         if (catalog.MediaItems == null || catalog.MediaTags == null)
             return;
 
+        bool refreshedSchema = false;
+
+        // check to see that at least one of the catalog root ID tags is defined
+        if (schema.GetMetatagFromId(BuiltinTags_Deprecated.s_CatRootID) == null && schema.GetMetatagFromId(BuiltinTags_Current.s_CatRootID) == null)
+        {
+            if (!refreshedSchema)
+            {
+                schema.ReplaceFromService(ServiceInterop.GetMetatagSchema(catalogID));
+            }
+        }
+
+        bool useDeprecatedTagIds = (schema.GetMetatagFromId(BuiltinTags_Deprecated.s_CatRootID)) != null;
+
         foreach (ServiceMediaItem item in catalog.MediaItems)
         {
-            MediaItem mediaItem = new MediaItem(item);
+            MediaItem mediaItem = new MediaItem(item, useDeprecatedTagIds);
             mediaItem.OnItemDirtied += OnMediaItemDirtied;
             dict.TryAdd(mediaItem.ID, mediaItem);
         }
@@ -333,7 +348,8 @@ public class Catalog : ICatalog
         timer.Reset();
         timer.Start();
 
-        bool refreshedSchema = false;
+        HashSet<Guid> missingMediaItems = new();
+
         foreach (ServiceMediaTag tag in catalog.MediaTags)
         {
             Metatag? metatag = schema.GetMetatagFromId(tag.Id);
@@ -350,7 +366,16 @@ public class Catalog : ICatalog
                     throw new Exception($"media has mediatag with id {tag.Id} but that tag id doesn't exist in the schema, even after refreshing the schema");
             }
 
-            m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value, tag.Deleted));
+            if (!m_media.AddMediaTagInternal(tag.MediaId, new MediaTag(metatag, tag.Value, tag.Deleted)))
+            {
+                if (!tag.Deleted)
+                    missingMediaItems.Add(tag.MediaId);
+            }
+        }
+
+        if (missingMediaItems.Count > 0)
+        {
+            MessageBox.Show($"There were {missingMediaItems.Count} media items missing during the mediatag reading");
         }
 
         App.LogForApp(EventType.Information, $"MediaTags added: {timer.Elapsed()}");

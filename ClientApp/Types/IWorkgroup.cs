@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Thetacat.Model;
 using Thetacat.Model.Workgroups;
+using Thetacat.ServiceClient;
 using Thetacat.Util;
 
 namespace Thetacat.Types;
@@ -29,4 +30,5 @@ public interface IWorkgroup
     public void UpdateWorkgroupFilter(WorkgroupFilter filter, int baseClock);
     public void UpdateClientDeletedMediaClockToAtLeast(int newClock);
     public int GetMinWorkgroupDeletedMediaClock();
+    public IReadOnlyCollection<ServiceWorkgroupClient> GetWorkgroupClients();
 }

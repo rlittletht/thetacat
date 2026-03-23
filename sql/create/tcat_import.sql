@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_import]    Script Date: 1/1/2024 2:53:02 PM ******/
+/****** Object:  Table [dbo].[tcat_import]    Script Date: 2/19/2025 4:28:55 PM ******/
 SET
     ANSI_NULLS ON
 GO
@@ -6,7 +6,7 @@ SET
     QUOTED_IDENTIFIER ON
 GO
     CREATE TABLE [dbo].[tcat_import](
-		[catalog_id] [uniqueidentifier] NOT NULL,
+        [catalog_id] [uniqueidentifier] NOT NULL,
         [id] [uniqueidentifier] NOT NULL,
         [state] [nvarchar](16) NOT NULL,
         [sourcePath] [varchar](1024) NOT NULL,

@@ -71,8 +71,8 @@ public partial class QuickFilterPanel : Window
         MetatagTreeView.GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(tagsSet, tagsIndeterminate, initialState, initialValues);
 
         Metatags.Initialize(model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState);
-        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState);
-        Metatags.AddSpecificTag(model.RootAvailable.Children, BuiltinTags.s_IsTrashItem, initialState);
+        Metatags.AddSpecificTag(model.RootAvailable.Children, schema.BuiltinTags.DontPushToCloud, initialState);
+        Metatags.AddSpecificTag(model.RootAvailable.Children, schema.BuiltinTags.IsTrashItem, initialState);
         App.LogForApp(EventType.Verbose, $"QuickFilterPanel:Set elapsed {timer.Elapsed()}");
     }
 

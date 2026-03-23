@@ -224,8 +224,6 @@ public class Derivatives
         }
     }
 
-    private Guid bad = new Guid("9686e696-6cfa-46ec-99fd-baba3342c053");
-
     /*----------------------------------------------------------------------------
         %%Function: TryGetFormatDerivative
         %%Qualified: Thetacat.Model.Client.Derivatives.TryGetFormatDerivative

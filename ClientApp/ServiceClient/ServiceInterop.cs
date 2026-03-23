@@ -32,8 +32,15 @@ public class ServiceInterop
 
     public static ServiceDeletedItemsClock GetDeletedMediaItems(Guid catalogId) => LocalService.Media.GetDeletedMediaItems(catalogId);
 
+    public static void SetDeleteItemsClockForDatabaseRestore(Guid catalogId, int clock) => LocalService.Media.SetDeleteItemsClockForDatabaseRestore(catalogId, clock);
+    public static void InsertDeletedMediaItemsWithClocksForRestore(Guid catalogId, IReadOnlyCollection<ServiceDeletedItem> items) => LocalService.Media.InsertDeletedMediaItemsWithClocksForRestore(catalogId, items);
+
     public static void DeleteAllMediaAndMediaTagsAndStacks(Guid catalogID) => LocalService.Media.DeleteAllMediaAndMediaTagsAndStacks(catalogID);
     public static void DeleteAllStacksAssociatedWithMedia(Guid catalogID) => LocalService.Stacks.DeleteAllStacksAssociatedWithMedia(catalogID);
+
+    public static void DeleteAllImports(Guid catalogID) => LocalService.Import.DeleteAllImports(catalogID);
+
+    public static void DeleteAllDeletedMedia(Guid catalogID) => LocalService.Media.DeleteAllDeletedMedia(catalogID);
 
     public static void UpdateMediatagsWithNoClockAndincrementVectorClock(Guid catalogID)
     {
@@ -108,10 +115,10 @@ public class ServiceInterop
         LocalService.Import.DeleteImportItem(catalogID, id);
     }
 
-    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> newItems)
-    {
-        LocalService.Media.InsertNewMediaItems(catalogID, newItems);
-    }
+//    public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> newItems)
+//    {
+//        LocalService.Media.InsertNewMediaItems(catalogID, newItems);
+//    }
 
 //    public static ServiceMediaTagsWithClocks ReadFullCatalogMediaTags(Guid catalogID) => LocalService.Mediatags.ReadFullCatalogMediaTags(catalogID);
 

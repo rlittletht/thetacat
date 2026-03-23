@@ -1,0 +1,32 @@
+﻿<Window x:Class="Thetacat.BackupRestore.Consistency.ConsistencyResults"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Thetacat.BackupRestore.Consistency"
+        xmlns:mediaItemsListControl="clr-namespace:Thetacat.UI.Controls.MediaItemsListControl"
+        mc:Ignorable="d"
+        Title="ConsistencyResults" Height="450" Width="800">
+    <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock>Consistency scan completed on currently loaded catalog. Results follow.</TextBlock>
+            <ListView Name="mediaItemsListView"
+                      ItemsSource="{Binding Path=Results}" Grid.Row="1">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <GroupBox Header="{Binding Path=Heading}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Path=Description}"/>
+                                <mediaItemsListControl:MediaItemsList Items="{Binding Path=Items}" />
+                            </StackPanel>
+                        </GroupBox>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
+</Window>

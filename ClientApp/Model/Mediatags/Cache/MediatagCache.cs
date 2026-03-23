@@ -158,7 +158,7 @@ public class MediatagCache : IEnumerable<ServiceMediaTag>
 
         // first, make a backup
 
-        string backup = $"{m_cacheFilepath}_{Guid.NewGuid()}.bak";
+        string backup = $"{m_cacheFilepath}_{RT.Comb.Provider.Sql.Create()}.bak";
 
         try
         {

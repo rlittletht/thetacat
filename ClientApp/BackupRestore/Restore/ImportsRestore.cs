@@ -25,4 +25,8 @@ public class ImportsRestore
     {
         XmlIO.FReadElement(reader, this, "imports", null, FParseImportsElement);
     }
+
+    public ImportsRestore()
+    {
+    }
 }

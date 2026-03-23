@@ -88,7 +88,8 @@ public class WorkgroupDb
         CREATE TABLE tcat_workgroup_clients(
             id VARCHAR(36) NOT NULL PRIMARY KEY, 
             name VARCHAR(128) NOT NULL, 
-            vectorClock INTEGER NOT NULL)";
+            vectorClock INTEGER NOT NULL,
+            deletedMediaClock INTEGER NOT NULL DEFAULT 0)";
 
     private readonly string s_initializeVectorClock = @"
         INSERT INTO tcat_workgroup_vectorclock (clock, value) VALUES ('workgroup-clock', 0)";
@@ -116,7 +117,7 @@ public class WorkgroupDb
         SELECT value FROM tcat_workgroup_vectorclock WHERE clock = 'workgroup-clock'";
 
     private readonly string s_insertWorkgroupClient = @"
-        INSERT INTO tcat_workgroup_clients (id, name, vectorClock) VALUES (@Id, @Name, @VectorClock)";
+        INSERT INTO tcat_workgroup_clients (id, name, vectorClock, deletedMediaClock) VALUES (@Id, @Name, @VectorClock, 0)";
 
     private readonly string s_updateWorkgroupClock = @"
         UPDATE tcat_workgroup_vectorclock SET value = @VectorClock WHERE clock = 'workgroup-clock'";
@@ -137,6 +138,9 @@ public class WorkgroupDb
 
     private readonly string s_queryMinDeletedMediaClockInWorkgroup = @"
         SELECT MIN(deletedMediaClock) FROM tcat_workgroup_clients";
+
+    private readonly string s_queryAllWorkgroupClients = @"
+        SELECT id, name, vectorClock, deletedMediaClock FROM tcat_workgroup_clients";
 
     /*----------------------------------------------------------------------------
         %%Function: OpenDatabase
@@ -189,7 +193,7 @@ public class WorkgroupDb
         {
             ServiceWorkgroupClient client =
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryWorkgroupClientDetailsByName,
                     (ISqlReader reader, Guid crids, ref ServiceWorkgroupClient _client) =>
                     {
@@ -239,7 +243,7 @@ public class WorkgroupDb
                 {
                     ServiceWorkgroupMediaClock mediaWithClock =
                         _Connection.ExecuteDelegatedQuery(
-                            Guid.NewGuid(),
+                            RT.Comb.Provider.Sql.Create(),
                             s_queryWorkgroupMediaClock,
                             (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupMediaClock building) =>
                             {
@@ -284,7 +288,7 @@ public class WorkgroupDb
         {
             List<ServiceWorkgroupFilter> filters =
                 _Connection.ExecuteDelegatedQuery(
-                    Guid.NewGuid(),
+                    RT.Comb.Provider.Sql.Create(),
                     s_queryWorkgroupFilters,
                     (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupFilter> building) =>
                     {
@@ -310,11 +314,43 @@ public class WorkgroupDb
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: GetWorkgroupClients
+        %%Qualified: Thetacat.ServiceClient.LocalDatabase.WorkgroupDb.GetWorkgroupClients
+    ----------------------------------------------------------------------------*/
+    public List<ServiceWorkgroupClient> GetWorkgroupClients()
+    {
+        try
+        {
+            List<ServiceWorkgroupClient> clients =
+                _Connection.ExecuteDelegatedQuery(
+                    RT.Comb.Provider.Sql.Create(),
+                    s_queryAllWorkgroupClients,
+                    (ISqlReader reader, Guid correlationId, ref List<ServiceWorkgroupClient> building) =>
+                    {
+                        ServiceWorkgroupClient client =
+                            new()
+                            {
+                                ClientId = reader.GetGuid(0),
+                                ClientName = reader.GetString(1),
+                                VectorClock = reader.GetInt32(2),
+                                DeletedMediaClock = reader.GetInt32(3)
+                            };
+                        building.Add(client);
+                    });
+            return clients;
+        }
+        catch (SqlExceptionNoResults)
+        {
+            return new List<ServiceWorkgroupClient>();
+        }
+    }
+
     public ServiceWorkgroupFilter GetWorkgroupFilter(Guid id)
     {
         return
             _Connection.ExecuteDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 s_queryWorkgroupFilter,
                 (ISqlReader reader, Guid correlationId, ref ServiceWorkgroupFilter building) =>
                 {
@@ -473,6 +509,27 @@ public class WorkgroupDb
     public int GetMinWorkgroupDeletedMediaClock()
     {
         return _Connection.NExecuteScalar(new SqlCommandTextInit(s_queryMinDeletedMediaClockInWorkgroup));
+    }
+
+    public void UpdateWorkgroupClockForRestore(int clock)
+    {
+        _Connection.ExecuteNonQuery(
+            new SqlCommandTextInit(s_updateWorkgroupClock),
+            (cmd) => cmd.AddParameterWithValue("@VectorClock", clock));
+
+    }
+
+    public void InsertCacheEntriesForRestore(List<WorkgroupCacheEntry> inserts)
+    {
+        ExecutePartedCommands(
+            _Connection,
+            "INSERT INTO tcat_workgroup_media (media, path, cachedBy, cachedDate, vectorClock, md5) VALUES ",
+            inserts,
+            (entry) =>
+                $"('{entry.ID.ToString()}', {SqlText.SqlifyQuoted(entry.Path.ToString())}, '{entry.CachedBy.ToString()}', {SqlText.Nullable(entry.CachedDate?.ToUniversalTime().ToString("u"))}, {SqlText.Nullable(entry.VectorClock)}, {SqlText.SqlifyQuoted(entry.MD5)}) ",
+            100,
+            ",",
+            null);
     }
 
     /*----------------------------------------------------------------------------

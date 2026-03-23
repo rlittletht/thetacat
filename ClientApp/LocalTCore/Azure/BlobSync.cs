@@ -2,8 +2,10 @@
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
+using Thetacat.Types;
 
 namespace Thetacat;
 
@@ -29,9 +31,36 @@ class BlobSync
         return await OpenContainer(containerName, m_storageAccountName, m_credential);
     }
 
+    public static async Task EnsureTokenValid(TokenCredential credential)
+    {
+        try
+        {
+            CancellationTokenSource cancellationSource = new CancellationTokenSource();
+
+            ValueTask<AccessToken>? taskToken = credential.GetTokenAsync(
+                new TokenRequestContext(new string[] { "https://storage.azure.com/.default" }),
+                cancellationSource.Token);
+
+            if (taskToken == null)
+                throw new CatExceptionInternalFailure("no token");
+
+            await taskToken.Value;
+        }
+        catch (CatException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+        }
+    }
+
     public static async Task<TcBlobContainer> OpenContainer(string containerName, string accountName, TokenCredential? credential)
     {
         Uri uri = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}");
+
+        if (credential != null)
+            await Task.Run(async () => await EnsureTokenValid(credential));
 
         BlobContainerClient container = new BlobContainerClient(uri, credential);
 

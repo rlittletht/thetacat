@@ -134,7 +134,7 @@ public class MetatagSchemaDefinition
             clone.AddMetatag(metatag.Clone());
         }
         clone.SchemaVersion = SchemaVersion;
-
+        
         return clone;
     }
 }

@@ -437,15 +437,17 @@ public partial class MediaExplorer : UserControl
 
             if (App.State.Catalog.TryGetMedia(item.MediaId, out MediaItem? mediaItem))
             {
+                MetatagSchema schema = App.State.MetatagSchema;
+
                 foreach (MediaTag tag in mediaItem.MediaTags)
                 {
                     if (tag.Deleted)
                         continue;
 
                     if (MetatagStandards.GetStandardFromStandardTag(tag.Metatag.Standard) != MetatagStandards.Standard.User
-                        && tag.Metatag.ID != BuiltinTags.s_DontPushToCloudID
-                        && tag.Metatag.ID != BuiltinTags.s_IsTrashItemID
-                        && tag.Metatag.ID != BuiltinTags.s_DateSpecifiedID)
+                        && tag.Metatag.ID != schema.BuiltinTags.DontPushToCloudID
+                        && tag.Metatag.ID != schema.BuiltinTags.IsTrashItemID
+                        && tag.Metatag.ID != schema.BuiltinTags.DateSpecifiedID)
                     {
                         continue;
                     }

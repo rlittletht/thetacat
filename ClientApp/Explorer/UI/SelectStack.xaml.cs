@@ -50,7 +50,7 @@ namespace Thetacat.Explorer.UI
         private void CreateStack(object sender, RoutedEventArgs e)
         {
             _model.CurrentStack = null;
-            _model.StackId = Guid.NewGuid().ToString();
+            _model.StackId = RT.Comb.Provider.Sql.Create().ToString();
             _model.Description = "";
             _model.CurrentType = MediaStackType.Media;
         }

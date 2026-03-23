@@ -65,5 +65,7 @@ public class MediaTag: INotifyPropertyChanged
         return true;
     }
 
+#pragma warning disable CS0067 // disable Never used warning
     public event PropertyChangedEventHandler? PropertyChanged;
+#pragma warning restore CS0067
 }

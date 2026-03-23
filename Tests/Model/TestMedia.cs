@@ -18,26 +18,26 @@ public class TestMedia
     public static Guid client2 = Guid.Parse("10000000-0000-0000-0000-000000000002");
 
     public static MediaItem mediaItem1 = new MediaItem(
-        new ServiceMediaItem() { Id = media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media1, VirtualPath = "media1.jpg", MD5 = "md5-1==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem2 = new MediaItem(
-        new ServiceMediaItem() { Id = media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media2, VirtualPath = "media2.jpg", MD5 = "md5-2==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem3 = new MediaItem(
-        new ServiceMediaItem() { Id = media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media3, VirtualPath = "media3.jpg", MD5 = "md5-3==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem4 = new MediaItem(
-        new ServiceMediaItem() { Id = media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media4, VirtualPath = "media4.jpg", MD5 = "md5-4==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem5 = new MediaItem(
-        new ServiceMediaItem() { Id = media5, VirtualPath = "media5.jpg", MD5 = "md5-5==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media5, VirtualPath = "media5.jpg", MD5 = "md5-5==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem6 = new MediaItem(
-        new ServiceMediaItem() { Id = media6, VirtualPath = "media6.jpg", MD5 = "md5-6==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media6, VirtualPath = "media6.jpg", MD5 = "md5-6==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem7 = new MediaItem(
-        new ServiceMediaItem() { Id = media7, VirtualPath = "media7.jpg", MD5 = "md5-7==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media7, VirtualPath = "media7.jpg", MD5 = "md5-7==", MimeType = "image/jpeg", State = "pending" }, false);
 
     public static MediaItem mediaItem8 = new MediaItem(
-        new ServiceMediaItem() { Id = media8, VirtualPath = "media8.jpg", MD5 = "md5-8==", MimeType = "image/jpeg", State = "pending" });
+        new ServiceMediaItem() { Id = media8, VirtualPath = "media8.jpg", MD5 = "md5-8==", MimeType = "image/jpeg", State = "pending" }, false);
 }

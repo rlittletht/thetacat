@@ -337,7 +337,7 @@ public class Filters : IEnumerable<Filter>
 
         BuildClause(checkedItems, 0, checkedItems.Count - 1, definition.Expression, op);
 
-        Filter filter = new Filter(definition, FilterType.Ephemeral, Guid.NewGuid());
+        Filter filter = new Filter(definition, FilterType.Ephemeral, RT.Comb.Provider.Sql.Create());
 
         return filter;
     }

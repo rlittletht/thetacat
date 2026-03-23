@@ -65,14 +65,14 @@ public partial class ApplyMetatag : Window
         MetatagTreeView.GetCheckedIndeterminateAndValuesFromSetsAndIndeterminates(tagsSet, tagsIndeterminate, initialState, initialValues);
 
         Metatags.Initialize(m_model.RootAvailable.Children, 0, MetatagStandards.Standard.User, initialState, initialValues);
-        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_DontPushToCloud, initialState, initialValues);
-        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_IsTrashItem, initialState, initialValues);
-        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_DateSpecified, initialState, initialValues);
-        Metatags.AddSpecificTag(m_model.RootAvailable.Children, BuiltinTags.s_OriginalMediaDate, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, schema.BuiltinTags.DontPushToCloud, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, schema.BuiltinTags.IsTrashItem, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, schema.BuiltinTags.DateSpecified, initialState, initialValues);
+        Metatags.AddSpecificTag(m_model.RootAvailable.Children, schema.BuiltinTags.OriginalMediaDate, initialState, initialValues);
         MetatagsApplied.Initialize(m_model.RootApplied.Children, 0, MetatagStandards.Standard.User, initialState);
-        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_DontPushToCloud, initialState);
-        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_IsTrashItem, initialState);
-        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, BuiltinTags.s_DateSpecified, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, schema.BuiltinTags.DontPushToCloud, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, schema.BuiltinTags.IsTrashItem, initialState);
+        MetatagsApplied.AddSpecificTag(m_model.RootApplied.Children, schema.BuiltinTags.DateSpecified, initialState);
         App.LogForApp(EventType.Verbose, $"ApplyMetatag:Set elapsed {timer.Elapsed()}");
     }
 

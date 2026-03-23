@@ -122,7 +122,7 @@ public class MetatagMigrationTests
             new()
             {
                 userRoot,
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -172,8 +172,8 @@ public class MetatagMigrationTests
             new()
             {
                 userRoot,
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -303,8 +303,8 @@ public class MetatagMigrationTests
             new()
             {
                 userRoot,
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root2").SetDescription("Root2").SetParentID(userRoot.ID).Build(),
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);
@@ -378,7 +378,7 @@ public class MetatagMigrationTests
             new()
             {
                 userRoot,
-                MetatagBuilder.Create(Guid.NewGuid()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
+                MetatagBuilder.Create(RT.Comb.Provider.Sql.Create()).SetName("Root").SetDescription("Root").SetParentID(userRoot.ID).Build()
             };
 
         Thetacat.Metatags.MetatagTree liveTree = new(liveTags);

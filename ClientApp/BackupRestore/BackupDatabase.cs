@@ -1,5 +1,6 @@
 ﻿using MetadataExtractor.Formats.Xmp;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Security.RightsManagement;
 using System.Threading.Tasks;
@@ -7,8 +8,12 @@ using System.Xml;
 using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Mediatags;
+using Thetacat.Model.Workgroups;
 using Thetacat.ServiceClient;
+using Thetacat.ServiceClient.LocalService;
+using Thetacat.Types;
 using Thetacat.UI;
+using Workgroup = Thetacat.Model.Workgroups.Workgroup;
 
 namespace Thetacat.Export;
 
@@ -23,8 +28,11 @@ public class BackupDatabase
     private readonly bool m_exportSchema = false;
     private readonly bool m_exportImports = false;
     private readonly bool m_exportWorkgroups = false;
+    private readonly bool m_exportWorkgroupData = false;
+    private readonly bool m_exportDeletedMedia = false;
 
     public static string s_uri = "https://schemas.thetasoft.com/thetacat/backup/2024";
+    private ChunkedProgressReport? m_chunkedProgressReport;
 
     public BackupDatabase(
         string backupPath,
@@ -33,9 +41,11 @@ public class BackupDatabase
         bool exportVersionStacks,
         bool exportSchema,
         bool exportImports,
-        bool exportWorkgroups)
+        bool exportDeletedMedia,
+        bool exportWorkgroups,
+        bool exportWorkgroupData)
     {
-        m_schema = new MetatagSchema();
+        m_schema = new MetatagSchema(false);
         m_catalog = new Catalog();
         m_filename = backupPath;
         m_exportMediaItems = exportMediaItems;
@@ -44,6 +54,8 @@ public class BackupDatabase
         m_exportSchema = exportSchema;
         m_exportImports = exportImports;
         m_exportWorkgroups = exportWorkgroups;
+        m_exportWorkgroupData = exportWorkgroupData;
+        m_exportDeletedMedia = exportDeletedMedia;
     }
 
     public delegate void WriteChildrenDelegate(XmlWriter writer);
@@ -62,34 +74,7 @@ public class BackupDatabase
         }
     }
 
-    #region Progress Reporting
-
-    private IProgressReport? m_progress;
-    private double m_blockStart = 0.0;
-    private double m_blockEnd = 0.0;
-
-    /*----------------------------------------------------------------------------
-        %%Function: StartNextBlock
-        %%Qualified: Thetacat.Export.BackupDatabase.StartNextBlock
-    ----------------------------------------------------------------------------*/
-    void StartNextBlock(double pctEnd)
-    {
-        m_progress?.UpdateProgress(m_blockEnd);
-        m_blockStart = m_blockEnd;
-        m_blockEnd = pctEnd;
-    }
-
-    /*----------------------------------------------------------------------------
-        %%Function: UpdateProgress
-        %%Qualified: Thetacat.Export.BackupDatabase.UpdateProgress
-    ----------------------------------------------------------------------------*/
-    void UpdateProgress(int idxCur, int idxMax)
-    {
-        m_progress?.UpdateProgress(m_blockStart + ((idxCur * 100.0) / idxMax) * (m_blockEnd - m_blockStart));
-    }
-    #endregion
-
-    #region Metatags/Schema
+#region Metatags/Schema
 
     /*----------------------------------------------------------------------------
         %%Function: WriteMetatag
@@ -100,9 +85,9 @@ public class BackupDatabase
         writer.WriteAttributeString("id", metatag.ID.ToString());
         WriteElement(writer, "name", (_writer) => _writer.WriteString(metatag.Name));
         WriteElement(writer, "description", (_writer) => _writer.WriteString(metatag.Description));
-        WriteElement(writer, "standard", (_writer)=>_writer.WriteString(metatag.Standard));
+        WriteElement(writer, "standard", (_writer) => _writer.WriteString(metatag.Standard));
         if (metatag.Parent != null)
-            WriteElement(writer, "parentId", (_writer)=>_writer.WriteString(metatag.Parent.ToString()));
+            WriteElement(writer, "parentId", (_writer) => _writer.WriteString(metatag.Parent.ToString()));
     }
 
     /*----------------------------------------------------------------------------
@@ -116,7 +101,7 @@ public class BackupDatabase
 
         foreach (Metatag metatag in schema.MetatagsWorking)
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(
                 writer,
                 "metatag",
@@ -130,16 +115,17 @@ public class BackupDatabase
     ----------------------------------------------------------------------------*/
     public void WriteSchema(XmlWriter writer, MetatagSchema schema)
     {
-        StartNextBlock(15.0);
+        m_chunkedProgressReport!.StartBlock("schema");
 
         WriteElement(
             writer,
             "metatagSchema",
             (_writer) => WriteMetatagDefinitions(_writer, schema));
     }
-    #endregion
 
-    #region Media
+#endregion
+
+#region Media
 
     /*----------------------------------------------------------------------------
         %%Function: WriteMediaTag
@@ -196,7 +182,7 @@ public class BackupDatabase
 
         foreach (MediaItem item in catalog.GetMediaCollection())
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(
                 writer,
@@ -240,11 +226,12 @@ public class BackupDatabase
 
         foreach (MediaStack stack in stacks.Items.Values)
         {
-            UpdateProgress(i++, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
             WriteElement(writer, "stack", (_writer) => WriteMediaStack(_writer, stack));
         }
     }
-    #endregion
+
+#endregion
 
     /*----------------------------------------------------------------------------
         %%Function: WriteCatalog
@@ -257,15 +244,23 @@ public class BackupDatabase
             "catalog",
             (_writer) =>
             {
-                StartNextBlock(85.0);
                 if (m_exportMediaItems)
+                {
+                    m_chunkedProgressReport.StartBlock("media");
                     WriteElement(_writer, "media", (__writer) => WriteMediaItems(__writer, catalog));
-                StartNextBlock(87.0);
+                }
+
                 if (m_exportVersionStacks)
+                {
+                    m_chunkedProgressReport!.StartBlock("versionStacks");
                     WriteElement(_writer, "versionStacks", (__writer) => WriteMediaStacks(__writer, catalog.VersionStacks));
-                StartNextBlock(89.0);
+                }
+
                 if (m_exportMediaStacks)
+                {
+                    m_chunkedProgressReport!.StartBlock("mediaStacks");
                     WriteElement(_writer, "mediaStacks", (__writer) => WriteMediaStacks(__writer, catalog.MediaStacks));
+                }
             });
     }
 
@@ -279,7 +274,7 @@ public class BackupDatabase
     {
         writer.WriteAttributeString("mediaId", item.ID.ToString());
         WriteElement(writer, "state", (_writer) => _writer.WriteString(item.State));
-        WriteElement(writer, "sourcePath", (_writer)=>_writer.WriteString(item.SourcePath));
+        WriteElement(writer, "sourcePath", (_writer) => _writer.WriteString(item.SourcePath));
         WriteElement(writer, "sourceServer", (_writer) => _writer.WriteString(item.SourceServer));
         if (item.Source != null)
             WriteElement(writer, "source", (_writer) => _writer.WriteString(item.Source));
@@ -296,9 +291,9 @@ public class BackupDatabase
         int count = items.Count;
         int i = 0;
 
-        foreach(ServiceImportItem item in items)
+        foreach (ServiceImportItem item in items)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(writer, "importItem", (_writer) => WriteImportItem(_writer, item));
         }
@@ -310,14 +305,165 @@ public class BackupDatabase
     ----------------------------------------------------------------------------*/
     public void WriteImports(XmlWriter writer)
     {
-        StartNextBlock(99.0);
+        m_chunkedProgressReport!.StartBlock("imports");
+
         List<ServiceImportItem> importItems = ServiceInterop.GetAllImports(App.State.ActiveProfile.CatalogID);
 
         WriteElement(writer, "imports", (_writer) => WriteImportItems(_writer, importItems));
     }
+
     #endregion Imports
 
-    #region Workgroups
+    #region Deleted Media
+
+    public void WriteDeletedMedia(XmlWriter writer, Guid catalogId)
+    {
+        m_chunkedProgressReport!.StartBlock("deletedMedia");
+        ServiceDeletedItemsClock itemsWithClock =  ServiceInterop.GetDeletedMediaItems(catalogId);
+
+        if (itemsWithClock.DeletedItems.Count == 0)
+            return;
+
+        WriteElement(
+            writer,
+            "deletedMedia",
+            _writer =>
+            {
+                _writer.WriteAttributeString("workgroupDeletedMediaClock", itemsWithClock.VectorClock.ToString());
+                WriteDeletedMediaItems(_writer, itemsWithClock);
+            });
+    }
+
+    public void WriteDeletedMediaItems(XmlWriter writer, ServiceDeletedItemsClock itemsWithClock)
+    {
+        int count = itemsWithClock.DeletedItems.Count;
+        int i = 0;
+
+        foreach (ServiceDeletedItem item in itemsWithClock.DeletedItems)
+        {
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
+            WriteElement(
+                writer, 
+                "deletedMediaItem", 
+                _writer =>
+                {
+                    _writer.WriteAttributeString("id", item.Id.ToString());
+                    _writer.WriteAttributeString("minWorkgroupClock", item.MinVectorClock.ToString());
+                });
+        }
+    }
+
+    #endregion
+
+    #region Workgroup Data
+
+    public void WriteWorkgroupData(XmlWriter writer, Guid catalogId, Guid workgroupId)
+    {
+        Workgroup workgroup = new Workgroup(catalogId, workgroupId);
+
+        WriteElement(
+            writer,
+            "workgroupData",
+            _writer =>
+            {
+                _writer.WriteAttributeString("workgroupId", workgroup.Id.ToString());
+                _writer.WriteAttributeString("name", workgroup.Name);
+
+                m_chunkedProgressReport!.StartBlock("workgroupClients");
+                WriteElement(_writer, "clients", __writer => WriteWorkgroupClients(__writer, workgroup));
+                m_chunkedProgressReport!.StartBlock("workgroupMedia");
+                WriteElement(_writer, "media", __writer => WriteWorkgroupMediaItems(__writer, workgroup));
+                m_chunkedProgressReport!.StartBlock("workgroupFilters");
+                WriteElement(_writer, "filters", __writer => WriteWorkgroupFilters(__writer, workgroup));
+                m_chunkedProgressReport!.StartBlock("workgroupClocks");
+                WriteElement(_writer, "vectorClocks", __writer => WriteWorkgroupVectorClocks(__writer, workgroup));
+            });
+    }
+
+    public void WriteWorkgroupClients(XmlWriter writer, Workgroup workgroup)
+    {
+        IReadOnlyCollection<ServiceWorkgroupClient> clients = workgroup.GetWorkgroupClients();
+        int count = clients.Count;
+        int i = 0;
+
+        foreach (ServiceWorkgroupClient client in clients)
+        {
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
+            WriteElement(
+                writer,
+                "client",
+                (_writer) =>
+                {
+                    _writer.WriteAttributeString("id", client.ClientId.ToString());
+                    WriteElement(_writer, "name", __writer => __writer.WriteString(client.ClientName));
+                    WriteElement(_writer, "vectorClock", __writer => __writer.WriteString(client.VectorClock.ToString()));
+                    WriteElement(_writer, "deletedMediaClock", __writer => __writer.WriteString(client.DeletedMediaClock.ToString()));
+                });
+        }
+    }
+
+    public void WriteWorkgroupMediaItems(XmlWriter writer, Workgroup workgroup)
+    {
+        ConcurrentDictionary<Guid, ICacheEntry> mediaItems = new();
+
+        workgroup.RefreshWorkgroupMedia(mediaItems);
+
+        int count = mediaItems.Count;
+        int i = 0;
+
+        foreach (ICacheEntry media in mediaItems.Values)
+        {
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
+            WriteElement(
+                writer,
+                "mediaItem",
+                (_writer) =>
+                {
+                    _writer.WriteAttributeString("id", media.ID.ToString());
+                    _writer.WriteAttributeString("vectorClock", media.VectorClock.ToString());
+                    WriteElement(_writer, "path", __writer => __writer.WriteString(media.Path));
+                    WriteElement(_writer, "cacheBy", __writer => __writer.WriteString(media.CachedBy.ToString()));
+                    WriteElement(_writer, "cachedDate", __writer => __writer.WriteString(media.CachedDate.ToString()));
+                    WriteElement(_writer, "md5", __writer => __writer.WriteString(media.MD5));
+                });
+        }
+    }
+
+    public void WriteWorkgroupFilters(XmlWriter writer, Workgroup workgroup)
+    {
+        IReadOnlyCollection<ServiceWorkgroupFilter> filters = workgroup.GetLatestWorkgroupFilters();
+        int count = filters.Count;
+        int i = 0;
+
+        foreach (ServiceWorkgroupFilter filter in filters)
+        {
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
+            WriteElement(
+                writer,
+                "filter",
+                (_writer) =>
+                {
+                    _writer.WriteAttributeString("id", filter.Id.ToString());
+                    WriteElement(_writer, "name", __writer => __writer.WriteString(filter.Name));
+                    WriteElement(_writer, "description", __writer => __writer.WriteString(filter.Description));
+                    WriteElement(_writer, "expression", __writer => __writer.WriteString(filter.Expression));
+                    WriteElement(_writer, "vectorClock", __writer => __writer.WriteString(filter.FilterClock.ToString()));
+                });
+        }
+    }
+
+    public void WriteWorkgroupVectorClocks(XmlWriter writer, Workgroup workgroup)
+    {
+        m_chunkedProgressReport!.UpdateProgress(1, 1);
+        WriteElement(
+            writer,
+            "workgroupClock",
+            _writer => _writer.WriteAttributeString("value", workgroup.BaseVectorClock.ToString()));
+    }
+
+#endregion
+
+#region Workgroups
 
     public void WriteWorkgroupItem(XmlWriter writer, ServiceWorkgroup item)
     {
@@ -334,7 +480,7 @@ public class BackupDatabase
 
         foreach (ServiceWorkgroup item in items)
         {
-            UpdateProgress(i, count);
+            m_chunkedProgressReport!.UpdateProgress(i++, count);
 
             WriteElement(writer, "workgroup", (_writer) => WriteWorkgroupItem(_writer, item));
         }
@@ -342,21 +488,59 @@ public class BackupDatabase
 
     public void WriteWorkgroups(XmlWriter writer)
     {
-        StartNextBlock(100.0);
+        m_chunkedProgressReport!.StartBlock("workgroups");
+
         List<ServiceWorkgroup> workgroups = ServiceInterop.GetAvailableWorkgroups(App.State.ActiveProfile.CatalogID);
 
         WriteElement(writer, "workgroups", (_writer) => WriteWorkgroupItems(_writer, workgroups));
     }
-    #endregion
+
+#endregion
+
+    bool WriteCatalogData()
+    {
+        return m_exportMediaItems
+            || m_exportMediaStacks
+            || m_exportVersionStacks
+            || m_exportSchema
+            || m_exportImports
+            || m_exportWorkgroups
+            || m_exportDeletedMedia;
+    }
 
     public bool DoBackup(IProgressReport progress)
     {
-        Guid catalogID = App.State.ActiveProfile.CatalogID;
-        m_progress = progress;
+        m_chunkedProgressReport = new ChunkedProgressReport(progress);
 
-        StartNextBlock(5.0);
+        m_chunkedProgressReport.AddWeightedChunk("Read", 5.0);
+        if (m_exportSchema)
+            m_chunkedProgressReport.AddWeightedChunk("schema", 10.0);
+        if (m_exportMediaItems)
+            m_chunkedProgressReport.AddWeightedChunk("media", 70.0);
+        if (m_exportVersionStacks)
+            m_chunkedProgressReport.AddWeightedChunk("versionStacks", 2.0);
+        if (m_exportMediaStacks)
+            m_chunkedProgressReport.AddWeightedChunk("mediaStacks", 2.0);
+        if (m_exportImports)
+            m_chunkedProgressReport.AddWeightedChunk("imports", 6.0);
+        if (m_exportDeletedMedia)
+            m_chunkedProgressReport.AddWeightedChunk("deletedMedia", 5.0);
+        if (m_exportWorkgroups)
+            m_chunkedProgressReport.AddWeightedChunk("workgroups", 1.0);
+        if (m_exportWorkgroupData)
+        {
+            m_chunkedProgressReport.AddWeightedChunk("workgroupClients", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupMedia", 10.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupFilters", 1.0);
+            m_chunkedProgressReport.AddWeightedChunk("workgroupClocks", 1.0);
+        }
+
+        Guid catalogID = App.State.ActiveProfile.CatalogID;
+
+        m_chunkedProgressReport!.StartBlock("Read");
+
         Task task = m_catalog.ReadFullCatalogFromServer(App.State.ActiveProfile.CatalogID, m_schema);
-        
+
         task.Wait();
 
         XmlWriterSettings settings = new XmlWriterSettings();
@@ -371,16 +555,21 @@ public class BackupDatabase
             {
                 _writer.WriteAttributeString("catalogID", catalogID.ToString());
 
-                if (m_progress != null)
+                if (m_exportSchema)
                     WriteSchema(_writer, m_schema);
-                WriteCatalog(_writer, m_catalog);
+                if (WriteCatalogData())
+                    WriteCatalog(_writer, m_catalog);
                 if (m_exportImports)
                     WriteImports(_writer);
+                if (m_exportDeletedMedia)
+                    WriteDeletedMedia(_writer, catalogID);
                 if (m_exportWorkgroups)
                     WriteWorkgroups(_writer);
+                if (m_exportWorkgroupData)
+                    WriteWorkgroupData(_writer, catalogID, Guid.Parse(App.State.ActiveProfile.WorkgroupId!));
             });
 
-        m_progress.WorkCompleted();
+        m_chunkedProgressReport.WorkCompleted();
         return true;
     }
 }

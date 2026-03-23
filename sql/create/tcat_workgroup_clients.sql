@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_workgroup_clients]    Script Date: 1/1/2024 3:01:26 PM ******/
+/****** Object:  Table [dbo].[tcat_workgroup_clients]    Script Date: 2/19/2025 4:41:40 PM ******/
 SET
 	ANSI_NULLS ON
 GO

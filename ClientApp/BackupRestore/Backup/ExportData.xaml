@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.BackupRestore.Backup"
         mc:Ignorable="d"
-        Title="ExportData" Height="180" Width="350">
+        Title="ExportData" Height="200" Width="350">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -14,26 +14,40 @@
         <StackPanel Orientation="Vertical">
             <TextBlock Text="Export data to" />
             <StackPanel Orientation="Horizontal">
-                <TextBox Text="{Binding Path=ExportPath}" Width="164" />
+                <TextBox Text="{Binding Path=GuidMapExportPath}" Width="164" />
                 <Button Content="..." Click="BrowseForPath" />
             </StackPanel>
-            <GroupBox Header="Export what data">
+            <GroupBox Header="Export database data">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Vertical" Grid.Column="0">
-                        <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ExportMediaItems}" />
-                        <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ExportMediaStacks}" />
-                        <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ExportVersionStacks}" />
-                        <CheckBox Content="Import Details" IsChecked="{Binding Path=ExportImports}" />
+                        <CheckBox Content="Export All Data" IsChecked="{Binding Path=ExportAllData}" />
+                        <CheckBox Content="Catalog Media Data" IsChecked="{Binding Path=ExportMediaItems}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Media Stacks" IsChecked="{Binding Path=ExportMediaStacks}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Version Stacks" IsChecked="{Binding Path=ExportVersionStacks}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
                     </StackPanel>
                     <StackPanel Orientation="Vertical" Grid.Column="1">
-                        <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ExportSchema}" />
-                        <CheckBox Content="Workgroups" IsChecked="{Binding Path=ExportWorkgroups}" />
+                        <CheckBox Content="Import Details" IsChecked="{Binding Path=ExportImports}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Metadata Schama" IsChecked="{Binding Path=ExportSchema}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Deleted Media" IsChecked="{Binding Path=ExportDeletedMedia}"
+                                  IsEnabled="{Binding Path=IsNotExportingAllData}" />
+                        <CheckBox Content="Workgroup Definitions" IsChecked="{Binding Path=ExportWorkgroups}"
+                                  IsEnabled="False" />
                     </StackPanel>
                 </Grid>
+            </GroupBox>
+            <GroupBox Header="Export workgroup data">
+                <StackPanel Orientation="Vertical" Grid.Column="0">
+                    <CheckBox Content="Workgroup data" IsChecked="{Binding Path=ExportWorkgroupData}" />
+                </StackPanel>
             </GroupBox>
         </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="1">

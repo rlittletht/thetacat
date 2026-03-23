@@ -111,7 +111,7 @@ public partial class MediaTagMigrateSummary : UserControl
 
             // since we already have the tag, just skip (except for import date -- we want to override the
             // value that import prepopulated)
-            if (metatag.ID != BuiltinTags.s_ImportDateID || identical == true)
+            if (metatag.ID != BuiltinTags_Current.s_ImportDateID || identical == true)
                 return;
         }
 
@@ -140,14 +140,14 @@ public partial class MediaTagMigrateSummary : UserControl
 
     void AddBuiltinDataToMigrationItems(PseMediaItem item, MediaItem catItem)
     {
-        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Width, item.ImageWidth.ToString());
-        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_Height, item.ImageHeight.ToString());
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags_Current.s_Width, item.ImageWidth.ToString());
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags_Current.s_Height, item.ImageHeight.ToString());
         if (item.FileDateOriginal == null)
             App.LogForApp(EventType.Error, $"no original media data for item: {item.FullPath}");
         else
-            AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_OriginalMediaDate, item.FileDateOriginal.Value.ToUniversalTime().ToString("u"));
+            AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags_Current.s_OriginalMediaDate, item.FileDateOriginal.Value.ToUniversalTime().ToString("u"));
 
-        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags.s_ImportDate, item.ImportDate.ToUniversalTime().ToString("u"));
+        AddMetadataValueItemIfNotPresent(item, catItem, BuiltinTags_Current.s_ImportDate, item.ImportDate.ToUniversalTime().ToString("u"));
     }
 
     void AddVersionStacksToMigrationItems(PseMediaItem item, MediaItem catItem)

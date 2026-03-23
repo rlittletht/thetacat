@@ -1,4 +1,4 @@
-/****** Object:  Table [dbo].[tcat_stackmedia]    Script Date: 1/1/2024 2:56:34 PM ******/
+/****** Object:  Table [dbo].[tcat_stackmedia]    Script Date: 2/19/2025 4:30:24 PM ******/
 SET
 	ANSI_NULLS ON
 GO
@@ -10,7 +10,11 @@ GO
 		[id] [uniqueidentifier] NOT NULL,
 		[media_id] [uniqueidentifier] NOT NULL,
 		[orderHint] [int] NOT NULL,
-		CONSTRAINT [PK_tcat_stacks] PRIMARY KEY CLUSTERED ([catalog_id] ASC, [id] ASC, [media_id] ASC) WITH (
+		CONSTRAINT [PK_tcat_stacks] PRIMARY KEY CLUSTERED (
+			[catalog_id] ASC,
+			[id] ASC,
+			[media_id] ASC
+		) WITH (
 			PAD_INDEX = OFF,
 			STATISTICS_NORECOMPUTE = OFF,
 			IGNORE_DUP_KEY = OFF,

@@ -10,6 +10,7 @@ using Thetacat.Import;
 using Thetacat.Model;
 using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
+using static Microsoft.WindowsAPICodePack.Shell.PropertySystem.SystemProperties.System;
 
 namespace Thetacat.ServiceClient.LocalService;
 
@@ -38,6 +39,20 @@ public class Import
 
     private static readonly string s_deleteMediaItem = @"
         DELETE FROM tcat_import WHERE catalog_id=@CatalogID AND id=@MediaID";
+
+    private static readonly string s_deleteAllMediaItems = @"
+        DELETE FROM tcat_import WHERE catalog_id=@CatalogID";
+
+    public static void DeleteAllImports(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllMediaItems,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogID", catalogID);
+            });
+    }
 
     public static void DeleteMediaItem(Guid catalogId, Guid mediaId)
     {
@@ -149,7 +164,7 @@ public class Import
 
     public static void CompleteImportForItem(Guid catalogID, Guid id)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -189,7 +204,7 @@ public class Import
 
     public static void ResetImportToPendingForItem(Guid catalogID, Guid id, string clientName)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -221,7 +236,7 @@ public class Import
 
     public static void DeleteImportItem(Guid catalogID, Guid id)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();

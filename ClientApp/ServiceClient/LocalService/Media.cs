@@ -23,6 +23,7 @@ public class Media
                 { "tcat_stacks", "ST" }
             });
 
+#if NOTUSED
     private static readonly string s_queryInsertMedia = @"
         INSERT INTO tcat_media
             (catalog_id, id, virtualPath, mimeType, state, md5)
@@ -32,15 +33,29 @@ public class Media
         INSERT INTO tcat_mediatags
             (catalog_id, id, metatag, value, deleted, clock)
         VALUES ";
-
+#endif
     // this is going to trigger a tag-clock reset
     private static readonly string s_deleteAllMediaAndMediaTagsAndStacks = @"
-        DELETE FROM tcat_stacks WHERE EXISTS (SELECT * FROM $$#tcat_stackmedia$$ INNER JOIN $$#tcat_media$$ ON $$tcat_stackmedia$$.media_id=$$tcat_media$$.id WHERE $$tcat_stackmedia$$.id=tcat_stacks.id) AND tcat_stacks.catalog_id=@CatalogID
-        DELETE FROM tcat_stackmedia WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_stackmedia.media_id=$$tcat_media$$.id) AND tcat_stackmedia.catalog_id=@CatalogID
-        DELETE FROM tcat_mediatags WHERE EXISTS (SELECT * FROM $$#tcat_media$$ WHERE tcat_mediatags.id=$$tcat_media$$.id) AND tcat_mediatags.catalog_id=@CatalogID
+        DELETE FROM tcat_stacks WHERE catalog_id=@CatalogID
+        DELETE FROM tcat_stackmedia WHERE catalog_id=@CatalogID
+        DELETE FROM tcat_mediatags WHERE catalog_id=@CatalogID
         DELETE FROM tcat_media WHERE catalog_id=@CatalogID
-        UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@Catalog";
+        UPDATE tcat_vector_clocks SET value = value + 1 WHERE name='mediatag-reset-clock' AND catalog_id=@CatalogID";
 
+    private static readonly string s_deleteAllDeletedMedia = @"
+        DELETE FROM tcat_deletedmedia WHERE catalog_id=@CatalogID";
+
+    /*----------------------------------------------------------------------------
+        %%Function: DeleteAllDeletedMedia
+        %%Qualified: Thetacat.ServiceClient.LocalService.Media.DeleteAllDeletedMedia
+    ----------------------------------------------------------------------------*/
+    public static void DeleteAllDeletedMedia(Guid catalogID)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_deleteAllDeletedMedia,
+            s_aliases,
+            cmd => { cmd.AddParameterWithValue("@CatalogID", catalogID); });
+    }
 
     /*----------------------------------------------------------------------------
         %%Function: InsertNewMediaItems
@@ -52,7 +67,8 @@ public class Media
     public static void InsertNewMediaItems(Guid catalogID, IEnumerable<MediaItem> items)
     {
         throw new NotImplementedException("do someting about tag.Deleted below...");
-        Guid crid = Guid.NewGuid();
+#if NOTUSED
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -109,6 +125,7 @@ public class Media
         {
             sql.Close();
         }
+#endif
     }
 
     static readonly string s_queryFullCatalog = @"
@@ -198,7 +215,7 @@ public class Media
 
     public static void UpdateMediaItems(Guid catalogID, IEnumerable<MediaItemDiff> diffs)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         sql.BeginTransaction();
@@ -264,7 +281,7 @@ public class Media
         try
         {
             return sql.ExecuteMultiSetDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 sQuery,
                 (ISqlReader reader, Guid _, int recordset, ref ServiceDeletedItemsClock building) =>
                 {
@@ -305,6 +322,51 @@ public class Media
         }
     }
 
+    private static readonly string s_setWorkgroupDeletedMediaClockForRestore = @"
+        UPDATE tcat_vector_clocks SET value = @Clock WHERE catalog_id = @CatalogId AND name = 'workgroup-deleted-media'";
+
+    public static void SetDeleteItemsClockForDatabaseRestore(Guid catalogId, int clock)
+    {
+        LocalServiceClient.DoGenericCommandWithAliases(
+            s_setWorkgroupDeletedMediaClockForRestore,
+            s_aliases,
+            cmd =>
+            {
+                cmd.AddParameterWithValue("@CatalogId", catalogId);
+                cmd.AddParameterWithValue("@Clock", clock);
+            });
+    }
+
+    public static void InsertDeletedMediaItemsWithClocksForRestore(Guid catalogId, IReadOnlyCollection<ServiceDeletedItem> items)
+    {
+        ISql sql = LocalServiceClient.GetConnection();
+
+        sql.BeginTransaction();
+
+        try
+        {
+            LocalServiceClient.ExecutePartedCommands(
+                sql,
+                string.Empty,
+                items,
+                item =>
+                    $"INSERT INTO tcat_deletedmedia (catalog_id, id, min_workgroup_clock) VALUES ('{catalogId.ToString()}', '{item.Id.ToString()}', {item.MinVectorClock!}) ",
+                1000,
+                " ",
+                s_aliases);
+
+            sql.Commit();
+        }
+        catch (Exception)
+        {
+            sql.Rollback();
+            throw;
+        }
+        finally
+        {
+            sql.Close();
+        }
+    }
 
     public static readonly string s_expireDeletedMediaItems = @"
         DECLARE @MinClock INT = (SELECT MIN(deletedMediaClock) FROM tcat_workgroups)

@@ -6,6 +6,7 @@ using System.Windows;
 using HeyRed.Mime;
 using RestoreWindowPlace;
 using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Types;
 
 namespace Thetacat
@@ -96,6 +97,8 @@ namespace Thetacat
                 Directory.CreateDirectory(directory);
 
             WindowPlace = new WindowPlace(LoadPlacements, SavePlacements);
+            BuiltinTags_Deprecated.Initialize();
+            BuiltinTags_Current.Initialize();
         }
 
         protected override void OnExit(ExitEventArgs e)

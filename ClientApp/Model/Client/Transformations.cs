@@ -10,8 +10,8 @@ namespace Thetacat.Model.Client;
 
 public class Transformations
 {
-    public static Guid s_rotateTransform = BuiltinTags.s_TransformRotateID;
-    public static Guid s_mirrorTransform = BuiltinTags.s_TransformMirrorID;
+    public static Guid s_rotateTransform = BuiltinTags_Current.s_TransformRotateID;
+    public static Guid s_mirrorTransform = BuiltinTags_Current.s_TransformMirrorID;
 
     private readonly Dictionary<Guid, string?> m_transformations = new();
 

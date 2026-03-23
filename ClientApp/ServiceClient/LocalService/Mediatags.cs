@@ -275,7 +275,7 @@ public class Mediatags
         try
         {
             return sql.ExecuteMultiSetDelegatedQuery(
-                Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                 sQuery,
                 (ISqlReader reader, Guid _, int recordset, ref ServiceMediaTagsWithClocks building) =>
                 {
@@ -336,7 +336,7 @@ public class Mediatags
         try
         {
             return sql.ExecuteMultiSetDelegatedQuery(
-                    Guid.NewGuid(),
+                RT.Comb.Provider.Sql.Create(),
                     sQuery,
                     (ISqlReader reader, Guid _, int recordset, ref ServiceMediaTagsWithClocks building) =>
                     {

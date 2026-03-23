@@ -34,8 +34,6 @@ public partial class CatOptions : Window
         AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
         AccountTab.LoadFromSettings(m_model);
         CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AppSecrets.MasterSqlConnectionString, AccountTab.CatalogID);
-
-
     }
 
     private void AccountModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -51,7 +49,7 @@ public partial class CatOptions : Window
         if (e.PropertyName == "CreateNewCatalog")
         {
             if (AccountTab._Model.CreateNewCatalog)
-                AccountTab._Model.CurrentCatalogID = Guid.NewGuid();
+                AccountTab._Model.CurrentCatalogID = RT.Comb.Provider.Sql.Create();
             else
                 AccountTab._Model.CurrentCatalogID = AccountTab._Model.CatalogDefinition?.ID ?? Guid.Empty;
         }
@@ -73,10 +71,16 @@ public partial class CatOptions : Window
         if (m_model.CurrentProfile == null)
             return;
 
+        // turn off property changed events
+
+        AccountTab._Model.PropertyChanged -= AccountModelPropertyChanged;
+
         if (!CacheConfigTab.FSaveSettings(AccountTab._Model.SqlConnection, AccountTab.CatalogID))
             MessageBox.Show("Failed to save Cache options");
         if (!AccountTab.FSaveSettings())
             MessageBox.Show("Failed to save account options");
+
+        AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
 
 
         if (m_model.CurrentProfile.Default)

@@ -149,7 +149,7 @@ public class AppState : IAppState
                         };
 
         Catalog = new Catalog();
-        MetatagSchema = new MetatagSchema();
+        MetatagSchema = new MetatagSchema(false);
         Cache = new Cache(null, null);
         m_closeAsyncLog = null;
         m_closeAppLog = null;

@@ -20,6 +20,21 @@ public class TcBlobContainer
         m_client = client;
     }
 
+    public BlobClient GetBlobClientForName(string name)
+    {
+        return m_client.GetBlobClient(name);
+    }
+
+    public async Task CopyToContainer(TcBlobContainer target, string sourceName, string targetName)
+    {
+        BlobClient sourceBlob = m_client.GetBlobClient(sourceName);
+        BlobClient targetBlob = target.m_client.GetBlobClient(targetName);
+
+        CopyFromUriOperation op = await targetBlob.StartCopyFromUriAsync(sourceBlob.Uri);
+
+        await op.WaitForCompletionAsync();
+    }
+
     public async Task<ETag> DoUploadWithMetadataCheckOnRetry(string localPath, string blobName, FileStream fs, string expectedMd5)
     {
         bool fRemoveBlobFirst = false;
@@ -86,7 +101,7 @@ public class TcBlobContainer
 
     public async Task<TcBlob> Upload(string localPath, string? blobName = null, string? virtualRoot = null)
     {
-        blobName ??= Guid.NewGuid().ToString();
+        blobName ??= RT.Comb.Provider.Sql.Create().ToString();
 
         if (virtualRoot != null)
             blobName = $"{virtualRoot}/{blobName}";

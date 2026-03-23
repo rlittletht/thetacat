@@ -2,6 +2,8 @@
 using System.Windows.Documents;
 using System.Xml;
 using System.Xml.Schema;
+using Thetacat.Metatags.Model;
+using Thetacat.Model;
 using XMLIO;
 
 namespace Thetacat.BackupRestore.Restore;
@@ -13,6 +15,17 @@ public class FullExportRestore
     public ImportsRestore? ImportsRestore;
     public WorkgroupsRestore? WorkgroupsRestore;
     public Guid? CatalogID;
+    public WorkgroupDataRestore? WorkgroupDataRestore;
+    public DeletedMediaRestore? DeletedMediaRestore;
+    public GuidMaps GuidMaps = new();
+
+    public FullExportRestore(MetatagSchema schema, Catalog catalog, ImportsRestore imports, DeletedMediaRestore? deletedMedia, WorkgroupDataRestore workgroupData)
+    {
+        CatalogRestore = new CatalogRestore(schema, catalog);
+        ImportsRestore = imports;
+        DeletedMediaRestore = deletedMedia;
+        WorkgroupDataRestore = workgroupData;
+    }
 
     static bool FParseFullExport(XmlReader reader, string element, FullExportRestore fullExport)
     {
@@ -40,6 +53,18 @@ public class FullExportRestore
             return true;
         }
 
+        if (element == "deletedMedia")
+        {
+            fullExport.DeletedMediaRestore = new DeletedMediaRestore(reader);
+            return true;
+        }
+
+        if (element == "workgroupData")
+        {
+            fullExport.WorkgroupDataRestore = new WorkgroupDataRestore(reader);
+            return true;
+        }
+
         throw new XmlSchemaException($"unknown element {element}");
     }
 
@@ -50,7 +75,7 @@ public class FullExportRestore
 
     private bool FParseFullExportAttribute(string attribute, string value, FullExportRestore fullExport)
     {
-        if (attribute == "catalogId")
+        if (attribute == "catalogID")
         {
             if (Guid.TryParse(value, out Guid id))
             {

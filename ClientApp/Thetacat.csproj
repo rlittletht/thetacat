@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.12.0" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
     <PackageReference Include="Emgu.CV" Version="4.8.1.5350" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.0.5324" />
     <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
@@ -22,6 +22,7 @@
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.35.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.8" />
     <PackageReference Include="RestoreWindowPlace" Version="2.1.1" />
+    <PackageReference Include="RT.Comb" Version="4.0.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
     <PackageReference Include="TCore.Exceptions" Version="1.1.1" />
     <PackageReference Include="TCore.MetadataExtractor" Version="1.0.2" />

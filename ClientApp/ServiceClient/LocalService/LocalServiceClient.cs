@@ -28,7 +28,7 @@ public class LocalServiceClient
         }
         catch (Exception e)
         {
-            throw new CatExceptionNoSqlConnection(Guid.NewGuid(), e, "failed to open SQL connection");
+            throw new CatExceptionNoSqlConnection(RT.Comb.Provider.Sql.Create(), e, "failed to open SQL connection");
             throw;
         }
     }
@@ -37,7 +37,7 @@ public class LocalServiceClient
 
     public static T? DoGenericQueryDelegateRead<T>(string sQuery, ISqlReader.DelegateReader<T>? delegateReader) where T : new()
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         LocalSqlHolder? lsh = null;
         SR sr = SR.Failed("unknown");
 
@@ -65,7 +65,7 @@ public class LocalServiceClient
         TableAliases aliases,
         CustomizeCommandDelegate? custDelegate = null) where T : new()
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
 
         SqlSelect selectTags = new SqlSelect();
 
@@ -105,7 +105,7 @@ public class LocalServiceClient
 
     public static void DoGenericCommandWithAliases(string query, TableAliases? aliases, CustomizeCommandDelegate? custDelegate)
     {
-        Guid crid = Guid.NewGuid();
+        Guid crid = RT.Comb.Provider.Sql.Create();
         ISql sql = LocalServiceClient.GetConnection();
 
         SqlSelect selectTags = new SqlSelect();
