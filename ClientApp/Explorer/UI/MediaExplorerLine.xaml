@@ -9,10 +9,12 @@
              x:Name="ExplorerLineControl"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <local:BindingProxy x:Key="MediaExplorerModelProxy" Data="{Binding ElementName=MediaExplorerControl, Path=Model}"/>
+        <local:BindingProxy x:Key="MediaExplorerModelProxy"
+                            Data="{Binding ElementName=MediaExplorerControl, Path=Model}" />
         <DataTemplate x:Key="MediaItemTemplate">
             <StackPanel Orientation="Vertical"
-                        Width="{Binding ElementName=ExplorerLineControl, Path=ImageContainerWidth}" Margin="0" Name="ThePanel">
+                        Width="{Binding ElementName=ExplorerLineControl, Path=ImageContainerWidth}" Margin="0"
+                        Name="ThePanel">
                 <StackPanel.InputBindings>
                     <MouseBinding Command="{Binding ElementName=MediaExplorerControl, Path=Model.SelectPanel}"
                                   CommandParameter="{Binding}" Gesture="LeftClick" />
@@ -28,8 +30,9 @@
                                   CommandParameter="{Binding}" Gesture="RightClick" />
                 </StackPanel.InputBindings>
                 <StackPanel.ContextMenu>
-                    <ContextMenu >
-                        <MenuItem Header="Apply Tags" ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AdvertisedTags}">
+                    <ContextMenu>
+                        <MenuItem Header="Apply Tags"
+                                  ItemsSource="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ExplorerContextMenu.AdvertisedTags}">
                             <MenuItem.ItemTemplate>
                                 <DataTemplate>
                                     <MenuItem Header="{Binding TagMenuText}"
@@ -54,16 +57,19 @@
                                   CommandParameter="{Binding}" />
                         <MenuItem Header="Show/Hide Metatag Panel"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ShowHideMetatagPanel}"
-                                  CommandParameter="{Binding}"/>
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Delete"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DeleteItems}"
-                                  CommandParameter="{Binding}"/>
+                                  CommandParameter="{Binding}" />
+                        <MenuItem Header="Download"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.DownloadItems}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Open item stack"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.OpenItemsStack}"
                                   CommandParameter="{Binding}" />
                         <MenuItem Header="Toggle Top Of Stack"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ToggleTopOfStackItems}"
-                                  CommandParameter="{Binding}"/>
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Reset Cache"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
                                   CommandParameter="{Binding}" />
@@ -79,19 +85,19 @@
                 </StackPanel.ContextMenu>
                 <Grid>
                     <Image Source="{Binding Path=TileImage}"
-                       Margin="5,5,5,5"
-                       MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
-                       MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}" 
-                           MouseMove="OnItemMouseMove" 
+                           Margin="5,5,5,5"
+                           MaxWidth="{Binding ElementName=ExplorerLineControl, Path=ImageWidth}"
+                           MaxHeight="{Binding ElementName=ExplorerLineControl, Path=ImageHeight}"
+                           MouseMove="OnItemMouseMove"
                            AllowDrop="True"
                            DragEnter="OnItemDragEnter"
                            DragOver="OnItemDragOver"
-                           DragLeave="OnItemDragLeave" 
-                           Drop="OnItemDragDrop"/>
+                           DragLeave="OnItemDragLeave"
+                           Drop="OnItemDragDrop" />
                     <StackPanel Orientation="Horizontal" Margin="6 6" HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom" >
+                                VerticalAlignment="Bottom">
                         <StackPanel.Background>
-                            <SolidColorBrush Color="AntiqueWhite" Opacity="0.7"/>
+                            <SolidColorBrush Color="AntiqueWhite" Opacity="0.7" />
                         </StackPanel.Background>
                         <controls:PendingUploadAdornment Visibility="{Binding Path=PendingUploadAdornerVisibility}" />
                         <controls:OfflineAdornment Visibility="{Binding Path=OfflineAdornerVisibility}" />
