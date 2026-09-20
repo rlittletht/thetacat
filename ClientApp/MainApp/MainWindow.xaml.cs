@@ -552,12 +552,11 @@ public partial class MainWindow : Window, IMainCommands
                     timelineOrder = TimelineOrder.DateAscending;
             }
 
-            ThreadContext.InvokeOnUiThread(
-                () =>
-                {
-                    m_model.ExplorerCollection.ResetTimeline();
-                    m_model.ExplorerCollection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
-                });
+            ThreadContext.InvokeOnUiThread(() =>
+                                           {
+                                               m_model.ExplorerCollection.ResetTimeline();
+                                               m_model.ExplorerCollection.SetTimelineTypeAndOrder(timelineType, timelineOrder);
+                                           });
 
             LogForApp(EventType.Information, $"Done building timeline. {timer.Elapsed()}");
 
@@ -568,6 +567,10 @@ public partial class MainWindow : Window, IMainCommands
 
             AzureCat.EnsureCreated(App.State.AzureStorageAccount);
             LogForApp(EventType.Information, $"Done reset. {timer.Elapsed()}");
+        }
+        catch (Exception ex)
+        {
+            ThreadContext.InvokeOnUiThread(()=> MessageBox.Show($"Exception: {ex.Message}", "Failed to connect", MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
         finally
         {
