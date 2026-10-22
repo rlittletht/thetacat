@@ -40,7 +40,7 @@ public partial class CreateWorkgroup : Window
         Close();
     }
 
-    public static ServiceWorkgroup? Create(Window? owner)
+    public static ServiceWorkgroup? Create(Window? owner, Guid? catalogID)
     {
         CreateWorkgroup dialog = new();
         dialog.Owner = owner;
@@ -50,6 +50,7 @@ public partial class CreateWorkgroup : Window
         {
             return new ServiceWorkgroup
                    {
+                       CatalogID = catalogID,
                        ID = Guid.Parse(dialog.m_model.WorkgroupID),
                        Name = dialog.m_model.WorkgroupName,
                        ServerPath = dialog.m_model.WorkgroupServerPath,

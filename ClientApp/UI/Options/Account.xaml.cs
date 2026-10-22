@@ -44,6 +44,11 @@ namespace Thetacat.UI.Options
             _Model.SqlConnection = _Model.CurrentProfile?.Profile.SqlConnection ?? string.Empty;
         }
 
+        public bool PrecheckSettings()
+        {
+            return true;
+        }
+        
         public bool FSaveSettings()
         {
             if (_Model.CurrentProfile != null)
