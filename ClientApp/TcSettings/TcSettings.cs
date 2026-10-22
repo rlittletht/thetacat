@@ -54,6 +54,8 @@ public class TcSettings
                         .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().ShowAppLogOnStart?.ToString() ?? "false", (_, value, context) => context!.GetDictionaryValue<string, Profile>().ShowAppLogOnStart = bool.Parse(value))
                         .AddElement("MediaExplorer")
                         .AddAttribute("ItemSize", (_, context) => context!.GetDictionaryValue<string, Profile>().ExplorerItemSize, (_, value, context) => context!.GetDictionaryValue<string, Profile>().ExplorerItemSize = value)
+                        .AddElement("LastDownloadLocation")
+                        .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().LastDownloadLocation, (_, value, context) => context!.GetDictionaryValue<string, Profile>().LastDownloadLocation = value)
                         .Pop()
                     .Pop()
                     .AddChildElement("View")

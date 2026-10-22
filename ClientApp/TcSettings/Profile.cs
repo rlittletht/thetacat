@@ -35,6 +35,7 @@ public class Profile
     public string? TimelineType;
     public string? TimelineOrder;
     public bool? ExpandMediaStacksInExplorers;
+    public string? LastDownloadLocation;
 
     public string? _DerivativeCache;
     public string? DerivativeCache => LocalCatalogCache;
@@ -76,6 +77,7 @@ public class Profile
         TimelineOrder = basedOn.TimelineOrder;
         _DerivativeCache = basedOn._DerivativeCache;
         LocalCatalogCache = basedOn.LocalCatalogCache;
+        LastDownloadLocation = basedOn.LastDownloadLocation;
     }
 
     public override string ToString() => Name ?? string.Empty;
