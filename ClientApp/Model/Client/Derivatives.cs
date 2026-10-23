@@ -27,6 +27,8 @@ namespace Thetacat.Model.Client;
 ----------------------------------------------------------------------------*/
 public class Derivatives
 {
+    public delegate void OnDerivativeWorkCompleteDelegate(OnDerivativeWorkCompleteArgs args);
+
     private ProducerConsumer<DerivativeWork>? m_derivativeWorkPipeline;
 
     // all of the derivatives we know about for each mediaitem. this is the master list
@@ -412,7 +414,7 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(work);
     }
 
-    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
+    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor, OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete)
     {
         QueueDerivativeWork(new DerivativeWork(item, md5, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor, onDerivativeWorkComplete));
     }
@@ -441,7 +443,7 @@ public class Derivatives
             Transcode
         }
 
-        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
+        public Derivatives.OnDerivativeWorkCompleteDelegate? OnDerivativeWorkComplete { get; private set; }
         public Guid Cookie => MediaKey;
         public Guid MediaKey { get; private set; }
         public string MD5 { get; private set; } = string.Empty;
@@ -480,7 +482,7 @@ public class Derivatives
             bool fullBitmapFidelity,
             string transformationsKey,
             double requestedScaleFactor,
-            Action<OnDerivativeWorkCompleteArgs>? onWorkComplete = null)
+            OnDerivativeWorkCompleteDelegate? onWorkComplete = null)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;

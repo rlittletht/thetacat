@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -15,6 +16,9 @@ using Thetacat.Model.Client;
 using Thetacat.Types;
 using Path = System.IO.Path;
 using System.Security.Cryptography;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
+using Point = System.Windows.Point;
 
 namespace Thetacat.Model.ImageCaching;
 
@@ -54,12 +58,17 @@ public class ImageCache
 
     public event EventHandler<ImageCacheUpdateEventArgs>? ImageCacheUpdated;
 
+    double GetScaleFactorForTarget(int? originalWidth, double aspectRatio)
+    {
+        if (m_target == Target.FullFidelity || originalWidth == null)
+            return 1.0;
+
+        return (double)Math.Min(GetWidthForTargetType(), (int)Math.Floor(aspectRatio * GetWidthForTargetType())) / originalWidth.Value;
+    }
+
     double GetScaleFactorForTarget(ImageLoaderWork item)
     {
-        if (m_target == Target.FullFidelity || item.OriginalWidth == null)
-            return 1.0;
-     
-        return (double)Math.Min(GetWidthForTargetType(), (int)Math.Floor(item.AspectRatio * GetWidthForTargetType())) / item.OriginalWidth.Value;
+        return GetScaleFactorForTarget(item.OriginalWidth, item.AspectRatio);
     }
     
     int GetWidthForTargetType()
@@ -128,7 +137,7 @@ public class ImageCache
         %%Qualified: Thetacat.Model.ImageCaching.ImageCache.TryQueueBackgroundLoadToCache
         
     ----------------------------------------------------------------------------*/
-    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
+    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
         App.LogForAsync(EventType.Verbose, $"queuing item {item.MediaId}");
@@ -194,9 +203,10 @@ public class ImageCache
 
 #region Image Loading/Threading
 
+        
     class ImageLoaderWork : IPipelineWorkItemBase<ImageLoaderWork>
     {
-        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
+        public Derivatives.OnDerivativeWorkCompleteDelegate? OnDerivativeWorkComplete { get; private set; }
         public Guid Cookie => MediaKey;
         public Guid MediaKey { get; set; }
         public string MD5 { get; set; } = string.Empty;
@@ -211,7 +221,7 @@ public class ImageCache
             Transformations = Transformations.Empty;
         }
 
-        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem, bool isPurgeAndReload = false, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete = null)
+        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem, bool isPurgeAndReload = false, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete = null)
         {
             MediaKey = mediaItem.ID;
             PathToImage = cacheItem.LocalPath;
@@ -537,6 +547,61 @@ public class ImageCache
         return fullImage;
     }
 
+    BitmapSource GetBitmap(MediaItem mediaItem, string pathToImageSource, int originalWidth, double aspectRatio, string md5, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete, Transformations transformations)
+    {
+        BitmapSource? targetBitmap = null;
+        double scaleFactor = GetScaleFactorForTarget(originalWidth, aspectRatio);
+        int targetWidth = 0;
+        bool scaling = false;
+
+        if (Derivatives.CompareDoubles(scaleFactor, 1.0, 4) != 0)
+        {
+            scaling = true;
+            targetWidth = (int)Math.Floor(originalWidth * scaleFactor);
+        }
+
+        // if we have a resampled derivative matching transformations, use it
+        // else if we have a fullImage, use it to scale to a resampled derivative (and queue it as a new derivative)
+        // else if we have a pathToFullImage, use that as the source to resample (and queue it as a new derivative)
+        // else use the original ImagePathToSourceas the source to resample (and queue it as a new derivative)
+
+        // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
+        // need to transcode)
+        if (App.State.Derivatives.TryGetResampledDerivative(mediaItem.ID, md5, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
+        {
+            if (pendingBitmap != null)
+            {
+                // we haven't saved this yet, so use this bitmap
+                targetBitmap = pendingBitmap;
+            }
+            else
+            {
+                // perfect match. use it. don't do any transformations because we matched a transformed derivative
+                targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
+            }
+        }
+        else
+        {
+            // we didn't find a match for what we want exactly. get a full fidelity image with the correct transformation
+            // (this might get transcoded). (this will save any interim transform steps as derivative items)
+            BitmapSource? fullImage = GetTransformedFullFidelityImage(pathToImageSource, mediaItem.ID, md5, transformations);
+
+            // and now scale it to the size we want, if necessary
+            if (scaling)
+            {
+                targetBitmap = ScaleBitmap(fullImage, scaleFactor);
+                targetBitmap.Freeze();
+                App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, targetBitmap, scaleFactor, onDerivativeWorkComplete);
+            }
+            else
+            {
+                targetBitmap = fullImage;
+            }
+        }
+
+        return targetBitmap;
+    }
+    
     /*----------------------------------------------------------------------------
         %%Function: DoImageLoaderWork
         %%Qualified: Thetacat.Model.MediaExplorerCollection.DoImageLoaderWork
@@ -587,55 +652,7 @@ public class ImageCache
 
             try
             {
-                BitmapSource? targetBitmap = null;
-                double scaleFactor = GetScaleFactorForTarget(item);
-                int targetWidth = 0;
-                bool scaling = false;
-
-                if (Derivatives.CompareDoubles(scaleFactor, 1.0, 4) != 0)
-                {
-                    scaling = true;
-                    targetWidth = (int)Math.Floor(item.OriginalWidth!.Value * scaleFactor);
-                }
-
-                // if we have a resampled derivative matching transformations, use it
-                // else if we have a fullImage, use it to scale to a resampled derivative (and queue it as a new derivative)
-                // else if we have a pathToFullImage, use that as the source to resample (and queue it as a new derivative)
-                // else use the original ImagePathToSourceas the source to resample (and queue it as a new derivative)
-
-                // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
-                // need to transcode)
-                if (App.State.Derivatives.TryGetResampledDerivative(item.MediaKey, item.MD5, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
-                {
-                    if (pendingBitmap != null)
-                    {
-                        // we haven't saved this yet, so use this bitmap
-                        targetBitmap = pendingBitmap;
-                    }
-                    else
-                    {
-                        // perfect match. use it. don't do any transformations because we matched a transformed derivative
-                        targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
-                    }
-                }
-                else
-                {
-                    // we didn't find a match for what we want exactly. get a full fidelity image with the correct transformation
-                    // (this might get transcoded). (this will save any interim transform steps as derivative items)
-                    BitmapSource? fullImage = GetTransformedFullFidelityImage(item.PathToImage, item.MediaKey, item.MD5, item.Transformations);
-
-                    // and now scale it to the size we want, if necessary
-                    if (scaling)
-                    {
-                        targetBitmap = ScaleBitmap(fullImage, scaleFactor);
-                        targetBitmap.Freeze();
-                        App.State.Derivatives.QueueSaveResampledImage(mediaItem, item.MD5, transformations, targetBitmap, scaleFactor, item.OnDerivativeWorkComplete);
-                    }
-                    else
-                    {
-                        targetBitmap = fullImage;
-                    }
-                }
+                BitmapSource targetBitmap = GetBitmap(mediaItem, item.PathToImage, item.OriginalWidth!.Value, item.AspectRatio, item.MD5, item.OnDerivativeWorkComplete, transformations);
 
                 int pixelsCached = targetBitmap.PixelHeight * targetBitmap.PixelWidth * 4;
 

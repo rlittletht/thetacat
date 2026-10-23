@@ -19,7 +19,6 @@ public class CatalogRepair
         IReadOnlyCollection<MediaItem> collection = catalog.GetMediaCollection();
 
         int count = collection.Count;
-        int i = 0;
 
         Dictionary<string, List<MediaItem>> md5Map = new();
         foreach (MediaItem item in collection)

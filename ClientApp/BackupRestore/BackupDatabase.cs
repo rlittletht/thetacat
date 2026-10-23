@@ -246,7 +246,7 @@ public class BackupDatabase
             {
                 if (m_exportMediaItems)
                 {
-                    m_chunkedProgressReport.StartBlock("media");
+                    m_chunkedProgressReport!.StartBlock("media");
                     WriteElement(_writer, "media", (__writer) => WriteMediaItems(__writer, catalog));
                 }
 

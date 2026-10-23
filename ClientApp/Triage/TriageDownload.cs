@@ -65,11 +65,11 @@ public class TriageDownload
                 
             }
             // copy all the items we have in the cache to the directory specified
-            System.IO.Directory.CreateDirectory(directory);
+            System.IO.Directory.CreateDirectory(directory!);
 
             foreach (string path in itemsToDownload)
             {
-                string target = System.IO.Path.Combine(directory, System.IO.Path.GetFileName(path));
+                string target = System.IO.Path.Combine(directory!, System.IO.Path.GetFileName(path));
                 System.IO.File.Copy(path, target);
             }
         }

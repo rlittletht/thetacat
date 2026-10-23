@@ -224,7 +224,7 @@ public partial class CacheConfig : UserControl
 
     private void CreateNewWorkgroup(object sender, System.Windows.RoutedEventArgs e)
     {
-        ServiceWorkgroup? newWorkgroup = CreateWorkgroup.Create(Window.GetWindow(this), _AccountModel.CurrentCatalogID);
+        ServiceWorkgroup? newWorkgroup = CreateWorkgroup.Create(Window.GetWindow(this), _AccountModel?.CurrentCatalogID);
 
         if (newWorkgroup != null)
         {
