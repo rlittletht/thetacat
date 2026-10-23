@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Model;
+using Thetacat.Types;
 
 // the plan here is to get all the items from the Triage cache. for every item we couldn't get, we will queue it (like queuepreviewimagecacheloadformediaitems)
 // and then we wait for all the callbacks to happen. we will do this on a background thread and either:
@@ -25,53 +28,114 @@ namespace Thetacat.Triage;
 
 public class TriageDownload
 {
-    public static void DownloadItems(IEnumerable<MediaItem> mediaItems, Window? parent)
+    private ConcurrentDictionary<Guid, MediaItem> m_pendingDerivatives = new ConcurrentDictionary<Guid, MediaItem>();
+    private bool m_fTriage = false;
+    private bool m_fReplaceExisting = false;
+
+    public TriageDownload()
+    {
+    }
+
+    void DownloadFullFidelityItems(IEnumerable<MediaItem> items, string targetDirectory)
+    {
+        List<string> itemsToDownload = new();
+
+        foreach (MediaItem item in items)
+        {
+            string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
+
+            if (path == null)
+                throw new CatExceptionInternalFailure($"Failed to get cached full path for item {item.VirtualPath}");
+
+            itemsToDownload.Add(path);
+        }
+
+        // copy all the items we have in the cache to the directory specified
+        System.IO.Directory.CreateDirectory(targetDirectory);
+
+        List<string> exists = new();
+
+        foreach (string path in itemsToDownload)
+        {
+            string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
+
+            if (Path.Exists(target))
+            {
+                if (!m_fReplaceExisting)
+                {
+                    exists.Add(target);
+                    continue;
+                }
+            }
+
+            System.IO.File.Copy(path, target, m_fReplaceExisting);
+        }
+        
+        if (exists.Count > 0)
+        {
+            string joined = string.Join(",", exists);
+            MessageBox.Show($"The following files already exist and were not replaced: {joined}", "Download", MessageBoxButton.OK);
+        }
+    }
+
+    void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items, string targetDirectory)
+    {
+        throw new CatExceptionInternalFailure("NYI");
+    }
+
+    public void DoDownload(IEnumerable<MediaItem> mediaItems, Window? parent)
     {
         string downloads = System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "Downloads");
 
-        if (DownloadMedia.FPrompt(App.State.ActiveProfile.LastDownloadLocation ?? downloads, parent, out string? directory, out bool triage))
+        if (!DownloadMedia.FPrompt(
+                App.State.ActiveProfile.LastDownloadLocation ?? downloads,
+                parent,
+                out string? directory,
+                out m_fTriage,
+                out m_fReplaceExisting))
+            return;
+
+        // first, preflight to make sure all the media is in the cache
+        List<string> uncachedItems = new();
+        List<MediaItem> itemsToDownload = new();
+
+        foreach (MediaItem item in mediaItems)
         {
-            // first, preflight to make sure all the media is in the cache
-            List<string> uncachedItems = new();
-            List<string> itemsToDownload = new();
+            string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
-            foreach (MediaItem item in mediaItems)
+            if (path == null)
             {
-                string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
-
-                if (path == null)
-                {
-                    uncachedItems.Add(item.VirtualPath);
-                }
-                else
-                {
-                    itemsToDownload.Add(path);
-                }
+                uncachedItems.Add(item.VirtualPath);
             }
-
-            if (uncachedItems.Count > 0)
+            else
             {
-                string joined = string.Join(",", uncachedItems);
-
-                if (MessageBox.Show($"Cannot download uncached items: {joined}", "Download", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                    return;
-            }
-
-            // now make sure we have triage cache entries for every item
-            if (triage)
-            {
-                
-            }
-            // copy all the items we have in the cache to the directory specified
-            System.IO.Directory.CreateDirectory(directory!);
-
-            foreach (string path in itemsToDownload)
-            {
-                string target = System.IO.Path.Combine(directory!, System.IO.Path.GetFileName(path));
-                System.IO.File.Copy(path, target);
+                itemsToDownload.Add(item);
             }
         }
+
+        if (uncachedItems.Count > 0)
+        {
+            string joined = string.Join(",", uncachedItems);
+
+            if (MessageBox.Show($"Cannot download uncached items: {joined}", "Download", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                return;
+        }
+
+        if (!m_fTriage)
+        {
+            DownloadFullFidelityItems(itemsToDownload, directory!);
+            return;
+        }
+
+        CreateAndDownloadTriageItems(itemsToDownload, directory!);
+    }
+
+    public static void DownloadItems(IEnumerable<MediaItem> mediaItems, Window? parent)
+    {
+        TriageDownload download = new TriageDownload();
+
+        download.DoDownload(mediaItems, parent);
     }
 }

@@ -66,7 +66,7 @@ namespace Thetacat.Explorer.UI
             Close();
         }
 
-        public static bool FPrompt(string lastLocation, Window? parent,  out string? directory, out bool triage)
+        public static bool FPrompt(string lastLocation, Window? parent,  out string? directory, out bool triage, out bool replaceExisting)
         {
             DownloadMedia download = new DownloadMedia();
 
@@ -76,12 +76,14 @@ namespace Thetacat.Explorer.UI
             {
                 directory = download._Model.DownloadTo;
                 triage = download._Model.Triage;
+                replaceExisting = download._Model.ReplaceExisting;
                 return true;
             }
             else
             {
                 directory = null;
                 triage = false;
+                replaceExisting = false;
                 return false;
             }
         }

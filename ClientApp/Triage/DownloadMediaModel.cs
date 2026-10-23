@@ -8,7 +8,14 @@ public class DownloadMediaModel: INotifyPropertyChanged
 {
     private string m_downloadTo = string.Empty;
     private bool m_triage;
-    
+    private bool m_replaceExisting;
+
+    public bool ReplaceExisting
+    {
+        get => m_replaceExisting;
+        set => SetField(ref m_replaceExisting, value);
+    }
+
     public bool Triage
     {
         get => m_triage;

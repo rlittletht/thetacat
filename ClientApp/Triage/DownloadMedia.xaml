@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.Explorer.UI"
         mc:Ignorable="d"
-        Title="DownloadMedia" Height="128" Width="300">
+        Title="DownloadMedia" Height="156" Width="300">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -16,10 +16,10 @@
             <DockPanel LastChildFill="True">
                 <Button Content="..." Click="BrowseForPath"
                         Name="SelectVirtualRootButton"
-                        IsEnabled="{Binding Path=EnableRepathControls}"
                         DockPanel.Dock="Right" Width="24" />
                 <TextBox DockPanel.Dock="Right" Text="{Binding Path=DownloadTo}" Margin="10,0,0,0" />
             </DockPanel>
+            <CheckBox Content="Replace existing files" IsChecked="{Binding Path=ReplaceExisting}" />
             <CheckBox Content="Download for triage" IsChecked="{Binding Path=Triage}" />
         </StackPanel>
         <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="1"
