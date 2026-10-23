@@ -161,7 +161,20 @@ public class PathSegmentTests
 
         Assert.AreEqual(expected, PathSegment.DoesPathSubsumePath(fullPath, checkPath));
     }
+    
+    [TestCase("c:/foo/bar.txt", "c_foo_bar.txt")]
+    [TestCase("c:/foo/bar/baz.txt", "c_foo_bar_baz.txt")]
+    [TestCase("c:/foo/bar:baz.txt", "c_foo_bar_baz.txt")]
+    [TestCase("\\\\server\\share\\root\\subdir", "_server_share_root_subdir")]
+    [Test]
+    public static void TestCreateFlatFilename(string full, string expected)
+    {
+        PathSegment fullPath = new PathSegment(full);
+        string actual = fullPath.CreateFlatFilename();
 
+        Assert.AreEqual(expected, actual);
+    }
+    
     [TestCase("c:/left", "c:/left1", false)]
     [TestCase("c:/left", "c:/Left", true)]
     [TestCase("c:/left", "c:/left", true)]

@@ -535,7 +535,15 @@ public class ImageCache
 
         return fullImage;
     }
+    
+    /*----------------------------------------------------------------------------
+        %%Function: GetBitmapSourceForMediaItemDerivative
+        %%Qualified: Thetacat.Model.ImageCaching.ImageCache.GetBitmapSourceForMediaItemDerivative
 
+        Get a BitmapSource for a media item. This will check to see if we have
+        a derivative already, and if not, it will create one (and queue it
+        for saving)
+    ----------------------------------------------------------------------------*/
     BitmapSource GetBitmapSourceForMediaItemDerivative(
         MediaItem mediaItem, string pathToImageSource, int originalWidth, double aspectRatio, string md5,
         Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete, Transformations transformations)

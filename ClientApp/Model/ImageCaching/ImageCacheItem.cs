@@ -9,8 +9,17 @@ namespace Thetacat.Model.ImageCaching;
 public class ImageCacheItem : INotifyPropertyChanged
 {
     public bool IsLoadQueued { get; set; } = false;
+
+    private string m_derivativePath = string.Empty;
     private BitmapSource? m_image;
     public string LocalPath { get; set; }
+
+    public string DerivativePath
+    {
+        get => m_derivativePath;
+        set => SetField(ref m_derivativePath, value);
+    }
+
     public Guid MediaId { get; set; }
 
     public BitmapSource? ImageInternal

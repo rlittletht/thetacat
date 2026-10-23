@@ -514,6 +514,20 @@ public class Derivatives
         }
     }
 
+    public static void SaveBitmapSourceDerivativeToFile(BitmapSource bitmap, string targetPath, int quality)
+    {
+        using FileStream stream = new(targetPath, FileMode.Create);
+
+        JpegBitmapEncoder encoder =
+            new()
+            {
+                QualityLevel = quality
+            };
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        encoder.Save(stream);
+    }
+    
+    
     void DoDerivativeWork(IEnumerable<DerivativeWork> workItems, Consumer<DerivativeWork>.ShouldAbortDelegate shouldAbort)
     {
         foreach (DerivativeWork item in workItems)
@@ -552,15 +566,7 @@ public class Derivatives
 
             try
             {
-                using FileStream stream = new(destination.Local, FileMode.Create);
-
-                JpegBitmapEncoder encoder =
-                    new()
-                    {
-                        QualityLevel = quality
-                    };
-                encoder.Frames.Add(BitmapFrame.Create(item.Image));
-                encoder.Save(stream);
+                SaveBitmapSourceDerivativeToFile(item.Image, destination.Local, quality);
 
                 DerivativeItem match = GetMatchingDerivativeItem(derivative);
                 // this is no longer pending save

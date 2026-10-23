@@ -2,10 +2,15 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
+using Thetacat.Logging;
 using Thetacat.Model;
+using Thetacat.Model.Client;
+using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
 
 // the plan here is to get all the items from the Triage cache. for every item we couldn't get, we will queue it (like queuepreviewimagecacheloadformediaitems)
@@ -31,12 +36,120 @@ public class TriageDownload
     private ConcurrentDictionary<Guid, MediaItem> m_pendingDerivatives = new ConcurrentDictionary<Guid, MediaItem>();
     private bool m_fTriage = false;
     private bool m_fReplaceExisting = false;
+    List<string> m_exists = new();
+    private string m_targetDirectory = string.Empty;
 
     public TriageDownload()
     {
     }
+    private static void ReloadDerivativeForFullFidelityPreview(OnDerivativeWorkCompleteArgs args)
+    {
+        if (App.State.TriageCache.Items.TryGetValue(args.MediaId, out ImageCacheItem? cacheItem))
+        {
+            if (cacheItem.IsLoadQueued || cacheItem.Image == null)
+            {
+                App.LogForApp(EventType.Critical, $"trying to purge and reload an item that isn't loaded {args.MediaId}");
+                return;
+            }
 
-    void DownloadFullFidelityItems(IEnumerable<MediaItem> items, string targetDirectory)
+            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(args.MediaId);
+
+            App.State.TriageCache.QueuePurgeAndReloadToCache(mediaItem, args.Md5, cacheItem);
+        }
+    }
+
+    public void QueueTriageCacheUpdate(IEnumerable<MediaItem> mediaItems)
+    {
+        ICache cache = App.State.Cache;
+
+        // queue these in reverse order since we are going to insert them at the front of the
+        // queue one by one
+        foreach (MediaItem mediaItem in mediaItems)
+        {
+            string? path = cache.TryGetCachedFullPath(mediaItem.ID);
+
+            if (path == null)
+                throw new CatExceptionInternalFailure($"couldn't get cached full path for media item {mediaItem}");
+
+            if (!m_pendingDerivatives.TryAdd(mediaItem.ID, mediaItem))
+            {
+                throw new CatExceptionInternalFailure($"added media item {mediaItem} more than once to pending derivatives");
+            }
+
+            App.State.TriageCache.TryQueueBackgroundLoadToCache(
+                mediaItem,
+                App.State.GetMD5ForItem(mediaItem.ID),
+                path,
+                ReloadDerivativeForFullFidelityPreview);
+        }
+    }
+
+    private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
+    {
+        ImageCache? cache = sender as ImageCache;
+        if (cache == null)
+            throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
+
+        if (cache.Items.TryGetValue(e.MediaId, out ImageCacheItem? cacheItem))
+        {
+            App.LogForAsync(EventType.Verbose, $"Done caching {cacheItem.MediaId}");
+
+            cacheItem.IsLoadQueued = false;
+            if (m_pendingDerivatives.TryGetValue(e.MediaId, out MediaItem? item))
+            {
+                if (!string.IsNullOrEmpty(cacheItem.DerivativePath))
+                {
+                    DownloadSinglePathItem(cacheItem.DerivativePath, m_targetDirectory);
+                }
+                else
+                {
+                    // we only have a bitmap. need to save it...
+                    SaveBitmapSourceToTarget(cacheItem.Image!, m_targetDirectory);
+                }
+
+                // either way, remove it from our remaining list
+                m_pendingDerivatives.TryRemove(e.MediaId, out MediaItem? itemDeleted);
+            }
+        }
+    }
+
+    void DownloadSinglePathItem(string path, string targetDirectory)
+    {
+        string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
+
+        if (Path.Exists(target))
+        {
+            if (!m_fReplaceExisting)
+            {
+                m_exists.Add(target);
+                return;
+            }
+        }
+
+        System.IO.File.Copy(path, target, m_fReplaceExisting);
+    }
+
+    void SaveBitmapSourceToTarget(BitmapSource bitmap, string targetDirectory)
+    {
+        string path = "";
+        
+        string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
+
+        if (Path.Exists(target))
+        {
+            if (!m_fReplaceExisting)
+            {
+                m_exists.Add(target);
+                return;
+            }
+
+            File.Delete(target);
+        }
+
+        Derivatives.SaveBitmapSourceDerivativeToFile(bitmap, target, 90 /*quality*/);
+    }
+
+    void DownloadFullFidelityItems(IEnumerable<MediaItem> items)
     {
         List<string> itemsToDownload = new();
 
@@ -51,38 +164,25 @@ public class TriageDownload
         }
 
         // copy all the items we have in the cache to the directory specified
-        System.IO.Directory.CreateDirectory(targetDirectory);
-
-        List<string> exists = new();
+        System.IO.Directory.CreateDirectory(m_targetDirectory);
 
         foreach (string path in itemsToDownload)
         {
-            string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
-
-            if (Path.Exists(target))
-            {
-                if (!m_fReplaceExisting)
-                {
-                    exists.Add(target);
-                    continue;
-                }
-            }
-
-            System.IO.File.Copy(path, target, m_fReplaceExisting);
-        }
-        
-        if (exists.Count > 0)
-        {
-            string joined = string.Join(",", exists);
-            MessageBox.Show($"The following files already exist and were not replaced: {joined}", "Download", MessageBoxButton.OK);
+            DownloadSinglePathItem(path, m_targetDirectory);
         }
     }
-
-    void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items, string targetDirectory)
+ 
+    void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items)
     {
-        // first lets find all the items that already have the right derivative created and on disk. that's a simple copy
-        
-        throw new CatExceptionInternalFailure("NYI");
+        App.State.TriageCache.ImageCacheUpdated += OnImageCacheUpdated;
+        try
+        {
+            QueueTriageCacheUpdate(items);
+        }
+        finally
+        {
+            App.State.TriageCache.ImageCacheUpdated -= OnImageCacheUpdated;
+        }
     }
 
     public void DoDownload(IEnumerable<MediaItem> mediaItems, Window? parent)
@@ -98,6 +198,8 @@ public class TriageDownload
                 out m_fTriage,
                 out m_fReplaceExisting))
             return;
+
+        m_targetDirectory = directory!;
 
         // first, preflight to make sure all the media is in the cache
         List<string> uncachedItems = new();
@@ -127,11 +229,18 @@ public class TriageDownload
 
         if (!m_fTriage)
         {
-            DownloadFullFidelityItems(itemsToDownload, directory!);
-            return;
+            DownloadFullFidelityItems(itemsToDownload);
+        }
+        else
+        {
+            CreateAndDownloadTriageItems(itemsToDownload);
         }
 
-        CreateAndDownloadTriageItems(itemsToDownload, directory!);
+        if (m_exists.Count > 0)
+        {
+            string joined = string.Join(",", m_exists);
+            MessageBox.Show($"The following files already exist and were not replaced: {joined}", "Download", MessageBoxButton.OK);
+        }
     }
 
     public static void DownloadItems(IEnumerable<MediaItem> mediaItems, Window? parent)
