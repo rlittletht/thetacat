@@ -6,10 +6,12 @@ public class CacheInfoModel
 {
     public ImageCache ExplorerCache { get; init; }
     public ImageCache FullDetailCache { get; init; }
+    public ImageCache TriageCache { get; init; }
 
     public CacheInfoModel()
     {
         ExplorerCache = App.State.PreviewImageCache;
         FullDetailCache = App.State.ImageCache;
+        TriageCache = App.State.TriageCache;
     }
 }

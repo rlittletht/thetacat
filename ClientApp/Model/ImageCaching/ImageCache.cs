@@ -35,18 +35,44 @@ namespace Thetacat.Model.ImageCaching;
 ----------------------------------------------------------------------------*/
 public class ImageCache
 {
+    public enum Target
+    {
+        Preview,
+        FullFidelity,
+        Triage
+    }
+    
     public ConcurrentDictionary<Guid, ImageCacheItem> Items = new ConcurrentDictionary<Guid, ImageCacheItem>();
 
     private readonly ProducerConsumer<ImageLoaderWork>? m_imageLoaderPipeline;
 
 //    private const int s_picturePreviewWidth = 512;
     private const int s_picturePreviewWidth = 260;
+    private const int s_pictureTriageWidth = 1024;
 
-    private bool m_fFullFidelity = false;
+    private Target m_target = Target.Preview;
 
     public event EventHandler<ImageCacheUpdateEventArgs>? ImageCacheUpdated;
 
-    public ImageCache(bool fFullFidelity = false)
+    double GetScaleFactorForTarget(ImageLoaderWork item)
+    {
+        if (m_target == Target.FullFidelity || item.OriginalWidth == null)
+            return 1.0;
+     
+        return (double)Math.Min(GetWidthForTargetType(), (int)Math.Floor(item.AspectRatio * GetWidthForTargetType())) / item.OriginalWidth.Value;
+    }
+    
+    int GetWidthForTargetType()
+    {
+        if (m_target == Target.FullFidelity)
+            return s_picturePreviewWidth;
+        if (m_target == Target.Triage)
+            return s_pictureTriageWidth;
+        
+        return s_picturePreviewWidth;
+    }
+    
+    public ImageCache(Target target = Target.Preview)
     {
         // don't start the pipeline thread if we're under a unit test.
         if (!MainApp.MainWindow.InUnitTest)
@@ -56,7 +82,7 @@ public class ImageCache
             m_imageLoaderPipeline.Start();
         }
 
-        m_fFullFidelity = fFullFidelity;
+        m_target = target;
     }
 
     public void Close()
@@ -562,10 +588,7 @@ public class ImageCache
             try
             {
                 BitmapSource? targetBitmap = null;
-                double scaleFactor =
-                    (m_fFullFidelity || item.OriginalWidth == null)
-                        ? 1.0
-                        : (double)Math.Min(s_picturePreviewWidth, (int)Math.Floor(item.AspectRatio * s_picturePreviewWidth)) / item.OriginalWidth.Value;
+                double scaleFactor = GetScaleFactorForTarget(item);
                 int targetWidth = 0;
                 bool scaling = false;
 
@@ -592,7 +615,7 @@ public class ImageCache
                     else
                     {
                         // perfect match. use it. don't do any transformations because we matched a transformed derivative
-                        targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_fFullFidelity ? null : targetWidth);
+                        targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
                     }
                 }
                 else
