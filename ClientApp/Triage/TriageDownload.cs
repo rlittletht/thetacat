@@ -80,6 +80,8 @@ public class TriageDownload
 
     void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items, string targetDirectory)
     {
+        // first lets find all the items that already have the right derivative created and on disk. that's a simple copy
+        
         throw new CatExceptionInternalFailure("NYI");
     }
 

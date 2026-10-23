@@ -26,7 +26,7 @@ namespace Thetacat.Model.ImageCaching;
     %%Class: PreviewImageCache
     %%Qualified: Thetacat.Model.PreviewImageCache
 
-    This caches images for the explorer windows. 
+    This caches images for the explorer windows.
 
     If an item exists in this cache, then it either has a cache image already
     (because of a previous cache item create), or it is queued in the
@@ -45,7 +45,7 @@ public class ImageCache
         FullFidelity,
         Triage
     }
-    
+
     public ConcurrentDictionary<Guid, ImageCacheItem> Items = new ConcurrentDictionary<Guid, ImageCacheItem>();
 
     private readonly ProducerConsumer<ImageLoaderWork>? m_imageLoaderPipeline;
@@ -70,17 +70,17 @@ public class ImageCache
     {
         return GetScaleFactorForTarget(item.OriginalWidth, item.AspectRatio);
     }
-    
+
     int GetWidthForTargetType()
     {
         if (m_target == Target.FullFidelity)
             return s_picturePreviewWidth;
         if (m_target == Target.Triage)
             return s_pictureTriageWidth;
-        
+
         return s_picturePreviewWidth;
     }
-    
+
     public ImageCache(Target target = Target.Preview)
     {
         // don't start the pipeline thread if we're under a unit test.
@@ -135,30 +135,49 @@ public class ImageCache
     /*----------------------------------------------------------------------------
         %%Function: TryQueueBackgroundLoadToCache
         %%Qualified: Thetacat.Model.ImageCaching.ImageCache.TryQueueBackgroundLoadToCache
-        
+
+        this will get called always to get an image item, without checking first
+        to see if we already have the item cached. we can do this because the
+        happy path through this will just return the existing (completed) cached
+        item.  The only inefficiency is we create an ImageCacheItem and throw
+        it away if we are already done.
+
+        if the item is not already loaded or queued to be loaded, then we will
+        push a new ImageLoaderWork onto the background thread to load it
     ----------------------------------------------------------------------------*/
-    public ImageCacheItem TryQueueBackgroundLoadToCache(MediaItem mediaItem, string md5, string localPath, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete)
+    public ImageCacheItem TryQueueBackgroundLoadToCache(
+        MediaItem mediaItem, string md5, string localPath, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete)
     {
         ImageCacheItem item = new ImageCacheItem(mediaItem.ID, localPath);
         App.LogForAsync(EventType.Verbose, $"queuing item {item.MediaId}");
 
+        // check to see if the item already exists (TryAdd will return false)
         if (!Items.TryAdd(mediaItem.ID, item))
         {
+            // make sure we can get the item we just got told already existed
             if (!Items.TryGetValue(mediaItem.ID, out ImageCacheItem? existingItem))
             {
                 throw new CatExceptionInternalFailure("Couldn't add the cache image item but then couldn't retrieve it. wicked race conditions?");
                 //return item;
             }
 
-            if (existingItem.IsLoadQueued || existingItem.Image != null)
+            // the existing item might only be queued for loading -- accelerate the load and then return
+            // what we have (which is probably, but not guaranteed to be, null)
+            if (existingItem.IsLoadQueued)
             {
                 if (existingItem.IsLoadQueued)
                 {
                     // accelearate the item...
                     m_imageLoaderPipeline?.Producer.Accelerate(mediaItem.ID);
                 }
+
                 return existingItem;
             }
+
+            // we could have combined this with the existing condition, but this is more clear
+            // return the existing item if we're already done
+            if (existingItem.Image != null)
+                return existingItem;
 
             item = existingItem;
         }
@@ -203,48 +222,6 @@ public class ImageCache
 
 #region Image Loading/Threading
 
-        
-    class ImageLoaderWork : IPipelineWorkItemBase<ImageLoaderWork>
-    {
-        public Derivatives.OnDerivativeWorkCompleteDelegate? OnDerivativeWorkComplete { get; private set; }
-        public Guid Cookie => MediaKey;
-        public Guid MediaKey { get; set; }
-        public string MD5 { get; set; } = string.Empty;
-        public string? PathToImage { get; set; }
-        public double AspectRatio { get; set; }
-        public int? OriginalWidth { get; set; }
-        public Transformations Transformations { get; set; }
-        public bool PurgeAndReload { get; set; }
-
-        public ImageLoaderWork()
-        {
-            Transformations = Transformations.Empty;
-        }
-
-        public ImageLoaderWork(MediaItem mediaItem, string md5, ImageCacheItem cacheItem, bool isPurgeAndReload = false, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete = null)
-        {
-            MediaKey = mediaItem.ID;
-            PathToImage = cacheItem.LocalPath;
-            AspectRatio = (double)(mediaItem.ImageWidth ?? 1.0) / (double)(mediaItem.ImageHeight ?? mediaItem.ImageWidth ?? 1.0);
-            OriginalWidth = mediaItem.ImageWidth;
-            Transformations = new Transformations(mediaItem);
-            MD5 = md5;
-            OnDerivativeWorkComplete = onDerivativeWorkComplete;
-        }
-
-        public void InitFrom(ImageLoaderWork t)
-        {
-            PurgeAndReload = t.PurgeAndReload;
-            MediaKey = t.MediaKey;
-            PathToImage = t.PathToImage;
-            AspectRatio = t.AspectRatio;
-            OriginalWidth = t.OriginalWidth;
-            Transformations = new Transformations(t.Transformations.TransformationsKey);
-            OnDerivativeWorkComplete = t.OnDerivativeWorkComplete;
-            MD5 = t.MD5;
-        }
-    }
-
     public static readonly HashSet<string> SkipExtensions =
         new HashSet<string>()
         {
@@ -266,7 +243,7 @@ public class ImageCache
     private BitmapSource DoTransformations(BitmapSource bitmapSource, Transformations transformations)
     {
         BitmapSource current = bitmapSource;
-        
+
         foreach (KeyValuePair<Guid, string?> transformation in transformations._Transformations)
         {
             if (transformation.Key == Transformations.s_rotateTransform)
@@ -329,7 +306,7 @@ public class ImageCache
     {
         using Mat mat = Emgu.CV.CvInvoke.Imread(filename, ImreadModes.Unchanged);
 
-  //      using Mat matOut = new Mat(512, 512, mat.Depth, mat.NumberOfChannels);
+        //      using Mat matOut = new Mat(512, 512, mat.Depth, mat.NumberOfChannels);
 //
 
         return mat.ToBitmapSource();
@@ -494,16 +471,28 @@ public class ImageCache
         MediaItem mediaItem = App.State.Catalog.GetMediaFromId(mediaId);
         string lowerPath = pathToRawImage.ToLowerInvariant();
         string extension = Path.GetExtension(lowerPath);
-        
+
         // first get a readable source for this image
         if (ReformatExtensions.Contains(extension) || ComingSoonExtensions.Contains(extension) || SkipExtensions.Contains(extension))
         {
             BitmapSource? pendingBitmap;
 
-            if (!App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, transformations, out DerivativeItem? formatDerivative, out pendingBitmap))
+            if (!App.State.Derivatives.TryGetFormatDerivative(
+                    mediaId,
+                    md5,
+                    s_formatPriorities,
+                    transformations,
+                    out DerivativeItem? formatDerivative,
+                    out pendingBitmap))
             {
                 // check to see if we have a non-transformed version available
-                if (App.State.Derivatives.TryGetFormatDerivative(mediaId, md5, s_formatPriorities, Transformations.Empty, out formatDerivative, out pendingBitmap))
+                if (App.State.Derivatives.TryGetFormatDerivative(
+                        mediaId,
+                        md5,
+                        s_formatPriorities,
+                        Transformations.Empty,
+                        out formatDerivative,
+                        out pendingBitmap))
                 {
                     // ok, do the transformations and save them
                     if (pendingBitmap != null)
@@ -547,7 +536,9 @@ public class ImageCache
         return fullImage;
     }
 
-    BitmapSource GetBitmap(MediaItem mediaItem, string pathToImageSource, int originalWidth, double aspectRatio, string md5, Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete, Transformations transformations)
+    BitmapSource GetBitmapSourceForMediaItemDerivative(
+        MediaItem mediaItem, string pathToImageSource, int originalWidth, double aspectRatio, string md5,
+        Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete, Transformations transformations)
     {
         BitmapSource? targetBitmap = null;
         double scaleFactor = GetScaleFactorForTarget(originalWidth, aspectRatio);
@@ -567,7 +558,14 @@ public class ImageCache
 
         // see if we can find a derivative matching our scale factor (this can fail if we are full fidelity and we don't
         // need to transcode)
-        if (App.State.Derivatives.TryGetResampledDerivative(mediaItem.ID, md5, scaleFactor, transformations, out DerivativeItem? derivative, out BitmapSource? pendingBitmap, 0.02))
+        if (App.State.Derivatives.TryGetResampledDerivative(
+                mediaItem.ID,
+                md5,
+                scaleFactor,
+                transformations,
+                out DerivativeItem? derivative,
+                out BitmapSource? pendingBitmap,
+                0.02))
         {
             if (pendingBitmap != null)
             {
@@ -601,7 +599,7 @@ public class ImageCache
 
         return targetBitmap;
     }
-    
+
     /*----------------------------------------------------------------------------
         %%Function: DoImageLoaderWork
         %%Qualified: Thetacat.Model.MediaExplorerCollection.DoImageLoaderWork
@@ -612,7 +610,7 @@ public class ImageCache
         Derivative types:
         This will take care of getting a getting a derivative type if necessary
         (because we need to reformat it)
-    
+
         Resample:
         Resample the image to a lower resolution if we aren't a full fidelity
         cache.
@@ -652,7 +650,14 @@ public class ImageCache
 
             try
             {
-                BitmapSource targetBitmap = GetBitmap(mediaItem, item.PathToImage, item.OriginalWidth!.Value, item.AspectRatio, item.MD5, item.OnDerivativeWorkComplete, transformations);
+                BitmapSource targetBitmap = GetBitmapSourceForMediaItemDerivative(
+                    mediaItem,
+                    item.PathToImage,
+                    item.OriginalWidth!.Value,
+                    item.AspectRatio,
+                    item.MD5,
+                    item.OnDerivativeWorkComplete,
+                    transformations);
 
                 int pixelsCached = targetBitmap.PixelHeight * targetBitmap.PixelWidth * 4;
 
@@ -680,7 +685,7 @@ public class ImageCache
             bool fNeedTrigger = !(cacheItem.Image == null && targetBitmap == null);
 
             cacheItem.Image = targetBitmap;
-            if (fNeedTrigger) 
+            if (fNeedTrigger)
                 TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
 
             cacheItem.IsLoadQueued = false; // we're done
