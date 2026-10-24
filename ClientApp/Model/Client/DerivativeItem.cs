@@ -28,6 +28,8 @@ public class DerivativeItem
     public Guid MediaId { get; init; }
     public string MimeType { get; init; }
     public double ScaleFactor { get; init; }
+    
+    // NOTE: This is the MD5 FOR THE ORIGINAL image in the original format (i.e. the MediaItem's MD5)
     public string MD5 { get; init; }
 
     private bool m_expired = false;

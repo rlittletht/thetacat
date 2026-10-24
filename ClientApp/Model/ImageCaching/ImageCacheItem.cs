@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
+using Thetacat.Util;
 
 namespace Thetacat.Model.ImageCaching;
 
@@ -10,11 +11,11 @@ public class ImageCacheItem : INotifyPropertyChanged
 {
     public bool IsLoadQueued { get; set; } = false;
 
-    private string m_derivativePath = string.Empty;
+    private PathSegment? m_derivativePath = null;
     private BitmapSource? m_image;
     public string LocalPath { get; set; }
 
-    public string DerivativePath
+    public PathSegment? DerivativePath
     {
         get => m_derivativePath;
         set => SetField(ref m_derivativePath, value);
@@ -53,5 +54,11 @@ public class ImageCacheItem : INotifyPropertyChanged
     {
         MediaId = mediaId;
         LocalPath = localPath;
+    }
+
+    public void ResetBitmapAndSetDerivativePath(PathSegment derivativePath)
+    {
+        Image = null;
+        DerivativePath = derivativePath;
     }
 }

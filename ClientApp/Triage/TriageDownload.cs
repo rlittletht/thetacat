@@ -12,6 +12,7 @@ using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
 using Thetacat.Types;
+using Thetacat.UI;
 
 // the plan here is to get all the items from the Triage cache. for every item we couldn't get, we will queue it (like queuepreviewimagecacheloadformediaitems)
 // and then we wait for all the callbacks to happen. we will do this on a background thread and either:
@@ -38,11 +39,13 @@ public class TriageDownload
     private bool m_fReplaceExisting = false;
     List<string> m_exists = new();
     private string m_targetDirectory = string.Empty;
+    private DownloadFilenameType m_filenameType = DownloadFilenameType.LeafOnly;
 
     public TriageDownload()
     {
     }
-    private static void ReloadDerivativeForFullFidelityPreview(OnDerivativeWorkCompleteArgs args)
+
+    private static void UpdateCacheUpdateForDerivativeItemSaved(OnDerivativeWorkCompleteArgs args)
     {
         if (App.State.TriageCache.Items.TryGetValue(args.MediaId, out ImageCacheItem? cacheItem))
         {
@@ -51,10 +54,12 @@ public class TriageDownload
                 App.LogForApp(EventType.Critical, $"trying to purge and reload an item that isn't loaded {args.MediaId}");
                 return;
             }
+            
+            // all we have to do is clear the bitmap since we have a derivative path
+            if (args.DerivativePath == null)
+                throw new CatExceptionInternalFailure("should have derivative path on reload in triage cache");
 
-            MediaItem mediaItem = App.State.Catalog.GetMediaFromId(args.MediaId);
-
-            App.State.TriageCache.QueuePurgeAndReloadToCache(mediaItem, args.Md5, cacheItem);
+            cacheItem.ResetBitmapAndSetDerivativePath(args.DerivativePath);
         }
     }
 
@@ -62,8 +67,6 @@ public class TriageDownload
     {
         ICache cache = App.State.Cache;
 
-        // queue these in reverse order since we are going to insert them at the front of the
-        // queue one by one
         foreach (MediaItem mediaItem in mediaItems)
         {
             string? path = cache.TryGetCachedFullPath(mediaItem.ID);
@@ -80,7 +83,20 @@ public class TriageDownload
                 mediaItem,
                 App.State.GetMD5ForItem(mediaItem.ID),
                 path,
-                ReloadDerivativeForFullFidelityPreview);
+                UpdateCacheUpdateForDerivativeItemSaved);
+        }
+    }
+
+    void DownloadCacheItem(ImageCacheItem cacheItem, MediaItem item)
+    {
+        if (cacheItem.DerivativePath != null)
+        {
+            DownloadSinglePathItem(cacheItem.DerivativePath.Local, m_targetDirectory, item);
+        }
+        else
+        {
+            // we only have a bitmap. need to save it...
+            SaveBitmapSourceToTarget(cacheItem.Image!, m_targetDirectory, item);
         }
     }
 
@@ -97,15 +113,7 @@ public class TriageDownload
             cacheItem.IsLoadQueued = false;
             if (m_pendingDerivatives.TryGetValue(e.MediaId, out MediaItem? item))
             {
-                if (!string.IsNullOrEmpty(cacheItem.DerivativePath))
-                {
-                    DownloadSinglePathItem(cacheItem.DerivativePath, m_targetDirectory);
-                }
-                else
-                {
-                    // we only have a bitmap. need to save it...
-                    SaveBitmapSourceToTarget(cacheItem.Image!, m_targetDirectory);
-                }
+                DownloadCacheItem(cacheItem, item);
 
                 // either way, remove it from our remaining list
                 m_pendingDerivatives.TryRemove(e.MediaId, out MediaItem? itemDeleted);
@@ -113,9 +121,31 @@ public class TriageDownload
         }
     }
 
-    void DownloadSinglePathItem(string path, string targetDirectory)
+    string GetTargetFilename(string targetDirectory, MediaItem item)
     {
-        string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
+        if (m_filenameType == DownloadFilenameType.LeafOnly)
+        {
+            return System.IO.Path.Combine(targetDirectory, item.VirtualPath.GetLeafItem()!);
+        }
+        else if (m_filenameType == DownloadFilenameType.FlattenedPath)
+        {
+            string flattenedName = item.VirtualPath.CreateFlatFilename();
+            return System.IO.Path.Combine(targetDirectory, flattenedName);
+        }
+        else
+        {
+            throw new CatExceptionInternalFailure($"Unsupported filename type: {m_filenameType}");
+        }
+    }
+
+    void DownloadSinglePathItem(string path, string targetDirectory, MediaItem item)
+    {
+        string target = GetTargetFilename(targetDirectory, item);
+        // make sure the extensions match
+        string? ext = Path.GetExtension(path);
+
+        if (ext != null)
+            target = Path.ChangeExtension(target, ext);
 
         if (Path.Exists(target))
         {
@@ -129,11 +159,11 @@ public class TriageDownload
         System.IO.File.Copy(path, target, m_fReplaceExisting);
     }
 
-    void SaveBitmapSourceToTarget(BitmapSource bitmap, string targetDirectory)
+    void SaveBitmapSourceToTarget(BitmapSource bitmap, string targetDirectory, MediaItem item)
     {
-        string path = "";
-        
-        string target = System.IO.Path.Combine(targetDirectory, System.IO.Path.GetFileName(path));
+        string target = GetTargetFilename(targetDirectory, item);
+
+        target = Path.ChangeExtension(target, "jpg");
 
         if (Path.Exists(target))
         {
@@ -151,7 +181,8 @@ public class TriageDownload
 
     void DownloadFullFidelityItems(IEnumerable<MediaItem> items)
     {
-        List<string> itemsToDownload = new();
+        // copy all the items we have in the cache to the directory specified
+        System.IO.Directory.CreateDirectory(m_targetDirectory);
 
         foreach (MediaItem item in items)
         {
@@ -160,44 +191,59 @@ public class TriageDownload
             if (path == null)
                 throw new CatExceptionInternalFailure($"Failed to get cached full path for item {item.VirtualPath}");
 
-            itemsToDownload.Add(path);
-        }
-
-        // copy all the items we have in the cache to the directory specified
-        System.IO.Directory.CreateDirectory(m_targetDirectory);
-
-        foreach (string path in itemsToDownload)
-        {
-            DownloadSinglePathItem(path, m_targetDirectory);
+            DownloadSinglePathItem(path, m_targetDirectory, item);
         }
     }
- 
-    void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items)
+
+    void CreateAndDownloadTriageItems(IEnumerable<MediaItem> items, Window? parent)
     {
         App.State.TriageCache.ImageCacheUpdated += OnImageCacheUpdated;
-        try
+
+        List<MediaItem> itemsToCache = new();
+
+        foreach (MediaItem item in items)
         {
-            QueueTriageCacheUpdate(items);
+            ImageCacheItem? cacheItem = App.State.TriageCache.GetAnyExistingItem(item.ID);
+
+            if (cacheItem != null)
+            {
+                DownloadCacheItem(cacheItem!, item);
+            }
+            else
+            {
+                itemsToCache.Add(item);
+            }
         }
-        finally
-        {
-            App.State.TriageCache.ImageCacheUpdated -= OnImageCacheUpdated;
-        }
+
+        QueueTriageCacheUpdate(itemsToCache);
+
+        int startingSize = m_pendingDerivatives.Count;
+
+        ProgressDialog.DoWorkWithProgress((IProgressReport progress) =>
+                                          {
+                                              // loop until our derivative list is empty
+                                              while (!this.m_pendingDerivatives.IsEmpty)
+                                              {
+                                                  progress.UpdateProgress(((double)(startingSize - this.m_pendingDerivatives.Count) * 100.0) / (double)startingSize);
+                                                  Thread.Sleep(100);
+                                              }
+
+                                              App.State.TriageCache.ImageCacheUpdated -= OnImageCacheUpdated;
+                                              progress.WorkCompleted();
+                                          });
     }
 
     public void DoDownload(IEnumerable<MediaItem> mediaItems, Window? parent)
     {
-        string downloads = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads");
-
         if (!DownloadMedia.FPrompt(
-                App.State.ActiveProfile.LastDownloadLocation ?? downloads,
                 parent,
                 out string? directory,
                 out m_fTriage,
-                out m_fReplaceExisting))
+                out m_fReplaceExisting,
+                out m_filenameType))
+        {
             return;
+        }
 
         m_targetDirectory = directory!;
 
@@ -233,7 +279,7 @@ public class TriageDownload
         }
         else
         {
-            CreateAndDownloadTriageItems(itemsToDownload);
+            CreateAndDownloadTriageItems(itemsToDownload, parent);
         }
 
         if (m_exists.Count > 0)

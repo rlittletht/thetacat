@@ -571,8 +571,8 @@ public class Derivatives
                 DerivativeItem match = GetMatchingDerivativeItem(derivative);
                 // this is no longer pending save
                 match.Path = destination;
-
-                item.OnDerivativeWorkComplete?.Invoke(new OnDerivativeWorkCompleteArgs(item.MediaKey, item.MD5));
+                
+                item.OnDerivativeWorkComplete?.Invoke(new OnDerivativeWorkCompleteArgs(item.MediaKey, item.MD5, destination));
             }
             catch (Exception ex)
             {

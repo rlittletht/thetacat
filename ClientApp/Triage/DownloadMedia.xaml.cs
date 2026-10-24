@@ -23,7 +23,7 @@ namespace Thetacat.Explorer.UI
     public partial class DownloadMedia : Window
     {
         private DownloadMediaModel _Model;
-        
+
         public DownloadMedia()
         {
             InitializeComponent();
@@ -66,17 +66,37 @@ namespace Thetacat.Explorer.UI
             Close();
         }
 
-        public static bool FPrompt(string lastLocation, Window? parent,  out string? directory, out bool triage, out bool replaceExisting)
+        public static bool FPrompt(Window? parent, out string? directory, out bool triage, out bool replaceExisting, out DownloadFilenameType filenameType)
         {
             DownloadMedia download = new DownloadMedia();
 
+            string lastLocation = App.State.ActiveProfile.LastDownloadLocation
+                ?? System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Downloads");
+
             download._Model.DownloadTo = lastLocation;
+            download._Model.ReplaceExisting = App.State.ActiveProfile.ReplaceFilesOnDownload ?? false;
+            download._Model.Triage = App.State.ActiveProfile.DownloadFilesForTriage ?? false;
+
+            string filenameTypeString = App.State.ActiveProfile.DownloadFilenameType ?? "Leaf Only";
+
+            download._Model.FilenameType = download._Model.GetFilenameTypeForDisplayString(filenameTypeString);
+
             download.Owner = parent;
             if (download.ShowDialog() ?? false)
             {
                 directory = download._Model.DownloadTo;
                 triage = download._Model.Triage;
                 replaceExisting = download._Model.ReplaceExisting;
+                filenameType = download._Model.FilenameType?.Value ?? DownloadFilenameType.LeafOnly;
+                App.State.ActiveProfile.DownloadFilenameType = download._Model.FilenameType?.DisplayName;
+                App.State.ActiveProfile.ReplaceFilesOnDownload = download._Model.ReplaceExisting;
+                App.State.ActiveProfile.DownloadFilesForTriage = download._Model.Triage;
+                App.State.ActiveProfile.LastDownloadLocation = download._Model.DownloadTo;
+                
+                App.State.Settings.WriteSettings();
+
                 return true;
             }
             else
@@ -84,6 +104,7 @@ namespace Thetacat.Explorer.UI
                 directory = null;
                 triage = false;
                 replaceExisting = false;
+                filenameType = DownloadFilenameType.LeafOnly;
                 return false;
             }
         }

@@ -159,7 +159,7 @@ public class AppState : IAppState
         // this will start the caching pipelines
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(ImageCache.Target.FullFidelity);
-        TriageCache = new ImageCache();
+        TriageCache = new ImageCache(ImageCache.Target.Triage, true);
         ClientDatabase = null;
         Workgroup = null;
         Md5Cache = new Md5Cache(ClientDatabase);

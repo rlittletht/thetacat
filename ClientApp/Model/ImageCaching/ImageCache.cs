@@ -54,6 +54,8 @@ public class ImageCache
     private const int s_picturePreviewWidth = 260;
     private const int s_pictureTriageWidth = 1024;
 
+    private bool m_favorDerivativePathOverImageCache = false;
+
     private Target m_target = Target.Preview;
 
     public event EventHandler<ImageCacheUpdateEventArgs>? ImageCacheUpdated;
@@ -81,8 +83,10 @@ public class ImageCache
         return s_picturePreviewWidth;
     }
 
-    public ImageCache(Target target = Target.Preview)
+    public ImageCache(Target target = Target.Preview, bool favorDerivativePathOverImageCache = false)
     {
+        m_favorDerivativePathOverImageCache = favorDerivativePathOverImageCache;
+
         // don't start the pipeline thread if we're under a unit test.
         if (!MainApp.MainWindow.InUnitTest)
         {
@@ -114,7 +118,6 @@ public class ImageCache
             }
         }
     }
-
 
     public ImageCacheItem QueuePurgeAndReloadToCache(MediaItem mediaItem, string md5, ImageCacheItem existing)
     {
@@ -535,7 +538,13 @@ public class ImageCache
 
         return fullImage;
     }
-    
+
+    struct BitmapOrPath
+    {
+        public BitmapSource? bitmap;
+        public Thetacat.Util.PathSegment? path;
+    }
+
     /*----------------------------------------------------------------------------
         %%Function: GetBitmapSourceForMediaItemDerivative
         %%Qualified: Thetacat.Model.ImageCaching.ImageCache.GetBitmapSourceForMediaItemDerivative
@@ -544,11 +553,15 @@ public class ImageCache
         a derivative already, and if not, it will create one (and queue it
         for saving)
     ----------------------------------------------------------------------------*/
-    BitmapSource GetBitmapSourceForMediaItemDerivative(
+    BitmapOrPath GetBitmapSourceForMediaItemDerivative(
         MediaItem mediaItem, string pathToImageSource, int originalWidth, double aspectRatio, string md5,
         Derivatives.OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete, Transformations transformations)
     {
-        BitmapSource? targetBitmap = null;
+        BitmapOrPath result;
+
+        result.path = null;
+        result.bitmap = null;
+
         double scaleFactor = GetScaleFactorForTarget(originalWidth, aspectRatio);
         int targetWidth = 0;
         bool scaling = false;
@@ -578,12 +591,15 @@ public class ImageCache
             if (pendingBitmap != null)
             {
                 // we haven't saved this yet, so use this bitmap
-                targetBitmap = pendingBitmap;
+                result.bitmap = pendingBitmap;
             }
             else
             {
                 // perfect match. use it. don't do any transformations because we matched a transformed derivative
-                targetBitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
+                if (m_favorDerivativePathOverImageCache)
+                    result.path = derivative.Path;
+                else
+                    result.bitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
             }
         }
         else
@@ -595,17 +611,17 @@ public class ImageCache
             // and now scale it to the size we want, if necessary
             if (scaling)
             {
-                targetBitmap = ScaleBitmap(fullImage, scaleFactor);
-                targetBitmap.Freeze();
-                App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, targetBitmap, scaleFactor, onDerivativeWorkComplete);
+                result.bitmap = ScaleBitmap(fullImage, scaleFactor);
+                result.bitmap.Freeze();
+                App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, result.bitmap, scaleFactor, onDerivativeWorkComplete);
             }
             else
             {
-                targetBitmap = fullImage;
+                result.bitmap = fullImage;
             }
         }
 
-        return targetBitmap;
+        return result;
     }
 
     /*----------------------------------------------------------------------------
@@ -658,7 +674,7 @@ public class ImageCache
 
             try
             {
-                BitmapSource targetBitmap = GetBitmapSourceForMediaItemDerivative(
+                BitmapOrPath bitmapOrPath = GetBitmapSourceForMediaItemDerivative(
                     mediaItem,
                     item.PathToImage,
                     item.OriginalWidth!.Value,
@@ -667,32 +683,40 @@ public class ImageCache
                     item.OnDerivativeWorkComplete,
                     transformations);
 
-                int pixelsCached = targetBitmap.PixelHeight * targetBitmap.PixelWidth * 4;
+                if (bitmapOrPath.bitmap != null)
+                {
+                    int pixelsCached = bitmapOrPath.bitmap.PixelHeight * bitmapOrPath.bitmap.PixelWidth * 4;
 
-                Interlocked.Add(ref m_cacheSize, pixelsCached);
-                Interlocked.Add(ref m_numImages, 1);
+                    Interlocked.Add(ref m_cacheSize, pixelsCached);
+                    Interlocked.Add(ref m_numImages, 1);
+                }
 
-                InternalSetBitmapForItem(item.MediaKey, targetBitmap);
+                InternalSetBitmapForItem(item.MediaKey, bitmapOrPath);
             }
             catch (Exception e)
             {
                 App.LogForApp(EventType.Critical, $"can't load image: {item.PathToImage}: {e}");
                 BitmapSource error = CreatePlaceholderImage($"cache failed");
-                InternalSetBitmapForItem(item.MediaKey, error);
+                InternalSetBitmapForItem(item.MediaKey, new BitmapOrPath { bitmap = error });
             }
         }
     }
 
-    private void InternalSetBitmapForItem(Guid mediaId, BitmapSource? targetBitmap)
+    private void InternalSetBitmapForItem(Guid mediaId, BitmapOrPath bitmapOrPath)
     {
+        BitmapSource? targetBitmap = bitmapOrPath.bitmap;
+
         if (Items.TryGetValue(mediaId, out ImageCacheItem? cacheItem))
         {
             if (targetBitmap != null && !targetBitmap.IsFrozen)
                 targetBitmap.Freeze();
 
-            bool fNeedTrigger = !(cacheItem.Image == null && targetBitmap == null);
+            bool fNeedTrigger = 
+                !(cacheItem.Image == null && targetBitmap == null && cacheItem.DerivativePath == null && bitmapOrPath.path == null);
 
             cacheItem.Image = targetBitmap;
+            cacheItem.DerivativePath = bitmapOrPath.path;
+            
             if (fNeedTrigger)
                 TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
 
