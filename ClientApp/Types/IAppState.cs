@@ -20,6 +20,8 @@ public interface IAppState
     public event EventHandler<ProfileChangedEventArgs>? ProfileChanged;
     ImageCache PreviewImageCache { get; }
     ImageCache ImageCache { get; }
+    ImageCache TriageCache { get; } 
+    
     ICatalog Catalog { get; }
     TcSettings.TcSettings Settings { get; }
     TcSettings.Profile ActiveProfile { get; }

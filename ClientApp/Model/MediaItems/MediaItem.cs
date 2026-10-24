@@ -45,6 +45,8 @@ public class MediaItem : INotifyPropertyChanged
     private bool m_isCachePending = false;
     public bool UseDeprecatedTagIds = false;
 
+    public override string ToString() => $"{VirtualPath} ({ID})";
+    
     public MediaItem(bool useDeprecatedTagIds)
     {
         m_working = new MediaItemData();

@@ -17,7 +17,7 @@ namespace Thetacat.UI.Options;
 /// </summary>
 public partial class CacheConfig : UserControl
 {
-    readonly CacheConfigModel _Model = new CacheConfigModel();
+    public readonly CacheConfigModel _Model = new CacheConfigModel();
     AccountModel? _AccountModel;
 
     public CacheConfig()
@@ -91,7 +91,28 @@ public partial class CacheConfig : UserControl
         }
     }
 
-
+    public bool PrecheckSettings(Guid? catalogID)
+    {
+        if (_Model.CreateNewWorkgroup)
+        {
+            return true;
+        }
+        
+        // check if the workgroup is null
+        if (_Model.CurrentWorkgroup == null)
+        {
+            MessageBox.Show("Can't save profile without a workgroup. Did you create a new catalog? Be sure to create a new workgroup too!");
+            return false;
+        }
+        
+        // check to see if the workgroup is using the same catalog as our account
+        if (_Model.CurrentWorkgroup.Workgroup.CatalogID != catalogID)
+        {
+            MessageBox.Show("Can't save profile. Workgroup is not using the same catalog as the account.");
+            return false;
+        }
+        return true;
+    }
     public bool FSaveSettings(string sqlConnection, Guid catalogID)
     {
         PathSegment localCatalogCacheRoot = new PathSegment(_Model.LocalCatalogCacheLocation);
@@ -203,7 +224,7 @@ public partial class CacheConfig : UserControl
 
     private void CreateNewWorkgroup(object sender, System.Windows.RoutedEventArgs e)
     {
-        ServiceWorkgroup? newWorkgroup = CreateWorkgroup.Create(Window.GetWindow(this));
+        ServiceWorkgroup? newWorkgroup = CreateWorkgroup.Create(Window.GetWindow(this), _AccountModel?.CurrentCatalogID);
 
         if (newWorkgroup != null)
         {

@@ -201,28 +201,32 @@
                 </Grid.ColumnDefinitions>
                 <GroupBox Grid.Column="0">
                     <GroupBox.Header>Builtin Properties</GroupBox.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Image Width" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
-                            <TextBlock Text="Image Height" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
-                            <TextBlock Text="Mime Type" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Original File Date" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
-                            <TextBlock Text="Import Date" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
-                            <TextBlock Text="MD5 Hash" />
-                            <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
-                        </StackPanel>
-                    </Grid>
+                    <StackPanel>
+                        <TextBlock Text="Virtual path" />
+                        <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.VirtualPath, Mode=OneWay}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Image Width" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageWidth}" />
+                                <TextBlock Text="Image Height" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImageHeight}" />
+                                <TextBlock Text="Mime Type" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MimeType}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Original File Date" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.OriginalMediaDate}" />
+                                <TextBlock Text="Import Date" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.ImportDate}" />
+                                <TextBlock Text="MD5 Hash" />
+                                <TextBox IsEnabled="False" Text="{Binding Path=MediaItem.MD5}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </GroupBox>
                 <GroupBox Grid.Column="1">
                     <GroupBox.Header>
@@ -231,15 +235,15 @@
                     <ListView Name="MetadataListView" ItemsSource="{Binding Path=Tags}" Focusable="False">
                         <ListView.Resources>
                             <ContextMenu x:Key="MetadataListViewMenu">
-                                <MenuItem Header="Metatag panel..." Click="ToggleMetatagPanel"/>
-                                <MenuItem Header="Edit metatag value..." Click="EditMetatagValue"/>
+                                <MenuItem Header="Metatag panel..." Click="ToggleMetatagPanel" />
+                                <MenuItem Header="Edit metatag value..." Click="EditMetatagValue" />
                             </ContextMenu>
                         </ListView.Resources>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="{x:Type ListViewItem}">
-                                    <Setter Property="ContextMenu" Value="{StaticResource MetadataListViewMenu}"/>
-                                </Style>
-                            </ListView.ItemContainerStyle>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="ContextMenu" Value="{StaticResource MetadataListViewMenu}" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn DisplayMemberBinding="{Binding Metatag.StandardName}">
@@ -250,7 +254,8 @@
                                     <GridViewColumnHeader Content="Value" Tag="Value" Click="SortType" />
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Grid Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                            <Grid Background="Transparent" HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Stretch">
                                                 <TextBlock Text="{Binding Value}" />
                                             </Grid>
                                         </DataTemplate>

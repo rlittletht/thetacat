@@ -63,12 +63,23 @@ public class PathSegment
         foreach (string path in paths)
         {
             if (path == "." || path == ".\\")
-                continue;  // meaningless join
+                continue; // meaningless join
 
             segment = new PathSegment(Path.Join(segment.Local, path));
         }
 
         return segment;
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: CreateFlatFilename
+        %%Qualified: Thetacat.Util.PathSegment.CreateFlatFilename
+
+        convert this to a single leaf name
+    ----------------------------------------------------------------------------*/
+    public string CreateFlatFilename()
+    {
+        return m_segment.Replace(":/", "_").Replace("//", "_").Replace("/", "_").Replace(":", "_");
     }
 
     public PathSegment Unroot()

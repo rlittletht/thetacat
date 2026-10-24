@@ -64,6 +64,7 @@ public class Workgroup
                 ServiceWorkgroup workgroup =
                     new ServiceWorkgroup()
                     {
+                        CatalogID = catalogID,
                         ID = reader.GetGuid(0),
                         Name = reader.GetString(1),
                         ServerPath = reader.GetString(2),
@@ -121,6 +122,7 @@ public class Workgroup
             s_queryWorkgroup,
             (ISqlReader reader, Guid correlationId, ref ServiceWorkgroup building) =>
             {
+                building.CatalogID = catalogID;
                 building.ID = reader.GetGuid(0);
                 building.Name = reader.GetString(1);
                 building.ServerPath = reader.GetString(2);

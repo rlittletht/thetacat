@@ -36,7 +36,10 @@ public class Profile
     public string? TimelineOrder;
     public bool? ExpandMediaStacksInExplorers;
     public string? LastDownloadLocation;
-
+    public bool? ReplaceFilesOnDownload;
+    public string? DownloadFilenameType;
+    public bool? DownloadFilesForTriage;
+    
     public string? _DerivativeCache;
     public string? DerivativeCache => LocalCatalogCache;
     public string? LocalCatalogCache;
@@ -78,6 +81,9 @@ public class Profile
         _DerivativeCache = basedOn._DerivativeCache;
         LocalCatalogCache = basedOn.LocalCatalogCache;
         LastDownloadLocation = basedOn.LastDownloadLocation;
+        ReplaceFilesOnDownload = basedOn.ReplaceFilesOnDownload;
+        DownloadFilenameType = basedOn.DownloadFilenameType;
+        DownloadFilesForTriage = basedOn.DownloadFilesForTriage;
     }
 
     public override string ToString() => Name ?? string.Empty;

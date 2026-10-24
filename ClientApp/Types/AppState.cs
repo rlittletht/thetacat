@@ -41,6 +41,8 @@ public class AppState : IAppState
     public ICache Cache { get; private set; }
     public ImageCache PreviewImageCache { get; private set; }
     public ImageCache ImageCache { get; private set; }
+    public ImageCache TriageCache { get; private set; }
+    
     public ICatalog Catalog { get; private set; }
     public Filters Filters { get; private set; }
     public void CloseAsyncLogMonitor(bool skipClose) => m_closeAsyncLog?.Invoke(skipClose);
@@ -156,7 +158,8 @@ public class AppState : IAppState
         m_addBackgroundWork = null;
         // this will start the caching pipelines
         PreviewImageCache = new ImageCache();
-        ImageCache = new ImageCache(true);
+        ImageCache = new ImageCache(ImageCache.Target.FullFidelity);
+        TriageCache = new ImageCache(ImageCache.Target.Triage, true);
         ClientDatabase = null;
         Workgroup = null;
         Md5Cache = new Md5Cache(ClientDatabase);

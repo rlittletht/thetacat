@@ -27,6 +27,8 @@ namespace Thetacat.Model.Client;
 ----------------------------------------------------------------------------*/
 public class Derivatives
 {
+    public delegate void OnDerivativeWorkCompleteDelegate(OnDerivativeWorkCompleteArgs args);
+
     private ProducerConsumer<DerivativeWork>? m_derivativeWorkPipeline;
 
     // all of the derivatives we know about for each mediaitem. this is the master list
@@ -412,7 +414,7 @@ public class Derivatives
         m_derivativeWorkPipeline?.Producer.QueueRecord(work);
     }
 
-    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor, Action<OnDerivativeWorkCompleteArgs>? onDerivativeWorkComplete)
+    public void QueueSaveResampledImage(MediaItem item, string md5, Transformations transformations, BitmapSource resampledImage, double requestedScaleFactor, OnDerivativeWorkCompleteDelegate? onDerivativeWorkComplete)
     {
         QueueDerivativeWork(new DerivativeWork(item, md5, resampledImage, false, transformations.TransformationsKey, requestedScaleFactor, onDerivativeWorkComplete));
     }
@@ -441,7 +443,7 @@ public class Derivatives
             Transcode
         }
 
-        public Action<OnDerivativeWorkCompleteArgs>? OnDerivativeWorkComplete { get; set; }
+        public Derivatives.OnDerivativeWorkCompleteDelegate? OnDerivativeWorkComplete { get; private set; }
         public Guid Cookie => MediaKey;
         public Guid MediaKey { get; private set; }
         public string MD5 { get; private set; } = string.Empty;
@@ -480,7 +482,7 @@ public class Derivatives
             bool fullBitmapFidelity,
             string transformationsKey,
             double requestedScaleFactor,
-            Action<OnDerivativeWorkCompleteArgs>? onWorkComplete = null)
+            OnDerivativeWorkCompleteDelegate? onWorkComplete = null)
         {
             OriginalHeight = mediaItem.ImageHeight ?? resampledImage.PixelHeight;
             OriginalWidth = mediaItem.ImageWidth ?? resampledImage.PixelWidth;
@@ -512,6 +514,20 @@ public class Derivatives
         }
     }
 
+    public static void SaveBitmapSourceDerivativeToFile(BitmapSource bitmap, string targetPath, int quality)
+    {
+        using FileStream stream = new(targetPath, FileMode.Create);
+
+        JpegBitmapEncoder encoder =
+            new()
+            {
+                QualityLevel = quality
+            };
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        encoder.Save(stream);
+    }
+    
+    
     void DoDerivativeWork(IEnumerable<DerivativeWork> workItems, Consumer<DerivativeWork>.ShouldAbortDelegate shouldAbort)
     {
         foreach (DerivativeWork item in workItems)
@@ -550,21 +566,13 @@ public class Derivatives
 
             try
             {
-                using FileStream stream = new(destination.Local, FileMode.Create);
-
-                JpegBitmapEncoder encoder =
-                    new()
-                    {
-                        QualityLevel = quality
-                    };
-                encoder.Frames.Add(BitmapFrame.Create(item.Image));
-                encoder.Save(stream);
+                SaveBitmapSourceDerivativeToFile(item.Image, destination.Local, quality);
 
                 DerivativeItem match = GetMatchingDerivativeItem(derivative);
                 // this is no longer pending save
                 match.Path = destination;
-
-                item.OnDerivativeWorkComplete?.Invoke(new OnDerivativeWorkCompleteArgs(item.MediaKey, item.MD5));
+                
+                item.OnDerivativeWorkComplete?.Invoke(new OnDerivativeWorkCompleteArgs(item.MediaKey, item.MD5, destination));
             }
             catch (Exception ex)
             {

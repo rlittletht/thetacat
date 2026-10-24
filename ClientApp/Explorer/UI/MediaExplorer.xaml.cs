@@ -20,6 +20,7 @@ using Thetacat.ServiceClient;
 using System.Windows.Media;
 using MetadataExtractor;
 using Thetacat.Model.Mediatags;
+using Thetacat.Triage;
 using Thetacat.UI.Input;
 
 namespace Thetacat.Explorer;
@@ -416,48 +417,7 @@ public partial class MediaExplorer : UserControl
 
     private void _DownloadItems(MediaExplorerItem? context)
     {
-        List<MediaItem> mediaItems = ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems);
-        string downloads = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads");
-
-        if (InputBox.FPrompt("Download directory", App.State.ActiveProfile.LastDownloadLocation ?? downloads, out string? directory, Window.GetWindow(this)))
-        {
-            // first, preflight to make sure all the media is in the cache
-            List<string> uncachedItems = new();
-            List<string> itemsToDownload = new();
-
-            foreach (MediaItem item in mediaItems)
-            {
-                string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
-
-                if (path == null)
-                {
-                    uncachedItems.Add(item.VirtualPath);
-                }
-                else
-                {
-                    itemsToDownload.Add(path);
-                }
-            }
-
-            if (uncachedItems.Count > 0)
-            {
-                string joined = string.Join(",", uncachedItems);
-
-                if (MessageBox.Show($"Cannot download uncached items: {joined}", "Download", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
-                    return;
-            }
-
-            // copy all the items we have in the cache to the directory specified
-            System.IO.Directory.CreateDirectory(directory);
-
-            foreach (string path in itemsToDownload)
-            {
-                string target = System.IO.Path.Combine(directory, System.IO.Path.GetFileName(path));
-                System.IO.File.Copy(path, target);
-            }
-        }
+        TriageDownload.DownloadItems(ItemSelector.GetSelectedMediaItems(m_selector.SelectedItems), Window.GetWindow(this));
     }
 
     private void _ShowHideMetatagPanel(MediaExplorerItem? context)

@@ -31,11 +31,21 @@ public partial class CatOptions : Window
         m_model.PropertyChanged += ModelPropertyChanged;
 
         DataContext = m_model;
+        Closing += OnClosingPrecheck;
+        
         AccountTab._Model.PropertyChanged += AccountModelPropertyChanged;
         AccountTab.LoadFromSettings(m_model);
         CacheConfigTab.LoadFromSettings(AccountTab._Model, m_model, AppSecrets.MasterSqlConnectionString, AccountTab.CatalogID);
     }
 
+    private void OnClosingPrecheck(object? sender, CancelEventArgs args)
+    {  
+        if (!PrecheckOptionsForSave())
+        {
+            args.Cancel = true;
+        }
+    }
+    
     private void AccountModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == "SqlConnection")
@@ -49,10 +59,13 @@ public partial class CatOptions : Window
         if (e.PropertyName == "CreateNewCatalog")
         {
             if (AccountTab._Model.CreateNewCatalog)
+            {
                 AccountTab._Model.CurrentCatalogID = RT.Comb.Provider.Sql.Create();
+                CacheConfigTab._Model.CurrentWorkgroup = null;
+            }
             else
                 AccountTab._Model.CurrentCatalogID = AccountTab._Model.CatalogDefinition?.ID ?? Guid.Empty;
-        }
+        }   
         else if (e.PropertyName == "CatalogDefinition")
         {
             if (AccountTab._Model.CatalogDefinition != null)
@@ -66,6 +79,27 @@ public partial class CatOptions : Window
         }
     }
 
+    /*----------------------------------------------------------------------------
+        %%Function: PrecheckOptionsForSave
+        %%Qualified: Thetacat.UI.Options.CatOptions.PrecheckOptionsForSave
+
+        preflight the options before we try to save. return false if the precheck
+        fails
+
+        this should tell the user why the precheck is failing and how they can
+        fix it
+    ----------------------------------------------------------------------------*/
+    public bool PrecheckOptionsForSave()
+    {
+        if (!CacheConfigTab.PrecheckSettings(AccountTab._Model.CurrentCatalogID))
+            return false;
+        
+        if (!AccountTab.PrecheckSettings())
+            return false;
+        
+        return true;
+    }
+    
     public void SaveToSettings()
     {
         if (m_model.CurrentProfile == null)
