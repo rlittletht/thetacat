@@ -42,6 +42,7 @@ public class AppState : IAppState
     public ImageCache PreviewImageCache { get; private set; }
     public ImageCache ImageCache { get; private set; }
     public ImageCache TriageCache { get; private set; }
+    public ImageCache HighFidelityCache { get; private set; }
     
     public ICatalog Catalog { get; private set; }
     public Filters Filters { get; private set; }
@@ -160,6 +161,7 @@ public class AppState : IAppState
         PreviewImageCache = new ImageCache();
         ImageCache = new ImageCache(ImageCache.Target.FullFidelity);
         TriageCache = new ImageCache(ImageCache.Target.Triage, true);
+        HighFidelityCache = new ImageCache(ImageCache.Target.HighFidelity, false/*fFavorDerivativePath*/);
         ClientDatabase = null;
         Workgroup = null;
         Md5Cache = new Md5Cache(ClientDatabase);

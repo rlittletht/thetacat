@@ -511,8 +511,8 @@ namespace Thetacat.Import.UI
             if (!m_model.IsMediaCheckedAgainstCatalog)
             {
                 if (MessageBox.Show(
-                        "Thetacat Import",
                         "You have not checked for items that already exist in the catalog. Do you want to continue and potentially import duplicate items?",
+                        "Thetacat Import",
                         MessageBoxButton.YesNo)
                     == MessageBoxResult.No)
                 {

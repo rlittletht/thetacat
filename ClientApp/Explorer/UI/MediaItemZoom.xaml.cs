@@ -34,15 +34,26 @@ public partial class MediaItemZoom : Window
     private readonly MediaItemZoomModel m_model = new();
 
     /*----------------------------------------------------------------------------
-        %%Function: OnImageCacheUpdated
-        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnImageCacheUpdated
+        %%Function: OnFullFidelityImageCacheUpdated
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.OnFullFidelityImageCacheUpdated
     ----------------------------------------------------------------------------*/
-    private void OnImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
+    private void OnFullFidelityImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
     {
         ImageCache? cache = sender as ImageCache;
 
         if (cache == null)
-            throw new CatExceptionInternalFailure("sender wasn't an image cache in OnImageCacheUpdated");
+            throw new CatExceptionInternalFailure("sender wasn't an image cache in OnFullFidelityImageCacheUpdated");
+
+        if (m_model.MediaItem != null)
+            EnsureZoomImageFromCache(null, cache, m_model.MediaItem);
+    }
+
+    private void OnHighFidelityImageCacheUpdated(object? sender, ImageCacheUpdateEventArgs e)
+    {
+        ImageCache? cache = sender as ImageCache;
+
+        if (cache == null)
+            throw new CatExceptionInternalFailure("sender wasn't an image cache in OnHighFidelityImageCacheUpdated");
 
         if (m_model.MediaItem != null)
             EnsureZoomImageFromCache(null, cache, m_model.MediaItem);
@@ -69,7 +80,8 @@ public partial class MediaItemZoom : Window
     ----------------------------------------------------------------------------*/
     private void OnCloseReleaseWatchers(object? sender, CancelEventArgs e)
     {
-        App.State.ImageCache.ImageCacheUpdated -= OnImageCacheUpdated;
+        App.State.ImageCache.ImageCacheUpdated -= OnFullFidelityImageCacheUpdated;
+        App.State.HighFidelityCache.ImageCacheUpdated -= OnHighFidelityImageCacheUpdated;
         m_model.MediaItem!.PropertyChanged -= OnMediaItemUpdated;
     }
 
@@ -86,7 +98,7 @@ public partial class MediaItemZoom : Window
             string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
 
             if (path != null)
-                App.State.ImageCache.TryQueueBackgroundLoadToCache(item, App.State.GetMD5ForItem(item.ID), path, null);
+                cache.TryQueueBackgroundLoadToCache(item, App.State.GetMD5ForItem(item.ID), path, null);
         }
 
         cacheItem ??= lowResCache?.GetAnyExistingItem(item.ID);
@@ -162,13 +174,14 @@ public partial class MediaItemZoom : Window
 
         App.State.RegisterWindowPlace(this, "mediaItem-details");
 
-        App.State.ImageCache.ImageCacheUpdated += OnImageCacheUpdated;
+        App.State.ImageCache.ImageCacheUpdated += OnFullFidelityImageCacheUpdated;
+        App.State.HighFidelityCache.ImageCacheUpdated += OnHighFidelityImageCacheUpdated;
         m_model.MediaItem.PropertyChanged += OnMediaItemUpdated;
         m_model.IsTrashItem = item.IsTrashItem;
         m_model.IsOffline = item.DontPushToCloud;
 
         RebuildMruButtons();
-        EnsureZoomImageFromCache(App.State.PreviewImageCache, App.State.ImageCache, item);
+        EnsureZoomImageFromCache(App.State.PreviewImageCache, m_model.IsFullFidelity ? App.State.ImageCache : App.State.HighFidelityCache, item);
         m_model.VectorClock++;
         UpdateMetatagPanelIfNecessary();
     }
@@ -421,6 +434,33 @@ public partial class MediaItemZoom : Window
     private void TogglePruneMode(object sender, RoutedEventArgs e)
     {
         TogglePruneModeCore();
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ToggleFullFidelityCore
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.ToggleFullFidelityCore
+    ----------------------------------------------------------------------------*/
+    private void ToggleFullFidelityCore()
+    {
+        if (m_model.IsFullFidelity)
+        {
+            m_model.IsFullFidelity = false;
+            m_model.FullFidelityCaption = "Full Fidelity";
+        }
+        else
+        {
+            m_model.IsFullFidelity = true;
+            m_model.FullFidelityCaption = "Not Full Fidelity";
+        }
+    }
+
+    /*----------------------------------------------------------------------------
+        %%Function: ToggleFullFidelity
+        %%Qualified: Thetacat.Explorer.MediaItemZoom.ToggleFullFidelity
+    ----------------------------------------------------------------------------*/
+    private void ToggleFullFidelity(object sender, RoutedEventArgs e)
+    {
+        ToggleFullFidelityCore();
     }
 
     /*----------------------------------------------------------------------------

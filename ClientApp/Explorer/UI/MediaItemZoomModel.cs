@@ -42,6 +42,10 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
             "IsTag21Checked", "IsTag22Checked", "IsTag23Checked", "IsTag24Checked", "IsTag25Checked", "IsTag26Checked", "IsTag27Checked", "IsTag28Checked", "IsTag29Checked", "IsTag30Checked"
         };
 
+    private int _vectorClock = 0;
+    private bool m_isFullFidelity;
+    private string m_fullFidelityCaption = "Full Fidelity";
+
     public string Tag1Label => $"{(IsPruning ? "0: " : "")}{ZoomTags[0].Tag?.Name ?? "unset"}";
     public string Tag2Label => $"{(IsPruning ? "1: " : "")}{ZoomTags[1].Tag?.Name ?? "unset"}";
     public string Tag3Label => $"{(IsPruning ? "2: " : "")}{ZoomTags[2].Tag?.Name ?? "unset"}";
@@ -115,7 +119,11 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
 
 #endregion
 
-    public int VectorClock { get; set; } = 0;
+    public int VectorClock
+    {
+        get => _vectorClock;
+        set => SetField(ref _vectorClock, value);
+    }
 
     public string PruneModeCaption
     {
@@ -134,6 +142,22 @@ public class MediaItemZoomModel : ItemAdorners, INotifyPropertyChanged
         }
     }
 
+    public string FullFidelityCaption
+    {
+        get => m_fullFidelityCaption;
+        set => SetField(ref m_fullFidelityCaption, value);
+    }
+    public bool IsFullFidelity
+    {
+        get => m_isFullFidelity;
+        set
+        {
+            SetField(ref m_isFullFidelity, value);
+            OnPropertyChanged(nameof(FullFidelityVisibility));
+        }
+    }
+
+    public Visibility FullFidelityVisibility => m_isFullFidelity ? Visibility.Visible : Visibility.Collapsed;
     public Visibility PruningVisibility => m_isPruning ? Visibility.Visible : Visibility.Collapsed;
 
     public BitmapSource? Image

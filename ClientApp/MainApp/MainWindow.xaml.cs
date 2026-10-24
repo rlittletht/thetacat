@@ -143,6 +143,7 @@ public partial class MainWindow : Window, IMainCommands
         App.State.PreviewImageCache.Close();
         App.State.ImageCache.Close();
         App.State.TriageCache.Close();
+        App.State.HighFidelityCache.Close();
         App.State.Md5Cache.Close();
         App.State.ClientDatabase?.Close();
 
