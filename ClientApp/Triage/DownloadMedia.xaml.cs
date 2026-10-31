@@ -66,7 +66,7 @@ namespace Thetacat.Explorer.UI
             Close();
         }
 
-        public static bool FPrompt(Window? parent, out string? directory, out bool triage, out bool replaceExisting, out DownloadFilenameType filenameType)
+        public static bool FPrompt(Window? parent, out string? directory, out bool triage, out bool replaceExisting, out bool appendMetadata, out DownloadFilenameType filenameType)
         {
             DownloadMedia download = new DownloadMedia();
 
@@ -78,6 +78,7 @@ namespace Thetacat.Explorer.UI
             download._Model.DownloadTo = lastLocation;
             download._Model.ReplaceExisting = App.State.ActiveProfile.ReplaceFilesOnDownload ?? false;
             download._Model.Triage = App.State.ActiveProfile.DownloadFilesForTriage ?? false;
+            download._Model.AppendMetadata = App.State.ActiveProfile.AppendMetadataOnDownload ?? false;
 
             string filenameTypeString = App.State.ActiveProfile.DownloadFilenameType ?? "Leaf Only";
 
@@ -89,11 +90,13 @@ namespace Thetacat.Explorer.UI
                 directory = download._Model.DownloadTo;
                 triage = download._Model.Triage;
                 replaceExisting = download._Model.ReplaceExisting;
+                appendMetadata = download._Model.AppendMetadata;
                 filenameType = download._Model.FilenameType?.Value ?? DownloadFilenameType.LeafOnly;
                 App.State.ActiveProfile.DownloadFilenameType = download._Model.FilenameType?.DisplayName;
                 App.State.ActiveProfile.ReplaceFilesOnDownload = download._Model.ReplaceExisting;
                 App.State.ActiveProfile.DownloadFilesForTriage = download._Model.Triage;
                 App.State.ActiveProfile.LastDownloadLocation = download._Model.DownloadTo;
+                App.State.ActiveProfile.AppendMetadataOnDownload = download._Model.AppendMetadata;
                 
                 App.State.Settings.WriteSettings();
 
@@ -104,7 +107,9 @@ namespace Thetacat.Explorer.UI
                 directory = null;
                 triage = false;
                 replaceExisting = false;
+                appendMetadata = false;
                 filenameType = DownloadFilenameType.LeafOnly;
+                
                 return false;
             }
         }

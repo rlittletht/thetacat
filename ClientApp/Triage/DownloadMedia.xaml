@@ -21,6 +21,7 @@
             </DockPanel>
             <CheckBox Content="Replace existing files" IsChecked="{Binding Path=ReplaceExisting}" />
             <CheckBox Content="Download for triage" IsChecked="{Binding Path=Triage}" />
+            <CheckBox Content="Append user metadata" IsChecked="{Binding Path=AppendMetadata}" />
             <TextBlock Margin="0,8,0,0">Filename type</TextBlock>
             <ComboBox
                 ItemsSource="{Binding Path=FilenameTypes}"
