@@ -682,6 +682,7 @@ public class ImageCache
                     }
 
                     BitmapSource other = ScaleBitmap(fullImage, scaleFactors[i]);
+                    other.Freeze();
                     // there's nobody to inform about this derivative work complete since nobody explicitly asked for it...
                     App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, other, scaleFactors[i], null /*onDerivativeWorkComplete*/);
                 }
