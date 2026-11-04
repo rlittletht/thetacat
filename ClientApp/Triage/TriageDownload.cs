@@ -9,6 +9,7 @@ using System.Windows.Shapes;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
@@ -42,6 +43,8 @@ public class TriageDownload
     private bool m_fTriage = false;
     private bool m_fReplaceExisting = false;
     private bool m_fAppendMetadata = false;
+    private List<Metatag> m_metadataToExport;
+    
     List<string> m_exists = new();
     private string m_targetDirectory = string.Empty;
     private DownloadFilenameType m_filenameType = DownloadFilenameType.LeafOnly;
@@ -106,6 +109,23 @@ public class TriageDownload
         {
             if (!IsStandardUserOrIptc(tag.Metatag.Standard))
                 continue;
+
+            if (m_metadataToExport.Count > 0)
+            {
+                // must match one of these items
+                bool matched = false;
+                
+                foreach (Metatag tagToExport in m_metadataToExport)
+                {
+                    if (tag.Metatag.ID == tagToExport.ID)
+                    {
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched)
+                    continue;
+            }
             
             string value = tag.Value != null ? $"({tag.Value})" : string.Empty;
             string hashtag = $"#{tag.Metatag.Standard}:{tag.Metatag.Name}{value}";
@@ -290,7 +310,8 @@ public class TriageDownload
                 out m_fTriage,
                 out m_fReplaceExisting,
                 out m_fAppendMetadata,
-                out m_filenameType))
+                out m_filenameType,
+                out m_metadataToExport))
         {
             return;
         }

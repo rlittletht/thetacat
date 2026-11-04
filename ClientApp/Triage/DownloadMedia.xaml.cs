@@ -2,6 +2,7 @@
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Thetacat.Filtering.UI;
+using Thetacat.Metatags;
+using Thetacat.Metatags.Model;
 using Thetacat.Triage;
 
 namespace Thetacat.Explorer.UI
@@ -23,12 +27,32 @@ namespace Thetacat.Explorer.UI
     public partial class DownloadMedia : Window
     {
         private DownloadMediaModel _Model;
+        private readonly Dictionary<Guid, string> m_metatagLineageMap;
 
         public DownloadMedia()
         {
             InitializeComponent();
             _Model = new DownloadMediaModel();
             DataContext = _Model;
+            m_metatagLineageMap = App.State.MetatagSchema.BuildLineageMap();
+            InitializeAvailableParents();
+
+        }
+
+        void InitializeAvailableParents()
+        {
+            IComparer<KeyValuePair<Guid, string>> comparer =
+                Comparer<KeyValuePair<Guid, string>>.Create((x, y) => String.Compare(x.Value, y.Value, StringComparison.Ordinal));
+            ImmutableSortedSet<KeyValuePair<Guid, string>> sorted = m_metatagLineageMap.ToImmutableSortedSet(comparer);
+
+            foreach (KeyValuePair<Guid, string> item in sorted)
+            {
+                _Model.AvailableTags.Add(new FilterModelMetatagItem(App.State.MetatagSchema.GetMetatagFromId(item.Key)!, item.Value));
+            }
+
+            AvailableMetatagsTree.Initialize(
+                App.State.MetatagSchema.WorkingTree.Children,
+                App.State.MetatagSchema.SchemaVersionWorking);
         }
 
         private void BrowseForPath(object sender, RoutedEventArgs e)
@@ -66,7 +90,35 @@ namespace Thetacat.Explorer.UI
             Close();
         }
 
-        public static bool FPrompt(Window? parent, out string? directory, out bool triage, out bool replaceExisting, out bool appendMetadata, out DownloadFilenameType filenameType)
+        private void AddInitialTag(object sender, RoutedEventArgs e)
+        {
+            InitialTagPickerPopup.IsOpen = !InitialTagPickerPopup.IsOpen;
+        }
+
+        private FilterModelMetatagItem? GetTagFromId(Guid id)
+        {
+            foreach (FilterModelMetatagItem tag in _Model.AvailableTags)
+            {
+                if (tag.Metatag.ID == id)
+                    return tag;
+            }
+
+            return null;
+        }
+        private void DoSelectedInitialTagChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is MetatagTreeItem newItem)
+            {
+                FilterModelMetatagItem? item = GetTagFromId(newItem.ItemId);
+
+                if (item != null)
+                    _Model.InitialTags.Add(item);
+            }
+
+            InitialTagPickerPopup.IsOpen = false;
+        }
+        
+        public static bool FPrompt(Window? parent, out string? directory, out bool triage, out bool replaceExisting, out bool appendMetadata, out DownloadFilenameType filenameType, out List<Metatag> metadataToExport)
         {
             DownloadMedia download = new DownloadMedia();
 
@@ -100,6 +152,13 @@ namespace Thetacat.Explorer.UI
                 
                 App.State.Settings.WriteSettings();
 
+                metadataToExport = new();
+                
+                foreach(FilterModelMetatagItem item in download._Model.InitialTags)
+                {
+                    metadataToExport.Add(item.Metatag);
+                }
+                
                 return true;
             }
             else
@@ -109,7 +168,7 @@ namespace Thetacat.Explorer.UI
                 replaceExisting = false;
                 appendMetadata = false;
                 filenameType = DownloadFilenameType.LeafOnly;
-                
+                metadataToExport = new();
                 return false;
             }
         }
