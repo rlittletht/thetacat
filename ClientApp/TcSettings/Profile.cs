@@ -37,6 +37,7 @@ public class Profile
     public bool? ExpandMediaStacksInExplorers;
     public string? LastDownloadLocation;
     public bool? ReplaceFilesOnDownload;
+    public bool? AppendMetadataOnDownload;
     public string? DownloadFilenameType;
     public bool? DownloadFilesForTriage;
     
@@ -82,6 +83,7 @@ public class Profile
         LocalCatalogCache = basedOn.LocalCatalogCache;
         LastDownloadLocation = basedOn.LastDownloadLocation;
         ReplaceFilesOnDownload = basedOn.ReplaceFilesOnDownload;
+        AppendMetadataOnDownload = basedOn.AppendMetadataOnDownload;
         DownloadFilenameType = basedOn.DownloadFilenameType;
         DownloadFilesForTriage = basedOn.DownloadFilesForTriage;
     }

@@ -58,6 +58,8 @@ public class TcSettings
                         .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().LastDownloadLocation, (_, value, context) => context!.GetDictionaryValue<string, Profile>().LastDownloadLocation = value)
                         .AddElement("ReplaceFilesOnDownload")
                         .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().ReplaceFilesOnDownload?.ToString() ?? "false", (_, value, context) => context!.GetDictionaryValue<string, Profile>().ReplaceFilesOnDownload = bool.Parse(value))
+                        .AddElement("AppendMetadataOnDownload")
+                        .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().AppendMetadataOnDownload?.ToString() ?? "false", (_, value, context) => context!.GetDictionaryValue<string, Profile>().AppendMetadataOnDownload = bool.Parse(value))
                         .AddElement("DownloadFilenameType")
                         .AddAttribute("value", (_, context) => context!.GetDictionaryValue<string, Profile>().DownloadFilenameType, (_, value, context) => context!.GetDictionaryValue<string, Profile>().DownloadFilenameType = value)
                         .AddElement("DownloadFilesForTriage")

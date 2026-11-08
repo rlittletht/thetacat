@@ -4,8 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Thetacat.Explorer.UI"
+        xmlns:controls="clr-namespace:Thetacat.UI.Controls"
+        xmlns:types="clr-namespace:Thetacat.Types"
         mc:Ignorable="d"
-        Title="DownloadMedia" Height="220" Width="300">
+        Title="DownloadMedia" Height="320" Width="300">
+    <Window.Resources>
+        <types:BindingProxy x:Key="MediaImportModelProxy"
+                            Data="{Binding ElementName=MediaImportControl, Path=Model}" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -19,13 +25,53 @@
                         DockPanel.Dock="Right" Width="24" />
                 <TextBox DockPanel.Dock="Right" Text="{Binding Path=DownloadTo}" Margin="10,0,0,0" />
             </DockPanel>
-            <CheckBox Content="Replace existing files" IsChecked="{Binding Path=ReplaceExisting}" />
-            <CheckBox Content="Download for triage" IsChecked="{Binding Path=Triage}" />
-            <TextBlock Margin="0,8,0,0">Filename type</TextBlock>
-            <ComboBox
-                ItemsSource="{Binding Path=FilenameTypes}"
-                SelectedItem="{Binding Path=FilenameType}"
-                DisplayMemberPath="DisplayName" />
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Vertical">
+                    <CheckBox Content="Replace existing files" IsChecked="{Binding Path=ReplaceExisting}" />
+                    <CheckBox Content="Download for triage" IsChecked="{Binding Path=Triage}" />
+                    <TextBlock Margin="0,8,0,0">Filename type</TextBlock>
+                    <ComboBox
+                        ItemsSource="{Binding Path=FilenameTypes}"
+                        SelectedItem="{Binding Path=FilenameType}"
+                        DisplayMemberPath="DisplayName" />
+                </StackPanel>
+                <GroupBox Header="Initial Tags" Grid.Column="2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Popup Name="InitialTagPickerPopup"
+                               PlacementTarget="{Binding ElementName=SelectMetatag}">
+                            <controls:MetatagTreeView Checkable="False"
+                                                      x:Name="AvailableMetatagsTree"
+                                                      SelectedItemChanged="DoSelectedInitialTagChanged" />
+                        </Popup>
+                        <StackPanel Orientation="Vertical" Grid.Row="0">
+                            <CheckBox Content="Append user metadata" IsChecked="{Binding Path=AppendMetadata}" />
+
+                            <Button Content="Select" Click="AddInitialTag" DockPanel.Dock="Right"
+                                    Name="SelectMetatag" />
+                        </StackPanel>
+                        <ListBox Name="InitialTags" ItemsSource="{Binding Path=InitialTags}" Grid.Row="1" Height="64px">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Remove mapping"
+                                                          Command="{Binding Source={StaticResource MediaImportModelProxy}, Path=Data.RemoveInitialTagCommand}"
+                                                          CommandParameter="{Binding}" />
+                                            </ContextMenu>
+                                        </StackPanel.ContextMenu>
+                                        <TextBlock Text="{Binding Metatag.Name}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
         </StackPanel>
         <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Grid.Row="1"
                     Margin="5">

@@ -5,14 +5,19 @@ using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using Thetacat.Explorer;
 using Thetacat.Explorer.UI;
 using Thetacat.Logging;
+using Thetacat.Metatags.Model;
 using Thetacat.Model;
 using Thetacat.Model.Client;
 using Thetacat.Model.ImageCaching;
+using Thetacat.Model.Mediatags;
+using Thetacat.Standards;
 using Thetacat.Types;
 using Thetacat.UI;
+using Path = System.IO.Path;
 
 // the plan here is to get all the items from the Triage cache. for every item we couldn't get, we will queue it (like queuepreviewimagecacheloadformediaitems)
 // and then we wait for all the callbacks to happen. we will do this on a background thread and either:
@@ -37,10 +42,15 @@ public class TriageDownload
     private ConcurrentDictionary<Guid, MediaItem> m_pendingDerivatives = new ConcurrentDictionary<Guid, MediaItem>();
     private bool m_fTriage = false;
     private bool m_fReplaceExisting = false;
+    private bool m_fAppendMetadata = false;
+    private List<Metatag> m_metadataToExport;
+    
     List<string> m_exists = new();
     private string m_targetDirectory = string.Empty;
     private DownloadFilenameType m_filenameType = DownloadFilenameType.LeafOnly;
 
+    private ConcurrentBag<string> m_hashtags = new();
+    
     public TriageDownload()
     {
     }
@@ -87,16 +97,67 @@ public class TriageDownload
         }
     }
 
+    bool IsStandardUserOrIptc(string standard)
+    {
+        return standard == MetatagStandards.User.StandardTag || standard == MetatagStandards.KnownStandards[MetatagStandards.Standard.Iptc].StandardTag;
+    }
+    
+    List<string> ConvertMetadataToHashtags(MediaItem item)
+    {
+        List<string> hashtags = new();
+        foreach (MediaTag tag in item.MediaTags)
+        {
+            if (!IsStandardUserOrIptc(tag.Metatag.Standard))
+                continue;
+
+            if (m_metadataToExport.Count > 0)
+            {
+                // must match one of these items
+                bool matched = false;
+                
+                foreach (Metatag tagToExport in m_metadataToExport)
+                {
+                    if (tag.Metatag.ID == tagToExport.ID)
+                    {
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched)
+                    continue;
+            }
+            
+            string value = tag.Value != null ? $"({tag.Value})" : string.Empty;
+            string hashtag = $"#{tag.Metatag.Standard}:{tag.Metatag.Name}{value}";
+
+            hashtags.Add(hashtag);
+        }
+
+        return hashtags;
+    }
+
     void DownloadCacheItem(ImageCacheItem cacheItem, MediaItem item)
     {
+        string? savedFilename;
+        
         if (cacheItem.DerivativePath != null)
         {
-            DownloadSinglePathItem(cacheItem.DerivativePath.Local, m_targetDirectory, item);
+            savedFilename = DownloadSinglePathItem(cacheItem.DerivativePath.Local, m_targetDirectory, item);
         }
         else
         {
             // we only have a bitmap. need to save it...
-            SaveBitmapSourceToTarget(cacheItem.Image!, m_targetDirectory, item);
+            savedFilename = SaveBitmapSourceToTarget(cacheItem.Image!, m_targetDirectory, item);
+        }
+
+        if (m_fAppendMetadata && savedFilename != null)
+        {
+            List<string> hashtags = ConvertMetadataToHashtags(item);
+
+            string leaf = Path.GetFileName(savedFilename);
+            string line = $"\"{leaf}\",\"{string.Join(",", hashtags)}\"";
+
+            m_hashtags.Add(line);
         }
     }
 
@@ -138,45 +199,53 @@ public class TriageDownload
         }
     }
 
-    void DownloadSinglePathItem(string path, string targetDirectory, MediaItem item)
+    string GetTargetFilenameFromParts(string targetDirectory, MediaItem item, string? ext = null)
     {
         string target = GetTargetFilename(targetDirectory, item);
         // make sure the extensions match
-        string? ext = Path.GetExtension(path);
 
         if (ext != null)
             target = Path.ChangeExtension(target, ext);
 
+        return target;
+
+    }
+    
+    string? DownloadSinglePathItem(string path, string targetDirectory, MediaItem item)
+    {
+        string? ext = Path.GetExtension(path);
+        string target = GetTargetFilenameFromParts(targetDirectory, item, ext);
+
         if (Path.Exists(target))
         {
             if (!m_fReplaceExisting)
             {
                 m_exists.Add(target);
-                return;
+                return null;
             }
         }
 
         System.IO.File.Copy(path, target, m_fReplaceExisting);
+        return target;
     }
 
-    void SaveBitmapSourceToTarget(BitmapSource bitmap, string targetDirectory, MediaItem item)
+    string? SaveBitmapSourceToTarget(BitmapSource bitmap, string targetDirectory, MediaItem item)
     {
-        string target = GetTargetFilename(targetDirectory, item);
-
-        target = Path.ChangeExtension(target, "jpg");
+        string target = GetTargetFilenameFromParts(targetDirectory, item, "jpg");
 
         if (Path.Exists(target))
         {
             if (!m_fReplaceExisting)
             {
                 m_exists.Add(target);
-                return;
+                return null;
             }
 
             File.Delete(target);
         }
 
         Derivatives.SaveBitmapSourceDerivativeToFile(bitmap, target, 90 /*quality*/);
+        return target;
     }
 
     void DownloadFullFidelityItems(IEnumerable<MediaItem> items)
@@ -240,7 +309,9 @@ public class TriageDownload
                 out string? directory,
                 out m_fTriage,
                 out m_fReplaceExisting,
-                out m_filenameType))
+                out m_fAppendMetadata,
+                out m_filenameType,
+                out m_metadataToExport))
         {
             return;
         }
@@ -280,6 +351,12 @@ public class TriageDownload
         else
         {
             CreateAndDownloadTriageItems(itemsToDownload, parent);
+
+            if (m_fAppendMetadata)
+            {
+                string metadataPath = System.IO.Path.Combine(m_targetDirectory, "metadata.csv");
+                System.IO.File.AppendAllLines(metadataPath, m_hashtags);
+            }
         }
 
         if (m_exists.Count > 0)

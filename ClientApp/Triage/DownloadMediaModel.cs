@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Thetacat.Filtering.UI;
 using Thetacat.Types;
 
 namespace Thetacat.Triage;
@@ -42,10 +44,21 @@ public class DownloadMediaModel: INotifyPropertyChanged
     private bool m_triage;
     private bool m_replaceExisting;
     private DownloadFilenameTypeItem? m_filenameType;
+    private bool m_appendMetadata;
+    private readonly List<DownloadFilenameTypeItem> _filenameTypes;
+
+    public ObservableCollection<FilterModelMetatagItem> AvailableTags { get; set; } = new ObservableCollection<FilterModelMetatagItem>();
+    public ObservableCollection<FilterModelMetatagItem> InitialTags { get; set; } = new ObservableCollection<FilterModelMetatagItem>();
+
+    public bool AppendMetadata
+    {
+        get => m_appendMetadata;
+        set => SetField(ref m_appendMetadata, value);
+    }
 
     public DownloadMediaModel()
     {
-        FilenameTypes = new List<DownloadFilenameTypeItem>()
+        _filenameTypes = new List<DownloadFilenameTypeItem>()
         {
             new DownloadFilenameTypeItem(DownloadFilenameType.LeafOnly, "Leaf Only"),
             new DownloadFilenameTypeItem(DownloadFilenameType.FlattenedPath, "Flattened Path"),
@@ -54,7 +67,7 @@ public class DownloadMediaModel: INotifyPropertyChanged
         FilenameType = FilenameTypes[0];
     }
 
-    public List<DownloadFilenameTypeItem> FilenameTypes { get; }
+    public List<DownloadFilenameTypeItem> FilenameTypes => _filenameTypes;
 
     public DownloadFilenameTypeItem GetFilenameTypeForDisplayString(string value)
     {

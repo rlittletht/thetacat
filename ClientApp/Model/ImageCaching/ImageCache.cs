@@ -41,9 +41,12 @@ public class ImageCache
 {
     public enum Target
     {
-        Preview,
+        First,
+        Preview = First,
         FullFidelity,
-        Triage
+        HighFidelity,
+        Triage,
+        Last = Triage
     }
 
     public ConcurrentDictionary<Guid, ImageCacheItem> Items = new ConcurrentDictionary<Guid, ImageCacheItem>();
@@ -52,6 +55,7 @@ public class ImageCache
 
 //    private const int s_picturePreviewWidth = 512;
     private const int s_picturePreviewWidth = 260;
+    private const int s_pictureHighFidelityWidth = 3192;
     private const int s_pictureTriageWidth = 1024;
 
     private bool m_favorDerivativePathOverImageCache = false;
@@ -60,12 +64,43 @@ public class ImageCache
 
     public event EventHandler<ImageCacheUpdateEventArgs>? ImageCacheUpdated;
 
-    double GetScaleFactorForTarget(int? originalWidth, double aspectRatio)
+    double GetScaleFactorForTarget(int? originalWidth, double aspectRatio, Target target)
     {
-        if (m_target == Target.FullFidelity || originalWidth == null)
+        if (target == Target.FullFidelity || originalWidth == null)
             return 1.0;
 
-        return (double)Math.Min(GetWidthForTargetType(), (int)Math.Floor(aspectRatio * GetWidthForTargetType())) / originalWidth.Value;
+        return (double)Math.Min(GetWidthForTargetType(target), (int)Math.Floor(aspectRatio * GetWidthForTargetType(target))) / originalWidth.Value;
+    }
+
+    double GetScaleFactorForTarget(int? originalWidth, double aspectRatio)
+    {
+        return GetScaleFactorForTarget(originalWidth, aspectRatio, m_target);
+    }
+
+    double[] GetAllScaleFactorsForTarget(int? originalWidth, double aspectRatio)
+    {
+        if (m_target == Target.FullFidelity || originalWidth == null)
+            return [1.0];
+
+        List<double> factors = new();
+
+        factors.Add(GetScaleFactorForTarget(originalWidth, aspectRatio, m_target));
+
+        // now add the others so we opportunistically create those derivatives as well
+        for (Target target = Target.First; target <= Target.Last; target++)
+        {
+            if (target != m_target && target != Target.FullFidelity)
+            {
+                factors.Add(GetScaleFactorForTarget(originalWidth, aspectRatio, target));
+            }
+        }
+
+        return factors.ToArray();
+    }
+
+    double GetScaleFactorForTarget(ImageLoaderWork item, Target target)
+    {
+        return GetScaleFactorForTarget(item.OriginalWidth, item.AspectRatio, target);
     }
 
     double GetScaleFactorForTarget(ImageLoaderWork item)
@@ -73,10 +108,24 @@ public class ImageCache
         return GetScaleFactorForTarget(item.OriginalWidth, item.AspectRatio);
     }
 
+    int GetWidthForTargetType(Target target)
+    {
+        if (target == Target.FullFidelity)
+            return s_picturePreviewWidth;
+        if (target == Target.HighFidelity)
+            return s_pictureHighFidelityWidth;
+        if (target == Target.Triage)
+            return s_pictureTriageWidth;
+
+        return s_picturePreviewWidth;
+    }
+
     int GetWidthForTargetType()
     {
         if (m_target == Target.FullFidelity)
             return s_picturePreviewWidth;
+        if (m_target == Target.HighFidelity)
+            return s_pictureHighFidelityWidth;
         if (m_target == Target.Triage)
             return s_pictureTriageWidth;
 
@@ -562,14 +611,17 @@ public class ImageCache
         result.path = null;
         result.bitmap = null;
 
-        double scaleFactor = GetScaleFactorForTarget(originalWidth, aspectRatio);
-        int targetWidth = 0;
+        // get all the scale factors to generate. The [0] item is the requested scale factor for this cache type
+        // and is what should be returned to the caller
+        double[] scaleFactors = GetAllScaleFactorsForTarget(originalWidth, aspectRatio);
+        int[] targetWidths = new int[scaleFactors.Length];
         bool scaling = false;
 
-        if (Derivatives.CompareDoubles(scaleFactor, 1.0, 4) != 0)
+        if (Derivatives.CompareDoubles(scaleFactors[0], 1.0, 4) != 0)
         {
             scaling = true;
-            targetWidth = (int)Math.Floor(originalWidth * scaleFactor);
+            for (int i = 0; i < scaleFactors.Length; i++)
+                targetWidths[i] = (int)Math.Floor(originalWidth * scaleFactors[i]);
         }
 
         // if we have a resampled derivative matching transformations, use it
@@ -582,7 +634,7 @@ public class ImageCache
         if (App.State.Derivatives.TryGetResampledDerivative(
                 mediaItem.ID,
                 md5,
-                scaleFactor,
+                scaleFactors[0],
                 transformations,
                 out DerivativeItem? derivative,
                 out BitmapSource? pendingBitmap,
@@ -599,7 +651,7 @@ public class ImageCache
                 if (m_favorDerivativePathOverImageCache)
                     result.path = derivative.Path;
                 else
-                    result.bitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidth);
+                    result.bitmap = LoadBitmapFromPath(derivative.Path.Local, Transformations.Empty, m_target == Target.FullFidelity ? null : targetWidths[0]);
             }
         }
         else
@@ -611,9 +663,33 @@ public class ImageCache
             // and now scale it to the size we want, if necessary
             if (scaling)
             {
-                result.bitmap = ScaleBitmap(fullImage, scaleFactor);
+                // opportunistically generate other scale factors we care about since we already have the full
+                // fidelity derivative
+                // skip the [0] since that's what we will generate and return later
+                for (int i = 1; i < scaleFactors.Length; i++)
+                {
+                    if (App.State.Derivatives.TryGetResampledDerivative(
+                            mediaItem.ID,
+                            md5,
+                            scaleFactors[i],
+                            transformations,
+                            out DerivativeItem? _,
+                            out BitmapSource? _,
+                            0.02))
+                    {
+                        // we already have a derivative for this scale factor...
+                        continue;
+                    }
+
+                    BitmapSource other = ScaleBitmap(fullImage, scaleFactors[i]);
+                    other.Freeze();
+                    // there's nobody to inform about this derivative work complete since nobody explicitly asked for it...
+                    App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, other, scaleFactors[i], null /*onDerivativeWorkComplete*/);
+                }
+
+                result.bitmap = ScaleBitmap(fullImage, scaleFactors[0]);
                 result.bitmap.Freeze();
-                App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, result.bitmap, scaleFactor, onDerivativeWorkComplete);
+                App.State.Derivatives.QueueSaveResampledImage(mediaItem, md5, transformations, result.bitmap, scaleFactors[0], onDerivativeWorkComplete);
             }
             else
             {
@@ -711,12 +787,12 @@ public class ImageCache
             if (targetBitmap != null && !targetBitmap.IsFrozen)
                 targetBitmap.Freeze();
 
-            bool fNeedTrigger = 
+            bool fNeedTrigger =
                 !(cacheItem.Image == null && targetBitmap == null && cacheItem.DerivativePath == null && bitmapOrPath.path == null);
 
             cacheItem.Image = targetBitmap;
             cacheItem.DerivativePath = bitmapOrPath.path;
-            
+
             if (fNeedTrigger)
                 TriggerImageCacheUpdatedEvent(cacheItem.MediaId);
 

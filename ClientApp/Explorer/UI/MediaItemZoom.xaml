@@ -70,6 +70,8 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Zoom">
+                <MenuItem Header="Full fidelity" Click="ToggleFullFidelity"
+                          IsChecked="{Binding Path=IsFullFidelity, Mode=OneWay}" />
                 <MenuItem Header="Prune mode" Click="TogglePruneMode"
                           IsChecked="{Binding Path=IsPruning, Mode=OneWay}" />
                 <MenuItem Header="_Next" Click="NextImage" />
