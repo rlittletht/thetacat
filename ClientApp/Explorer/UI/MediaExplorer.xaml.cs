@@ -48,6 +48,7 @@ public partial class MediaExplorer : UserControl
         Model.ToggleTopOfStackItems = new ToggleTopOfStackCommand(_ToggleTopOfStackItems);
         Model.OpenItemsStack = new OpenItemsStackCommand(_OpenItemsStack);
         Model.ResetCacheItems = new ResetCacheItemsCommand(_ClearCacheItems);
+        Model.RescanMetadata = new RescanMetadataCommand(_RescanMetadata);
         Model.RotateItemsRight = new RotateItemsRightCommand(_RotateItemsRight);
         Model.MirrorItems = new MirrorItemsCommand(_MirrorItems);
         Model.SelectPanel = new SelectPanelCommand(m_selector._SelectPanel);
@@ -303,6 +304,21 @@ public partial class MediaExplorer : UserControl
         explorerItem.TileImage = null;
         App.State.PreviewImageCache.ResetImageForKey(item.ID);
         App.State.ImageCache.ResetImageForKey(item.ID);
+    }
+
+    private void _RescanMetadata(MediaExplorerItem? context)
+    {
+        foreach (MediaExplorerItem explorerItem in m_selector.SelectedItems)
+        {
+            MediaItem item = App.State.Catalog.GetMediaFromId(explorerItem.MediaId);
+
+            string? path = App.State.Cache.TryGetCachedFullPath(item.ID);
+
+            if (path == null)
+                continue;
+
+            item.SetMediaTagsFromFileMetadata(App.State.MetatagSchema, path);
+        }
     }
 
     private void _ClearCacheItems(MediaExplorerItem? context)

@@ -25,6 +25,7 @@ using Thetacat.Util;
 using Thetacat.Metatags.Model;
 using Thetacat.Model.ImageCaching;
 using System.Diagnostics.CodeAnalysis;
+using BitMiracle.LibTiff.Classic;
 using Thetacat.Model.Mediatags;
 
 namespace Thetacat.Model;
@@ -46,7 +47,7 @@ public class MediaItem : INotifyPropertyChanged
     public bool UseDeprecatedTagIds = false;
 
     public override string ToString() => $"{VirtualPath} ({ID})";
-    
+
     public MediaItem(bool useDeprecatedTagIds)
     {
         m_working = new MediaItemData();
@@ -343,7 +344,9 @@ public class MediaItem : INotifyPropertyChanged
         }
         set
         {
-            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DateSpecified : BuiltinTags_Current.s_DateSpecified, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(
+                UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_DateSpecified : BuiltinTags_Current.s_DateSpecified,
+                value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(SpecifiedMediaDate));
         }
@@ -353,14 +356,18 @@ public class MediaItem : INotifyPropertyChanged
     {
         get
         {
-            if (Tags.TryGetValue(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDateID : BuiltinTags_Current.s_OriginalMediaDateID, out MediaTag? tag))
+            if (Tags.TryGetValue(
+                    UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDateID : BuiltinTags_Current.s_OriginalMediaDateID,
+                    out MediaTag? tag))
                 return tag.Value == null ? null : DateTime.Parse(tag.Value);
 
             return null;
         }
         set
         {
-            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(
+                UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate,
+                value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(OriginalMediaDate));
         }
@@ -377,7 +384,9 @@ public class MediaItem : INotifyPropertyChanged
         }
         set
         {
-            MediaTag tag = new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate, value?.ToUniversalTime().ToString("u"));
+            MediaTag tag = new MediaTag(
+                UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate,
+                value?.ToUniversalTime().ToString("u"));
             FAddOrUpdateMediaTag(tag, true);
             OnPropertyChanged(nameof(ImportDate));
         }
@@ -804,6 +813,11 @@ public class MediaItem : INotifyPropertyChanged
         return null;
     }
 
+    private int GetTiffInt(Tiff tiff, TiffTag tag, int defaultValue)
+    {
+        return tiff.GetField(tag)?[0].ToInt() ?? defaultValue;
+    }
+    
     /*----------------------------------------------------------------------------
         %%Function: SetMediaTagsFromFileMetadata
         %%Qualified: Thetacat.Model.MediaItem.SetMediaTagsFromFileMetadata
@@ -817,27 +831,58 @@ public class MediaItem : INotifyPropertyChanged
 
         string file = localFilePath;
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
+        bool deepTiffScan = file.ToLowerInvariant().EndsWith(".tif") || file.ToLowerInvariant().EndsWith(".tiff");
 
-        // load exif and other data from this item.
 
-//        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
-//        {
-//            // this is a jpeg2000 file. have to use emgu
-//            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
-//            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
-//
-//            MessageBox.Show($"num: {img.")
-//        }
-//        else
+        if (!deepTiffScan)
         {
-            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
+            // load exif and other data from this item.
 
-            this.MD5 = CalculateMD5Hash(file);
-
-            foreach (MetadataExtractor.Directory directory in directories)
+            //        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
+            //        {
+            //            // this is a jpeg2000 file. have to use emgu
+            //            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
+            //            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
+            //
+            //            MessageBox.Show($"num: {img.")
+            //        }
+            //        else
             {
-                PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
+                IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
+
+                this.MD5 = CalculateMD5Hash(file);
+
+                foreach (MetadataExtractor.Directory directory in directories)
+                {
+                    PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
+                }
             }
+        }
+
+        if (deepTiffScan)
+        {
+            // scan for TIFF
+            using Tiff tiff = Tiff.Open(file, "r");
+
+            do
+            {
+                FieldValue[]? icc = tiff.GetField(TiffTag.ICCPROFILE);
+                FieldValue[]? transfer = tiff.GetField(TiffTag.TRANSFERFUNCTION);
+
+                if (icc != null)
+                {
+                    int length = icc[0].ToInt();
+                    byte[] profile = icc[1].ToByteArray();
+                    
+                    File.WriteAllBytes($"c:\\temp\\icc_profile_{Guid.NewGuid()}.icc", profile.AsSpan(0, length).ToArray());
+                }
+                int width = GetTiffInt(tiff, TiffTag.IMAGEWIDTH, -1);
+                int height = GetTiffInt(tiff, TiffTag.IMAGELENGTH, -1);
+                int subfileType = GetTiffInt(tiff, TiffTag.SUBFILETYPE, 0);
+                int samplesPerPixel = GetTiffInt(tiff, TiffTag.SAMPLESPERPIXEL, -1);
+                int bitsPerSample = GetTiffInt(tiff, TiffTag.BITSPERSAMPLE, -1);
+                Photometric photometric = (Photometric)(GetTiffInt(tiff, TiffTag.PHOTOMETRIC, -1));
+            } while (tiff.ReadDirectory());
         }
 
         metatagSchema.EnsureBuiltinMetatagsDefined();
@@ -846,11 +891,19 @@ public class MediaItem : INotifyPropertyChanged
         Tuple<int, int>? widthHeight = FindWidthHeightFromMediaTags(metatagSchema);
         if (widthHeight != null)
         {
-            FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Width : BuiltinTags_Current.s_Width, widthHeight.Item1.ToString()), true);
-            FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Height : BuiltinTags_Current.s_Height, widthHeight.Item2.ToString()), true);
+            FAddOrUpdateMediaTag(
+                new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Width : BuiltinTags_Current.s_Width, widthHeight.Item1.ToString()),
+                true);
+            FAddOrUpdateMediaTag(
+                new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_Height : BuiltinTags_Current.s_Height, widthHeight.Item2.ToString()),
+                true);
         }
 
-        FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate, DateTime.Now.ToUniversalTime().ToString("u")), true);
+        FAddOrUpdateMediaTag(
+            new MediaTag(
+                UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_ImportDate : BuiltinTags_Current.s_ImportDate,
+                DateTime.Now.ToUniversalTime().ToString("u")),
+            true);
 
         string? dateTimeString =
             TryGetMediaTagValueFromStandardAndType(
@@ -879,7 +932,9 @@ public class MediaItem : INotifyPropertyChanged
 
         dateTimeString ??= File.GetCreationTime(file).ToUniversalTime().ToString("u");
 
-        FAddOrUpdateMediaTag(new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate, dateTimeString), true);
+        FAddOrUpdateMediaTag(
+            new MediaTag(UseDeprecatedTagIds ? BuiltinTags_Deprecated.s_OriginalMediaDate : BuiltinTags_Current.s_OriginalMediaDate, dateTimeString),
+            true);
 
         return log;
     }

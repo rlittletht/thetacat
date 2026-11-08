@@ -22,6 +22,7 @@ public class MediaExplorerModel : INotifyPropertyChanged
     public DownloadCommand? DownloadItems { get; set; }
     public ToggleTopOfStackCommand? ToggleTopOfStackItems { get; set; }
     public OpenItemsStackCommand? OpenItemsStack { get; set; }
+    public RescanMetadataCommand? RescanMetadata{ get; set; }
     public ResetCacheItemsCommand? ResetCacheItems { get; set; }
     public RotateItemsRightCommand? RotateItemsRight{ get; set; }
     public MirrorItemsCommand? MirrorItems { get; set; }

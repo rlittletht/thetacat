@@ -73,6 +73,9 @@
                         <MenuItem Header="Reset Cache"
                                   Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.ResetCacheItems}"
                                   CommandParameter="{Binding}" />
+                        <MenuItem Header="(Re)Scan Metadata"
+                                  Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RescanMetadata}"
+                                  CommandParameter="{Binding}" />
                         <MenuItem Header="Transforms">
                             <MenuItem Header="Rotate Right"
                                       Command="{Binding Source={StaticResource MediaExplorerModelProxy}, Path=Data.RotateItemsRight}"
