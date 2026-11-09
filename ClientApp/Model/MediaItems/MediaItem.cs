@@ -719,6 +719,10 @@ public class MediaItem : INotifyPropertyChanged
                     {
                         App.LogForApp(EventType.Verbose, $"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
                         log?.Add($"Different metatag value for {key}: {oldMediaTag.Value} != {tag.Value}");
+                        
+                        // don't allow the override to happen. also signal we made no change
+                        identicalExisting = true;
+                        return oldMediaTag;
                     }
 
                     oldMediaTag.Value = tag.Value;
@@ -831,22 +835,20 @@ public class MediaItem : INotifyPropertyChanged
 
         string file = localFilePath;
         bool allowSubifdOverrideIfd = file.ToLowerInvariant().EndsWith(".nef");
-        bool deepTiffScan = file.ToLowerInvariant().EndsWith(".tif") || file.ToLowerInvariant().EndsWith(".tiff");
+//        bool deepTiffScan = file.ToLowerInvariant().EndsWith(".tif") || file.ToLowerInvariant().EndsWith(".tiff");
 
 
-        if (!deepTiffScan)
-        {
             // load exif and other data from this item.
 
-            //        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
-            //        {
-            //            // this is a jpeg2000 file. have to use emgu
-            //            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
-            //            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
-            //
-            //            MessageBox.Show($"num: {img.")
-            //        }
-            //        else
+//        if (MimeType == MimeTypesMap.GetMimeType("test.jp2"))
+//        {
+//            // this is a jpeg2000 file. have to use emgu
+//            Mat mat = CvInvoke.Imread(file, ImreadModes.AnyColor);
+//            Image<Bgr, Byte> img = mat.ToImage<Bgr, Byte>();
+//
+//            MessageBox.Show($"num: {img.")
+//        }
+//        else
             {
                 IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file);
 
@@ -857,33 +859,32 @@ public class MediaItem : INotifyPropertyChanged
                     PopulateMediaTagsFromMetadataDirectory(metatagSchema, null, directory, MetatagStandards.Standard.Unknown, allowSubifdOverrideIfd, log);
                 }
             }
-        }
 
-        if (deepTiffScan)
-        {
-            // scan for TIFF
-            using Tiff tiff = Tiff.Open(file, "r");
-
-            do
-            {
-                FieldValue[]? icc = tiff.GetField(TiffTag.ICCPROFILE);
-                FieldValue[]? transfer = tiff.GetField(TiffTag.TRANSFERFUNCTION);
-
-                if (icc != null)
-                {
-                    int length = icc[0].ToInt();
-                    byte[] profile = icc[1].ToByteArray();
-                    
-                    File.WriteAllBytes($"c:\\temp\\icc_profile_{Guid.NewGuid()}.icc", profile.AsSpan(0, length).ToArray());
-                }
-                int width = GetTiffInt(tiff, TiffTag.IMAGEWIDTH, -1);
-                int height = GetTiffInt(tiff, TiffTag.IMAGELENGTH, -1);
-                int subfileType = GetTiffInt(tiff, TiffTag.SUBFILETYPE, 0);
-                int samplesPerPixel = GetTiffInt(tiff, TiffTag.SAMPLESPERPIXEL, -1);
-                int bitsPerSample = GetTiffInt(tiff, TiffTag.BITSPERSAMPLE, -1);
-                Photometric photometric = (Photometric)(GetTiffInt(tiff, TiffTag.PHOTOMETRIC, -1));
-            } while (tiff.ReadDirectory());
-        }
+//        if (deepTiffScan)
+//        {
+//            // scan for TIFF
+//            using Tiff tiff = Tiff.Open(file, "r");
+//
+//            do
+//            {
+//                FieldValue[]? icc = tiff.GetField(TiffTag.ICCPROFILE);
+//                FieldValue[]? transfer = tiff.GetField(TiffTag.TRANSFERFUNCTION);
+//
+//                if (icc != null)
+//                {
+//                    int length = icc[0].ToInt();
+//                    byte[] profile = icc[1].ToByteArray();
+//                    
+//                    File.WriteAllBytes($"c:\\temp\\icc_profile_{Guid.NewGuid()}.icc", profile.AsSpan(0, length).ToArray());
+//                }
+//                int width = GetTiffInt(tiff, TiffTag.IMAGEWIDTH, -1);
+//                int height = GetTiffInt(tiff, TiffTag.IMAGELENGTH, -1);
+//                int subfileType = GetTiffInt(tiff, TiffTag.SUBFILETYPE, 0);
+//                int samplesPerPixel = GetTiffInt(tiff, TiffTag.SAMPLESPERPIXEL, -1);
+//                int bitsPerSample = GetTiffInt(tiff, TiffTag.BITSPERSAMPLE, -1);
+//                Photometric photometric = (Photometric)(GetTiffInt(tiff, TiffTag.PHOTOMETRIC, -1));
+//            } while (tiff.ReadDirectory());
+//        }
 
         metatagSchema.EnsureBuiltinMetatagsDefined();
 
